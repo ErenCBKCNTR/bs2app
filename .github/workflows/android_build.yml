@@ -27,9 +27,7 @@ jobs:
           cache: true
 
       - name: Install dependencies
-        run: |
-          flutter pub get
-          flutter pub upgrade --major-versions
+        run: flutter pub get
 
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
