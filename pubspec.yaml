@@ -23,7 +23,7 @@ dependencies:
   livekit_client: ^2.1.0
   
   # UI & Icons
-  lucide_icons: ^0.321.0
+  lucide_icons: ^0.7.1
   google_fonts: ^6.2.1
   
   # Utils
