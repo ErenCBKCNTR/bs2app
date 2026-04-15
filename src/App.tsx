@@ -39,30 +39,30 @@ const MOCK_CHATS: Chat[] = [
 
 const Header = ({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (tab: string) => void }) => {
   return (
-    <header className="bg-surface text-text-main py-6 px-8 border-b border-border-dim sticky top-0 z-50">
-      <div className="flex justify-between items-center mb-0">
+    <header className="bg-surface text-text-main py-4 px-4 border-b border-border-dim sticky top-0 z-50">
+      <div className="flex justify-between items-center">
         <h1 
           id="app-title"
-          className="text-[32px] font-bold tracking-wider"
+          className="text-xl font-bold tracking-tight"
           aria-label="Blind Social Ana Sayfa"
         >
           Blind Social 
-          <span className="ml-3 bg-highlight text-black text-[12px] font-extrabold px-2 py-1 rounded uppercase align-middle">
-            A11Y Aktif
+          <span className="ml-2 bg-highlight text-black text-[10px] font-extrabold px-1.5 py-0.5 rounded uppercase align-middle">
+            A11Y
           </span>
         </h1>
-        <div className="flex gap-6">
+        <div className="flex gap-4">
           <button 
             aria-label="Sohbetlerde ara"
-            className="w-8 h-8 border-2 border-current rounded-md flex items-center justify-center hover:bg-white/10 transition-colors"
+            className="w-9 h-9 border border-current rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
           >
-            <Search size={20} />
+            <Search size={18} />
           </button>
           <button 
             aria-label="Daha fazla seçenek"
-            className="w-8 h-8 border-2 border-current rounded-md flex items-center justify-center hover:bg-white/10 transition-colors"
+            className="w-9 h-9 border border-current rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
           >
-            <MoreVertical size={20} />
+            <MoreVertical size={18} />
           </button>
         </div>
       </div>
@@ -72,7 +72,7 @@ const Header = ({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: 
 
 const Tabs = ({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (tab: string) => void }) => {
   return (
-    <nav className="flex bg-surface border-b-4 border-border-dim" role="tablist">
+    <nav className="flex bg-surface border-b border-border-dim" role="tablist">
       {[
         { id: 'chats', label: 'Sohbetler' },
         { id: 'blog', label: 'Blog' },
@@ -85,7 +85,7 @@ const Tabs = ({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (t
           aria-controls={`${tab.id}-panel`}
           id={`${tab.id}-tab`}
           onClick={() => setActiveTab(tab.id)}
-          className={`flex-1 py-5 text-[18px] font-semibold uppercase transition-all relative border-b-4 ${
+          className={`flex-1 py-3 text-sm font-bold uppercase transition-all relative border-b-2 ${
             activeTab === tab.id ? 'text-primary border-primary' : 'text-text-sub border-transparent'
           }`}
         >
@@ -102,56 +102,53 @@ const ChatItem = ({ chat }: { chat: Chat; key?: React.Key }) => {
     <button
       role="listitem"
       aria-label={`${chat.name} ile sohbet. Son mesaj: ${chat.lastMessage}. Saat: ${chat.time}. ${chat.unreadCount > 0 ? `${chat.unreadCount} okunmamış mesaj var.` : ''}`}
-      className="w-full flex items-center gap-5 py-5 px-8 hover:bg-[#1a1a1a] transition-colors border-b border-border-dim text-left focus:outline-none focus:bg-[#1a1a1a] relative group"
+      className="w-full flex items-center gap-3 py-3 px-4 hover:bg-[#1a1a1a] transition-colors border-b border-border-dim text-left focus:outline-none focus:bg-[#1a1a1a] relative group"
     >
       <div className="relative">
-        <div className="w-16 h-16 rounded-full bg-border-dim border-2 border-primary flex items-center justify-center text-text-main text-[28px] font-bold">
+        <div className="w-12 h-12 rounded-full bg-border-dim border border-primary/30 flex items-center justify-center text-text-main text-base font-bold">
           {chat.name.split(' ').map(n => n[0]).join('')}
         </div>
         {chat.isOnline && (
-          <div className="absolute bottom-0 right-0 w-4 h-4 bg-primary border-2 border-background rounded-full" />
+          <div className="absolute bottom-0.5 right-0.5 w-3 h-3 bg-primary border-2 border-background rounded-full" />
         )}
       </div>
       
       <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-baseline mb-1">
-          <h2 className="text-text-main text-[22px] font-bold">{chat.name}</h2>
-          <span className="text-[16px] text-text-sub">
+        <div className="flex justify-between items-baseline mb-0.5">
+          <h2 className="text-text-main text-base font-semibold">{chat.name}</h2>
+          <span className="text-xs text-text-sub">
             {chat.time}
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <p className="text-text-sub text-[18px] truncate flex-1">
+          <p className="text-text-sub text-sm truncate flex-1">
             {chat.lastMessage}
           </p>
           {chat.unreadCount > 0 && (
-            <span className="bg-primary text-black text-[12px] font-extrabold min-w-[24px] h-6 flex items-center justify-center rounded-full px-1 ml-2">
+            <span className="bg-primary text-black text-[10px] font-extrabold min-w-[18px] h-4.5 flex items-center justify-center rounded-full px-1 ml-2">
               {chat.unreadCount}
             </span>
           )}
         </div>
       </div>
-      <span className="absolute bottom-1 right-2 text-[10px] text-highlight opacity-70 font-mono sr-only md:not-sr-only">
-        Semantics: {chat.name}
-      </span>
     </button>
   );
 };
 
 const BottomNav = () => {
   return (
-    <footer className="bg-surface border-top border-border-dim flex justify-around py-4 fixed bottom-0 left-0 right-0 z-50">
+    <footer className="bg-surface border-t border-border-dim flex justify-around py-2 fixed bottom-0 left-0 right-0 z-50">
       {[
         { label: 'Ana Sayfa', icon: '🏠', active: true },
         { label: 'Aramalar', icon: '📞', active: false },
         { label: 'Profil', icon: '👤', active: false },
         { label: 'Ayarlar', icon: '⚙️', active: false },
       ].map((item, i) => (
-        <div key={i} className={`flex flex-col items-center gap-1 ${item.active ? 'text-primary' : 'text-text-sub'}`}>
-          <div className="w-8 h-8 border-2 border-current rounded-md flex items-center justify-center font-bold">
+        <div key={i} className={`flex flex-col items-center gap-0.5 ${item.active ? 'text-primary' : 'text-text-sub'}`}>
+          <div className="w-7 h-7 border border-current rounded-md flex items-center justify-center font-bold text-sm">
             {item.icon}
           </div>
-          <span className="text-xs">{item.label}</span>
+          <span className="text-[10px]">{item.label}</span>
         </div>
       ))}
     </footer>
@@ -166,7 +163,7 @@ export default function App() {
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
       <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      <main className="flex-1 pb-32">
+      <main className="flex-1 pb-20">
         <AnimatePresence mode="wait">
           {activeTab === 'chats' && (
             <motion.div
@@ -195,11 +192,11 @@ export default function App() {
               id="blog-panel"
               role="tabpanel"
               aria-labelledby="blog-tab"
-              className="p-12 text-center"
+              className="p-8 text-center"
             >
-              <Rss size={64} className="mx-auto mb-6 text-text-sub opacity-20" />
-              <h2 className="text-2xl font-bold mb-4">Blog İçeriği</h2>
-              <p className="text-text-sub text-lg">Görme engelliler için güncel haberler ve makaleler burada listelenecek.</p>
+              <Rss size={48} className="mx-auto mb-4 text-text-sub opacity-20" />
+              <h2 className="text-xl font-bold mb-2">Blog İçeriği</h2>
+              <p className="text-text-sub text-sm">Görme engelliler için güncel haberler ve makaleler burada listelenecek.</p>
             </motion.div>
           )}
 
@@ -212,11 +209,11 @@ export default function App() {
               id="rooms-panel"
               role="tabpanel"
               aria-labelledby="rooms-tab"
-              className="p-12 text-center"
+              className="p-8 text-center"
             >
-              <Users size={64} className="mx-auto mb-6 text-text-sub opacity-20" />
-              <h2 className="text-2xl font-bold mb-4">Sesli Odalar</h2>
-              <p className="text-text-sub text-lg">Canlı sesli sohbet odalarına katılarak toplulukla etkileşime geçin.</p>
+              <Users size={48} className="mx-auto mb-4 text-text-sub opacity-20" />
+              <h2 className="text-xl font-bold mb-2">Sesli Odalar</h2>
+              <p className="text-text-sub text-sm">Canlı sesli sohbet odalarına katılarak toplulukla etkileşime geçin.</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -224,7 +221,7 @@ export default function App() {
 
       <button
         aria-label="Yeni mesaj oluştur"
-        className="fixed bottom-24 right-10 w-20 h-20 bg-primary text-black rounded-full shadow-[0_8px_24px_rgba(0,255,127,0.3)] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-50 border-none text-4xl"
+        className="fixed bottom-20 right-6 w-14 h-14 bg-primary text-black rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-50 border-none text-2xl"
       >
         +
       </button>

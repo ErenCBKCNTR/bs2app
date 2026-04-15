@@ -21,20 +21,24 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // Material 3 standartlarında başlık boyutu
         title: Semantics(
           label: "Blind Social Ana Sayfa",
           header: true,
-          child: const Text('Blind Social'),
+          child: const Text(
+            'Blind Social',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
         ),
         actions: [
           IconButton(
             onPressed: () {},
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.search, size: 24),
             tooltip: "Sohbetlerde ara",
           ),
           IconButton(
             onPressed: () {},
-            icon: const Icon(Icons.more_vert),
+            icon: const Icon(Icons.more_vert, size: 24),
             tooltip: "Daha fazla seçenek",
           ),
         ],
@@ -43,6 +47,9 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
           indicatorColor: Theme.of(context).colorScheme.primary,
           labelColor: Theme.of(context).colorScheme.primary,
           unselectedLabelColor: Colors.grey,
+          // Standart sekme metin boyutu
+          labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          unselectedLabelStyle: const TextStyle(fontSize: 14),
           tabs: [
             Tab(
               child: Semantics(
@@ -78,19 +85,20 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
+        // Standart FAB boyutu
         backgroundColor: Theme.of(context).colorScheme.primary,
         tooltip: "Yeni sohbet başlat",
-        child: const Icon(Icons.message, color: Colors.white),
+        child: const Icon(Icons.message, color: Colors.black, size: 24),
       ),
     );
   }
 
   Widget _buildChatList() {
-    // Örnek veri
     final chats = [
-      {"name": "Ahmet Yılmaz", "lastMsg": "Sesli mesaj: 0:45", "time": "14:20", "unread": 2},
-      {"name": "Erişilebilirlik Grubu", "lastMsg": "Yeni etkinlik duyurusu", "time": "Dün", "unread": 0},
-      {"name": "Ayşe Demir", "lastMsg": "Tamam, görüşürüz.", "time": "Pazartesi", "unread": 5},
+      {"name": "Ahmet Yılmaz", "lastMsg": "Selam kardeşim, akşamki sesli odaya katılıyor musun?", "time": "14:45", "unread": 2},
+      {"name": "Elif Demir", "lastMsg": "Sesli mesaj: 0:45", "time": "12:10", "unread": 0},
+      {"name": "Teknoloji Grubu", "lastMsg": "Can: Yeni ekran okuyucu güncellemesi yayına alındı.", "time": "Dün", "unread": 15},
+      {"name": "Mert Erkan", "lastMsg": "Tamamdır, haberleşiriz.", "time": "Dün", "unread": 0},
     ];
 
     return ListView.separated(
@@ -105,18 +113,24 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
           button: true,
           onTapHint: "Sohbeti açmak için çift dokunun",
           child: ListTile(
+            // Standart CircleAvatar boyutu
             leading: CircleAvatar(
+              radius: 24,
               backgroundColor: Colors.grey[800],
-              child: Text(chat['name'].toString()[0]),
+              child: Text(
+                chat['name'].toString().split(' ').map((e) => e[0]).take(2).join(''),
+                style: const TextStyle(fontSize: 16, color: Colors.white),
+              ),
             ),
             title: Text(
               chat['name'].toString(),
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             subtitle: Text(
               chat['lastMsg'].toString(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
             trailing: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -132,10 +146,10 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                 if (hasUnread)
                   Container(
                     margin: const EdgeInsets.only(top: 4),
-                    padding: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.primary,
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       chat['unread'].toString(),
@@ -144,9 +158,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                   ),
               ],
             ),
-            onTap: () {
-              // Sohbet detayına git
-            },
+            onTap: () {},
           ),
         );
       },
