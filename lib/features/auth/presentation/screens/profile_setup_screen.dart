@@ -16,7 +16,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   Future<void> _saveProfile() async {
     final username = _usernameController.text.trim();
-    final dob = _dobController.text.trim();
+    String dob = _dobController.text.trim();
 
     if (username.isEmpty || dob.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -25,11 +25,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       return;
     }
 
+    // Eğer kullanıcı araya eğik çizgi koymadan 8 rakam girdiyse (örn: 16071996), biz aralara çizgi ekleyelim.
+    if (dob.length == 8 && !dob.contains('/')) {
+      dob = '${dob.substring(0, 2)}/${dob.substring(2, 4)}/${dob.substring(4, 8)}';
+      _dobController.text = dob; // Ekranda da düzeltilmiş halini gösterelim
+    }
+
     // Basit tarih formatı kontrolü (GG/AA/YYYY)
     final dateRegExp = RegExp(r'^\d{2}/\d{2}/\d{4}$');
     if (!dateRegExp.hasMatch(dob)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen tarihi GG/AA/YYYY formatında girin.')),
+        const SnackBar(content: Text('Lütfen tarihi GG/AA/YYYY formatında girin (Örn: 15/08/1995 veya 15081995).')),
       );
       return;
     }
