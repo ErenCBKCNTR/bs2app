@@ -167,3 +167,16 @@ ON public.voice_room_participants FOR DELETE USING (auth.uid() = user_id);
 -- Realtime'a sesli odaları da ekle
 ALTER PUBLICATION supabase_realtime ADD TABLE public.voice_rooms;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.voice_room_participants;
+
+-- ==========================================
+-- STORAGE (DOSYA DEPOLAMA) AYARLARI
+-- ==========================================
+
+-- chat_audio adında bir bucket oluşturulması (Eğer yoksa)
+-- Not: Supabase arayüzünden Storage kısmına gidip "chat_audio" isimli PUBLIC bir bucket oluşturmayı da unutmayın, veya bu kodla otomatik oluşur.
+INSERT INTO storage.buckets (id, name, public) VALUES ('chat_audio', 'chat_audio', true) ON CONFLICT (id) DO NOTHING;
+
+-- Storage için RLS: Herkes okuyabilir, sadece giriş yapanlar yükleyebilir
+CREATE POLICY "Sesli mesajları herkes okuyabilir" ON storage.objects FOR SELECT USING (bucket_id = 'chat_audio');
+CREATE POLICY "Sadece giriş yapanlar sesli mesaj yükleyebilir" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'chat_audio' AND auth.uid() = owner);
+
