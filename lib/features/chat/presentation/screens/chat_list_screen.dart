@@ -96,10 +96,10 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   }
 
   Widget _buildChatList() {
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: Supabase.instance.client
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: Supabase.instance.client
           .from('chats')
-          .stream(primaryKey: ['id'])
+          .select()
           .order('updated_at'),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
