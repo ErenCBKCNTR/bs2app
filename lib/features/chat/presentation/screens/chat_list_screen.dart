@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/features/chat/presentation/screens/voice_rooms_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -80,7 +82,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
         children: [
           _buildChatList(),
           const Center(child: Text("Blog İçeriği")),
-          const Center(child: Text("Sesli Odalar")),
+          const VoiceRoomsScreen(),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -94,72 +96,69 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   }
 
   Widget _buildChatList() {
-    final chats = [
-      {"name": "Ahmet Yılmaz", "lastMsg": "Selam kardeşim, akşamki sesli odaya katılıyor musun?", "time": "14:45", "unread": 2},
-      {"name": "Elif Demir", "lastMsg": "Sesli mesaj: 0:45", "time": "12:10", "unread": 0},
-      {"name": "Teknoloji Grubu", "lastMsg": "Can: Yeni ekran okuyucu güncellemesi yayına alındı.", "time": "Dün", "unread": 15},
-      {"name": "Mert Erkan", "lastMsg": "Tamamdır, haberleşiriz.", "time": "Dün", "unread": 0},
-    ];
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: Supabase.instance.client
+          .from('chats')
+          .stream(primaryKey: ['id'])
+          .order('updated_at'),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    return ListView.separated(
-      itemCount: chats.length,
-      separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.white10),
-      itemBuilder: (context, index) {
-        final chat = chats[index];
-        final bool hasUnread = (chat['unread'] as int) > 0;
+        if (snapshot.hasError) {
+          return Center(child: Text('Hata: ${snapshot.error}'));
+        }
 
-        return Semantics(
-          label: "${chat['name']} ile sohbet. Son mesaj: ${chat['lastMsg']}. Saat: ${chat['time']}. ${hasUnread ? "${chat['unread']} okunmamış mesaj var." : ""}",
-          button: true,
-          onTapHint: "Sohbeti açmak için çift dokunun",
-          child: ListTile(
-            // Standart CircleAvatar boyutu
-            leading: CircleAvatar(
-              radius: 24,
-              backgroundColor: Colors.grey[800],
-              child: Text(
-                chat['name'].toString().split(' ').map((e) => e[0]).take(2).join(''),
-                style: const TextStyle(fontSize: 16, color: Colors.white),
-              ),
+        final chats = snapshot.data ?? [];
+
+        if (chats.isEmpty) {
+          return const Center(
+            child: Text(
+              'Henüz bir sohbetiniz yok.\nYeni bir sohbet başlatın.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
-            title: Text(
-              chat['name'].toString(),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            subtitle: Text(
-              chat['lastMsg'].toString(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  chat['time'].toString(),
-                  style: TextStyle(
-                    color: hasUnread ? Theme.of(context).colorScheme.primary : Colors.grey,
-                    fontSize: 12,
+          );
+        }
+
+        return ListView.separated(
+          itemCount: chats.length,
+          separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.white10),
+          itemBuilder: (context, index) {
+            final chat = chats[index];
+            final chatName = chat['name'] ?? 'İsimsiz Sohbet';
+            
+            return Semantics(
+              label: "$chatName ile sohbet.",
+              button: true,
+              onTapHint: "Sohbeti açmak için çift dokunun",
+              child: ListTile(
+                leading: CircleAvatar(
+                  radius: 24,
+                  backgroundColor: Colors.grey[800],
+                  child: Text(
+                    chatName.toString().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join(''),
+                    style: const TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),
-                if (hasUnread)
-                  Container(
-                    margin: const EdgeInsets.only(top: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      chat['unread'].toString(),
-                      style: const TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-              ],
-            ),
-            onTap: () {},
-          ),
+                title: Text(
+                  chatName.toString(),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                subtitle: const Text(
+                  'Sohbete gitmek için dokunun',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  // TODO: Sohbet detay ekranına git
+                },
+              ),
+            );
+          },
         );
       },
     );

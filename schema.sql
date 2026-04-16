@@ -111,3 +111,52 @@ ON public.messages FOR INSERT WITH CHECK (
 ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_participants;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+
+-- ==========================================
+-- SESLİ ODALAR (VOICE ROOMS) - LIVEKIT İÇİN
+-- ==========================================
+
+-- 5. Sesli Odalar Tablosu (voice_rooms)
+CREATE TABLE IF NOT EXISTS public.voice_rooms (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL,
+    created_by UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+-- 6. Sesli Oda Katılımcıları (voice_room_participants)
+CREATE TABLE IF NOT EXISTS public.voice_room_participants (
+    room_id UUID REFERENCES public.voice_rooms(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    joined_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    PRIMARY KEY (room_id, user_id)
+);
+
+-- Sesli Odalar RLS Politikaları
+ALTER TABLE public.voice_rooms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.voice_room_participants ENABLE ROW LEVEL SECURITY;
+
+-- Herkes aktif odaları görebilir
+CREATE POLICY "Herkes aktif odaları görebilir" 
+ON public.voice_rooms FOR SELECT USING (is_active = true);
+
+-- Sadece giriş yapmış kullanıcılar oda oluşturabilir
+CREATE POLICY "Kullanıcılar oda oluşturabilir" 
+ON public.voice_rooms FOR INSERT WITH CHECK (auth.uid() = created_by);
+
+-- Herkes odadaki katılımcıları görebilir
+CREATE POLICY "Herkes oda katılımcılarını görebilir" 
+ON public.voice_room_participants FOR SELECT USING (true);
+
+-- Kullanıcılar odalara katılabilir
+CREATE POLICY "Kullanıcılar odalara katılabilir" 
+ON public.voice_room_participants FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Kullanıcılar odalardan çıkabilir
+CREATE POLICY "Kullanıcılar odalardan çıkabilir" 
+ON public.voice_room_participants FOR DELETE USING (auth.uid() = user_id);
+
+-- Realtime'a sesli odaları da ekle
+ALTER PUBLICATION supabase_realtime ADD TABLE public.voice_rooms;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.voice_room_participants;
