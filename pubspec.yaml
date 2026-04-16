@@ -19,7 +19,7 @@ dependencies:
   supabase_flutter: ^2.12.2
   
   # Real-time & Communication
-  flutter_webrtc: ^1.4.0
+  flutter_webrtc: ^1.4.1
   livekit_client: ^2.7.0
   
   # UI & Icons
