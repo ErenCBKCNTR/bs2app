@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/features/chat/presentation/screens/active_voice_room_screen.dart';
 
 class VoiceRoomsScreen extends StatelessWidget {
   const VoiceRoomsScreen({super.key});
@@ -53,9 +54,14 @@ class VoiceRoomsScreen extends StatelessWidget {
                 subtitle: const Text('Canlı Ses Odası'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
-                  // TODO: LiveKit ile odaya katılma mantığı eklenecek
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Odaya bağlanılıyor...')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ActiveVoiceRoomScreen(
+                        roomId: room['id'].toString(),
+                        roomName: room['name'].toString(),
+                      ),
+                    ),
                   );
                 },
               ),

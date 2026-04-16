@@ -3,6 +3,9 @@ import 'package:flutter/semantics.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:blind_social/features/chat/presentation/screens/voice_rooms_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/user_profile_screen.dart';
+import 'package:blind_social/features/developer/presentation/screens/developer_logs_screen.dart';
+import 'package:blind_social/features/chat/presentation/screens/blog_screen.dart';
+import 'package:blind_social/core/utils/logger.dart';
 import 'chat_detail_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
@@ -12,11 +15,27 @@ class ChatListScreen extends StatefulWidget {
   State<ChatListScreen> createState() => _ChatListScreenState();
 }
 
-class _ChatListScreenState extends State<ChatListScreen> {
-  int _currentIndex = 0;
+class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   int _refreshKey = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   void _refresh() {
+    AppLogger.instance.info('Sohbet listesi yenilendi.');
     setState(() {
       _refreshKey++;
     });
@@ -35,65 +54,69 @@ class _ChatListScreenState extends State<ChatListScreen> {
           ),
         ),
         actions: [
+          Semantics(
+            label: "Kullanıcı Ara",
+            child: IconButton(
+              icon: const Icon(Icons.search, size: 28),
+              onPressed: _showUserSearchDialog,
+              tooltip: "Kullanıcı Ara",
+            ),
+          ),
           IconButton(
             onPressed: _refresh,
             icon: const Icon(Icons.refresh, size: 28),
             tooltip: "Sayfayı Yenile",
           ),
+          PopupMenuButton<String>(
+            tooltip: "Diğer Seçenekler",
+            onSelected: (value) {
+              if (value == 'dev') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperLogsScreen()));
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem<String>(
+                  value: 'dev',
+                  child: Text('Geliştirici Modu / Loglar'),
+                ),
+              ];
+            },
+          ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Theme.of(context).colorScheme.primary,
+          labelColor: Theme.of(context).colorScheme.primary,
+          unselectedLabelColor: Colors.grey,
+          tabs: const [
+            Tab(text: "Sohbetler"),
+            Tab(text: "Blog"),
+            Tab(text: "Odalar"),
+          ],
+        ),
       ),
-      body: _buildBody(),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat_bubble),
-            label: 'Sohbetler',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.article_outlined),
-            selectedIcon: Icon(Icons.article),
-            label: 'Blog',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.headset_mic_outlined),
-            selectedIcon: Icon(Icons.headset_mic),
-            label: 'Odalar',
-          ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildChatList(),
+          const BlogScreen(),
+          VoiceRoomsScreen(key: ValueKey(_refreshKey)),
         ],
       ),
       floatingActionButton: _buildFAB(),
     );
   }
 
-  Widget _buildBody() {
-    switch (_currentIndex) {
-      case 0:
-        return _buildChatList();
-      case 1:
-        return const Center(child: Text("Blog İçeriği Çok Yakında", style: TextStyle(fontSize: 18)));
-      case 2:
-        return VoiceRoomsScreen(key: ValueKey(_refreshKey));
-      default:
-        return _buildChatList();
-    }
-  }
-
   Widget? _buildFAB() {
-    if (_currentIndex == 0) {
+    if (_tabController.index == 0) {
       return FloatingActionButton(
-        onPressed: _showUsersListToStartChat,
+        onPressed: _showUserSearchDialog,
         backgroundColor: Theme.of(context).colorScheme.primary,
         tooltip: "Yeni Sohbet Başlat",
         child: const Icon(Icons.message, color: Colors.black),
       );
-    } else if (_currentIndex == 2) {
+    } else if (_tabController.index == 2) {
       return FloatingActionButton(
         onPressed: _showCreateVoiceRoomDialog,
         backgroundColor: Theme.of(context).colorScheme.primary,
@@ -102,6 +125,97 @@ class _ChatListScreenState extends State<ChatListScreen> {
       );
     }
     return null;
+  }
+
+  Future<void> _showUserSearchDialog() async {
+    final searchController = TextEditingController();
+    bool isSearching = false;
+    String? errorMessage;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text('Kullanıcı Ara'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: searchController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: 'Kullanıcı Adı',
+                      hintText: 'Örn: ahmet123',
+                      border: const OutlineInputBorder(),
+                      errorText: errorMessage,
+                    ),
+                    onSubmitted: (val) {
+                      // Trigger search programmatically ? No simple handle for dialog.
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSearching ? null : () => Navigator.pop(context),
+                  child: const Text('İptal'),
+                ),
+                ElevatedButton(
+                  onPressed: isSearching ? null : () async {
+                    final username = searchController.text.trim();
+                    if (username.isEmpty) return;
+                    
+                    final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+
+                    setStateDialog(() {
+                      isSearching = true;
+                      errorMessage = null;
+                    });
+                    
+                    try {
+                      final response = await Supabase.instance.client
+                          .from('users')
+                          .select()
+                          .eq('username', username)
+                          .maybeSingle();
+
+                      if (response == null) {
+                         setStateDialog(() {
+                           isSearching = false;
+                           errorMessage = "Böyle bir kullanıcı bulunamadı.";
+                         });
+                      } else if (response['id'] == currentUserId) {
+                         setStateDialog(() {
+                           isSearching = false;
+                           errorMessage = "Kendinizle sohbet edemezsiniz.";
+                         });
+                      } else {
+                         // Found! Start chat.
+                         if (context.mounted) {
+                           Navigator.pop(context);
+                           _createOrOpenChat(response);
+                         }
+                      }
+                    } catch (e) {
+                      AppLogger.instance.error('Kullanıcı arama hatası: $e');
+                      setStateDialog(() {
+                        isSearching = false;
+                        errorMessage = "Bir hata oluştu.";
+                      });
+                    }
+                  },
+                  child: isSearching 
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Ara & Mesaj At'),
+                ),
+              ],
+            );
+          }
+        );
+      }
+    );
   }
 
   Future<void> _showCreateVoiceRoomDialog() async {
@@ -152,6 +266,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       }
                       _refresh(); // Odalar listesini yenile
                     } catch (e) {
+                      AppLogger.instance.error('Oda oluşturulurken hata: $e');
                       setStateDialog(() => isSaving = false);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -169,94 +284,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
           }
         );
       }
-    );
-  }
-
-  Future<void> _showUsersListToStartChat() async {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.6,
-          maxChildSize: 0.9,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text("Kullanıcı Seç", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                ),
-                Expanded(
-                  child: FutureBuilder<List<Map<String, dynamic>>>(
-                    future: Supabase.instance.client
-                        .from('users')
-                        .select()
-                        .neq('id', Supabase.instance.client.auth.currentUser!.id),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (snapshot.hasError) {
-                        return Center(child: Text("Hata: ${snapshot.error}"));
-                      }
-                      final users = snapshot.data ?? [];
-                      if (users.isEmpty) {
-                        return const Center(child: Text("Henüz sistemde başka kullanıcı yok."));
-                      }
-                      
-                      return ListView.builder(
-                        controller: scrollController,
-                        itemCount: users.length,
-                        itemBuilder: (context, index) {
-                          final user = users[index];
-                          final username = user['username'] ?? 'İsimsiz';
-                          final targetUserId = user['id'];
-                          
-                          return ListTile(
-                            leading: GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => UserProfileScreen(userId: targetUserId),
-                                  ),
-                                );
-                              },
-                              child: Semantics(
-                                label: "Profili gör",
-                                button: true,
-                                child: Hero(
-                                  tag: 'avatar_$targetUserId',
-                                  child: CircleAvatar(
-                                    backgroundColor: Colors.green.shade800,
-                                    child: Text(username[0].toUpperCase(), style: const TextStyle(color: Colors.white)),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            title: Text(username, style: const TextStyle(fontSize: 18)),
-                            subtitle: const Text("Mesajlaşmak için tıklayın"),
-                            trailing: const Icon(Icons.chat),
-                            onTap: () {
-                              Navigator.pop(context);
-                              _createOrOpenChat(user);
-                            },
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          }
-        );
-      },
     );
   }
 
@@ -282,8 +309,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sohbet oluşturuldu!')));
       }
+      AppLogger.instance.info('Sohbet oluşturuldu: $chatId');
       _refresh(); // Listeyi yenile
     } catch (e) {
+      AppLogger.instance.error('Sohbet oluşturulurken hata: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
@@ -303,6 +332,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         }
 
         if (snapshot.hasError) {
+          AppLogger.instance.error('Sohbetler yüklenirken hata: ${snapshot.error}');
           return Center(child: Text('Hata: ${snapshot.error}'));
         }
 

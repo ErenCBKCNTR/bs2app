@@ -5,6 +5,7 @@ import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import '../../../../core/utils/logger.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final Map<String, dynamic> chat;
@@ -65,6 +66,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         );
       }
     } catch (e) {
+      AppLogger.instance.error('Mesaj gönderilirken hata: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
@@ -82,12 +84,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           path: path,
         );
         
+        AppLogger.instance.info('Kayıt başlatıldı: $path');
         setState(() {
           _isRecording = true;
           _recordingPath = path;
         });
+      } else {
+        AppLogger.instance.warning('Kayıt için izin reddedildi.');
       }
     } catch (e) {
+      AppLogger.instance.error('Kayıt başlatılamadı: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Kayıt başlatılamadı: $e')));
       }
@@ -123,6 +129,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         await _sendMessage('[VOICE]$publicUrl');
       }
     } catch (e) {
+      AppLogger.instance.error('Ses yükleme hatası: $e');
       setState(() {
         _isRecording = false;
       });
@@ -147,6 +154,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               stream: _messagesStream,
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
+                  AppLogger.instance.error('Mesajlar yüklenirken hata: ${snapshot.error}');
                   return Center(child: Text('Hata: ${snapshot.error}'));
                 }
 
