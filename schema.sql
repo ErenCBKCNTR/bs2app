@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
     full_name TEXT,
+    dob DATE,
     avatar_url TEXT,
     is_online BOOLEAN DEFAULT false,
     last_seen TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),

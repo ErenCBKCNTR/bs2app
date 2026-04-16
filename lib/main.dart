@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:blind_social/features/chat/presentation/screens/chat_list_screen.dart';
+import 'package:blind_social/features/auth/presentation/screens/auth_wrapper.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -46,7 +46,7 @@ class BlindSocialApp extends StatelessWidget {
         // Erişilebilirlik için yüksek kontrast ve odak yönetimi
         focusColor: Colors.white.withOpacity(0.3),
       ),
-      home: const ChatListScreen(),
+      home: const AuthWrapper(),
     );
   }
 }
