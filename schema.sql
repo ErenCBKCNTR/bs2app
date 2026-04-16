@@ -55,6 +55,21 @@ ALTER TABLE public.chats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chat_participants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
+-- ==========================================
+-- RLS YARDIMCI FONKSİYONLARI (Infinite Recursion'ı Önlemek İçin)
+-- ==========================================
+
+-- Bu fonksiyon "kullanıcı bu sohbetin katılımcısı mı?" kontrolünü RLS döngüsüne girmeden yapar.
+CREATE OR REPLACE FUNCTION public.is_chat_participant(chat_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql STABLE SECURITY DEFINER AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.chat_participants
+    WHERE chat_participants.chat_id = $1
+    AND chat_participants.user_id = auth.uid()
+  );
+$$;
+
 -- Users Politikaları
 -- Herkes profilleri okuyabilir
 CREATE POLICY "Kullanıcı profilleri herkes tarafından okunabilir" 
@@ -72,39 +87,27 @@ ON public.users FOR INSERT WITH CHECK (auth.uid() = id);
 -- Kullanıcılar sadece katılımcısı oldukları sohbetleri görebilir
 CREATE POLICY "Kullanıcılar sadece kendi sohbetlerini görebilir" 
 ON public.chats FOR SELECT USING (
-    EXISTS (
-        SELECT 1 FROM public.chat_participants 
-        WHERE chat_id = id AND user_id = auth.uid()
-    )
+    public.is_chat_participant(id)
 );
 
 -- Chat Participants Politikaları
 -- Kullanıcılar sadece kendi sohbetlerindeki katılımcıları görebilir
 CREATE POLICY "Kullanıcılar kendi sohbetlerindeki katılımcıları görebilir" 
 ON public.chat_participants FOR SELECT USING (
-    EXISTS (
-        SELECT 1 FROM public.chat_participants cp 
-        WHERE cp.chat_id = chat_participants.chat_id AND cp.user_id = auth.uid()
-    )
+    public.is_chat_participant(chat_id)
 );
 
 -- Messages Politikaları
 -- Kullanıcılar sadece katılımcısı oldukları sohbetlerdeki mesajları görebilir
 CREATE POLICY "Kullanıcılar kendi sohbetlerindeki mesajları görebilir" 
 ON public.messages FOR SELECT USING (
-    EXISTS (
-        SELECT 1 FROM public.chat_participants 
-        WHERE chat_id = messages.chat_id AND user_id = auth.uid()
-    )
+    public.is_chat_participant(chat_id)
 );
 
 -- Kullanıcılar sadece katılımcısı oldukları sohbetlere mesaj gönderebilir
 CREATE POLICY "Kullanıcılar kendi sohbetlerine mesaj gönderebilir" 
 ON public.messages FOR INSERT WITH CHECK (
-    EXISTS (
-        SELECT 1 FROM public.chat_participants 
-        WHERE chat_id = messages.chat_id AND user_id = auth.uid()
-    )
+    public.is_chat_participant(chat_id)
     AND sender_id = auth.uid() -- Mesajı gönderen kişi gerçekten giriş yapmış kişi olmalı
 );
 
