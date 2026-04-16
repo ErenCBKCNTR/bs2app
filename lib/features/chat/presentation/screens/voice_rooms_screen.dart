@@ -6,10 +6,10 @@ class VoiceRoomsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: Supabase.instance.client
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: Supabase.instance.client
           .from('voice_rooms')
-          .select()
+          .stream(primaryKey: ['id'])
           .eq('is_active', true)
           .order('created_at'),
       builder: (context, snapshot) {
