@@ -64,6 +64,10 @@ ON public.users FOR SELECT USING (true);
 CREATE POLICY "Kullanıcılar kendi profillerini güncelleyebilir" 
 ON public.users FOR UPDATE USING (auth.uid() = id);
 
+-- Kullanıcılar kendi profillerini oluşturabilir (İlk kayıt aşaması için gerekli)
+CREATE POLICY "Kullanıcılar kendi profillerini oluşturabilir" 
+ON public.users FOR INSERT WITH CHECK (auth.uid() = id);
+
 -- Chats Politikaları
 -- Kullanıcılar sadece katılımcısı oldukları sohbetleri görebilir
 CREATE POLICY "Kullanıcılar sadece kendi sohbetlerini görebilir" 
