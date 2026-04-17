@@ -118,6 +118,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           .eq('chat_id', chatId)
           .order('created_at', ascending: true);
 
+      // Katılımcıların durumlarını (okunma bilgisi için) her seferinde çekelim
+      final participantsResponse = await Supabase.instance.client
+          .from('chat_participants')
+          .select()
+          .eq('chat_id', chatId);
+
       if (mounted) {
         bool isNewMessageArrived = false;
         if (_messages.isNotEmpty && response.isNotEmpty) {
@@ -130,6 +136,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
         setState(() {
           _messages = List<Map<String, dynamic>>.from(response);
+          _chat = {
+            ..._chat,
+            'chat_participants': participantsResponse,
+          };
           _isLoading = false;
         });
 
@@ -491,9 +501,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                         if (voiceUrl != null) 
                                           VoiceMessageWidget(url: voiceUrl, isMyMessage: isMyMessage),
                                         const SizedBox(height: 4),
-                                        Text(
-                                          timeString,
-                                          style: const TextStyle(fontSize: 10, color: Colors.white70),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              timeString,
+                                              style: const TextStyle(fontSize: 10, color: Colors.white70),
+                                            ),
+                                            if (isMyMessage) ...[
+                                              const SizedBox(width: 4),
+                                              _buildReadStatus(message),
+                                            ],
+                                          ],
                                         ),
                                       ],
                                     ),
@@ -530,9 +549,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                               style: const TextStyle(fontSize: 16),
                                             ),
                                           const SizedBox(height: 4),
-                                          Text(
-                                            timeString,
-                                            style: const TextStyle(fontSize: 10, color: Colors.white70),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                timeString,
+                                                style: const TextStyle(fontSize: 10, color: Colors.white70),
+                                              ),
+                                              if (isMyMessage) ...[
+                                                const SizedBox(width: 4),
+                                                _buildReadStatus(message),
+                                              ],
+                                            ],
                                           ),
                                         ],
                                       ),
@@ -546,6 +574,41 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           _buildMessageInput(),
         ],
       ),
+    );
+  }
+
+  Widget _buildReadStatus(Map<String, dynamic> message) {
+    if (message['sender_id'] != _myUserId) return const SizedBox.shrink();
+
+    final participants = _chat['chat_participants'] as List<dynamic>? ?? [];
+    String? otherLastReadId;
+    
+    // Normal sohbetlerde diğer katılımcının son okuduğu mesajı bul
+    for (var p in participants) {
+      if (p['user_id'] != _myUserId) {
+        otherLastReadId = p['last_read_message_id'];
+        break;
+      }
+    }
+
+    if (otherLastReadId == null) {
+      return const Icon(Icons.done, size: 14, color: Colors.white70);
+    }
+
+    // Mesajların ID sırasına göre karşılaştırma (Serial ise)
+    // UUID ise dizin karşılaştırması yapıyoruz
+    bool isRead = false;
+    final otherReadIndex = _messages.indexWhere((m) => m['id'] == otherLastReadId);
+    final currentMsgIndex = _messages.indexOf(message);
+
+    if (otherReadIndex != -1 && currentMsgIndex <= otherReadIndex) {
+      isRead = true;
+    }
+
+    return Icon(
+      isRead ? Icons.done_all : Icons.done,
+      size: 14,
+      color: isRead ? Colors.blueAccent : Colors.white70,
     );
   }
 

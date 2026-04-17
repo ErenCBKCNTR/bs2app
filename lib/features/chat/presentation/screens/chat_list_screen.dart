@@ -653,11 +653,25 @@ Widget? _buildFAB() {
                     chatName.toString(),
                     style: TextStyle(fontWeight: isUnread ? FontWeight.w900 : FontWeight.bold, fontSize: 16),
                   ),
-                  subtitle: Text(
-                    subtitleText,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 14, color: isUnread ? Colors.white : Colors.grey, fontWeight: isUnread ? FontWeight.bold : FontWeight.normal),
+                  subtitle: Row(
+                    children: [
+                      if (lastMessage != null && lastMessage['sender_id'] == currentUserId) ...[
+                        _buildSmallReadStatus(chat, lastMessage),
+                        const SizedBox(width: 4),
+                      ],
+                      Expanded(
+                        child: Text(
+                          subtitleText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 14, 
+                            color: isUnread ? Colors.white : Colors.grey, 
+                            fontWeight: isUnread ? FontWeight.bold : FontWeight.normal
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onLongPress: () {
@@ -825,6 +839,32 @@ Widget? _buildFAB() {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSmallReadStatus(Map<String, dynamic> chat, Map<String, dynamic> lastMessage) {
+    final participants = chat['chat_participants'] as List<dynamic>? ?? [];
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    
+    String? otherLastReadId;
+    for (var p in participants) {
+      if (p['user_id'] != currentUserId) {
+        otherLastReadId = p['last_read_message_id'];
+        break;
+      }
+    }
+
+    // Basitleştirilmiş karşılaştırma: Son mesaj okunan mesaj ise veya ondan önceyse
+    // List screen'de tüm mesaj listesi elimizde olmadığı için sadece son mesaj-okunan ID eşitliğini kontrol ediyoruz.
+    // Gelişmiş durumda 'messages' listesindeki sıralamaya bakılabilir.
+    // Ancak genellikle lastMessage okunduysa isRead true'dur.
+    
+    bool isRead = otherLastReadId != null && otherLastReadId == lastMessage['id'];
+    
+    return Icon(
+      isRead ? Icons.done_all : Icons.done,
+      size: 14,
+      color: isRead ? Colors.blueAccent : Colors.grey,
     );
   }
 
