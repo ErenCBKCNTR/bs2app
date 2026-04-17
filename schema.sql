@@ -50,6 +50,9 @@ CREATE TABLE IF NOT EXISTS public.chat_participants (
 ALTER TABLE public.chat_participants ADD COLUMN IF NOT EXISTS last_read_message_id UUID;
 ALTER TABLE public.chat_participants ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT false;
 
+-- Okunma durumu sorguları için performans indeksi
+CREATE INDEX IF NOT EXISTS idx_chat_participants_last_read ON public.chat_participants(last_read_message_id);
+
 -- 4. Mesajlar Tablosu (messages)
 CREATE TABLE IF NOT EXISTS public.messages (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
