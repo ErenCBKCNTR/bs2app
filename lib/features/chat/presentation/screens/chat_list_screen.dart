@@ -7,6 +7,7 @@ import 'package:blind_social/features/profile/presentation/screens/user_profile_
 import 'package:blind_social/features/developer/presentation/screens/developer_logs_screen.dart';
 import 'package:blind_social/features/chat/presentation/screens/blog_screen.dart';
 import 'package:blind_social/core/utils/logger.dart';
+import 'dart:async';
 import 'chat_detail_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
@@ -50,7 +51,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       final response = await Supabase.instance.client
           .from('chats')
           .select('*, chat_participants(user_id)')
-          .order('updated_at', descending: true);
+          .order('updated_at', ascending: false);
           
       if (mounted) {
         setState(() {
@@ -404,7 +405,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => UserProfileScreen(userId: targetUserId),
+                      builder: (context) => UserProfileScreen(userId: targetUserId!),
                     ),
                   );
                 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:blind_social/core/utils/logger.dart';
+import 'dart:async';
 
 class BlogScreen extends StatefulWidget {
   const BlogScreen({super.key});

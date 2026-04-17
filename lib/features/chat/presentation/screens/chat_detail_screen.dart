@@ -358,15 +358,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       ),
     );
   }
-
-  @override
-  void dispose() {
-    _stopTimer();
-    _audioRecorder.dispose();
-    _messageController.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
 }
 
 class VoiceMessageWidget extends StatefulWidget {
