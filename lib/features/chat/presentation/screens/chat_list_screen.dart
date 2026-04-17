@@ -19,6 +19,10 @@ class ChatListScreen extends StatefulWidget {
 class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _refreshKey = 0;
+  
+  List<Map<String, dynamic>> _chats = [];
+  bool _isLoadingChats = true;
+  Timer? _pollingTimer;
 
   @override
   void initState() {
@@ -27,12 +31,38 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     _tabController.addListener(() {
       setState(() {});
     });
+    
+    _fetchChats();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      _fetchChats(isBackground: true);
+    });
   }
 
   @override
   void dispose() {
+    _pollingTimer?.cancel();
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchChats({bool isBackground = false}) async {
+    try {
+      final response = await Supabase.instance.client
+          .from('chats')
+          .select('*, chat_participants(user_id)')
+          .order('updated_at', descending: true);
+          
+      if (mounted) {
+        setState(() {
+          _chats = List<Map<String, dynamic>>.from(response);
+          _isLoadingChats = false;
+        });
+      }
+    } catch (e) {
+      if (!isBackground) {
+        AppLogger.instance.error('Sohbetler yüklenirken hata: $e');
+      }
+    }
   }
 
   void _refresh() {
@@ -40,7 +70,9 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     setState(() {
       _refreshKey++;
     });
+    _fetchChats();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -328,107 +360,91 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   }
 
   Widget _buildChatList() {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      key: ValueKey(_refreshKey),
-      future: Supabase.instance.client
-          .from('chats')
-          .select('*, chat_participants(user_id)')
-          .order('updated_at', ascending: false),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+    if (_isLoadingChats) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_chats.isEmpty) {
+      return const Center(
+        child: Text(
+          'Henüz bir sohbetiniz yok.\nYeni bir sohbet başlatın.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
+
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+
+    return ListView.separated(
+      itemCount: _chats.length,
+      separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.white10),
+      itemBuilder: (context, index) {
+        final chat = _chats[index];
+        final chatName = chat['name'] ?? 'İsimsiz Sohbet';
+        
+        // Diğer katılımcının ID'sini bul
+        final participants = chat['chat_participants'] as List<dynamic>? ?? [];
+        String? targetUserId;
+        for (var p in participants) {
+          if (p['user_id'] != currentUserId) {
+            targetUserId = p['user_id'];
+            break;
+          }
         }
-
-        if (snapshot.hasError) {
-          AppLogger.instance.error('Sohbetler yüklenirken hata: ${snapshot.error}');
-          return Center(child: Text('Hata: ${snapshot.error}'));
-        }
-
-        final chats = snapshot.data ?? [];
-
-        if (chats.isEmpty) {
-          return const Center(
-            child: Text(
-              'Henüz bir sohbetiniz yok.\nYeni bir sohbet başlatın.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          );
-        }
-
-        final currentUserId = Supabase.instance.client.auth.currentUser?.id;
-
-        return ListView.separated(
-          itemCount: chats.length,
-          separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.white10),
-          itemBuilder: (context, index) {
-            final chat = chats[index];
-            final chatName = chat['name'] ?? 'İsimsiz Sohbet';
-            
-            // Diğer katılımcının ID'sini bul
-            final participants = chat['chat_participants'] as List<dynamic>? ?? [];
-            String? targetUserId;
-            for (var p in participants) {
-              if (p['user_id'] != currentUserId) {
-                targetUserId = p['user_id'];
-                break;
-              }
-            }
-            
-            return Semantics(
-              label: "$chatName ile sohbet.",
-              button: true,
-              onTapHint: "Sohbeti açmak için çift dokunun",
-              child: ListTile(
-                leading: GestureDetector(
-                  onTap: () {
-                    if (targetUserId != null) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UserProfileScreen(userId: targetUserId!),
-                        ),
-                      );
-                    }
-                  },
-                  child: Semantics(
-                    label: "Profili gör",
-                    button: true,
-                    child: Hero(
-                      tag: 'chat_avatar_$targetUserId',
-                      child: CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Colors.grey[800],
-                        child: Text(
-                          chatName.toString().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join(''),
-                          style: const TextStyle(fontSize: 16, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                title: Text(
-                  chatName.toString(),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                subtitle: const Text(
-                  'Sohbete gitmek için dokunun',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
+        
+        return Semantics(
+          label: "$chatName ile sohbet.",
+          button: true,
+          onTapHint: "Sohbeti açmak için çift dokunun",
+          child: ListTile(
+            leading: GestureDetector(
+              onTap: () {
+                if (targetUserId != null) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ChatDetailScreen(chat: chat),
+                      builder: (context) => UserProfileScreen(userId: targetUserId),
                     ),
                   );
-                },
+                }
+              },
+              child: Semantics(
+                label: "Profili gör",
+                button: true,
+                child: Hero(
+                  tag: 'chat_avatar_$targetUserId',
+                  child: CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.grey[800],
+                    child: Text(
+                      chatName.toString().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join(''),
+                      style: const TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                  ),
+                ),
               ),
-            );
-          },
+            ),
+            title: Text(
+              chatName.toString(),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            subtitle: const Text(
+              'Sohbete gitmek için dokunun',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChatDetailScreen(chat: chat),
+                ),
+              );
+            },
+          ),
         );
       },
     );

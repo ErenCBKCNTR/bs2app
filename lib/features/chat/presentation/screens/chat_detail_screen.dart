@@ -21,7 +21,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   
-  late final Stream<List<Map<String, dynamic>>> _messagesStream;
+  List<Map<String, dynamic>> _messages = [];
+  bool _isLoading = true;
+  Timer? _pollingTimer;
   late final String _myUserId;
 
   // Ses kaydı için değişkenler
@@ -56,13 +58,68 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   void initState() {
     super.initState();
     _myUserId = Supabase.instance.client.auth.currentUser!.id;
-    final chatId = widget.chat['id'];
+    
+    // İlk yükleme
+    _fetchMessages();
+    
+    // 2 saniyede bir gizlice yenileme (Polling / WebSockets alternatifi)
+    _pollingTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      _fetchMessages(isBackground: true);
+    });
+  }
 
-    _messagesStream = Supabase.instance.client
-        .from('messages')
-        .stream(primaryKey: ['id'])
-        .eq('chat_id', chatId)
-        .order('created_at', ascending: true);
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    _recordTimer?.cancel();
+    _audioRecorder.dispose();
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchMessages({bool isBackground = false}) async {
+    try {
+      final chatId = widget.chat['id'];
+      final response = await Supabase.instance.client
+          .from('messages')
+          .select()
+          .eq('chat_id', chatId)
+          .order('created_at', ascending: true);
+
+      if (mounted) {
+        bool isNewMessageArrived = false;
+        if (_messages.isNotEmpty && response.isNotEmpty) {
+           if (_messages.last['id'] != response.last['id']) {
+             isNewMessageArrived = true;
+           }
+        } else if (_messages.isEmpty && response.isNotEmpty) {
+           isNewMessageArrived = true;
+        }
+
+        setState(() {
+          _messages = List<Map<String, dynamic>>.from(response);
+          _isLoading = false;
+        });
+
+        // Yeni mesaj geldiyse aşağı kaydır
+        if (isNewMessageArrived) {
+           Future.delayed(const Duration(milliseconds: 100), () {
+             if (_scrollController.hasClients) {
+                _scrollController.animateTo(
+                  _scrollController.position.maxScrollExtent + 200,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                );
+             }
+           });
+        }
+      }
+    } catch (e) {
+      if (!isBackground) {
+         AppLogger.instance.error('Mesajlar yüklenirken hata: $e');
+      }
+    }
   }
 
   Future<void> _sendMessage(String text) async {
@@ -177,70 +234,54 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _messagesStream,
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  AppLogger.instance.error('Mesajlar yüklenirken hata: ${snapshot.error}');
-                  return Center(child: Text('Hata: ${snapshot.error}'));
-                }
+            child: _isLoading 
+              ? const Center(child: CircularProgressIndicator())
+              : _messages.isEmpty 
+                ? const Center(child: Text('Henüz mesaj yok.'))
+                : ListView.builder(
+                    controller: _scrollController,
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      final message = _messages[index];
+                      final isMyMessage = message['sender_id'] == _myUserId;
+                      final content = message['content'];
+                      final createdAt = DateTime.parse(message['created_at']).toLocal();
+                      final timeString = DateFormat('HH:mm').format(createdAt);
+                      
+                      final isVoiceMessage = content.toString().startsWith('[VOICE]');
+                      final textContent = isVoiceMessage ? '' : content;
+                      final voiceUrl = isVoiceMessage ? content.toString().substring(7) : null;
 
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final messages = snapshot.data ?? [];
-
-                if (messages.isEmpty) {
-                  return const Center(child: Text('Henüz mesaj yok.'));
-                }
-
-                return ListView.builder(
-                  controller: _scrollController,
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    final isMyMessage = message['sender_id'] == _myUserId;
-                    final content = message['content'];
-                    final createdAt = DateTime.parse(message['created_at']).toLocal();
-                    final timeString = DateFormat('HH:mm').format(createdAt);
-                    
-                    final isVoiceMessage = content.toString().startsWith('[VOICE]');
-                    final textContent = isVoiceMessage ? '' : content;
-                    final voiceUrl = isVoiceMessage ? content.toString().substring(7) : null;
-
-                    return Align(
-                      alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: isMyMessage ? Colors.green[700] : Colors.grey[800],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                          children: [
-                            if (isVoiceMessage && voiceUrl != null) 
-                              VoiceMessageWidget(url: voiceUrl, isMyMessage: isMyMessage)
-                            else
+                      return Align(
+                        alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: isMyMessage ? Colors.green[700] : Colors.grey[800],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                            children: [
+                              if (isVoiceMessage && voiceUrl != null) 
+                                VoiceMessageWidget(url: voiceUrl, isMyMessage: isMyMessage)
+                              else
+                                Text(
+                                  textContent,
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              const SizedBox(height: 4),
                               Text(
-                                textContent,
-                                style: const TextStyle(fontSize: 16),
+                                timeString,
+                                style: const TextStyle(fontSize: 10, color: Colors.white70),
                               ),
-                            const SizedBox(height: 4),
-                            Text(
-                              timeString,
-                              style: const TextStyle(fontSize: 10, color: Colors.white70),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+                      );
+                    },
+                  ),
           ),
           _buildMessageInput(),
         ],
