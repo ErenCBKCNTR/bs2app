@@ -10,6 +10,10 @@ import 'dart:io';
 import 'dart:async';
 import '../../../../core/utils/logger.dart';
 
+import 'package:audioplayers/audioplayers.dart';
+import 'package:vibration/vibration.dart';
+import 'package:blind_social/core/services/settings_service.dart';
+
 class ChatDetailScreen extends StatefulWidget {
   final Map<String, dynamic> chat;
 
@@ -140,6 +144,19 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
         // Yeni mesaj geldiyse aşağı kaydır
         if (isNewMessageArrived) {
+           final lastMsg = response.last;
+           if (lastMsg['sender_id'] != _myUserId) {
+              final settings = SettingsService();
+              if (settings.messageVibrationEnabled) {
+                Vibration.vibrate(duration: 100);
+              }
+              if (settings.messageSoundEnabled) {
+                // Try to play a short notification sound
+                final player = AudioPlayer();
+                player.play(AssetSource('sounds/new_message.mp3')).catchError((e) => null);
+              }
+           }
+
            Future.delayed(const Duration(milliseconds: 100), () {
              if (_scrollController.hasClients) {
                 _scrollController.animateTo(

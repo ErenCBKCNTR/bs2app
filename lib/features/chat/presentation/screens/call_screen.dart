@@ -4,7 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:vibration/vibration.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/services/settings_service.dart';
 
 class CallScreen extends StatefulWidget {
   final String chatId;
@@ -51,8 +53,15 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   Future<void> _playRingtone() async {
+    final settings = SettingsService();
+    
+    if (settings.callVibrationEnabled) {
+      Vibration.vibrate(pattern: [500, 1000, 500, 1000], repeat: 0);
+    }
+
+    if (!settings.callSoundEnabled) return;
+
     try {
-      // Not: assets/sounds/outgoing_call.mp3 dosyasının varlığı varsayılmaktadır.
       await _ringtonePlayer.setReleaseMode(ReleaseMode.loop);
       await _ringtonePlayer.play(AssetSource('sounds/outgoing_call.mp3'));
     } catch (e) {
@@ -61,6 +70,7 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   Future<void> _stopRingtone() async {
+    Vibration.cancel();
     await _ringtonePlayer.stop();
   }
 

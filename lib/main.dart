@@ -6,10 +6,14 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:blind_social/core/providers/theme_provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:blind_social/core/services/settings_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Settings servislerini başlat
+  await SettingsService().init();
+
   // Çevre değişkenlerini yükle
   await dotenv.load(fileName: ".env");
   

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:blind_social/features/auth/presentation/screens/auth_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blind_social/core/providers/theme_provider.dart';
+import 'notification_settings_screen.dart';
 
 class MyProfileScreen extends ConsumerStatefulWidget {
   const MyProfileScreen({super.key});
@@ -165,6 +166,19 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                   }
                 },
               ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.notifications_active),
+              title: const Text('Bildirim Ayarları'),
+              subtitle: const Text('Ses ve titreşim ayarlarını yönetin'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
+                );
+              },
             ),
             const SizedBox(height: 40),
             ElevatedButton.icon(
