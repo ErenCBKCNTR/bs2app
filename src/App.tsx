@@ -19,9 +19,24 @@ import { motion, AnimatePresence } from 'motion/react';
 import { createClient } from '@supabase/supabase-js';
 
 // --- Supabase Config ---
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Only initialize if keys are present
+const supabase = (supabaseUrl && supabaseAnonKey) 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
+
+// --- Mock Data fallback if no Supabase ---
+const MOCK_POSTS = [
+  { id: 'm1', content: 'Uygulamanızın önizlemesi hazır! Gerçek verileri görmek için lütfen ayarlar menüsünden Supabase anahtarlarınızı girin.', created_at: new Date().toISOString(), users: { username: 'Sistem' } },
+  { id: 'm2', content: 'Blog sayfasında görme engelliler için erişilebilirlik ipuçları paylaşılacak.', created_at: new Date().toISOString(), users: { username: 'Erişilebilirlik' } },
+];
+
+const MOCK_CHATS = [
+  { id: 'c1', name: 'Destek Ekibi', messages: [{ content: 'Hoş geldiniz! Size nasıl yardımcı olabiliriz?', created_at: new Date().toISOString() }], chat_participants: [{ user_id: 'demo-user', is_archived: false }] },
+  { id: 'c2', name: 'Erişilebilirlik Topluluğu', messages: [{ content: 'Yarın saat 20:00\'de sesli oda etkinliğimiz var.', created_at: new Date().toISOString() }], chat_participants: [{ user_id: 'demo-user', is_archived: false }] },
+];
 
 // --- Components ---
 
@@ -100,26 +115,40 @@ export default function App() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!supabase) {
+      setUserId('demo-user');
+      setChats(MOCK_CHATS);
+      setPosts(MOCK_POSTS);
+      setIsLoading(false);
+      return;
+    }
+
     // Check auth
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user?.id || null);
+      setUserId(session?.user?.id || 'demo-user'); // Fallback to demo if not logged in
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChanged((_event, session) => {
-      setUserId(session?.user?.id || null);
+      setUserId(session?.user?.id || 'demo-user');
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const fetchData = async () => {
+    if (!supabase || userId === 'demo-user') {
+      setIsLoading(false);
+      return;
+    }
+    
     setIsLoading(true);
     try {
       if (activeTab === 'chats') {
         const { data, error } = await supabase
           .from('chats')
           .select('*, chat_participants!inner(user_id, is_archived), messages(content, created_at)')
-          .order('updated_at', { ascending: false });
+          .order('updated_at', { ascending: false })
+          .limit(20);
         
         if (error) throw error;
         setChats(data || []);
@@ -127,13 +156,17 @@ export default function App() {
         const { data, error } = await supabase
           .from('posts')
           .select('*, users(username)')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(10);
         
         if (error) throw error;
         setPosts(data || []);
       }
     } catch (err) {
       console.error('Data loading error:', err);
+      // Fail gracefully to demo data if logged in but DB error occurs (e.g. table not ready)
+      if (activeTab === 'chats') setChats(MOCK_CHATS);
+      if (activeTab === 'blog') setPosts(MOCK_POSTS);
     } finally {
       setIsLoading(false);
     }
@@ -144,7 +177,16 @@ export default function App() {
   }, [activeTab, userId]);
 
   const toggleArchive = async (chatId: string, currentStatus: boolean) => {
-    if (!userId) return;
+    if (!supabase || userId === 'demo-user') {
+      // Local UI update for demo
+      setChats(prev => prev.map(c => 
+        c.id === chatId 
+          ? { ...c, chat_participants: c.chat_participants.map((p: any) => p.user_id === userId ? { ...p, is_archived: !currentStatus } : p) } 
+          : c
+      ));
+      return;
+    }
+    
     try {
       await supabase
         .from('chat_participants')
@@ -168,21 +210,8 @@ export default function App() {
     return p?.is_archived === true;
   }).length;
 
-  if (!userId) {
-    return (
-      <div className="min-h-screen bg-background text-text-main flex flex-col items-center justify-center p-6 text-center">
-        <MessageSquare size={64} className="text-primary mb-6" />
-        <h1 className="text-2xl font-bold mb-4">Blind Social'a Hoş Geldiniz</h1>
-        <p className="text-text-sub mb-8">Uygulamayı önizlemek için lütfen backend bağlantınızı yapılandırın veya Flutter üzerinden test edin.</p>
-        <div className="p-4 bg-surface rounded-lg border border-border-dim text-sm space-y-2">
-          <p className="font-mono text-xs opacity-50">SUPABASE_URL ve SUPABASE_ANON_KEY eksik olabilir.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background text-text-main font-sans flex flex-col max-w-md mx-auto border-x border-border-dim">
+    <div className="min-h-screen bg-[#050505] text-white font-sans flex flex-col max-w-md mx-auto border-x border-[#333] shadow-2xl relative overflow-hidden">
       <Header 
         title={showArchived ? "Arşivlenmiş" : "Blind Social"} 
         onBack={showArchived ? () => setShowArchived(false) : undefined}
@@ -192,29 +221,34 @@ export default function App() {
       
       {!showArchived && <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />}
 
-      <main className="flex-1 overflow-y-auto pb-20">
-        <AnimatePresence mode="wait">
+      <main className="flex-1 overflow-y-auto pb-20 scrollbar-hide">
+        <div>
+          {(!supabase || userId === 'demo-user') && activeTab === 'chats' && !showArchived && (
+            <div className="bg-[#00FF7F]/10 p-3 text-xs text-[#00FF7F] text-center border-b border-[#00FF7F]/20">
+              Gerçek verileri görmek için <strong>Settings</strong> menüsünden Supabase anahtarlarınızı tanımlayın.
+            </div>
+          )}
           {activeTab === 'chats' && (
-            <motion.div key="chats" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <div key="chats">
               
               {/* Archive Toggle Row */}
               {!showArchived && archivedCount > 0 && (
                 <button 
                   onClick={() => setShowArchived(true)}
-                  className="w-full flex items-center gap-4 px-4 py-4 hover:bg-white/5 border-b border-border-dim transition-colors"
+                  className="w-full flex items-center gap-4 px-4 py-4 hover:bg-white/5 border-b border-[#333] transition-colors"
                 >
-                  <Archive size={24} className="text-primary" />
+                  <Archive size={24} className="text-[#00FF7F]" />
                   <span className="flex-1 text-left font-bold">Arşivlenmiş</span>
-                  <span className="text-sm bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
+                  <span className="text-sm bg-[#00FF7F]/20 text-[#00FF7F] px-2 py-0.5 rounded-full font-bold">
                     {archivedCount}
                   </span>
                 </button>
               )}
 
               {isLoading ? (
-                <div className="p-8 text-center text-text-sub">Yükleniyor...</div>
+                <div className="p-8 text-center text-gray-400">Yükleniyor...</div>
               ) : filteredChats.length === 0 ? (
-                <div className="p-12 text-center text-text-sub">
+                <div className="p-12 text-center text-gray-400">
                   <MessageCircle size={48} className="mx-auto mb-4 opacity-20" />
                   <p>{showArchived ? 'Arşivlenmiş sohbet yok.' : 'Henüz sohbetiniz yok.'}</p>
                 </div>
@@ -223,19 +257,19 @@ export default function App() {
                   {filteredChats.map((chat) => (
                     <div 
                       key={chat.id}
-                      className="flex items-center gap-4 px-4 py-3 hover:bg-white/5 border-b border-border-dim cursor-pointer group"
+                      className="flex items-center gap-4 px-4 py-3 hover:bg-white/5 border-b border-[#333] cursor-pointer group"
                     >
-                      <div className="w-12 h-12 rounded-full bg-surface border border-border-dim flex items-center justify-center font-bold text-lg">
+                      <div className="w-12 h-12 rounded-full bg-[#121212] border border-[#333] flex items-center justify-center font-bold text-lg">
                         {chat.name?.[0]?.toUpperCase() || 'S'}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline mb-1">
                           <h3 className="font-bold truncate">{chat.name}</h3>
-                          <span className="text-[10px] text-text-sub">
+                          <span className="text-[10px] text-gray-500">
                             {chat.messages?.[0] ? new Date(chat.messages[0].created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                           </span>
                         </div>
-                        <p className="text-sm text-text-sub truncate">
+                        <p className="text-sm text-gray-400 truncate">
                           {chat.messages?.[0]?.content || 'Resim veya mesaj yok'}
                         </p>
                       </div>
@@ -252,33 +286,33 @@ export default function App() {
                   ))}
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
 
           {activeTab === 'blog' && (
-            <motion.div key="blog" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-4 space-y-4">
+            <div key="blog" className="p-4 space-y-4">
               {isLoading ? (
-                <div className="p-8 text-center text-text-sub">Yükleniyor...</div>
+                <div className="p-8 text-center text-gray-400">Yükleniyor...</div>
               ) : posts.map((post) => (
-                <div key={post.id} className="bg-surface p-4 rounded-xl border border-border-dim">
+                <div key={post.id} className="bg-[#121212] p-4 rounded-xl border border-[#333]">
                   <div className="flex justify-between items-start mb-2">
-                    <span className="font-bold text-primary">{post.users?.username || 'Anonim'}</span>
-                    <span className="text-[10px] text-text-sub">{new Date(post.created_at).toLocaleDateString()}</span>
+                    <span className="font-bold text-[#00FF7F]">{post.users?.username || 'Anonim'}</span>
+                    <span className="text-[10px] text-gray-500">{new Date(post.created_at).toLocaleDateString()}</span>
                   </div>
                   <p className="text-sm leading-relaxed">{post.content}</p>
                 </div>
               ))}
-            </motion.div>
+            </div>
           )}
 
           {activeTab === 'rooms' && (
-            <motion.div key="rooms" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-12 text-center text-text-sub">
+            <div key="rooms" className="p-12 text-center text-gray-400">
               <Mic size={64} className="mx-auto mb-4 opacity-10" />
               <h3 className="text-lg font-bold mb-2">Sesli Odalar</h3>
               <p className="text-sm">Bu özellik şu an için sadece mobil uygulamada aktiftir.</p>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </div>
       </main>
 
       <button className="fixed bottom-20 right-6 w-14 h-14 bg-primary text-black rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform">

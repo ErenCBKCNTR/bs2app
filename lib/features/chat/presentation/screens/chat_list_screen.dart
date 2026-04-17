@@ -26,6 +26,9 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   Timer? _pollingTimer;
   bool _showArchived = false;
 
+  final ScrollController _chatListScrollController = ScrollController();
+  bool _archivedVisible = false;
+
   @override
   void initState() {
     super.initState();
@@ -38,12 +41,23 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     _pollingTimer = Timer.periodic(const Duration(seconds: 4), (_) {
       _fetchChats(isBackground: true);
     });
+    
+    _chatListScrollController.addListener(_scrollListener);
+  }
+
+  void _scrollListener() {
+    if (_chatListScrollController.offset < -60 && !_archivedVisible && !_showArchived) {
+      setState(() {
+        _archivedVisible = true;
+      });
+    }
   }
 
   @override
   void dispose() {
     _pollingTimer?.cancel();
     _tabController.dispose();
+    _chatListScrollController.dispose();
     super.dispose();
   }
 
@@ -97,10 +111,6 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
           SnackBar(
             content: Text(!currentStatus ? 'Sohbet arşivlendi' : 'Sohbet arşivden çıkarıldı'),
             duration: const Duration(seconds: 2),
-            action: currentStatus ? null : SnackBarAction(
-              label: 'GURUNTULE', 
-              onPressed: () => setState(() => _showArchived = true)
-            ),
           )
         );
       }
@@ -374,12 +384,50 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     );
   }
 
+  Future<void> _navigateToChat(String chatId, String chatName) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatDetailScreen(chat: {'id': chatId, 'name': chatName}),
+      ),
+    );
+    _fetchChats();
+  }
+
   Future<void> _createOrOpenChat(Map<String, dynamic> targetUser) async {
     try {
       final myId = Supabase.instance.client.auth.currentUser!.id;
       final targetId = targetUser['id'];
       
-      // Sohbet oluştur
+      // 1. Önce bu kullanıcıyla mevcut bir özel sohbet (dm) var mı kontrol et
+      // Bu sorgu: both usersin katıldığı ve is_group = false olan sohbetleri getirir
+      final existingChatRes = await Supabase.instance.client
+          .from('chat_participants')
+          .select('chat_id, chats!inner(is_group)')
+          .eq('user_id', myId)
+          .eq('chats.is_group', false);
+
+      final myPrivateChatIds = (existingChatRes as List).map((p) => p['chat_id']).toList();
+
+      if (myPrivateChatIds.isNotEmpty) {
+        final findTargetRes = await Supabase.instance.client
+            .from('chat_participants')
+            .select('chat_id')
+            .in_('chat_id', myPrivateChatIds)
+            .eq('user_id', targetId)
+            .maybeSingle();
+
+        if (findTargetRes != null) {
+          final chatId = findTargetRes['chat_id'];
+          AppLogger.instance.info('Mevcut sohbet bulundu: $chatId');
+          if (mounted) {
+            _navigateToChat(chatId, targetUser['username']);
+          }
+          return;
+        }
+      }
+
+      // 2. Mevcut sohbet yoksa yeni oluştur
       final chatRes = await Supabase.instance.client.from('chats').insert({
         'is_group': false,
         'name': '${targetUser['username']}', 
@@ -396,9 +444,9 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sohbet oluşturuldu!')));
+        _navigateToChat(chatId, targetUser['username']);
       }
       AppLogger.instance.info('Sohbet oluşturuldu: $chatId');
-      _refresh(); // Listeyi yenile
     } catch (e) {
       AppLogger.instance.error('Sohbet oluşturulurken hata: $e');
       if (mounted) {
@@ -442,9 +490,11 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
 
     return Column(
       children: [
-        if (!_showArchived) _buildArchiveToggle(),
+        if (!_showArchived && _archivedVisible) _buildArchiveToggle(),
         Expanded(
           child: ListView.separated(
+            controller: _chatListScrollController,
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             itemCount: filteredChats.length,
             separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.white10),
             itemBuilder: (context, index) {

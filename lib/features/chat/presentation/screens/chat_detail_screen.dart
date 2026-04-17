@@ -1,3 +1,4 @@
+import 'package:blind_social/features/chat/presentation/screens/call_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -284,6 +285,35 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     );
   }
 
+  void _startCall({required bool isVideo}) {
+    // Katılımcıyı bul
+    final participants = widget.chat['chat_participants'] as List<dynamic>? ?? [];
+    String? targetId;
+    for (var p in participants) {
+      if (p['user_id'] != _myUserId) {
+        targetId = p['user_id'];
+        break;
+      }
+    }
+
+    if (targetId == null) {
+       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Arama yapılacak kullanıcı bulunamadı.')));
+       return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CallScreen(
+          chatId: widget.chat['id'],
+          targetUserId: targetId!,
+          targetUsername: widget.chat['name'] ?? 'Kullanıcı',
+          isVideo: isVideo,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final chatName = widget.chat['name'] ?? 'Sohbet';
@@ -291,6 +321,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(chatName),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.videocam),
+            tooltip: 'Görüntülü Arama',
+            onPressed: () => _startCall(isVideo: true),
+          ),
+          IconButton(
+            icon: const Icon(Icons.call),
+            tooltip: 'Sesli Arama',
+            onPressed: () => _startCall(isVideo: false),
+          ),
+        ],
       ),
       body: Column(
         children: [
