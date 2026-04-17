@@ -107,7 +107,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         if (response.isNotEmpty) {
             Supabase.instance.client.from('chat_participants').update({
               'last_read_message_id': response.last['id']
-            }).eq('chat_id', chatId).eq('user_id', _myUserId).then((value) {});
+            }).eq('chat_id', chatId).eq('user_id', _myUserId).catchError((e) {
+              AppLogger.instance.error('Okunma durumu güncellenemedi (Sütun eksik olabilir): $e');
+            });
         }
 
         // Yeni mesaj geldiyse aşağı kaydır

@@ -42,11 +42,13 @@ CREATE TABLE IF NOT EXISTS public.chat_participants (
     chat_id UUID REFERENCES public.chats(id) ON DELETE CASCADE,
     user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
     last_read_message_id UUID, -- Okunmamış mesajları hesaplamak için
+    is_archived BOOLEAN DEFAULT false, -- KİŞİSEL ARŞİVLEME SÜTUNU BURAYA TAŞINDI
     joined_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     PRIMARY KEY (chat_id, user_id)
 );
 
 ALTER TABLE public.chat_participants ADD COLUMN IF NOT EXISTS last_read_message_id UUID;
+ALTER TABLE public.chat_participants ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT false;
 
 -- 4. Mesajlar Tablosu (messages)
 CREATE TABLE IF NOT EXISTS public.messages (

@@ -52,7 +52,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       final userId = Supabase.instance.client.auth.currentUser!.id;
       final response = await Supabase.instance.client
           .from('chats')
-          .select('*, chat_participants!inner(user_id, last_read_message_id), messages(id, content, sender_id, created_at)')
+          .select('*, chat_participants!inner(user_id, last_read_message_id, is_archived), messages(id, content, sender_id, created_at)')
           .order('updated_at', ascending: false);
           
       if (mounted) {
@@ -84,18 +84,31 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
 
   Future<void> _toggleArchive(String chatId, bool currentStatus) async {
     try {
+      final myId = Supabase.instance.client.auth.currentUser!.id;
       await Supabase.instance.client
-          .from('chats')
+          .from('chat_participants')
           .update({'is_archived': !currentStatus})
-          .eq('id', chatId);
-      _fetchChats();
+          .eq('chat_id', chatId)
+          .eq('user_id', myId);
+          
+      await _fetchChats();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(!currentStatus ? 'Sohbet arşivlendi' : 'Sohbet arşivden çıkarıldı'))
+          SnackBar(
+            content: Text(!currentStatus ? 'Sohbet arşivlendi' : 'Sohbet arşivden çıkarıldı'),
+            duration: const Duration(seconds: 2),
+            action: currentStatus ? null : SnackBarAction(
+              label: 'GURUNTULE', 
+              onPressed: () => setState(() => _showArchived = true)
+            ),
+          )
         );
       }
     } catch (e) {
       AppLogger.instance.error('Arşivleme hatası: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      }
     }
   }
 
@@ -399,8 +412,12 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       return const Center(child: CircularProgressIndicator());
     }
 
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+
     final filteredChats = _chats.where((c) {
-       final isArchived = c['is_archived'] ?? false;
+       final participants = c['chat_participants'] as List<dynamic>? ?? [];
+       final myPart = participants.firstWhere((p) => p['user_id'] == currentUserId, orElse: () => null);
+       final isArchived = myPart != null ? (myPart['is_archived'] ?? false) : (c['is_archived'] ?? false);
        return isArchived == _showArchived;
     }).toList();
 
@@ -423,8 +440,6 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       );
     }
 
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
-
     return Column(
       children: [
         if (!_showArchived) _buildArchiveToggle(),
@@ -435,10 +450,12 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
             itemBuilder: (context, index) {
               final chat = filteredChats[index];
               final chatName = chat['name'] ?? 'İsimsiz Sohbet';
-              final isArchived = chat['is_archived'] ?? false;
               
-              // Diğer katılımcının ID'sini bul
+              // Katılımcı bilgisinden arşiv durumunu al
               final participants = chat['chat_participants'] as List<dynamic>? ?? [];
+              final myPart = participants.firstWhere((p) => p['user_id'] == currentUserId, orElse: () => null);
+              final isArchived = myPart != null ? (myPart['is_archived'] ?? false) : (chat['is_archived'] ?? false);
+              
               String? targetUserId;
               String? lastReadId;
               for (var p in participants) {
@@ -557,22 +574,49 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   }
 
   Widget _buildArchiveToggle() {
-    final archivedCount = _chats.where((c) => c['is_archived'] == true).length;
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final archivedCount = _chats.where((c) {
+      final participants = c['chat_participants'] as List<dynamic>? ?? [];
+      final myPart = participants.firstWhere((p) => p['user_id'] == currentUserId, orElse: () => null);
+      return myPart != null ? (myPart['is_archived'] == true) : false;
+    }).length;
+    
     if (archivedCount == 0) return const SizedBox.shrink();
 
-    return ListTile(
-      leading: const Icon(Icons.archive_outlined, color: Colors.grey),
-      title: Text("Arşivlenmiş ($archivedCount)"),
-      onTap: () {
-        setState(() {
-          _showArchived = true;
-        });
-      },
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
+        leading: const Icon(Icons.archive, color: Colors.blue, size: 28),
+        title: Text(
+          "Arşivlenmiş",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade300),
+        ),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            archivedCount.toString(),
+            style: const TextStyle(color: Colors.blue, fontSize: 12),
+          ),
+        ),
+        onTap: () {
+          setState(() {
+            _showArchived = true;
+          });
+        },
+      ),
     );
   }
 
   void _showChatOptions(Map<String, dynamic> chat) {
-    final isArchived = chat['is_archived'] ?? false;
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final participants = chat['chat_participants'] as List<dynamic>? ?? [];
+    final myPart = participants.firstWhere((p) => p['user_id'] == currentUserId, orElse: () => null);
+    final isArchived = myPart != null ? (myPart['is_archived'] ?? false) : (chat['is_archived'] ?? false);
+
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -585,6 +629,14 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
               onTap: () {
                 Navigator.pop(context);
                 _toggleArchive(chat['id'], isArchived);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: Colors.red),
+              title: const Text('Sohbeti Sil', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                // Sohbet silme mantığı buraya eklenebilir
               },
             ),
           ],
