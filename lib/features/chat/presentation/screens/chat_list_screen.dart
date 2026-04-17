@@ -23,6 +23,8 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   
   List<Map<String, dynamic>> _chats = [];
   bool _isLoadingChats = true;
+  bool _isDeleting = false;
+  final Set<String> _pendingOperations = {}; // İşlem gören chat ID'leri
   Timer? _pollingTimer;
   bool _showArchived = false;
 
@@ -68,22 +70,21 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   }
 
   Future<void> _fetchChats({bool isBackground = false}) async {
+    if (_isDeleting && isBackground) return; // Silme işlemi sırasında arka plan verisiyle yerel durumu bozma
+    
     try {
       final userId = Supabase.instance.client.auth.currentUser!.id;
       final response = await Supabase.instance.client
           .from('chats')
           .select('*, chat_participants!inner(user_id, last_read_message_id, is_archived), messages(id, content, sender_id, created_at)')
+          .eq('chat_participants.user_id', userId) // SERVER-SIDE FILTER: ONLY MY CHATS
           .order('updated_at', ascending: false);
           
       if (mounted) {
         setState(() {
-          _chats = List<Map<String, dynamic>>.from(response);
-          // Only keep chats where current user is a participant (simulated local filter to ease complex RLS inner joins in single select)
-          _chats = _chats.where((c) {
-             final participants = c['chat_participants'] as List<dynamic>? ?? [];
-             return participants.any((p) => p['user_id'] == userId);
-          }).toList();
-          
+          final rawChats = List<Map<String, dynamic>>.from(response);
+          // İşlemdeki chat'leri listeden hariç tut (senkronizasyon gecikmesi için)
+          _chats = rawChats.where((c) => !_pendingOperations.contains(c['id'])).toList();
           _isLoadingChats = false;
         });
       }
@@ -105,6 +106,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   Future<void> _toggleArchive(String chatId, bool currentStatus) async {
     // Yerel UI güncelemesi (Optimizasyon)
     setState(() {
+      _pendingOperations.add(chatId);
       final chatIndex = _chats.indexWhere((c) => c['id'] == chatId);
       if (chatIndex != -1) {
         final participants = List<dynamic>.from(_chats[chatIndex]['chat_participants'] ?? []);
@@ -139,6 +141,12 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
+    } finally {
+       if (mounted) {
+         setState(() {
+           _pendingOperations.remove(chatId);
+         });
+       }
     }
   }
 
@@ -744,14 +752,15 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   Future<void> _deleteChat(String chatId) async {
     // Yerel UI güncellemesi (Anlık tepki için)
     setState(() {
+      _isDeleting = true;
+      _pendingOperations.add(chatId);
       _chats.removeWhere((c) => c['id'] == chatId);
     });
 
     try {
-      // Önce katılımcıları sil
-      await Supabase.instance.client.from('chat_participants').delete().eq('chat_id', chatId);
-      // Sonra sohbeti sil
-      await Supabase.instance.client.from('chats').delete().eq('id', chatId);
+      final myId = Supabase.instance.client.auth.currentUser!.id;
+      // Önce katılımcıyı sil
+      await Supabase.instance.client.from('chat_participants').delete().eq('chat_id', chatId).eq('user_id', myId);
       
       _fetchChats(isBackground: true);
       if (mounted) {
@@ -761,6 +770,13 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       AppLogger.instance.error('Sohbet silme hatası: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sohbet silinemedi: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+           _isDeleting = false;
+           _pendingOperations.remove(chatId);
+        });
       }
     }
   }

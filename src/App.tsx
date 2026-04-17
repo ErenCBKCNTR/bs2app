@@ -13,7 +13,8 @@ import {
   RefreshCcw,
   LogOut,
   Send,
-  MessageCircle
+  MessageCircle,
+  Heart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { createClient } from '@supabase/supabase-js';
@@ -210,6 +211,17 @@ export default function App() {
     return p?.is_archived === true;
   }).length;
 
+  const toggleLike = async (postId: string) => {
+    if (!supabase || userId === 'demo-user') return;
+    
+    try {
+      await supabase.rpc('toggle_post_like', { p_post_id: postId });
+      fetchData();
+    } catch (err) {
+      console.error('Toggle like error:', err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans flex flex-col max-w-md mx-auto border-x border-[#333] shadow-2xl relative overflow-hidden">
       <Header 
@@ -299,7 +311,20 @@ export default function App() {
                     <span className="font-bold text-[#00FF7F]">{post.users?.username || 'Anonim'}</span>
                     <span className="text-[10px] text-gray-500">{new Date(post.created_at).toLocaleDateString()}</span>
                   </div>
-                  <p className="text-sm leading-relaxed">{post.content}</p>
+                  <p className="text-sm leading-relaxed mb-3">{post.content}</p>
+                  <div className="flex items-center gap-4 pt-2 border-t border-white/5">
+                    <button 
+                      onClick={() => toggleLike(post.id)}
+                      className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      <Heart size={16} />
+                      <span>{post.likes_count || 0} Beğeni</span>
+                    </button>
+                    <button className="text-xs text-gray-400 hover:text-[#00FF7F] transition-colors">
+                      <MessageCircle size={16} className="inline mr-1" />
+                      Yorum Yap
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

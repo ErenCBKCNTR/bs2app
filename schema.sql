@@ -235,6 +235,56 @@ DO $$ BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.post_comments;
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
+-- 5. Beğeniler Tablosu (post_likes)
+CREATE TABLE IF NOT EXISTS public.post_likes (
+    post_id UUID REFERENCES public.posts(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    PRIMARY KEY (post_id, user_id)
+);
+
+ALTER TABLE public.post_likes ENABLE ROW LEVEL SECURITY;
+
+-- Beğeni Politikaları
+DROP POLICY IF EXISTS "Herkes beğenileri görebilir" ON public.post_likes;
+CREATE POLICY "Herkes beğenileri görebilir" 
+ON public.post_likes FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Giriş yapan kullanıcılar beğeni yapabilir" ON public.post_likes;
+CREATE POLICY "Giriş yapan kullanıcılar beğeni yapabilir" 
+ON public.post_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Kullanıcılar kendi beğenilerini silebilir" ON public.post_likes;
+CREATE POLICY "Kullanıcılar kendi beğenilerini silebilir" 
+ON public.post_likes FOR DELETE USING (auth.uid() = user_id);
+
+-- Beğeniyi açıp kapatan fonksiyon (Toggle Like)
+-- Bu fonksiyon beğeniyi ekler veya varsa siler ve likes_count'u günceller.
+CREATE OR REPLACE FUNCTION public.toggle_post_like(p_post_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM public.post_likes WHERE post_id = p_post_id AND user_id = auth.uid()) THEN
+        -- Beğeniyi kaldır
+        DELETE FROM public.post_likes WHERE post_id = p_post_id AND user_id = auth.uid();
+        -- Sayaç azalt
+        UPDATE public.posts SET likes_count = GREATEST(0, likes_count - 1) WHERE id = p_post_id;
+    ELSE
+        -- Beğeni ekle
+        INSERT INTO public.post_likes (post_id, user_id) VALUES (p_post_id, auth.uid());
+        -- Sayaç artır
+        UPDATE public.posts SET likes_count = likes_count + 1 WHERE id = p_post_id;
+    END IF;
+END;
+$$;
+
+-- Realtime'a beğenileri de ekle
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.post_likes;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
 -- ==========================================
 -- SESLİ ODALAR (VOICE ROOMS) - LIVEKIT İÇİN
 -- ==========================================

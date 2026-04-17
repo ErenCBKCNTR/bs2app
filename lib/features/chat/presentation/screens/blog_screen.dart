@@ -138,6 +138,15 @@ class _BlogScreenState extends State<BlogScreen> {
     }
   }
 
+  Future<void> _toggleLike(String postId) async {
+    try {
+      await Supabase.instance.client.rpc('toggle_post_like', params: {'p_post_id': postId});
+      _fetchPosts(isBackground: true);
+    } catch (e) {
+      AppLogger.instance.error('Beğeni işlemi başarısız: $e');
+    }
+  }
+
   void _showEditDialog(String id, String currentContent) {
     final editController = TextEditingController(text: currentContent);
     showDialog(
@@ -329,13 +338,51 @@ class _BlogScreenState extends State<BlogScreen> {
                                 const SizedBox(height: 12),
                                 Row(
                                   children: [
-                                    Icon(Icons.favorite_border, size: 20, color: Colors.grey.shade400),
-                                    const SizedBox(width: 4),
-                                    Text(likes.toString(), style: TextStyle(color: Colors.grey.shade400)),
+                                    Semantics(
+                                      label: "Beğen. Şu anki beğeni sayısı $likes",
+                                      button: true,
+                                      onTapHint: "Gönderiyi beğenmek veya beğeniyi geri almak için çift dokunun",
+                                      child: InkWell(
+                                        onTap: () => _toggleLike(post['id']),
+                                        borderRadius: BorderRadius.circular(20),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.favorite_border, size: 20, color: Colors.red.shade400),
+                                              const SizedBox(width: 4),
+                                              Text(likes.toString(), style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.bold)),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                     const SizedBox(width: 16),
-                                    Icon(Icons.chat_bubble_outline, size: 20, color: Colors.grey.shade400),
-                                    const SizedBox(width: 4),
-                                    Text(commentCount.toString(), style: TextStyle(color: Colors.grey.shade400)),
+                                    Semantics(
+                                      label: "Yorumlar. $commentCount yorum var.",
+                                      button: true,
+                                      onTapHint: "Yorumları görmek için çift dokunun",
+                                      child: InkWell(
+                                        onTap: () {
+                                          showModalBottomSheet(
+                                            context: context,
+                                            isScrollControlled: true,
+                                            builder: (_) => BlogCommentsBottomSheet(postId: post['id']),
+                                          );
+                                        },
+                                        borderRadius: BorderRadius.circular(20),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.chat_bubble_outline, size: 20, color: Colors.grey.shade400),
+                                              const SizedBox(width: 4),
+                                              Text(commentCount.toString(), style: TextStyle(color: Colors.grey.shade400)),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ],
                                 )
                               ],

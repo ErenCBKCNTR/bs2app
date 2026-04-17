@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import '../../../../core/utils/logger.dart';
 
@@ -30,6 +31,10 @@ class _CallScreenState extends State<CallScreen> {
   bool _isCamOff = false;
   bool _isJoined = false;
   
+  // Timer for call duration
+  Timer? _durationTimer;
+  int _secondsElapsed = 0;
+  
   late final String _myId;
   
   @override
@@ -40,6 +45,25 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   Future<void> _initCall() async {
+    // Permission checks
+    await [
+      Permission.microphone,
+      if (widget.isVideo) Permission.camera,
+    ].request();
+
+    final micStatus = await Permission.microphone.status;
+    final camStatus = widget.isVideo ? await Permission.camera.status : PermissionStatus.granted;
+
+    if (!micStatus.isGranted || !camStatus.isGranted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Kamera veya mikrofon izni verilmedi.')),
+        );
+        Navigator.pop(context);
+      }
+      return;
+    }
+
     // Note: Proje kapsamında LiveKit server ve token generator gereklidir.
     // Şimdilik WhatsApp arayüzünü ve LiveKit altyapı hazırlığını sunuyoruz.
     try {
@@ -70,6 +94,7 @@ class _CallScreenState extends State<CallScreen> {
       setState(() {
         _isJoined = true;
       });
+      _startTimer();
       
     } catch (e) {
       AppLogger.instance.error('Arama başlatma hatası: $e');
@@ -77,8 +102,26 @@ class _CallScreenState extends State<CallScreen> {
     }
   }
 
+  void _startTimer() {
+    _durationTimer?.cancel();
+    _durationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted && _isJoined) {
+        setState(() {
+          _secondsElapsed++;
+        });
+      }
+    });
+  }
+
+  String _formatDuration(int seconds) {
+    final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (seconds % 60).toString().padLeft(2, '0');
+    return "$minutes:$secs";
+  }
+
   @override
   void dispose() {
+    _durationTimer?.cancel();
     _room?.disconnect();
     super.dispose();
   }
@@ -141,7 +184,9 @@ class _CallScreenState extends State<CallScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  widget.isIncoming ? "Gelen Arama" : "Aranıyor...",
+                  _isJoined 
+                    ? _formatDuration(_secondsElapsed)
+                    : (widget.isIncoming ? "Gelen Arama" : "Aranıyor..."),
                   style: const TextStyle(fontSize: 16, color: Colors.white70),
                 ),
                 const Spacer(),
@@ -197,7 +242,12 @@ class _CallScreenState extends State<CallScreen> {
                  children: [
                    FloatingActionButton(
                      heroTag: "accept",
-                     onPressed: () => setState(() => _isJoined = true),
+                     onPressed: () {
+                       setState(() {
+                         _isJoined = true;
+                       });
+                       _startTimer();
+                     },
                      backgroundColor: Colors.green,
                      child: const Icon(Icons.call),
                    ),
