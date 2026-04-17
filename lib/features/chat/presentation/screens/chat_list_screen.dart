@@ -303,6 +303,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       final chatRes = await Supabase.instance.client.from('chats').insert({
         'is_group': false,
         'name': '${targetUser['username']}', 
+        'created_by': myId,
       }).select().single();
       
       final chatId = chatRes['id'];

@@ -26,6 +26,11 @@ CREATE TABLE IF NOT EXISTS public.chats (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
+-- (Mevcut tablolara safely column ekleme)
+DO $$ BEGIN
+    ALTER TABLE public.chats ADD COLUMN created_by UUID REFERENCES public.users(id);
+EXCEPTION WHEN duplicate_column THEN null; END $$;
+
 -- 3. Sohbet Katılımcıları Tablosu (chat_participants)
 -- Hangi kullanıcının hangi sohbette olduğunu tutar.
 CREATE TABLE IF NOT EXISTS public.chat_participants (
@@ -91,7 +96,7 @@ ON public.users FOR INSERT WITH CHECK (auth.uid() = id);
 DROP POLICY IF EXISTS "Kullanıcılar sadece kendi sohbetlerini görebilir" ON public.chats;
 CREATE POLICY "Kullanıcılar sadece kendi sohbetlerini görebilir" 
 ON public.chats FOR SELECT USING (
-    public.is_chat_participant(id)
+    public.is_chat_participant(id) OR created_by = auth.uid()
 );
 
 -- Kullanıcılar yeni sohbet oluşturabilir

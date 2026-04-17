@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:blind_social/core/utils/logger.dart';
 
 class ActiveVoiceRoomScreen extends StatefulWidget {
@@ -27,17 +30,33 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
     _connectToRoom();
   }
 
+  String _generateToken(String apiKey, String apiSecret, String roomName, String participantIdentity) {
+    final jwt = JWT({
+      'exp': (DateTime.now().millisecondsSinceEpoch / 1000).round() + (60 * 60 * 24), // 24 hours valid
+      'iss': apiKey,
+      'sub': participantIdentity,
+      'nbf': 0,
+      'video': {
+        'room': roomName,
+        'roomJoin': true,
+        'canPublish': true,
+        'canSubscribe': true,
+      }
+    });
+
+    return jwt.sign(SecretKey(apiSecret));
+  }
+
   Future<void> _connectToRoom() async {
     AppLogger.instance.info('Odaya bağlanılıyor: ${widget.roomName} (${widget.roomId})');
     
-    // GitHub Secrets üzerinden (derleme zamanında --dart-define ile) gelen değişkenleri alıyoruz
-    const String livekitUrl = String.fromEnvironment('LIVEKIT_URL', defaultValue: '');
-    const String livekitToken = String.fromEnvironment('LIVEKIT_TOKEN', defaultValue: '');
+    // .env dosyasından okuyoruz. GitHub Actions .env oluşturuyor.
+    final String livekitUrl = dotenv.env['LIVEKIT_URL'] ?? '';
+    final String apiKey = dotenv.env['LIVEKIT_API_KEY'] ?? '';
+    final String apiSecret = dotenv.env['LIVEKIT_API_SECRET'] ?? '';
 
-    if (livekitUrl.isEmpty || livekitToken.isEmpty) {
-      // Backend (Supabase Functions vb.) token entegrasyonu olmadığı için 
-      // sadece arayüzün çalıştığını simüle ediyoruz. 
-      AppLogger.instance.warning('LiveKit URL veya Token bulunamadı. Simülasyon modunda açılıyor.');
+    if (livekitUrl.isEmpty || apiKey.isEmpty || apiSecret.isEmpty) {
+      AppLogger.instance.warning('LiveKit URL, Key veya Secret bulunamadı. Simülasyon modunda açılıyor.');
       await Future.delayed(const Duration(seconds: 1));
       if (mounted) {
         setState(() {
@@ -49,6 +68,12 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
     }
 
     try {
+      final user = Supabase.instance.client.auth.currentUser;
+      final userId = user?.id ?? 'anonymous_${DateTime.now().millisecondsSinceEpoch}';
+      
+      // Tokeni lokal imzalayarak oluşturuyoruz
+      final String livekitToken = _generateToken(apiKey, apiSecret, widget.roomName, userId);
+
       _room = Room();
       
       const roomOptions = RoomOptions(
