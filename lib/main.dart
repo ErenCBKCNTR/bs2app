@@ -4,6 +4,7 @@ import 'package:blind_social/features/auth/presentation/screens/auth_wrapper.dar
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/core/providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,15 +35,31 @@ void main() async {
   );
 }
 
-class BlindSocialApp extends StatelessWidget {
+class BlindSocialApp extends ConsumerWidget {
   const BlindSocialApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+
     return MaterialApp(
       title: 'Blind Social',
       debugShowCheckedModeBanner: false,
+      themeMode: themeMode,
       theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF075E54),
+          brightness: Brightness.light,
+          primary: const Color(0xFF075E54),
+          surface: Colors.white,
+        ),
+        textTheme: GoogleFonts.interTextTheme(
+          ThemeData.light().textTheme,
+        ),
+        focusColor: Colors.black.withOpacity(0.3),
+      ),
+      darkTheme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF075E54), // WhatsApp Yeşili
