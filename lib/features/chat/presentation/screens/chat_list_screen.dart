@@ -269,10 +269,11 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
         ],
       ),
       floatingActionButton: _buildFAB(),
-    );
-  }
+    ),
+  );
+}
 
-  Widget? _buildFAB() {
+Widget? _buildFAB() {
     if (_tabController.index == 0) {
       return FloatingActionButton(
         onPressed: _showUserSearchDialog,
