@@ -413,7 +413,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
         final findTargetRes = await Supabase.instance.client
             .from('chat_participants')
             .select('chat_id')
-            .in_('chat_id', myPrivateChatIds)
+            .filter('chat_id', 'in', myPrivateChatIds)
             .eq('user_id', targetId)
             .maybeSingle();
 
