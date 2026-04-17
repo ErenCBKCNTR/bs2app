@@ -425,48 +425,67 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                   _deleteMessage(message['id']);
                                 },
                               } : {}),
-                          child: ExcludeSemantics(
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                              decoration: BoxDecoration(
-                                color: isCallMessage 
-                                  ? Colors.blueGrey[900]?.withOpacity(0.5) 
-                                  : (isMyMessage ? Colors.green[700] : Colors.grey[800]),
-                                borderRadius: BorderRadius.circular(12),
-                                border: isCallMessage ? Border.all(color: Colors.white24, width: 0.5) : null,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                                children: [
-                                  if (isVoiceMessage && voiceUrl != null) 
-                                    VoiceMessageWidget(url: voiceUrl, isMyMessage: isMyMessage)
-                                  else if (isCallMessage)
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
+                          child: isVoiceMessage 
+                                ? Container(
+                                    margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      color: isMyMessage ? Colors.green[700] : Colors.grey[800],
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                                       children: [
-                                        if (callIcon != null) Icon(callIcon, color: Colors.white70, size: 16),
-                                        if (callIcon != null) const SizedBox(width: 8),
+                                        if (voiceUrl != null) 
+                                          VoiceMessageWidget(url: voiceUrl, isMyMessage: isMyMessage),
+                                        const SizedBox(height: 4),
                                         Text(
-                                          displayContent,
-                                          style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Colors.white),
+                                          timeString,
+                                          style: const TextStyle(fontSize: 10, color: Colors.white70),
                                         ),
                                       ],
-                                    )
-                                  else
-                                    Text(
-                                      textContent,
-                                      style: const TextStyle(fontSize: 16),
                                     ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    timeString,
-                                    style: const TextStyle(fontSize: 10, color: Colors.white70),
+                                  )
+                                : ExcludeSemantics(
+                                    child: Container(
+                                      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                      decoration: BoxDecoration(
+                                        color: isCallMessage 
+                                          ? Colors.blueGrey[900]?.withOpacity(0.5) 
+                                          : (isMyMessage ? Colors.green[700] : Colors.grey[800]),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: isCallMessage ? Border.all(color: Colors.white24, width: 0.5) : null,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                        children: [
+                                          if (isCallMessage)
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                if (callIcon != null) Icon(callIcon, color: Colors.white70, size: 16),
+                                                if (callIcon != null) const SizedBox(width: 8),
+                                                Text(
+                                                  displayContent,
+                                                  style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Colors.white),
+                                                ),
+                                              ],
+                                            )
+                                          else
+                                            Text(
+                                              textContent,
+                                              style: const TextStyle(fontSize: 16),
+                                            ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            timeString,
+                                            style: const TextStyle(fontSize: 10, color: Colors.white70),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          ),
                         ),
                       );
                     },
@@ -629,34 +648,42 @@ class _VoiceMessageWidgetState extends State<VoiceMessageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 240, // Expanded for extra buttons
-      decoration: BoxDecoration(
-        color: widget.isMyMessage ? Colors.green[800] : Colors.grey[700],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Play/Pause Button
-          Semantics(
-            label: _isPlaying ? "Sesi duraklat" : "Sesli mesajı oynat",
-            button: true,
-            child: IconButton(
-              constraints: const BoxConstraints(),
-              padding: const EdgeInsets.all(4),
-              tooltip: _isPlaying ? "Sesi duraklat" : "Sesli mesajı oynat",
-              icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 28),
-              onPressed: () async {
-                if (_isPlaying) {
-                  await _audioPlayer.pause();
-                } else {
-                  await _audioPlayer.play(UrlSource(widget.url));
-                }
-              },
+    return GestureDetector(
+      onTap: () async {
+        if (_isPlaying) {
+          await _audioPlayer.pause();
+        } else {
+          await _audioPlayer.play(UrlSource(widget.url));
+        }
+      },
+      child: Container(
+        width: 240, // Expanded for extra buttons
+        decoration: BoxDecoration(
+          color: widget.isMyMessage ? Colors.green[800] : Colors.grey[700],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Play/Pause Button
+            Semantics(
+              label: _isPlaying ? "Sesi duraklat" : "Sesli mesajı oynat",
+              button: true,
+              child: IconButton(
+                constraints: const BoxConstraints(),
+                padding: const EdgeInsets.all(4),
+                tooltip: _isPlaying ? "Sesi duraklat" : "Sesli mesajı oynat",
+                icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 28),
+                onPressed: () async {
+                  if (_isPlaying) {
+                    await _audioPlayer.pause();
+                  } else {
+                    await _audioPlayer.play(UrlSource(widget.url));
+                  }
+                },
+              ),
             ),
-          ),
           
           // Rewind 5s
           Semantics(
@@ -688,21 +715,24 @@ class _VoiceMessageWidgetState extends State<VoiceMessageWidget> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-                    trackHeight: 2,
-                  ),
-                  child: Slider(
-                    min: 0,
-                    max: _duration.inSeconds > 0 ? _duration.inSeconds.toDouble() : 1.0,
-                    value: _position.inSeconds.toDouble().clamp(0.0, _duration.inSeconds > 0 ? _duration.inSeconds.toDouble() : 1.0),
-                    onChanged: (val) {
-                      _audioPlayer.seek(Duration(seconds: val.toInt()));
-                    },
-                    activeColor: Colors.white,
-                    inactiveColor: Colors.white30,
+                Semantics(
+                  label: "Ses çalma ilerlemesi: ${_formatDuration(_position)} / ${_formatDuration(_duration)}",
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                      trackHeight: 2,
+                    ),
+                    child: Slider(
+                      min: 0,
+                      max: _duration.inSeconds > 0 ? _duration.inSeconds.toDouble() : 1.0,
+                      value: _position.inSeconds.toDouble().clamp(0.0, _duration.inSeconds > 0 ? _duration.inSeconds.toDouble() : 1.0),
+                      onChanged: (val) {
+                        _audioPlayer.seek(Duration(seconds: val.toInt()));
+                      },
+                      activeColor: Colors.white,
+                      inactiveColor: Colors.white30,
+                    ),
                   ),
                 ),
                 Padding(
