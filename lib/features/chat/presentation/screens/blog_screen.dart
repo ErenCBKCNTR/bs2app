@@ -102,11 +102,39 @@ class _BlogScreenState extends State<BlogScreen> {
   }
 
   Future<void> _deletePost(String id) async {
-    try {
-      await Supabase.instance.client.from('posts').delete().eq('id', id);
-      _fetchPosts();
-    } catch (e) {
-      AppLogger.instance.error('Gönderi silinemedi: $e');
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Gönderiyi Sil'),
+        content: const Text('Bu gönderiyi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await Supabase.instance.client.from('posts').delete().eq('id', id);
+        AppLogger.instance.info('Gönderi silindi: $id');
+        _fetchPosts();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gönderi silindi.')));
+        }
+      } catch (e) {
+        AppLogger.instance.error('Gönderi silinemedi: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        }
+      }
     }
   }
 
@@ -133,15 +161,25 @@ class _BlogScreenState extends State<BlogScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
+                final newContent = editController.text.trim();
+                if (newContent.isEmpty) return;
+                
                 Navigator.pop(context);
                 try {
                   await Supabase.instance.client
                       .from('posts')
-                      .update({'content': editController.text})
+                      .update({'content': newContent})
                       .eq('id', id);
+                  AppLogger.instance.info('Gönderi düzenlendi: $id');
                   _fetchPosts();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gönderi güncellendi.')));
+                  }
                 } catch (e) {
                   AppLogger.instance.error('Gönderi düzenlenemedi: $e');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Düzenlenemedi: $e')));
+                  }
                 }
               },
               child: const Text('Kaydet'),
