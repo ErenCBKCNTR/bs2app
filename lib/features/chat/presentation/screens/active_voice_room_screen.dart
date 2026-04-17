@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:livekit_client/livekit_client.dart';
 import 'package:blind_social/core/utils/logger.dart';
 
 class ActiveVoiceRoomScreen extends StatefulWidget {
@@ -19,6 +19,7 @@ class ActiveVoiceRoomScreen extends StatefulWidget {
 class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   bool _isMuted = false;
   bool _isConnected = false;
+  Room? _room;
 
   @override
   void initState() {
@@ -27,17 +28,59 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   }
 
   Future<void> _connectToRoom() async {
-    // Simüle eilen bağlanma süreci. 
-    // Gerçek LiveKit entegrasyonu sunucu tarafında token üretmeyi gerektirir.
     AppLogger.instance.info('Odaya bağlanılıyor: ${widget.roomName} (${widget.roomId})');
     
-    await Future.delayed(const Duration(seconds: 1));
-    if (mounted) {
-      setState(() {
-        _isConnected = true;
-      });
-      AppLogger.instance.info('Odaya başarıyla bağlanıldı: ${widget.roomName}');
+    // GitHub Secrets üzerinden (derleme zamanında --dart-define ile) gelen değişkenleri alıyoruz
+    const String livekitUrl = String.fromEnvironment('LIVEKIT_URL', defaultValue: '');
+    const String livekitToken = String.fromEnvironment('LIVEKIT_TOKEN', defaultValue: '');
+
+    if (livekitUrl.isEmpty || livekitToken.isEmpty) {
+      // Backend (Supabase Functions vb.) token entegrasyonu olmadığı için 
+      // sadece arayüzün çalıştığını simüle ediyoruz. 
+      AppLogger.instance.warning('LiveKit URL veya Token bulunamadı. Simülasyon modunda açılıyor.');
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) {
+        setState(() {
+          _isConnected = true;
+        });
+        AppLogger.instance.info('Odaya simülasyon modunda başarıyla bağlanıldı: ${widget.roomName}');
+      }
+      return;
     }
+
+    try {
+      _room = Room();
+      
+      const roomOptions = RoomOptions(
+        adaptiveStream: true,
+        dynacast: true,
+      );
+
+      await _room!.connect(livekitUrl, livekitToken, roomOptions: roomOptions);
+      
+      if (mounted) {
+        setState(() {
+          _isConnected = true;
+        });
+      }
+
+      await _room!.localParticipant?.setMicrophoneEnabled(true);
+      AppLogger.instance.info('LiveKit odaya başarıyla bağlanıldı: ${widget.roomName}');
+
+    } catch (e) {
+      AppLogger.instance.error('LiveKit bağlantı hatası: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Bağlantı hatası: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _room?.disconnect();
+    super.dispose();
   }
 
   @override
@@ -63,10 +106,13 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
             ),
             const SizedBox(height: 10),
             if (_isConnected)
-              const Text(
-                "Şu anda odadasınız. Canlı sesli sohbet özellikleri (LiveKit) yapılandırılınca aktif olacaktır.",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.0),
+                child: Text(
+                  "Şu anda odadasınız. (Eğer ses gitmiyorsa LiveKit backend token entegrasyonu tamamlanmamış olabilir).",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
               ),
           ],
         ),
@@ -82,11 +128,19 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
                 button: true,
                 child: FloatingActionButton(
                   heroTag: "muteBtn",
-                  onPressed: _isConnected ? () {
-                    setState(() {
-                      _isMuted = !_isMuted;
-                    });
-                    AppLogger.instance.info(_isMuted ? 'Mikrofon kapatıldı' : 'Mikrofon açıldı');
+                  onPressed: _isConnected ? () async {
+                    try {
+                      final targetState = !_isMuted;
+                      if (_room != null) {
+                         await _room!.localParticipant?.setMicrophoneEnabled(!targetState);
+                      }
+                      setState(() {
+                        _isMuted = targetState;
+                      });
+                      AppLogger.instance.info(_isMuted ? 'Mikrofon kapatıldı' : 'Mikrofon açıldı');
+                    } catch (e) {
+                       AppLogger.instance.error('Mikrofon kontrol hatası: $e');
+                    }
                   } : null,
                   backgroundColor: _isMuted ? Colors.red : Colors.green[700],
                   child: Icon(

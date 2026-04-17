@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:blind_social/features/chat/presentation/screens/voice_rooms_screen.dart';
+import 'package:blind_social/features/profile/presentation/screens/my_profile_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/user_profile_screen.dart';
 import 'package:blind_social/features/developer/presentation/screens/developer_logs_screen.dart';
 import 'package:blind_social/features/chat/presentation/screens/blog_screen.dart';
@@ -72,10 +73,16 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
             onSelected: (value) {
               if (value == 'dev') {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperLogsScreen()));
+              } else if (value == 'profile') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen()));
               }
             },
             itemBuilder: (BuildContext context) {
               return [
+                const PopupMenuItem<String>(
+                  value: 'profile',
+                  child: Text('Profil Ayarları'),
+                ),
                 const PopupMenuItem<String>(
                   value: 'dev',
                   child: Text('Geliştirici Modu / Loglar'),

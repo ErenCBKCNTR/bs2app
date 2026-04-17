@@ -5,6 +5,7 @@ import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'dart:async';
 import '../../../../core/utils/logger.dart';
 
 class ChatDetailScreen extends StatefulWidget {
@@ -27,6 +28,29 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final AudioRecorder _audioRecorder = AudioRecorder();
   bool _isRecording = false;
   String? _recordingPath;
+  
+  Timer? _recordTimer;
+  int _recordDuration = 0;
+
+  void _startTimer() {
+    _recordTimer?.cancel();
+    _recordDuration = 0;
+    _recordTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
+      if (mounted) {
+        setState(() => _recordDuration++);
+      }
+    });
+  }
+
+  void _stopTimer() {
+    _recordTimer?.cancel();
+  }
+
+  String _formatRecordDuration(int seconds) {
+    final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (seconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$secs';
+  }
 
   @override
   void initState() {
@@ -84,6 +108,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           path: path,
         );
         
+        _startTimer();
         AppLogger.instance.info('Kayıt başlatıldı: $path');
         setState(() {
           _isRecording = true;
@@ -103,6 +128,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   Future<void> _stopRecordingAndSend() async {
     try {
       final path = await _audioRecorder.stop();
+      _stopTimer();
       setState(() {
         _isRecording = false;
       });
@@ -130,6 +156,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       }
     } catch (e) {
       AppLogger.instance.error('Ses yükleme hatası: $e');
+      _stopTimer();
       setState(() {
         _isRecording = false;
       });
@@ -231,7 +258,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             child: TextField(
               controller: _messageController,
               decoration: InputDecoration(
-                hintText: _isRecording ? 'Ses kaydediliyor...' : 'Mesaj yaz...',
+                hintText: _isRecording ? 'Kayıt: ${_formatRecordDuration(_recordDuration)}' : 'Mesaj yaz...',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
@@ -252,8 +279,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               child: GestureDetector(
                 onTap: _stopRecordingAndSend,
                 child: const CircleAvatar(
+                  radius: 24, // Yarıçapı büyüterek butonu daha belirgin yaptık
                   backgroundColor: Colors.red,
-                  child: Icon(Icons.stop, color: Colors.white),
+                  child: Icon(Icons.stop, color: Colors.white, size: 28),
                 ),
               ),
             )
@@ -263,6 +291,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               child: GestureDetector(
                 onTap: _startRecording,
                 child: const CircleAvatar(
+                  radius: 20,
                   backgroundColor: Colors.blueAccent,
                   child: Icon(Icons.mic, color: Colors.white),
                 ),
@@ -277,6 +306,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   _sendMessage(text);
                 },
                 child: const CircleAvatar(
+                  radius: 20,
                   backgroundColor: Colors.green,
                   child: Icon(Icons.send, color: Colors.white),
                 ),
@@ -290,6 +320,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   @override
   void dispose() {
+    _stopTimer();
     _audioRecorder.dispose();
     _messageController.dispose();
     _scrollController.dispose();

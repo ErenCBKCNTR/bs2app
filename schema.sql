@@ -90,12 +90,20 @@ ON public.chats FOR SELECT USING (
     public.is_chat_participant(id)
 );
 
+-- Kullanıcılar yeni sohbet oluşturabilir
+CREATE POLICY "Kullanıcılar sohbet oluşturabilir" 
+ON public.chats FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
 -- Chat Participants Politikaları
 -- Kullanıcılar sadece kendi sohbetlerindeki katılımcıları görebilir
 CREATE POLICY "Kullanıcılar kendi sohbetlerindeki katılımcıları görebilir" 
 ON public.chat_participants FOR SELECT USING (
     public.is_chat_participant(chat_id)
 );
+
+-- Kullanıcılar sohbetlere katılımcı ekleyebilir
+CREATE POLICY "Kullanıcılar katılımcı ekleyebilir" 
+ON public.chat_participants FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 -- Messages Politikaları
 -- Kullanıcılar sadece katılımcısı oldukları sohbetlerdeki mesajları görebilir
@@ -118,6 +126,27 @@ ON public.messages FOR INSERT WITH CHECK (
 ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_participants;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+
+-- ==========================================
+-- MİKRO BLOG (POSTS) AYARLARI
+-- ==========================================
+CREATE TABLE IF NOT EXISTS public.posts (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    likes_count INT DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Herkes gönderileri görebilir" 
+ON public.posts FOR SELECT USING (true);
+
+CREATE POLICY "Giriş yapan kullanıcılar gönderi oluşturabilir" 
+ON public.posts FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.posts;
 
 -- ==========================================
 -- SESLİ ODALAR (VOICE ROOMS) - LIVEKIT İÇİN
