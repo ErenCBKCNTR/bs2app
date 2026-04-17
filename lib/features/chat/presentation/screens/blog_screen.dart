@@ -308,8 +308,6 @@ class _BlogScreenState extends State<BlogScreen> {
                     ),
                   );
                 },
-                separatorBuilder: (context, index) => const Divider(),
-                itemCount: _posts.length,
               ),
       ),
     ],
