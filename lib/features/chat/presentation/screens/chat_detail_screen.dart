@@ -747,6 +747,7 @@ class _VoiceMessageWidgetState extends State<VoiceMessageWidget> {
           ),
         ],
       ),
+    ),
     );
   }
 }
