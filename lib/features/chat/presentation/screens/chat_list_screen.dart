@@ -567,11 +567,9 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                 customSemanticsActions: {
                   CustomSemanticsAction(label: isArchived ? 'Arşivden Çıkar' : 'Arşivle'): () {
                     _toggleArchive(chat['id'], isArchived);
-                    return true;
                   },
                   CustomSemanticsAction(label: 'Sohbeti Sil'): () {
                     _confirmDeleteChat(chat);
-                    return true;
                   },
                 },
                 child: ListTile(
