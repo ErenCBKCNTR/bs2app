@@ -49,10 +49,6 @@ class _CallScreenState extends State<CallScreen> {
           'chat_id': widget.chatId,
           'sender_id': _myId,
           'content': widget.isVideo ? '[VIDEO_CALL_STARTED]' : '[VOICE_CALL_STARTED]',
-          'metadata': {
-            'call_id': 'call_${DateTime.now().millisecondsSinceEpoch}',
-            'is_video': widget.isVideo,
-          }
         });
       }
       

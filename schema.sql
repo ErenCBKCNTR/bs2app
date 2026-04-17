@@ -114,6 +114,11 @@ DROP POLICY IF EXISTS "Kullanıcılar sohbet oluşturabilir" ON public.chats;
 CREATE POLICY "Kullanıcılar sohbet oluşturabilir" 
 ON public.chats FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
+-- Kullanıcılar oluşturdukları sohbetleri silebilir
+DROP POLICY IF EXISTS "Kullanıcılar kendi sohbetlerini silebilir" ON public.chats;
+CREATE POLICY "Kullanıcılar kendi sohbetlerini silebilir" 
+ON public.chats FOR DELETE USING (created_by = auth.uid());
+
 -- Chat Participants Politikaları
 -- Kullanıcılar sadece kendi sohbetlerindeki katılımcıları görebilir
 DROP POLICY IF EXISTS "Kullanıcılar kendi sohbetlerindeki katılımcıları görebilir" ON public.chat_participants;
@@ -126,6 +131,16 @@ ON public.chat_participants FOR SELECT USING (
 DROP POLICY IF EXISTS "Kullanıcılar katılımcı ekleyebilir" ON public.chat_participants;
 CREATE POLICY "Kullanıcılar katılımcı ekleyebilir" 
 ON public.chat_participants FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- Kullanıcılar kendi katılımcı bilgilerini güncelleyebilir (Arşivleme için)
+DROP POLICY IF EXISTS "Kullanıcılar kendi katılımcı bilgilerini güncelleyebilir" ON public.chat_participants;
+CREATE POLICY "Kullanıcılar kendi katılımcı bilgilerini güncelleyebilir" 
+ON public.chat_participants FOR UPDATE USING (user_id = auth.uid());
+
+-- Kullanıcılar kendi katılımcı bilgilerini silebilir (Sohbetten ayrılma/silme için)
+DROP POLICY IF EXISTS "Kullanıcılar kendi katılımcı bilgilerini silebilir" ON public.chat_participants;
+CREATE POLICY "Kullanıcılar kendi katılımcı bilgilerini silebilir" 
+ON public.chat_participants FOR DELETE USING (user_id = auth.uid());
 
 -- Messages Politikaları
 -- Kullanıcılar sadece katılımcısı oldukları sohbetlerdeki mesajları görebilir

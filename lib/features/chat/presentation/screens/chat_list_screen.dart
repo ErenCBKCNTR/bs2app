@@ -48,8 +48,9 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   void _scrollListener() {
     if (_tabController.index != 0) return;
     
-    // WhatsApp tarzı arşiv görünürlüğü: Sayfayı yukarıdan aşağıya (overscroll) çekince belirir
-    if (_chatListScrollController.offset < -40 && !_archivedVisible && !_showArchived) {
+    // WhatsApp tarzı arşiv görünürlüğü: Listenin en başındayken aşağıya doğru çekme (overscroll)
+    // Offset negatif olduğunda (iOS bounc veya Android glow/overscroll) tetiklenir
+    if (_chatListScrollController.position.pixels < -30 && !_archivedVisible && !_showArchived) {
       if (mounted) {
         setState(() {
           _archivedVisible = true;
@@ -102,6 +103,20 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   }
 
   Future<void> _toggleArchive(String chatId, bool currentStatus) async {
+    // Yerel UI güncelemesi (Optimizasyon)
+    setState(() {
+      final chatIndex = _chats.indexWhere((c) => c['id'] == chatId);
+      if (chatIndex != -1) {
+        final participants = List<dynamic>.from(_chats[chatIndex]['chat_participants'] ?? []);
+        final myId = Supabase.instance.client.auth.currentUser!.id;
+        final myPartIndex = participants.indexWhere((p) => p['user_id'] == myId);
+        if (myPartIndex != -1) {
+          participants[myPartIndex]['is_archived'] = !currentStatus;
+          _chats[chatIndex]['chat_participants'] = participants;
+        }
+      }
+    });
+
     try {
       final myId = Supabase.instance.client.auth.currentUser!.id;
       await Supabase.instance.client
@@ -110,7 +125,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
           .eq('chat_id', chatId)
           .eq('user_id', myId);
           
-      await _fetchChats();
+      _fetchChats(isBackground: true);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -552,6 +567,11 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                 customSemanticsActions: {
                   CustomSemanticsAction(label: isArchived ? 'Arşivden Çıkar' : 'Arşivle'): () {
                     _toggleArchive(chat['id'], isArchived);
+                    return true;
+                  },
+                  CustomSemanticsAction(label: 'Sohbeti Sil'): () {
+                    _confirmDeleteChat(chat);
+                    return true;
                   },
                 },
                 child: ListTile(
@@ -724,13 +744,18 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   }
 
   Future<void> _deleteChat(String chatId) async {
+    // Yerel UI güncellemesi (Anlık tepki için)
+    setState(() {
+      _chats.removeWhere((c) => c['id'] == chatId);
+    });
+
     try {
-      // Önce katılımcıları sil (RLS'e bağlı olarak cascade olabilir ama garanti edelim)
+      // Önce katılımcıları sil
       await Supabase.instance.client.from('chat_participants').delete().eq('chat_id', chatId);
       // Sonra sohbeti sil
       await Supabase.instance.client.from('chats').delete().eq('id', chatId);
       
-      _fetchChats();
+      _fetchChats(isBackground: true);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sohbet silindi.')));
       }

@@ -128,7 +128,7 @@ export default function App() {
       setUserId(session?.user?.id || 'demo-user'); // Fallback to demo if not logged in
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChanged((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserId(session?.user?.id || 'demo-user');
     });
 
