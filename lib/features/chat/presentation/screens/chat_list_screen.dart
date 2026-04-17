@@ -156,122 +156,126 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) async {
+      onPopInvoked: (didPop) {
         if (didPop) return;
 
-        if (_showArchived) {
-          setState(() => _showArchived = false);
-          return;
-        }
-
-        if (_tabController.index != 0) {
-          _tabController.animateTo(0);
-          return;
-        }
-
-        final exitConfirmed = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Uygulamadan Çık'),
-            content: const Text('Uygulamadan çıkmak istediğinize emin misiniz?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('İPTAL'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('ÇIK', style: TextStyle(color: Colors.red)),
-              ),
-            ],
-          ),
-        );
-
-        if (exitConfirmed == true && context.mounted) {
-          // Bu durumda canPop false olduğu için manuel çıkış yapıyoruz
-          SystemNavigator.pop();
-        }
+        // Async işlemler için ayrı bir fonksiyon çağırıyoruz
+        _handleBackNavigation();
       },
       child: Scaffold(
-      appBar: AppBar(
-        leading: _showArchived && _tabController.index == 0
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => setState(() => _showArchived = false),
-                tooltip: "Sohbetlere dön",
-              )
-            : null,
-        title: Semantics(
-          label: _showArchived && _tabController.index == 0 ? "Arşivlenmiş Sohbetler" : "Blind Social Ana Sayfa",
-          header: true,
-          child: Text(
-            _showArchived && _tabController.index == 0 ? "Arşivlenmiş" : 'Blind Social',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+        appBar: AppBar(
+          leading: _showArchived && _tabController.index == 0
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => setState(() => _showArchived = false),
+                  tooltip: "Sohbetlere dön",
+                )
+              : null,
+          title: Semantics(
+            label: _showArchived && _tabController.index == 0 ? "Arşivlenmiş Sohbetler" : "Blind Social Ana Sayfa",
+            header: true,
+            child: Text(
+              _showArchived && _tabController.index == 0 ? "Arşivlenmiş" : 'Blind Social',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+          ),
+          actions: [
+            if (!_showArchived || _tabController.index != 0) ...[
+              Semantics(
+                label: "Kullanıcı Ara",
+                child: IconButton(
+                  icon: const Icon(Icons.search, size: 28),
+                  onPressed: _showUserSearchDialog,
+                  tooltip: "Kullanıcı Ara",
+                ),
+              ),
+              IconButton(
+                onPressed: _refresh,
+                icon: const Icon(Icons.refresh, size: 28),
+                tooltip: "Sayfayı Yenile",
+              ),
+              PopupMenuButton<String>(
+                tooltip: "Diğer Seçenekler",
+                onSelected: (value) {
+                  if (value == 'dev') {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperLogsScreen()));
+                  } else if (value == 'profile') {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen()));
+                  }
+                },
+                itemBuilder: (BuildContext context) {
+                  return [
+                    const PopupMenuItem<String>(
+                      value: 'profile',
+                      child: Text('Profil Ayarları'),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'dev',
+                      child: Text('Geliştirici Modu / Loglar'),
+                    ),
+                  ];
+                },
+              ),
+            ]
+          ],
+          bottom: TabBar(
+            controller: _tabController,
+            indicatorColor: Theme.of(context).colorScheme.primary,
+            labelColor: Theme.of(context).colorScheme.primary,
+            unselectedLabelColor: Colors.grey,
+            tabs: [
+              Tab(child: Semantics(label: "Sohbetler", excludeSemantics: true, child: const Text("Sohbetler"))),
+              Tab(child: Semantics(label: "Blog", excludeSemantics: true, child: const Text("Blog"))),
+              Tab(child: Semantics(label: "Odalar", excludeSemantics: true, child: const Text("Odalar"))),
+            ],
           ),
         ),
-        actions: [
-          if (!_showArchived || _tabController.index != 0) ...[
-            Semantics(
-              label: "Kullanıcı Ara",
-              child: IconButton(
-                icon: const Icon(Icons.search, size: 28),
-                onPressed: _showUserSearchDialog,
-                tooltip: "Kullanıcı Ara",
-              ),
-            ),
-            IconButton(
-              onPressed: _refresh,
-              icon: const Icon(Icons.refresh, size: 28),
-              tooltip: "Sayfayı Yenile",
-            ),
-            PopupMenuButton<String>(
-              tooltip: "Diğer Seçenekler",
-              onSelected: (value) {
-                if (value == 'dev') {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperLogsScreen()));
-                } else if (value == 'profile') {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen()));
-                }
-              },
-              itemBuilder: (BuildContext context) {
-                return [
-                  const PopupMenuItem<String>(
-                    value: 'profile',
-                    child: Text('Profil Ayarları'),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'dev',
-                    child: Text('Geliştirici Modu / Loglar'),
-                  ),
-                ];
-              },
-            ),
-          ]
-        ],
-        bottom: TabBar(
+        body: TabBarView(
           controller: _tabController,
-          indicatorColor: Theme.of(context).colorScheme.primary,
-          labelColor: Theme.of(context).colorScheme.primary,
-          unselectedLabelColor: Colors.grey,
-          tabs: [
-            Tab(child: Semantics(label: "Sohbetler", excludeSemantics: true, child: const Text("Sohbetler"))),
-            Tab(child: Semantics(label: "Blog", excludeSemantics: true, child: const Text("Blog"))),
-            Tab(child: Semantics(label: "Odalar", excludeSemantics: true, child: const Text("Odalar"))),
+          children: [
+            _buildChatList(),
+            const BlogScreen(),
+            VoiceRoomsScreen(key: ValueKey(_refreshKey)),
           ],
         ),
+        floatingActionButton: _buildFAB(),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildChatList(),
-          const BlogScreen(),
-          VoiceRoomsScreen(key: ValueKey(_refreshKey)),
+    );
+  }
+
+  Future<void> _handleBackNavigation() async {
+    if (_showArchived) {
+      setState(() => _showArchived = false);
+      return;
+    }
+
+    if (_tabController.index != 0) {
+      _tabController.animateTo(0);
+      return;
+    }
+
+    final exitConfirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Uygulamadan Çık'),
+        content: const Text('Uygulamadan çıkmak istediğinize emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('İPTAL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('ÇIK', style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
-      floatingActionButton: _buildFAB(),
-    ),
-  );
-}
+    );
+
+    if (exitConfirmed == true && mounted) {
+      SystemNavigator.pop();
+    }
+  }
 
 Widget? _buildFAB() {
     if (_tabController.index == 0) {

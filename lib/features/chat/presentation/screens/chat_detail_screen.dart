@@ -376,15 +376,42 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       final createdAt = DateTime.parse(message['created_at']).toLocal();
                       final timeString = DateFormat('HH:mm').format(createdAt);
                       
+                      final isCallMessage = content.toString().contains('_CALL_');
                       final isVoiceMessage = content.toString().startsWith('[VOICE]');
-                      final textContent = isVoiceMessage ? '' : content;
+                      
+                      String displayContent = content.toString();
+                      IconData? callIcon;
+                      
+                      if (isCallMessage) {
+                        if (content.toString().contains('VOICE_CALL_STARTED')) {
+                          displayContent = "Sesli görüşme başlatıldı";
+                          callIcon = Icons.call_made;
+                        } else if (content.toString().contains('VOICE_CALL_ENDED')) {
+                          final duration = content.toString().contains('(') ? content.toString().split('(').last.replaceAll(')', '') : '';
+                          displayContent = content.toString().contains('CEVAPLANMADI') ? "Cevaplanmayan sesli görüşme" : "Sesli görüşme bitti: $duration";
+                          callIcon = content.toString().contains('CEVAPLANMADI') ? Icons.call_missed : Icons.call_end;
+                        } else if (content.toString().contains('VIDEO_CALL_STARTED')) {
+                          displayContent = "Görüntülü görüşme başlatıldı";
+                          callIcon = Icons.videocam;
+                        } else if (content.toString().contains('VIDEO_CALL_ENDED')) {
+                          final duration = content.toString().contains('(') ? content.toString().split('(').last.replaceAll(')', '') : '';
+                          displayContent = content.toString().contains('CEVAPLANMADI') ? "Cevaplanmayan görüntülü görüşme" : "Görüntülü görüşme bitti: $duration";
+                          callIcon = content.toString().contains('CEVAPLANMADI') ? Icons.missed_video_call : Icons.videocam_off;
+                        }
+                      }
+
+                      final textContent = isVoiceMessage ? '' : (isCallMessage ? displayContent : content);
                       final voiceUrl = isVoiceMessage ? content.toString().substring(7) : null;
 
                       return Align(
                         alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
                         child: Semantics(
-                          label: isVoiceMessage ? (isMyMessage ? "Gönderdiğiniz sesli mesaj. $timeString" : "Gelen sesli mesaj. $timeString") : (isMyMessage ? "Gönderdiğiniz mesaj: $textContent. $timeString" : "Gelen mesaj: $textContent. $timeString"),
-                          customSemanticsActions: isMyMessage && !isVoiceMessage // Sadece kendi yazdığı metin mesajlarını silebilir veya düzenleyebilir
+                          label: isVoiceMessage 
+                            ? (isMyMessage ? "Gönderdiğiniz sesli mesaj. $timeString" : "Gelen sesli mesaj. $timeString") 
+                            : (isCallMessage 
+                                ? "$displayContent. $timeString" 
+                                : (isMyMessage ? "Gönderdiğiniz mesaj: $textContent. $timeString" : "Gelen mesaj: $textContent. $timeString")),
+                          customSemanticsActions: isMyMessage && !isVoiceMessage && !isCallMessage
                             ? {
                                 CustomSemanticsAction(label: 'Mesajı Düzenle'): () {
                                   _showEditMessageDialog(message['id'], textContent);
@@ -393,7 +420,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                   _deleteMessage(message['id']);
                                 },
                               }
-                            : (isMyMessage && isVoiceMessage ? {
+                            : ((isMyMessage && (isVoiceMessage || isCallMessage)) ? {
                                 CustomSemanticsAction(label: 'Mesajı Sil'): () {
                                   _deleteMessage(message['id']);
                                 },
@@ -403,14 +430,29 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                               margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                               decoration: BoxDecoration(
-                                color: isMyMessage ? Colors.green[700] : Colors.grey[800],
+                                color: isCallMessage 
+                                  ? Colors.blueGrey[900]?.withOpacity(0.5) 
+                                  : (isMyMessage ? Colors.green[700] : Colors.grey[800]),
                                 borderRadius: BorderRadius.circular(12),
+                                border: isCallMessage ? Border.all(color: Colors.white24, width: 0.5) : null,
                               ),
                               child: Column(
                                 crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                                 children: [
                                   if (isVoiceMessage && voiceUrl != null) 
                                     VoiceMessageWidget(url: voiceUrl, isMyMessage: isMyMessage)
+                                  else if (isCallMessage)
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (callIcon != null) Icon(callIcon, color: Colors.white70, size: 16),
+                                        if (callIcon != null) const SizedBox(width: 8),
+                                        Text(
+                                          displayContent,
+                                          style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Colors.white),
+                                        ),
+                                      ],
+                                    )
                                   else
                                     Text(
                                       textContent,

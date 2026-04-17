@@ -19,7 +19,17 @@ class _AuthWrapperState extends State<AuthWrapper> {
   @override
   void initState() {
     super.initState();
+    _checkInitialSession();
     _setupAuthListener();
+  }
+
+  void _checkInitialSession() {
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
+      _checkProfile(session.user.id);
+    } else {
+      _isLoading = false;
+    }
   }
 
   void _setupAuthListener() {

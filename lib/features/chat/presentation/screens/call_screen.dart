@@ -30,42 +30,63 @@ class _CallScreenState extends State<CallScreen> {
   bool _isMuted = false;
   bool _isCamOff = false;
   bool _isJoined = false;
+  bool _isAccepted = false; // Arama cevaplandı mı?
   
   // Timer for call duration
   Timer? _durationTimer;
   int _secondsElapsed = 0;
   
   late final String _myId;
+  final AudioPlayer _ringtonePlayer = AudioPlayer();
   
   @override
   void initState() {
     super.initState();
     _myId = Supabase.instance.client.auth.currentUser!.id;
     _initCall();
+    if (!widget.isIncoming) {
+      _playRingtone();
+    }
+  }
+
+  Future<void> _playRingtone() async {
+    try {
+      // Not: assets/sounds/outgoing_call.mp3 dosyasının varlığı varsayılmaktadır.
+      await _ringtonePlayer.setReleaseMode(ReleaseMode.loop);
+      await _ringtonePlayer.play(AssetSource('sounds/outgoing_call.mp3'));
+    } catch (e) {
+      AppLogger.instance.warning('Zil sesi çalınamadı: $e');
+    }
+  }
+
+  Future<void> _stopRingtone() async {
+    await _ringtonePlayer.stop();
   }
 
   Future<void> _initCall() async {
     // Permission checks
-    await [
+    final permissions = [
       Permission.microphone,
       if (widget.isVideo) Permission.camera,
-    ].request();
+    ];
+    
+    Map<Permission, PermissionStatus> statuses = await permissions.request();
+    
+    bool allGranted = true;
+    statuses.forEach((permission, status) {
+      if (!status.isGranted) allGranted = false;
+    });
 
-    final micStatus = await Permission.microphone.status;
-    final camStatus = widget.isVideo ? await Permission.camera.status : PermissionStatus.granted;
-
-    if (!micStatus.isGranted || !camStatus.isGranted) {
+    if (!allGranted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kamera veya mikrofon izni verilmedi.')),
+          const SnackBar(content: Text('Kilit özellikler için kamera ve mikrofon izni gereklidir.')),
         );
         Navigator.pop(context);
       }
       return;
     }
 
-    // Note: Proje kapsamında LiveKit server ve token generator gereklidir.
-    // Şimdilik WhatsApp arayüzünü ve LiveKit altyapı hazırlığını sunuyoruz.
     try {
       if (!widget.isIncoming) {
         // Arama başlatılıyorsa karşı tarafa bildirim gönder (signaling)
@@ -74,18 +95,16 @@ class _CallScreenState extends State<CallScreen> {
           'sender_id': _myId,
           'content': widget.isVideo ? '[VIDEO_CALL_STARTED]' : '[VOICE_CALL_STARTED]',
         });
+
+        // Simülasyon: 3 saniye sonra karşı tarafın açtığını varsayalım (Geliştirme aşaması için)
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted && !_isAccepted) {
+            _handleAccept();
+          }
+        });
       }
       
-      // Mock Room init for UI demo
-      // Room options
-      final roomOptions = RoomOptions(
-        adaptiveStream: true,
-        dynacast: true,
-      );
-      
       _room = Room();
-      
-      // Listen for events
       final listener = _room!.createListener();
       listener.on<RoomDisconnectedEvent>((event) {
         if (mounted) Navigator.pop(context);
@@ -94,7 +113,10 @@ class _CallScreenState extends State<CallScreen> {
       setState(() {
         _isJoined = true;
       });
-      _startTimer();
+      
+      if (widget.isIncoming) {
+        // Gelen aramada henüz timer başlamaz, "Kabul Et" tıklanınca başlar.
+      }
       
     } catch (e) {
       AppLogger.instance.error('Arama başlatma hatası: $e');
@@ -102,10 +124,18 @@ class _CallScreenState extends State<CallScreen> {
     }
   }
 
+  void _handleAccept() {
+    _stopRingtone();
+    setState(() {
+      _isAccepted = true;
+    });
+    _startTimer();
+  }
+
   void _startTimer() {
     _durationTimer?.cancel();
     _durationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted && _isJoined) {
+      if (mounted && _isAccepted) {
         setState(() {
           _secondsElapsed++;
         });
@@ -114,6 +144,7 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   String _formatDuration(int seconds) {
+    if (seconds == 0 && !_isAccepted) return "";
     final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
     final secs = (seconds % 60).toString().padLeft(2, '0');
     return "$minutes:$secs";
@@ -122,16 +153,23 @@ class _CallScreenState extends State<CallScreen> {
   @override
   void dispose() {
     _durationTimer?.cancel();
+    _ringtonePlayer.dispose();
     _room?.disconnect();
     super.dispose();
   }
 
   void _hangUp() async {
+    _stopRingtone();
     if (!widget.isIncoming) {
+       // Arama kaydı sadece başlatan taraf kapattığında veya cevaplanmadığında mantıklı olabilir.
+       // Gerçek bir sistemde status (answered, cancelled, etc) tutulmalıdır.
+       final durationText = _secondsElapsed > 0 ? " (${_formatDuration(_secondsElapsed)})" : "";
+       final status = _secondsElapsed > 0 ? "TAMAMLANDI" : "CEVAPLANMADI";
+       
        await Supabase.instance.client.from('messages').insert({
           'chat_id': widget.chatId,
           'sender_id': _myId,
-          'content': widget.isVideo ? '[VIDEO_CALL_ENDED]' : '[VOICE_CALL_ENDED]',
+          'content': widget.isVideo ? '[VIDEO_CALL_ENDED]$status$durationText' : '[VOICE_CALL_ENDED]$status$durationText',
         });
     }
     await _room?.disconnect();
@@ -183,12 +221,30 @@ class _CallScreenState extends State<CallScreen> {
                   style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  _isJoined 
-                    ? _formatDuration(_secondsElapsed)
-                    : (widget.isIncoming ? "Gelen Arama" : "Aranıyor..."),
-                  style: const TextStyle(fontSize: 16, color: Colors.white70),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      widget.isVideo ? Icons.videocam : Icons.call,
+                      size: 16,
+                      color: Colors.white70,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _isAccepted 
+                        ? (widget.isVideo ? "Görüntülü Görüşme" : "Sesli Görüşme")
+                        : (widget.isIncoming ? "Gelen Arama..." : "Aranıyor..."),
+                      style: const TextStyle(fontSize: 16, color: Colors.white70),
+                    ),
+                  ],
                 ),
+                if (_isAccepted) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatDuration(_secondsElapsed),
+                    style: const TextStyle(fontSize: 14, color: Colors.greenAccent, fontWeight: FontWeight.bold),
+                  ),
+                ],
                 const Spacer(),
                 
                 // Control ButtonsBar
@@ -196,7 +252,7 @@ class _CallScreenState extends State<CallScreen> {
                   margin: const EdgeInsets.all(24),
                   padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
                   decoration: BoxDecoration(
-                    color: Colors.white10,
+                    color: Colors.white.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(40),
                   ),
                   child: Row(
@@ -232,7 +288,7 @@ class _CallScreenState extends State<CallScreen> {
             ),
           ),
           
-          if (widget.isIncoming)
+          if (widget.isIncoming && !_isAccepted)
              Positioned(
                bottom: 120,
                left: 0,
@@ -242,12 +298,7 @@ class _CallScreenState extends State<CallScreen> {
                  children: [
                    FloatingActionButton(
                      heroTag: "accept",
-                     onPressed: () {
-                       setState(() {
-                         _isJoined = true;
-                       });
-                       _startTimer();
-                     },
+                     onPressed: _handleAccept,
                      backgroundColor: Colors.green,
                      child: const Icon(Icons.call),
                    ),
