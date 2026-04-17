@@ -311,9 +311,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   void _startCall({required bool isVideo}) {
-    // Katılımcıyı bul
+    // Katılımcıyı bul (En güncel katılımcı listesini kontrol et)
     final participants = _chat['chat_participants'] as List<dynamic>? ?? [];
     String? targetId;
+    
+    // Eğer yerel state'de yoksa widget.chat'den ya da mesajlardan bulmaya çalış
     for (var p in participants) {
       if (p['user_id'] != _myUserId) {
         targetId = p['user_id'];
@@ -322,16 +324,49 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     }
 
     if (targetId == null) {
-       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Arama yapılacak kullanıcı bulunamadı.')));
+       // Son çare: Mesajlardan karşı tarafı bulmaya çalış (en az bir mesaj varsa)
+       for (var m in _messages) {
+         if (m['sender_id'] != _myUserId) {
+           targetId = m['sender_id'];
+           break;
+         }
+       }
+    }
+
+    if (targetId == null) {
+       // Hala bulunamadıysa katılımcı listesini tekrar çek ve bekle
+       _fetchChatDetails().then((_) {
+         final updatedParticipants = _chat['chat_participants'] as List<dynamic>? ?? [];
+         for (var p in updatedParticipants) {
+           if (p['user_id'] != _myUserId) {
+             targetId = p['user_id'];
+             break;
+           }
+         }
+         if (targetId != null) {
+            _navigateToCall(targetId!, isVideo);
+         } else {
+           if (mounted) {
+             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+               content: Text('Hata: Katılımcı bilgisi alınamadı. Sohbet yenileniyor...'),
+               behavior: SnackBarBehavior.floating,
+             ));
+           }
+         }
+       });
        return;
     }
 
+    _navigateToCall(targetId!, isVideo);
+  }
+
+  void _navigateToCall(String targetId, bool isVideo) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CallScreen(
           chatId: _chat['id'],
-          targetUserId: targetId!,
+          targetUserId: targetId,
           targetUsername: _chat['name'] ?? 'Kullanıcı',
           isVideo: isVideo,
         ),
@@ -498,71 +533,80 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   Widget _buildMessageInput() {
-    return Container(
-      padding: const EdgeInsets.all(8.0),
-      color: Colors.grey[900],
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _messageController,
-              decoration: InputDecoration(
-                hintText: _isRecording ? 'Kayıt: ${_formatRecordDuration(_recordDuration)}' : 'Mesaj yaz...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+        color: Colors.grey[900],
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _messageController,
+                decoration: InputDecoration(
+                  hintText: _isRecording ? 'Kayıt: ${_formatRecordDuration(_recordDuration)}' : 'Mesaj yaz...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: _isRecording ? Colors.red.withOpacity(0.2) : Colors.grey[800],
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 ),
-                filled: true,
-                fillColor: _isRecording ? Colors.red.withOpacity(0.2) : Colors.grey[800],
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-              enabled: !_isRecording,
-              onSubmitted: (val) => _sendMessage(val.trim()),
-            ),
-          ),
-          const SizedBox(width: 8),
-          
-          if (_isRecording)
-            Semantics(
-              label: "Mevcut ses kaydını durdur ve gönder",
-              child: GestureDetector(
-                onTap: _stopRecordingAndSend,
-                child: const CircleAvatar(
-                  radius: 24, // Yarıçapı büyüterek butonu daha belirgin yaptık
-                  backgroundColor: Colors.red,
-                  child: Icon(Icons.stop, color: Colors.white, size: 28),
-                ),
-              ),
-            )
-          else ...[
-            Semantics(
-              label: "Seslı mesaj kaydet",
-              child: GestureDetector(
-                onTap: _startRecording,
-                child: const CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Colors.blueAccent,
-                  child: Icon(Icons.mic, color: Colors.white),
-                ),
+                enabled: !_isRecording,
+                onSubmitted: (val) {
+                  final text = val.trim();
+                  if (text.isNotEmpty) _sendMessage(text);
+                },
               ),
             ),
             const SizedBox(width: 8),
-            Semantics(
-              label: "Mesaj gönder",
-              child: GestureDetector(
-                onTap: () {
-                  final text = _messageController.text.trim();
-                  _sendMessage(text);
-                },
-                child: const CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Colors.green,
-                  child: Icon(Icons.send, color: Colors.white),
+            
+            if (_isRecording)
+              Semantics(
+                label: "Ses kaydını durdur ve gönder",
+                button: true,
+                child: GestureDetector(
+                  onTap: _stopRecordingAndSend,
+                  child: const CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Colors.red,
+                    child: Icon(Icons.stop, color: Colors.white, size: 28),
+                  ),
+                ),
+              )
+            else ...[
+              Semantics(
+                label: "Sesli mesaj kaydet",
+                button: true,
+                child: GestureDetector(
+                  onTap: _startRecording,
+                  child: const CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Colors.blueAccent,
+                    child: Icon(Icons.mic, color: Colors.white),
+                  ),
                 ),
               ),
-            ),
-          ]
-        ],
+              const SizedBox(width: 8),
+              Semantics(
+                label: "Mesaj gönder",
+                button: true,
+                child: GestureDetector(
+                  onTap: () {
+                    final text = _messageController.text.trim();
+                    if (text.isNotEmpty) _sendMessage(text);
+                  },
+                  child: const CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Colors.green,
+                    child: Icon(Icons.send, color: Colors.white),
+                  ),
+                ),
+              ),
+            ]
+          ],
+        ),
       ),
     );
   }
@@ -648,51 +692,46 @@ class _VoiceMessageWidgetState extends State<VoiceMessageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () async {
-        if (_isPlaying) {
-          await _audioPlayer.pause();
-        } else {
-          await _audioPlayer.play(UrlSource(widget.url));
-        }
-      },
-      child: Container(
-        width: 240, // Expanded for extra buttons
-        decoration: BoxDecoration(
-          color: widget.isMyMessage ? Colors.green[800] : Colors.grey[700],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Play/Pause Button
-            Semantics(
-              label: _isPlaying ? "Sesi duraklat" : "Sesli mesajı oynat",
-              button: true,
-              child: IconButton(
-                constraints: const BoxConstraints(),
-                padding: const EdgeInsets.all(4),
-                tooltip: _isPlaying ? "Sesi duraklat" : "Sesli mesajı oynat",
-                icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 28),
-                onPressed: () async {
-                  if (_isPlaying) {
-                    await _audioPlayer.pause();
-                  } else {
-                    await _audioPlayer.play(UrlSource(widget.url));
-                  }
-                },
-              ),
+    final playPauseLabel = _isPlaying ? "Sesi duraklat" : "Sesli mesajı oynat";
+    
+    return Container(
+      width: 260, 
+      decoration: BoxDecoration(
+        color: widget.isMyMessage ? Colors.green[800] : Colors.grey[700],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Play/Pause Button
+          Semantics(
+            label: playPauseLabel,
+            button: true,
+            excludeSemantics: true,
+            child: IconButton(
+              constraints: const BoxConstraints(),
+              padding: const EdgeInsets.all(4),
+              icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 32),
+              onPressed: () async {
+                if (_isPlaying) {
+                  await _audioPlayer.pause();
+                } else {
+                  await _audioPlayer.play(UrlSource(widget.url));
+                }
+              },
             ),
+          ),
           
           // Rewind 5s
           Semantics(
             label: "5 saniye geri sar",
             button: true,
+            excludeSemantics: true,
             child: IconButton(
               constraints: const BoxConstraints(),
               padding: const EdgeInsets.all(4),
-              icon: const Icon(Icons.replay_5, color: Colors.white, size: 20),
+              icon: const Icon(Icons.replay_5, color: Colors.white, size: 24),
               onPressed: () => _seekRelative(-5),
             ),
           ),
@@ -701,10 +740,11 @@ class _VoiceMessageWidgetState extends State<VoiceMessageWidget> {
           Semantics(
             label: "5 saniye ileri sar",
             button: true,
+            excludeSemantics: true,
             child: IconButton(
               constraints: const BoxConstraints(),
               padding: const EdgeInsets.all(4),
-              icon: const Icon(Icons.forward_5, color: Colors.white, size: 20),
+              icon: const Icon(Icons.forward_5, color: Colors.white, size: 24),
               onPressed: () => _seekRelative(5),
             ),
           ),
@@ -716,7 +756,7 @@ class _VoiceMessageWidgetState extends State<VoiceMessageWidget> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Semantics(
-                  label: "Ses çalma ilerlemesi: ${_formatDuration(_position)} / ${_formatDuration(_duration)}",
+                  label: "Ses ilerlemesi: ${_formatDuration(_position)} / ${_formatDuration(_duration)}",
                   child: SliderTheme(
                     data: SliderTheme.of(context).copyWith(
                       thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
@@ -739,7 +779,7 @@ class _VoiceMessageWidgetState extends State<VoiceMessageWidget> {
                   padding: const EdgeInsets.symmetric(horizontal: 4.0),
                   child: Text(
                     '${_formatDuration(_position)} / ${_formatDuration(_duration)}',
-                    style: const TextStyle(fontSize: 9, color: Colors.white70),
+                    style: const TextStyle(fontSize: 10, color: Colors.white70),
                   ),
                 ),
               ],
@@ -747,7 +787,6 @@ class _VoiceMessageWidgetState extends State<VoiceMessageWidget> {
           ),
         ],
       ),
-    ),
     );
   }
 }

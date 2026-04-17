@@ -96,13 +96,6 @@ class _CallScreenState extends State<CallScreen> {
           'sender_id': _myId,
           'content': widget.isVideo ? '[VIDEO_CALL_STARTED]' : '[VOICE_CALL_STARTED]',
         });
-
-        // Simülasyon: 3 saniye sonra karşı tarafın açtığını varsayalım (Geliştirme aşaması için)
-        Future.delayed(const Duration(seconds: 3), () {
-          if (mounted && !_isAccepted) {
-            _handleAccept();
-          }
-        });
       }
       
       _room = Room();
@@ -234,7 +227,7 @@ class _CallScreenState extends State<CallScreen> {
                     Text(
                       _isAccepted 
                         ? (widget.isVideo ? "Görüntülü Görüşme" : "Sesli Görüşme")
-                        : (widget.isIncoming ? "Gelen Arama..." : "Aranıyor..."),
+                        : (widget.isIncoming ? "Gelen Arama" : "Çalıyor..."),
                       style: const TextStyle(fontSize: 16, color: Colors.white70),
                     ),
                   ],
@@ -324,24 +317,29 @@ class _CallScreenState extends State<CallScreen> {
     required VoidCallback onPressed,
     required String label,
   }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        GestureDetector(
-          onTap: onPressed,
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
+    return Semantics(
+      label: label,
+      button: true,
+      excludeSemantics: true,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            onTap: onPressed,
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 28),
             ),
-            child: Icon(icon, color: iconColor, size: 28),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-      ],
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        ],
+      ),
     );
   }
 }
