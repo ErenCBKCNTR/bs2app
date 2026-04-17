@@ -46,10 +46,15 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   }
 
   void _scrollListener() {
-    if (_chatListScrollController.offset < -60 && !_archivedVisible && !_showArchived) {
-      setState(() {
-        _archivedVisible = true;
-      });
+    if (_tabController.index != 0) return;
+    
+    // WhatsApp tarzı arşiv görünürlüğü: Sayfayı yukarıdan aşağıya (overscroll) çekince belirir
+    if (_chatListScrollController.offset < -40 && !_archivedVisible && !_showArchived) {
+      if (mounted) {
+        setState(() {
+          _archivedVisible = true;
+        });
+      }
     }
   }
 
@@ -414,11 +419,10 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
             .from('chat_participants')
             .select('chat_id')
             .filter('chat_id', 'in', myPrivateChatIds)
-            .eq('user_id', targetId)
-            .maybeSingle();
+            .eq('user_id', targetId);
 
-        if (findTargetRes != null) {
-          final chatId = findTargetRes['chat_id'];
+        if ((findTargetRes as List).isNotEmpty) {
+          final chatId = findTargetRes[0]['chat_id'];
           AppLogger.instance.info('Mevcut sohbet bulundu: $chatId');
           if (mounted) {
             _navigateToChat(chatId, targetUser['username']);
@@ -488,17 +492,21 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       );
     }
 
-    return Column(
-      children: [
-        if (!_showArchived && _archivedVisible) _buildArchiveToggle(),
-        Expanded(
-          child: ListView.separated(
-            controller: _chatListScrollController,
-            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-            itemCount: filteredChats.length,
-            separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.white10),
-            itemBuilder: (context, index) {
-              final chat = filteredChats[index];
+    return ListView.separated(
+      controller: _chatListScrollController,
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      itemCount: filteredChats.length + 1,
+      separatorBuilder: (context, index) {
+        if (index == 0 && (!_archivedVisible || _showArchived)) return const SizedBox.shrink();
+        return const Divider(height: 1, color: Colors.white10);
+      },
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          if (!_archivedVisible || _showArchived) return const SizedBox.shrink();
+          return _buildArchiveToggle();
+        }
+        
+        final chat = filteredChats[index - 1];
               final chatName = chat['name'] ?? 'İsimsiz Sohbet';
               
               // Katılımcı bilgisinden arşiv durumunu al
@@ -617,9 +625,6 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                 ),
               );
             },
-          ),
-        ),
-      ],
     );
   }
 
@@ -686,12 +691,54 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
               title: const Text('Sohbeti Sil', style: TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(context);
-                // Sohbet silme mantığı buraya eklenebilir
+                _confirmDeleteChat(chat);
               },
             ),
           ],
         );
       }
     );
+  }
+
+  void _confirmDeleteChat(Map<String, dynamic> chat) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sohbeti Silinecek'),
+        content: const Text('Bu sohbeti silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İPTAL'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteChat(chat['id']);
+            },
+            child: const Text('SİL', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteChat(String chatId) async {
+    try {
+      // Önce katılımcıları sil (RLS'e bağlı olarak cascade olabilir ama garanti edelim)
+      await Supabase.instance.client.from('chat_participants').delete().eq('chat_id', chatId);
+      // Sonra sohbeti sil
+      await Supabase.instance.client.from('chats').delete().eq('id', chatId);
+      
+      _fetchChats();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sohbet silindi.')));
+      }
+    } catch (e) {
+      AppLogger.instance.error('Sohbet silme hatası: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sohbet silinemedi: $e')));
+      }
+    }
   }
 }
