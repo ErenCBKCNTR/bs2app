@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:blind_social/features/chat/presentation/screens/voice_rooms_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/my_profile_screen.dart';
@@ -153,7 +154,45 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
+        if (_showArchived) {
+          setState(() => _showArchived = false);
+          return;
+        }
+
+        if (_tabController.index != 0) {
+          _tabController.animateTo(0);
+          return;
+        }
+
+        final exitConfirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Uygulamadan Çık'),
+            content: const Text('Uygulamadan çıkmak istediğinize emin misiniz?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('İPTAL'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('ÇIK', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+        );
+
+        if (exitConfirmed == true && context.mounted) {
+          // Bu durumda canPop false olduğu için manuel çıkış yapıyoruz
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(
         leading: _showArchived && _tabController.index == 0
             ? IconButton(

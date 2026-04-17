@@ -156,7 +156,7 @@ export default function App() {
       } else if (activeTab === 'blog') {
         const { data, error } = await supabase
           .from('posts')
-          .select('*, users(username)')
+          .select('*, users!posts_user_id_fkey(username)')
           .order('created_at', { ascending: false })
           .limit(10);
         

@@ -41,7 +41,7 @@ class _BlogScreenState extends State<BlogScreen> {
     try {
       final response = await Supabase.instance.client
           .from('posts')
-          .select('*, users!inner(username), post_comments(count)')
+          .select('*, users!posts_user_id_fkey(username), post_comments(count)')
           .order('created_at', ascending: false);
           
       if (mounted) {

@@ -23,6 +23,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   
+  late Map<String, dynamic> _chat;
   List<Map<String, dynamic>> _messages = [];
   bool _isLoading = true;
   Timer? _pollingTimer;
@@ -60,6 +61,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   void initState() {
     super.initState();
     _myUserId = Supabase.instance.client.auth.currentUser!.id;
+    _chat = Map<String, dynamic>.from(widget.chat);
+    
+    // Eğer katılımcılar yoksa (başka ekrandan sadece id/name ile gelindiyse) çek
+    if (!_chat.containsKey('chat_participants') || (_chat['chat_participants'] as List).isEmpty) {
+      _fetchChatDetails();
+    }
     
     // İlk yükleme
     _fetchMessages();
@@ -78,6 +85,24 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchChatDetails() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('chats')
+          .select('*, chat_participants(*)')
+          .eq('id', _chat['id'])
+          .single();
+      
+      if (mounted) {
+        setState(() {
+          _chat = response;
+        });
+      }
+    } catch (e) {
+      AppLogger.instance.error('Sohbet detayları yüklenemedi: $e');
+    }
   }
 
   Future<void> _fetchMessages({bool isBackground = false}) async {
@@ -108,7 +133,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         if (response.isNotEmpty) {
             Supabase.instance.client.from('chat_participants').update({
               'last_read_message_id': response.last['id']
-            }).eq('chat_id', chatId).eq('user_id', _myUserId).catchError((e) {
+            }).eq('chat_id', _chat['id']).eq('user_id', _myUserId).catchError((e) {
               AppLogger.instance.error('Okunma durumu güncellenemedi (Sütun eksik olabilir): $e');
             });
         }
@@ -140,7 +165,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
     try {
       await Supabase.instance.client.from('messages').insert({
-        'chat_id': widget.chat['id'],
+        'chat_id': _chat['id'],
         'sender_id': _myUserId,
         'content': text,
       });
@@ -148,7 +173,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       // Sohbetin updated_at alanını güncelle
       await Supabase.instance.client.from('chats').update({
         'updated_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', widget.chat['id']);
+      }).eq('id', _chat['id']);
 
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -287,7 +312,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   void _startCall({required bool isVideo}) {
     // Katılımcıyı bul
-    final participants = widget.chat['chat_participants'] as List<dynamic>? ?? [];
+    final participants = _chat['chat_participants'] as List<dynamic>? ?? [];
     String? targetId;
     for (var p in participants) {
       if (p['user_id'] != _myUserId) {
@@ -305,9 +330,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => CallScreen(
-          chatId: widget.chat['id'],
+          chatId: _chat['id'],
           targetUserId: targetId!,
-          targetUsername: widget.chat['name'] ?? 'Kullanıcı',
+          targetUsername: _chat['name'] ?? 'Kullanıcı',
           isVideo: isVideo,
         ),
       ),
