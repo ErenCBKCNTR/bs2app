@@ -102,6 +102,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           _isLoading = false;
         });
 
+        // Mark as read in participants table if we have messages
+        if (response.isNotEmpty) {
+            Supabase.instance.client.from('chat_participants').update({
+              'last_read_message_id': response.last['id']
+            }).eq('chat_id', chatId).eq('user_id', _myUserId).then((value) {});
+        }
+
         // Yeni mesaj geldiyse aşağı kaydır
         if (isNewMessageArrived) {
            Future.delayed(const Duration(milliseconds: 100), () {
@@ -223,6 +230,57 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     }
   }
 
+  Future<void> _deleteMessage(String messageId) async {
+    try {
+      await Supabase.instance.client.from('messages').delete().eq('id', messageId);
+      _fetchMessages();
+    } catch (e) {
+      AppLogger.instance.error('Mesaj silinemedi: $e');
+    }
+  }
+
+  void _showEditMessageDialog(String messageId, String currentContent) {
+    final editController = TextEditingController(text: currentContent);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Mesajı Düzenle'),
+          content: TextField(
+            controller: editController,
+            maxLines: 3,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'Mesajınızı düzenleyin...',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                try {
+                  await Supabase.instance.client
+                      .from('messages')
+                      .update({'content': editController.text})
+                      .eq('id', messageId);
+                  _fetchMessages();
+                } catch (e) {
+                  AppLogger.instance.error('Mesaj düzenlenemedi: $e');
+                }
+              },
+              child: const Text('Kaydet'),
+            ),
+          ],
+        );
+      }
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final chatName = widget.chat['name'] ?? 'Sohbet';
@@ -254,29 +312,48 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
                       return Align(
                         alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: isMyMessage ? Colors.green[700] : Colors.grey[800],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                            children: [
-                              if (isVoiceMessage && voiceUrl != null) 
-                                VoiceMessageWidget(url: voiceUrl, isMyMessage: isMyMessage)
-                              else
-                                Text(
-                                  textContent,
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                              const SizedBox(height: 4),
-                              Text(
-                                timeString,
-                                style: const TextStyle(fontSize: 10, color: Colors.white70),
+                        child: Semantics(
+                          label: isVoiceMessage ? (isMyMessage ? "Gönderdiğiniz sesli mesaj. $timeString" : "Gelen sesli mesaj. $timeString") : (isMyMessage ? "Gönderdiğiniz mesaj: $textContent. $timeString" : "Gelen mesaj: $textContent. $timeString"),
+                          customSemanticsActions: isMyMessage && !isVoiceMessage // Sadece kendi yazdığı metin mesajlarını silebilir veya düzenleyebilir
+                            ? {
+                                CustomSemanticsAction(label: 'Mesajı Düzenle'): () {
+                                  _showEditMessageDialog(message['id'], textContent);
+                                },
+                                CustomSemanticsAction(label: 'Mesajı Sil'): () {
+                                  _deleteMessage(message['id']);
+                                },
+                              }
+                            : (isMyMessage && isVoiceMessage ? {
+                                CustomSemanticsAction(label: 'Mesajı Sil'): () {
+                                  _deleteMessage(message['id']);
+                                },
+                              } : {}),
+                          child: ExcludeSemantics(
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: isMyMessage ? Colors.green[700] : Colors.grey[800],
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                            ],
+                              child: Column(
+                                crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                children: [
+                                  if (isVoiceMessage && voiceUrl != null) 
+                                    VoiceMessageWidget(url: voiceUrl, isMyMessage: isMyMessage)
+                                  else
+                                    Text(
+                                      textContent,
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    timeString,
+                                    style: const TextStyle(fontSize: 10, color: Colors.white70),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       );
@@ -440,9 +517,10 @@ class _VoiceMessageWidgetState extends State<VoiceMessageWidget> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Semantics(
-            label: _isPlaying ? "Sesi duraklat" : "Sesli mesajı dinle",
+            label: _isPlaying ? "Sesi duraklat" : "Sesli mesajı oynat",
             button: true,
             child: IconButton(
+              tooltip: _isPlaying ? "Sesi duraklat" : "Sesli mesajı oynat",
               icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white),
               onPressed: () async {
                 if (_isPlaying) {

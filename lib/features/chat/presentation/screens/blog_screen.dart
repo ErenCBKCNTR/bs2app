@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:blind_social/core/utils/logger.dart';
+import 'package:blind_social/features/chat/presentation/screens/blog_comments_bottom_sheet.dart';
 import 'dart:async';
 
 class BlogScreen extends StatefulWidget {
@@ -99,6 +100,57 @@ class _BlogScreenState extends State<BlogScreen> {
     }
   }
 
+  Future<void> _deletePost(String id) async {
+    try {
+      await Supabase.instance.client.from('posts').delete().eq('id', id);
+      _fetchPosts();
+    } catch (e) {
+      AppLogger.error('Gönderi silinemedi: $e');
+    }
+  }
+
+  void _showEditDialog(String id, String currentContent) {
+    final editController = TextEditingController(text: currentContent);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Gönderiyi Düzenle'),
+          content: TextField(
+            controller: editController,
+            maxLines: 4,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'Gönderinizi düzenleyin...',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                try {
+                  await Supabase.instance.client
+                      .from('posts')
+                      .update({'content': editController.text})
+                      .eq('id', id);
+                  _fetchPosts();
+                } catch (e) {
+                  AppLogger.error('Gönderi düzenlenemedi: $e');
+                }
+              },
+              child: const Text('Kaydet'),
+            ),
+          ],
+        );
+      }
+    );
+  }
+
   void _showCreatePostDialog() {
     showDialog(
       context: context,
@@ -166,54 +218,86 @@ class _BlogScreenState extends State<BlogScreen> {
                     final likes = post['likes_count'] ?? 0;
                     final timeStr = _formatTime(post['created_at']);
 
-                    return Card(
-                      elevation: 0,
-                      color: Colors.transparent,
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: Colors.green.shade800,
-                                  child: Text(
-                                    username.isNotEmpty ? username[0].toUpperCase() : '?',
-                                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                                  ),
+                    return Semantics(
+                      label: "$username. $timeStr. $content. $likes beğeni, 0 yorum.",
+                      button: true, // Clickable for future actions or reading context
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          builder: (_) => BlogCommentsBottomSheet(postId: post['id']),
+                        );
+                      },
+                      onTapHint: "Yorumları okumak ve yazmak için çift dokunun",
+                      customSemanticsActions: post['user_id'] == Supabase.instance.client.auth.currentUser?.id
+                        ? {
+                            CustomSemanticsAction(label: 'Gönderiyi Düzenle'): () {
+                              _showEditDialog(post['id'], content);
+                            },
+                            CustomSemanticsAction(label: 'Gönderiyi Sil'): () {
+                              _deletePost(post['id']);
+                            },
+                          }
+                        : {},
+                      child: ExcludeSemantics(
+                        child: Card(
+                          elevation: 0,
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                builder: (_) => BlogCommentsBottomSheet(postId: post['id']),
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: Colors.green.shade800,
+                                      child: Text(
+                                        username.isNotEmpty ? username[0].toUpperCase() : '?',
+                                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      username,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      timeStr,
+                                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(height: 12),
                                 Text(
-                                  username,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  content,
+                                  style: const TextStyle(fontSize: 15),
                                 ),
-                                const Spacer(),
-                                Text(
-                                  timeStr,
-                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Icon(Icons.favorite_border, size: 20, color: Colors.grey.shade400),
+                                    const SizedBox(width: 4),
+                                    Text(likes.toString(), style: TextStyle(color: Colors.grey.shade400)),
+                                    const SizedBox(width: 16),
+                                    Icon(Icons.chat_bubble_outline, size: 20, color: Colors.grey.shade400),
+                                    const SizedBox(width: 4),
+                                    Text("0", style: TextStyle(color: Colors.grey.shade400)),
+                                  ],
+                                )
                               ],
                             ),
-                            const SizedBox(height: 12),
-                            Text(
-                              content,
-                              style: const TextStyle(fontSize: 15),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Icon(Icons.favorite_border, size: 20, color: Colors.grey.shade400),
-                                const SizedBox(width: 4),
-                                Text(likes.toString(), style: TextStyle(color: Colors.grey.shade400)),
-                                const SizedBox(width: 16),
-                                Icon(Icons.chat_bubble_outline, size: 20, color: Colors.grey.shade400),
-                                const SizedBox(width: 4),
-                                Text("0", style: TextStyle(color: Colors.grey.shade400)),
-                              ],
-                            )
-                          ],
+                          ),
                         ),
                       ),
                     );

@@ -39,9 +39,12 @@ ALTER TABLE public.chats ALTER COLUMN created_by SET DEFAULT auth.uid();
 CREATE TABLE IF NOT EXISTS public.chat_participants (
     chat_id UUID REFERENCES public.chats(id) ON DELETE CASCADE,
     user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    last_read_message_id UUID, -- Okunmamış mesajları hesaplamak için
     joined_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     PRIMARY KEY (chat_id, user_id)
 );
+
+ALTER TABLE public.chat_participants ADD COLUMN IF NOT EXISTS last_read_message_id UUID;
 
 -- 4. Mesajlar Tablosu (messages)
 CREATE TABLE IF NOT EXISTS public.messages (
@@ -153,7 +156,7 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- ==========================================
--- MİKRO BLOG (POSTS) AYARLARI
+-- MİKRO BLOG (POSTS) ve YORUMLAR AYARLARI
 -- ==========================================
 CREATE TABLE IF NOT EXISTS public.posts (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -163,8 +166,18 @@ CREATE TABLE IF NOT EXISTS public.posts (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
-ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
+CREATE TABLE IF NOT EXISTS public.post_comments (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    post_id UUID REFERENCES public.posts(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
 
+ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.post_comments ENABLE ROW LEVEL SECURITY;
+
+-- Gönderi Politikaları
 DROP POLICY IF EXISTS "Herkes gönderileri görebilir" ON public.posts;
 CREATE POLICY "Herkes gönderileri görebilir" 
 ON public.posts FOR SELECT USING (true);
@@ -173,8 +186,34 @@ DROP POLICY IF EXISTS "Giriş yapan kullanıcılar gönderi oluşturabilir" ON p
 CREATE POLICY "Giriş yapan kullanıcılar gönderi oluşturabilir" 
 ON public.posts FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Gönderi sahipleri gönderilerini güncelleyebilir" ON public.posts;
+CREATE POLICY "Gönderi sahipleri gönderilerini güncelleyebilir" 
+ON public.posts FOR UPDATE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Gönderi sahipleri gönderilerini silebilir" ON public.posts;
+CREATE POLICY "Gönderi sahipleri gönderilerini silebilir" 
+ON public.posts FOR DELETE USING (auth.uid() = user_id);
+
+-- Yorum Politikaları
+DROP POLICY IF EXISTS "Herkes yorumları görebilir" ON public.post_comments;
+CREATE POLICY "Herkes yorumları görebilir" 
+ON public.post_comments FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Giriş yapan kullanıcılar yorum oluşturabilir" ON public.post_comments;
+CREATE POLICY "Giriş yapan kullanıcılar yorum oluşturabilir" 
+ON public.post_comments FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Yorum sahipleri yorumlarını güncelleyebilir" ON public.post_comments;
+CREATE POLICY "Yorum sahipleri yorumlarını güncelleyebilir" 
+ON public.post_comments FOR UPDATE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Yorum sahipleri yorumlarını silebilir" ON public.post_comments;
+CREATE POLICY "Yorum sahipleri yorumlarını silebilir" 
+ON public.post_comments FOR DELETE USING (auth.uid() = user_id);
+
 DO $$ BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.posts;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.post_comments;
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- ==========================================

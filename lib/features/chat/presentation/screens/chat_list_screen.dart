@@ -48,14 +48,21 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
 
   Future<void> _fetchChats({bool isBackground = false}) async {
     try {
+      final userId = Supabase.instance.client.auth.currentUser!.id;
       final response = await Supabase.instance.client
           .from('chats')
-          .select('*, chat_participants(user_id)')
+          .select('*, chat_participants!inner(user_id, last_read_message_id), messages(id, content, sender_id, created_at)')
           .order('updated_at', ascending: false);
           
       if (mounted) {
         setState(() {
           _chats = List<Map<String, dynamic>>.from(response);
+          // Only keep chats where current user is a participant (simulated local filter to ease complex RLS inner joins in single select)
+          _chats = _chats.where((c) {
+             final participants = c['chat_participants'] as List<dynamic>? ?? [];
+             return participants.any((p) => p['user_id'] == userId);
+          }).toList();
+          
           _isLoadingChats = false;
         });
       }
@@ -129,10 +136,10 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
           indicatorColor: Theme.of(context).colorScheme.primary,
           labelColor: Theme.of(context).colorScheme.primary,
           unselectedLabelColor: Colors.grey,
-          tabs: const [
-            Tab(text: "Sohbetler"),
-            Tab(text: "Blog"),
-            Tab(text: "Odalar"),
+          tabs: [
+            Tab(child: Semantics(label: "Sohbetler", excludeSemantics: true, child: const Text("Sohbetler"))),
+            Tab(child: Semantics(label: "Blog", excludeSemantics: true, child: const Text("Blog"))),
+            Tab(child: Semantics(label: "Odalar", excludeSemantics: true, child: const Text("Odalar"))),
           ],
         ),
       ),
@@ -387,15 +394,38 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
         // Diğer katılımcının ID'sini bul
         final participants = chat['chat_participants'] as List<dynamic>? ?? [];
         String? targetUserId;
+        String? lastReadId;
         for (var p in participants) {
           if (p['user_id'] != currentUserId) {
             targetUserId = p['user_id'];
-            break;
+          } else {
+             lastReadId = p['last_read_message_id'];
           }
         }
         
+        final messages = chat['messages'] as List<dynamic>? ?? [];
+        messages.sort((a, b) => b['created_at'].compareTo(a['created_at'])); // sort descending
+        final lastMessage = messages.isNotEmpty ? messages.first : null;
+        
+        String subtitleText = 'Sohbete gitmek için dokunun';
+        bool isUnread = false;
+        
+        if (lastMessage != null) {
+           final content = lastMessage['content'].toString();
+           subtitleText = content.startsWith('[VOICE]') ? 'Sesli Mesaj' : content;
+           
+           if (lastMessage['sender_id'] != currentUserId) {
+              if (lastReadId == null || lastReadId != lastMessage['id']) {
+                 isUnread = true;
+              }
+           }
+        }
+        
+        final semanticUnreadSuffix = isUnread ? "Okunmamış yeni mesajınız var." : "";
+        final semanticSubtitle = lastMessage != null ? "Son mesaj: $subtitleText." : "";
+        
         return Semantics(
-          label: "$chatName ile sohbet.",
+          label: "$chatName. $semanticSubtitle $semanticUnreadSuffix",
           button: true,
           onTapHint: "Sohbeti açmak için çift dokunun",
           child: ListTile(
@@ -415,35 +445,53 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                 button: true,
                 child: Hero(
                   tag: 'chat_avatar_$targetUserId',
-                  child: CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Colors.grey[800],
-                    child: Text(
-                      chatName.toString().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join(''),
-                      style: const TextStyle(fontSize: 16, color: Colors.white),
-                    ),
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Colors.grey[800],
+                        child: Text(
+                          chatName.toString().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join(''),
+                          style: const TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                      ),
+                      if (isUnread)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 14,
+                            height: 14,
+                            decoration: const BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
             ),
             title: Text(
               chatName.toString(),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(fontWeight: isUnread ? FontWeight.w900 : FontWeight.bold, fontSize: 16),
             ),
-            subtitle: const Text(
-              'Sohbete gitmek için dokunun',
+            subtitle: Text(
+              subtitleText,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(fontSize: 14, color: isUnread ? Colors.white : Colors.grey, fontWeight: isUnread ? FontWeight.bold : FontWeight.normal),
             ),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => ChatDetailScreen(chat: chat),
                 ),
               );
+              _fetchChats();
             },
           ),
         );
