@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:blind_social/features/auth/presentation/screens/auth_screen.dart';
 
 class MyProfileScreen extends StatefulWidget {
@@ -57,6 +58,16 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     }
   }
 
+  String _formatDate(String? isoString) {
+    if (isoString == null || isoString.isEmpty) return 'Bilinmiyor';
+    try {
+      final date = DateTime.parse(isoString).toLocal();
+      return DateFormat('dd.MM.yyyy').format(date);
+    } catch (e) {
+      return 'Geçersiz Tarih';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -67,6 +78,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     }
 
     final username = _userData?['username'] ?? 'Bilinmiyor';
+    final dob = _userData?['dob'];
+    final createdAt = _userData?['created_at'];
 
     return Scaffold(
       appBar: AppBar(
@@ -113,11 +126,15 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             ),
             const Divider(),
             ListTile(
+              leading: const Icon(Icons.cake),
+              title: const Text('Doğum Tarihi'),
+              subtitle: Text(_formatDate(dob)),
+            ),
+            const Divider(),
+            ListTile(
               leading: const Icon(Icons.calendar_today),
               title: const Text('Katılım Tarihi'),
-              subtitle: Text(_userData?['created_at'] != null 
-                  ? DateTime.parse(_userData!['created_at']).toLocal().toString().split(' ')[0] 
-                  : 'Bilinmiyor'),
+              subtitle: Text(_formatDate(createdAt)),
             ),
             const SizedBox(height: 40),
             ElevatedButton.icon(

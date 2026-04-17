@@ -72,47 +72,56 @@ $$;
 
 -- Users Politikaları
 -- Herkes profilleri okuyabilir
+DROP POLICY IF EXISTS "Kullanıcı profilleri herkes tarafından okunabilir" ON public.users;
 CREATE POLICY "Kullanıcı profilleri herkes tarafından okunabilir" 
 ON public.users FOR SELECT USING (true);
 
 -- Kullanıcılar sadece kendi profillerini güncelleyebilir
+DROP POLICY IF EXISTS "Kullanıcılar kendi profillerini güncelleyebilir" ON public.users;
 CREATE POLICY "Kullanıcılar kendi profillerini güncelleyebilir" 
 ON public.users FOR UPDATE USING (auth.uid() = id);
 
 -- Kullanıcılar kendi profillerini oluşturabilir (İlk kayıt aşaması için gerekli)
+DROP POLICY IF EXISTS "Kullanıcılar kendi profillerini oluşturabilir" ON public.users;
 CREATE POLICY "Kullanıcılar kendi profillerini oluşturabilir" 
 ON public.users FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- Chats Politikaları
 -- Kullanıcılar sadece katılımcısı oldukları sohbetleri görebilir
+DROP POLICY IF EXISTS "Kullanıcılar sadece kendi sohbetlerini görebilir" ON public.chats;
 CREATE POLICY "Kullanıcılar sadece kendi sohbetlerini görebilir" 
 ON public.chats FOR SELECT USING (
     public.is_chat_participant(id)
 );
 
 -- Kullanıcılar yeni sohbet oluşturabilir
+DROP POLICY IF EXISTS "Kullanıcılar sohbet oluşturabilir" ON public.chats;
 CREATE POLICY "Kullanıcılar sohbet oluşturabilir" 
 ON public.chats FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 -- Chat Participants Politikaları
 -- Kullanıcılar sadece kendi sohbetlerindeki katılımcıları görebilir
+DROP POLICY IF EXISTS "Kullanıcılar kendi sohbetlerindeki katılımcıları görebilir" ON public.chat_participants;
 CREATE POLICY "Kullanıcılar kendi sohbetlerindeki katılımcıları görebilir" 
 ON public.chat_participants FOR SELECT USING (
     public.is_chat_participant(chat_id)
 );
 
 -- Kullanıcılar sohbetlere katılımcı ekleyebilir
+DROP POLICY IF EXISTS "Kullanıcılar katılımcı ekleyebilir" ON public.chat_participants;
 CREATE POLICY "Kullanıcılar katılımcı ekleyebilir" 
 ON public.chat_participants FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 -- Messages Politikaları
 -- Kullanıcılar sadece katılımcısı oldukları sohbetlerdeki mesajları görebilir
+DROP POLICY IF EXISTS "Kullanıcılar kendi sohbetlerindeki mesajları görebilir" ON public.messages;
 CREATE POLICY "Kullanıcılar kendi sohbetlerindeki mesajları görebilir" 
 ON public.messages FOR SELECT USING (
     public.is_chat_participant(chat_id)
 );
 
 -- Kullanıcılar sadece katılımcısı oldukları sohbetlere mesaj gönderebilir
+DROP POLICY IF EXISTS "Kullanıcılar kendi sohbetlerine mesaj gönderebilir" ON public.messages;
 CREATE POLICY "Kullanıcılar kendi sohbetlerine mesaj gönderebilir" 
 ON public.messages FOR INSERT WITH CHECK (
     public.is_chat_participant(chat_id)
@@ -140,9 +149,11 @@ CREATE TABLE IF NOT EXISTS public.posts (
 
 ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Herkes gönderileri görebilir" ON public.posts;
 CREATE POLICY "Herkes gönderileri görebilir" 
 ON public.posts FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Giriş yapan kullanıcılar gönderi oluşturabilir" ON public.posts;
 CREATE POLICY "Giriş yapan kullanıcılar gönderi oluşturabilir" 
 ON public.posts FOR INSERT WITH CHECK (auth.uid() = user_id);
 
@@ -174,22 +185,27 @@ ALTER TABLE public.voice_rooms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.voice_room_participants ENABLE ROW LEVEL SECURITY;
 
 -- Herkes aktif odaları görebilir
+DROP POLICY IF EXISTS "Herkes aktif odaları görebilir" ON public.voice_rooms;
 CREATE POLICY "Herkes aktif odaları görebilir" 
 ON public.voice_rooms FOR SELECT USING (is_active = true);
 
 -- Sadece giriş yapmış kullanıcılar oda oluşturabilir
+DROP POLICY IF EXISTS "Kullanıcılar oda oluşturabilir" ON public.voice_rooms;
 CREATE POLICY "Kullanıcılar oda oluşturabilir" 
 ON public.voice_rooms FOR INSERT WITH CHECK (auth.uid() = created_by);
 
 -- Herkes odadaki katılımcıları görebilir
+DROP POLICY IF EXISTS "Herkes oda katılımcılarını görebilir" ON public.voice_room_participants;
 CREATE POLICY "Herkes oda katılımcılarını görebilir" 
 ON public.voice_room_participants FOR SELECT USING (true);
 
 -- Kullanıcılar odalara katılabilir
+DROP POLICY IF EXISTS "Kullanıcılar odalara katılabilir" ON public.voice_room_participants;
 CREATE POLICY "Kullanıcılar odalara katılabilir" 
 ON public.voice_room_participants FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Kullanıcılar odalardan çıkabilir
+DROP POLICY IF EXISTS "Kullanıcılar odalardan çıkabilir" ON public.voice_room_participants;
 CREATE POLICY "Kullanıcılar odalardan çıkabilir" 
 ON public.voice_room_participants FOR DELETE USING (auth.uid() = user_id);
 
@@ -206,6 +222,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.voice_room_participants;
 INSERT INTO storage.buckets (id, name, public) VALUES ('chat_audio', 'chat_audio', true) ON CONFLICT (id) DO NOTHING;
 
 -- Storage için RLS: Herkes okuyabilir, sadece giriş yapanlar yükleyebilir
+DROP POLICY IF EXISTS "Sesli mesajları herkes okuyabilir" ON storage.objects;
 CREATE POLICY "Sesli mesajları herkes okuyabilir" ON storage.objects FOR SELECT USING (bucket_id = 'chat_audio');
+
+DROP POLICY IF EXISTS "Sadece giriş yapanlar sesli mesaj yükleyebilir" ON storage.objects;
 CREATE POLICY "Sadece giriş yapanlar sesli mesaj yükleyebilir" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'chat_audio' AND auth.uid() = owner);
 
