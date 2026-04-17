@@ -132,9 +132,17 @@ ON public.messages FOR INSERT WITH CHECK (
 -- REALTIME (Gerçek Zamanlı) AYARLARI
 -- ==========================================
 -- Mesajlar ve katılımcılar tablosunu realtime dinlemeye aç
-ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_participants;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_participants;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- ==========================================
 -- MİKRO BLOG (POSTS) AYARLARI
@@ -157,7 +165,9 @@ DROP POLICY IF EXISTS "Giriş yapan kullanıcılar gönderi oluşturabilir" ON p
 CREATE POLICY "Giriş yapan kullanıcılar gönderi oluşturabilir" 
 ON public.posts FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-ALTER PUBLICATION supabase_realtime ADD TABLE public.posts;
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.posts;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- ==========================================
 -- SESLİ ODALAR (VOICE ROOMS) - LIVEKIT İÇİN
@@ -210,8 +220,13 @@ CREATE POLICY "Kullanıcılar odalardan çıkabilir"
 ON public.voice_room_participants FOR DELETE USING (auth.uid() = user_id);
 
 -- Realtime'a sesli odaları da ekle
-ALTER PUBLICATION supabase_realtime ADD TABLE public.voice_rooms;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.voice_room_participants;
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.voice_rooms;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.voice_room_participants;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- ==========================================
 -- STORAGE (DOSYA DEPOLAMA) AYARLARI
