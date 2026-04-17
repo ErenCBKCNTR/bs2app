@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS public.chats (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     is_group BOOLEAN DEFAULT false,
     name TEXT, -- Sadece grup sohbetleri için
+    is_archived BOOLEAN DEFAULT false, -- ARŞİVLEME SÜTUNU EKLENDİ
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     created_by UUID DEFAULT auth.uid() REFERENCES public.users(id) -- OLUŞTURAN KİŞİ EKLENDİ (OTOMATİK ID ALIR)
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS public.chats (
 
 -- Eğer chats tablosu önceden oluşturulduysa, sonradan sütun eklemek için çalıştırılması gereken komut:
 -- (Hata verirse sütun zaten var demektir, görmezden gelebilirsiniz)
+ALTER TABLE public.chats ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT false;
 ALTER TABLE public.chats ADD COLUMN IF NOT EXISTS created_by UUID DEFAULT auth.uid() REFERENCES public.users(id);
 
 -- Eger tablo varsa ama auth.uid() default degeri verilmediyse onu kesin olarak verelim!

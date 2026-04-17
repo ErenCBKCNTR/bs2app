@@ -39,7 +39,7 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
         });
       }
     } catch (e) {
-      AppLogger.error('Yorumlar getirilirken hata (Belki tablo henüz yok): $e');
+      AppLogger.instance.error('Yorumlar getirilirken hata (Belki tablo henüz yok): $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -64,7 +64,7 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
       _commentController.clear();
       _fetchComments();
     } catch (e) {
-      AppLogger.error('Yorum gönderilirken hata: $e');
+      AppLogger.instance.error('Yorum gönderilirken hata: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Yorum gönderilemedi: $e')));
       }

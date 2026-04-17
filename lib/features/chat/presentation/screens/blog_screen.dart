@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:blind_social/core/utils/logger.dart';
@@ -40,7 +41,7 @@ class _BlogScreenState extends State<BlogScreen> {
     try {
       final response = await Supabase.instance.client
           .from('posts')
-          .select('*, users!inner(username)')
+          .select('*, users!inner(username), post_comments(count)')
           .order('created_at', ascending: false);
           
       if (mounted) {
@@ -105,7 +106,7 @@ class _BlogScreenState extends State<BlogScreen> {
       await Supabase.instance.client.from('posts').delete().eq('id', id);
       _fetchPosts();
     } catch (e) {
-      AppLogger.error('Gönderi silinemedi: $e');
+      AppLogger.instance.error('Gönderi silinemedi: $e');
     }
   }
 
@@ -140,7 +141,7 @@ class _BlogScreenState extends State<BlogScreen> {
                       .eq('id', id);
                   _fetchPosts();
                 } catch (e) {
-                  AppLogger.error('Gönderi düzenlenemedi: $e');
+                  AppLogger.instance.error('Gönderi düzenlenemedi: $e');
                 }
               },
               child: const Text('Kaydet'),
@@ -216,10 +217,14 @@ class _BlogScreenState extends State<BlogScreen> {
                     final username = user?['username'] ?? 'Bilinmeyen';
                     final content = post['content'] ?? '';
                     final likes = post['likes_count'] ?? 0;
+                    final commentsData = post['post_comments'] as List<dynamic>?;
+                    final commentCount = (commentsData != null && commentsData.isNotEmpty) 
+                        ? (commentsData.first['count'] ?? 0) 
+                        : 0;
                     final timeStr = _formatTime(post['created_at']);
 
                     return Semantics(
-                      label: "$username. $timeStr. $content. $likes beğeni, 0 yorum.",
+                      label: "$username. $timeStr. $content. $likes beğeni, $commentCount yorum.",
                       button: true, // Clickable for future actions or reading context
                       onTap: () {
                         showModalBottomSheet(
@@ -292,7 +297,7 @@ class _BlogScreenState extends State<BlogScreen> {
                                     const SizedBox(width: 16),
                                     Icon(Icons.chat_bubble_outline, size: 20, color: Colors.grey.shade400),
                                     const SizedBox(width: 4),
-                                    Text("0", style: TextStyle(color: Colors.grey.shade400)),
+                                    Text(commentCount.toString(), style: TextStyle(color: Colors.grey.shade400)),
                                   ],
                                 )
                               ],
@@ -300,11 +305,14 @@ class _BlogScreenState extends State<BlogScreen> {
                           ),
                         ),
                       ),
-                    );
-                  },
-                ),
-        ),
-      ],
-    );
-  }
+                    ),
+                  );
+                },
+                separatorBuilder: (context, index) => const Divider(),
+                itemCount: _posts.length,
+              ),
+      ),
+    ],
+  );
+}
 }

@@ -24,6 +24,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   List<Map<String, dynamic>> _chats = [];
   bool _isLoadingChats = true;
   Timer? _pollingTimer;
+  bool _showArchived = false;
 
   @override
   void initState() {
@@ -81,55 +82,81 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     _fetchChats();
   }
 
+  Future<void> _toggleArchive(String chatId, bool currentStatus) async {
+    try {
+      await Supabase.instance.client
+          .from('chats')
+          .update({'is_archived': !currentStatus})
+          .eq('id', chatId);
+      _fetchChats();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(!currentStatus ? 'Sohbet arşivlendi' : 'Sohbet arşivden çıkarıldı'))
+        );
+      }
+    } catch (e) {
+      AppLogger.instance.error('Arşivleme hatası: $e');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: _showArchived && _tabController.index == 0
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => setState(() => _showArchived = false),
+                tooltip: "Sohbetlere dön",
+              )
+            : null,
         title: Semantics(
-          label: "Blind Social Ana Sayfa",
+          label: _showArchived && _tabController.index == 0 ? "Arşivlenmiş Sohbetler" : "Blind Social Ana Sayfa",
           header: true,
-          child: const Text(
-            'Blind Social',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          child: Text(
+            _showArchived && _tabController.index == 0 ? "Arşivlenmiş" : 'Blind Social',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
           ),
         ),
         actions: [
-          Semantics(
-            label: "Kullanıcı Ara",
-            child: IconButton(
-              icon: const Icon(Icons.search, size: 28),
-              onPressed: _showUserSearchDialog,
-              tooltip: "Kullanıcı Ara",
+          if (!_showArchived || _tabController.index != 0) ...[
+            Semantics(
+              label: "Kullanıcı Ara",
+              child: IconButton(
+                icon: const Icon(Icons.search, size: 28),
+                onPressed: _showUserSearchDialog,
+                tooltip: "Kullanıcı Ara",
+              ),
             ),
-          ),
-          IconButton(
-            onPressed: _refresh,
-            icon: const Icon(Icons.refresh, size: 28),
-            tooltip: "Sayfayı Yenile",
-          ),
-          PopupMenuButton<String>(
-            tooltip: "Diğer Seçenekler",
-            onSelected: (value) {
-              if (value == 'dev') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperLogsScreen()));
-              } else if (value == 'profile') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen()));
-              }
-            },
-            itemBuilder: (BuildContext context) {
-              return [
-                const PopupMenuItem<String>(
-                  value: 'profile',
-                  child: Text('Profil Ayarları'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'dev',
-                  child: Text('Geliştirici Modu / Loglar'),
-                ),
-              ];
-            },
-          ),
+            IconButton(
+              onPressed: _refresh,
+              icon: const Icon(Icons.refresh, size: 28),
+              tooltip: "Sayfayı Yenile",
+            ),
+            PopupMenuButton<String>(
+              tooltip: "Diğer Seçenekler",
+              onSelected: (value) {
+                if (value == 'dev') {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperLogsScreen()));
+                } else if (value == 'profile') {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen()));
+                }
+              },
+              itemBuilder: (BuildContext context) {
+                return [
+                  const PopupMenuItem<String>(
+                    value: 'profile',
+                    child: Text('Profil Ayarları'),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'dev',
+                    child: Text('Geliştirici Modu / Loglar'),
+                  ),
+                ];
+              },
+            ),
+          ]
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -372,130 +399,197 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_chats.isEmpty) {
-      return const Center(
-        child: Text(
-          'Henüz bir sohbetiniz yok.\nYeni bir sohbet başlatın.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, color: Colors.grey),
-        ),
+    final filteredChats = _chats.where((c) {
+       final isArchived = c['is_archived'] ?? false;
+       return isArchived == _showArchived;
+    }).toList();
+
+    if (filteredChats.isEmpty) {
+      return Column(
+        children: [
+          if (!_showArchived) _buildArchiveToggle(),
+          Expanded(
+            child: Center(
+              child: Text(
+                _showArchived 
+                    ? 'Arşivlenmiş sohbet yok.' 
+                    : 'Henüz bir sohbetiniz yok.\nYeni bir sohbet başlatın.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            ),
+          ),
+        ],
       );
     }
 
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
 
-    return ListView.separated(
-      itemCount: _chats.length,
-      separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.white10),
-      itemBuilder: (context, index) {
-        final chat = _chats[index];
-        final chatName = chat['name'] ?? 'İsimsiz Sohbet';
-        
-        // Diğer katılımcının ID'sini bul
-        final participants = chat['chat_participants'] as List<dynamic>? ?? [];
-        String? targetUserId;
-        String? lastReadId;
-        for (var p in participants) {
-          if (p['user_id'] != currentUserId) {
-            targetUserId = p['user_id'];
-          } else {
-             lastReadId = p['last_read_message_id'];
-          }
-        }
-        
-        final messages = chat['messages'] as List<dynamic>? ?? [];
-        messages.sort((a, b) => b['created_at'].compareTo(a['created_at'])); // sort descending
-        final lastMessage = messages.isNotEmpty ? messages.first : null;
-        
-        String subtitleText = 'Sohbete gitmek için dokunun';
-        bool isUnread = false;
-        
-        if (lastMessage != null) {
-           final content = lastMessage['content'].toString();
-           subtitleText = content.startsWith('[VOICE]') ? 'Sesli Mesaj' : content;
-           
-           if (lastMessage['sender_id'] != currentUserId) {
-              if (lastReadId == null || lastReadId != lastMessage['id']) {
-                 isUnread = true;
-              }
-           }
-        }
-        
-        final semanticUnreadSuffix = isUnread ? "Okunmamış yeni mesajınız var." : "";
-        final semanticSubtitle = lastMessage != null ? "Son mesaj: $subtitleText." : "";
-        
-        return Semantics(
-          label: "$chatName. $semanticSubtitle $semanticUnreadSuffix",
-          button: true,
-          onTapHint: "Sohbeti açmak için çift dokunun",
-          child: ListTile(
-            leading: GestureDetector(
-              onTap: () {
-                if (targetUserId != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => UserProfileScreen(userId: targetUserId!),
-                    ),
-                  );
+    return Column(
+      children: [
+        if (!_showArchived) _buildArchiveToggle(),
+        Expanded(
+          child: ListView.separated(
+            itemCount: filteredChats.length,
+            separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.white10),
+            itemBuilder: (context, index) {
+              final chat = filteredChats[index];
+              final chatName = chat['name'] ?? 'İsimsiz Sohbet';
+              final isArchived = chat['is_archived'] ?? false;
+              
+              // Diğer katılımcının ID'sini bul
+              final participants = chat['chat_participants'] as List<dynamic>? ?? [];
+              String? targetUserId;
+              String? lastReadId;
+              for (var p in participants) {
+                if (p['user_id'] != currentUserId) {
+                  targetUserId = p['user_id'];
+                } else {
+                   lastReadId = p['last_read_message_id'];
                 }
-              },
-              child: Semantics(
-                label: "Profili gör",
+              }
+              
+              final messages = chat['messages'] as List<dynamic>? ?? [];
+              messages.sort((a, b) => b['created_at'].compareTo(a['created_at'])); // sort descending
+              final lastMessage = messages.isNotEmpty ? messages.first : null;
+              
+              String subtitleText = 'Sohbete gitmek için dokunun';
+              bool isUnread = false;
+              
+              if (lastMessage != null) {
+                 final content = lastMessage['content'].toString();
+                 subtitleText = content.startsWith('[VOICE]') ? 'Sesli Mesaj' : content;
+                 
+                 if (lastMessage['sender_id'] != currentUserId) {
+                    if (lastReadId == null || lastReadId != lastMessage['id']) {
+                       isUnread = true;
+                    }
+                 }
+              }
+              
+              final semanticUnreadSuffix = isUnread ? "Okunmamış yeni mesajınız var." : "";
+              final semanticSubtitle = lastMessage != null ? "Son mesaj: $subtitleText." : "";
+              
+              return Semantics(
+                label: "$chatName. $semanticSubtitle $semanticUnreadSuffix",
                 button: true,
-                child: Hero(
-                  tag: 'chat_avatar_$targetUserId',
-                  child: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Colors.grey[800],
-                        child: Text(
-                          chatName.toString().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join(''),
-                          style: const TextStyle(fontSize: 16, color: Colors.white),
+                onTapHint: "Sohbeti açmak için çift dokunun",
+                customSemanticsActions: {
+                  CustomSemanticsAction(label: isArchived ? 'Arşivden Çıkar' : 'Arşivle'): () {
+                    _toggleArchive(chat['id'], isArchived);
+                  },
+                },
+                child: ListTile(
+                  leading: GestureDetector(
+                    onTap: () {
+                      if (targetUserId != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => UserProfileScreen(userId: targetUserId!),
+                          ),
+                        );
+                      }
+                    },
+                    child: Semantics(
+                      label: "Profili gör",
+                      button: true,
+                      child: Hero(
+                        tag: 'chat_avatar_$targetUserId',
+                        child: Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundColor: Colors.grey[800],
+                              child: Text(
+                                chatName.toString().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join(''),
+                                style: const TextStyle(fontSize: 16, color: Colors.white),
+                              ),
+                            ),
+                            if (isUnread)
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: Container(
+                                  width: 14,
+                                  height: 14,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                      if (isUnread)
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: Container(
-                            width: 14,
-                            height: 14,
-                            decoration: const BoxDecoration(
-                              color: Colors.green,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ),
-            title: Text(
-              chatName.toString(),
-              style: TextStyle(fontWeight: isUnread ? FontWeight.w900 : FontWeight.bold, fontSize: 16),
-            ),
-            subtitle: Text(
-              subtitleText,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 14, color: isUnread ? Colors.white : Colors.grey, fontWeight: isUnread ? FontWeight.bold : FontWeight.normal),
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ChatDetailScreen(chat: chat),
+                  title: Text(
+                    chatName.toString(),
+                    style: TextStyle(fontWeight: isUnread ? FontWeight.w900 : FontWeight.bold, fontSize: 16),
+                  ),
+                  subtitle: Text(
+                    subtitleText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 14, color: isUnread ? Colors.white : Colors.grey, fontWeight: isUnread ? FontWeight.bold : FontWeight.normal),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onLongPress: () {
+                    _showChatOptions(chat);
+                  },
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatDetailScreen(chat: chat),
+                      ),
+                    );
+                    _fetchChats();
+                  },
                 ),
               );
-              _fetchChats();
             },
           ),
-        );
+        ),
+      ],
+    );
+  }
+
+  Widget _buildArchiveToggle() {
+    final archivedCount = _chats.where((c) => c['is_archived'] == true).length;
+    if (archivedCount == 0) return const SizedBox.shrink();
+
+    return ListTile(
+      leading: const Icon(Icons.archive_outlined, color: Colors.grey),
+      title: Text("Arşivlenmiş ($archivedCount)"),
+      onTap: () {
+        setState(() {
+          _showArchived = true;
+        });
       },
+    );
+  }
+
+  void _showChatOptions(Map<String, dynamic> chat) {
+    final isArchived = chat['is_archived'] ?? false;
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(isArchived ? Icons.unarchive : Icons.archive),
+              title: Text(isArchived ? 'Arşivden Çıkar' : 'Arşivle'),
+              onTap: () {
+                Navigator.pop(context);
+                _toggleArchive(chat['id'], isArchived);
+              },
+            ),
+          ],
+        );
+      }
     );
   }
 }
