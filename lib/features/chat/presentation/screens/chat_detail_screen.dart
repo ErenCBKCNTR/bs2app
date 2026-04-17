@@ -549,24 +549,38 @@ class _VoiceMessageWidgetState extends State<VoiceMessageWidget> {
     return '$minutes:$seconds';
   }
 
+  void _seekRelative(int seconds) {
+    final newPosition = _position + Duration(seconds: seconds);
+    if (newPosition < Duration.zero) {
+      _audioPlayer.seek(Duration.zero);
+    } else if (newPosition > _duration && _duration != Duration.zero) {
+      _audioPlayer.seek(_duration);
+    } else {
+      _audioPlayer.seek(newPosition);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 200,
+      width: 240, // Expanded for extra buttons
       decoration: BoxDecoration(
         color: widget.isMyMessage ? Colors.green[800] : Colors.grey[700],
         borderRadius: BorderRadius.circular(12),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Play/Pause Button
           Semantics(
             label: _isPlaying ? "Sesi duraklat" : "Sesli mesajı oynat",
             button: true,
             child: IconButton(
+              constraints: const BoxConstraints(),
+              padding: const EdgeInsets.all(4),
               tooltip: _isPlaying ? "Sesi duraklat" : "Sesli mesajı oynat",
-              icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white),
+              icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 28),
               onPressed: () async {
                 if (_isPlaying) {
                   await _audioPlayer.pause();
@@ -576,15 +590,43 @@ class _VoiceMessageWidgetState extends State<VoiceMessageWidget> {
               },
             ),
           ),
+          
+          // Rewind 5s
+          Semantics(
+            label: "5 saniye geri sar",
+            button: true,
+            child: IconButton(
+              constraints: const BoxConstraints(),
+              padding: const EdgeInsets.all(4),
+              icon: const Icon(Icons.replay_5, color: Colors.white, size: 20),
+              onPressed: () => _seekRelative(-5),
+            ),
+          ),
+
+          // Forward 5s
+          Semantics(
+            label: "5 saniye ileri sar",
+            button: true,
+            child: IconButton(
+              constraints: const BoxConstraints(),
+              padding: const EdgeInsets.all(4),
+              icon: const Icon(Icons.forward_5, color: Colors.white, size: 20),
+              onPressed: () => _seekRelative(5),
+            ),
+          ),
+
           const SizedBox(width: 4),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 SliderTheme(
                   data: SliderTheme.of(context).copyWith(
                     thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                    trackHeight: 2,
+                    contentPadding: EdgeInsets.zero,
                   ),
                   child: Slider(
                     min: 0,
@@ -598,10 +640,10 @@ class _VoiceMessageWidgetState extends State<VoiceMessageWidget> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
                   child: Text(
                     '${_formatDuration(_position)} / ${_formatDuration(_duration)}',
-                    style: const TextStyle(fontSize: 10, color: Colors.white70),
+                    style: const TextStyle(fontSize: 9, color: Colors.white70),
                   ),
                 ),
               ],
