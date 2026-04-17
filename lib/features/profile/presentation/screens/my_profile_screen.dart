@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:blind_social/features/auth/presentation/screens/login_screen.dart';
+import 'package:blind_social/features/auth/presentation/screens/auth_screen.dart';
 
 class MyProfileScreen extends StatefulWidget {
   const MyProfileScreen({super.key});
@@ -51,7 +51,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     await Supabase.instance.client.auth.signOut();
     if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
         (route) => false,
       );
     }
