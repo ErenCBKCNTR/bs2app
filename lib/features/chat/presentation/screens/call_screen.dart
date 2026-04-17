@@ -55,7 +55,8 @@ class _CallScreenState extends State<CallScreen> {
   Future<void> _playRingtone() async {
     final settings = SettingsService();
     
-    if (settings.callVibrationEnabled) {
+    // Yalnızca gelen aramada titreşim çalmalı, giden aramada sadece ses duyulmalı
+    if (widget.isIncoming && settings.callVibrationEnabled) {
       Vibration.vibrate(pattern: [500, 1000, 500, 1000], repeat: 0);
     }
 

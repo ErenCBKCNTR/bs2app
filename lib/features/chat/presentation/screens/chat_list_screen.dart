@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:blind_social/features/chat/presentation/screens/voice_rooms_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/my_profile_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/user_profile_screen.dart';
+import 'package:blind_social/features/profile/presentation/screens/app_settings_screen.dart';
 import 'package:blind_social/features/developer/presentation/screens/developer_logs_screen.dart';
 import 'package:blind_social/features/chat/presentation/screens/blog_screen.dart';
 import 'package:blind_social/core/utils/logger.dart';
@@ -184,37 +185,15 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
               Semantics(
                 label: "Kullanıcı Ara",
                 child: IconButton(
-                  icon: const Icon(Icons.search, size: 28),
+                  icon: const Icon(Icons.search, size: 18), // Biraz daha küçük ikon
                   onPressed: _showUserSearchDialog,
                   tooltip: "Kullanıcı Ara",
                 ),
               ),
               IconButton(
                 onPressed: _refresh,
-                icon: const Icon(Icons.refresh, size: 28),
+                icon: const Icon(Icons.refresh, size: 18),
                 tooltip: "Sayfayı Yenile",
-              ),
-              PopupMenuButton<String>(
-                tooltip: "Diğer Seçenekler",
-                onSelected: (value) {
-                  if (value == 'dev') {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperLogsScreen()));
-                  } else if (value == 'profile') {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen()));
-                  }
-                },
-                itemBuilder: (BuildContext context) {
-                  return [
-                    const PopupMenuItem<String>(
-                      value: 'profile',
-                      child: Text('Profil Ayarları'),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'dev',
-                      child: Text('Geliştirici Modu / Loglar'),
-                    ),
-                  ];
-                },
               ),
             ]
           ],
@@ -230,6 +209,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
             ],
           ),
         ),
+        drawer: _buildDrawer(context),
         body: TabBarView(
           controller: _tabController,
           children: [
@@ -744,29 +724,107 @@ Widget? _buildFAB() {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(isArchived ? Icons.unarchive : Icons.archive),
-              title: Text(isArchived ? 'Arşivden Çıkar' : 'Arşivle'),
-              onTap: () {
-                Navigator.pop(context);
-                _toggleArchive(chat['id'], isArchived);
-              },
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  ListTile(
+                    leading: Icon(isArchived ? Icons.unarchive : Icons.archive),
+                    title: Text(isArchived ? 'Arşivden Çıkar' : 'Arşivle'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _toggleArchive(chat['id'], isArchived);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.delete_outline, color: Colors.red),
+                    title: const Text('Sohbeti Sil', style: TextStyle(color: Colors.red)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _confirmDeleteChat(chat);
+                    },
+                  ),
+                ],
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.red),
-              title: const Text('Sohbeti Sil', style: TextStyle(color: Colors.red)),
-              onTap: () {
-                Navigator.pop(context);
-                _confirmDeleteChat(chat);
-              },
-            ),
-          ],
+          ),
         );
       }
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context) {
+    final user = Supabase.instance.client.auth.currentUser;
+    final email = user?.email ?? 'Hesap Bilgisi Yok';
+    
+    return Drawer(
+      child: Column(
+        children: [
+          UserAccountsDrawerHeader(
+            accountName: const Text('Blind Social'),
+            accountEmail: Text(email),
+            currentAccountPicture: const CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, color: Color(0xFF075E54), size: 40),
+            ),
+            decoration: const BoxDecoration(
+              color: Color(0xFF075E54),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: const Text('Profilim'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings_outlined),
+            title: const Text('Uygulama Ayarları'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const AppSettingsScreen()));
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.bug_report_outlined),
+            title: const Text('Geliştirici Modu / Loglar'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperLogsScreen()));
+            },
+          ),
+          const Spacer(),
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'Versiyon 1.0.0',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
