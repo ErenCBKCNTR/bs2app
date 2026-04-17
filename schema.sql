@@ -23,13 +23,16 @@ CREATE TABLE IF NOT EXISTS public.chats (
     is_group BOOLEAN DEFAULT false,
     name TEXT, -- Sadece grup sohbetleri için
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    created_by UUID DEFAULT auth.uid() REFERENCES public.users(id) -- OLUŞTURAN KİŞİ EKLENDİ (OTOMATİK ID ALIR)
 );
 
--- (Mevcut tablolara safely column ekleme)
-DO $$ BEGIN
-    ALTER TABLE public.chats ADD COLUMN created_by UUID REFERENCES public.users(id);
-EXCEPTION WHEN duplicate_column THEN null; END $$;
+-- Eğer chats tablosu önceden oluşturulduysa, sonradan sütun eklemek için çalıştırılması gereken komut:
+-- (Hata verirse sütun zaten var demektir, görmezden gelebilirsiniz)
+ALTER TABLE public.chats ADD COLUMN IF NOT EXISTS created_by UUID DEFAULT auth.uid() REFERENCES public.users(id);
+
+-- Eger tablo varsa ama auth.uid() default degeri verilmediyse onu kesin olarak verelim!
+ALTER TABLE public.chats ALTER COLUMN created_by SET DEFAULT auth.uid();
 
 -- 3. Sohbet Katılımcıları Tablosu (chat_participants)
 -- Hangi kullanıcının hangi sohbette olduğunu tutar.
