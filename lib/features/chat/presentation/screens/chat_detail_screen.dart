@@ -3,15 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:intl/intl.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:async';
 import '../../../../core/utils/logger.dart';
-
-import 'package:audioplayers/audioplayers.dart';
+import 'package:http/http.dart' as http;
 import 'package:vibration/vibration.dart';
 import 'package:blind_social/core/services/settings_service.dart';
 
@@ -257,21 +256,22 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
       if (path != null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses mesajı özelliği için backend file alanı eklemeniz gerekiyor.')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses mesajı gönderiliyor...')));
         }
         
-        // TODO: PocketBase messages tablosuna 'file' adında bir dosya alanı eklendiğinde kullanılabilir:
-        // final fileBytes = File(path).readAsBytesSync();
-        // await PocketBaseService.client.collection('messages').create(
-        //   body: {
-        //     'chat_id': widget.chat['id'],
-        //     'sender_id': _myUserId,
-        //     'content': '[VOICE]',
-        //   },
-        //   files: [
-        //     http.MultipartFile.fromBytes('file', fileBytes, filename: 'ses.m4a')
-        //   ],
-        // );
+        final fileBytes = File(path).readAsBytesSync();
+        
+        // PocketBase messages tablosunda 'file' isminde bir File alanı olması gerekiyor.
+        await PocketBaseService.client.collection('messages').create(
+          body: {
+            'chat_id': widget.chat['id'],
+            'sender_id': _myUserId,
+            'content': '[VOICE]',
+          },
+          files: [
+            http.MultipartFile.fromBytes('file', fileBytes, filename: 'ses.m4a')
+          ],
+        );
       }
     } catch (e) {
       AppLogger.instance.error('Ses kaydı durdurulamadı: $e');
@@ -458,7 +458,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       }
 
                       final textContent = isVoiceMessage ? '' : (isCallMessage ? displayContent : content);
-                      final voiceUrl = isVoiceMessage ? content.toString().substring(7) : null;
+                      
+                      String? voiceUrl;
+                      if (isVoiceMessage) {
+                        final filename = message['file'];
+                        if (filename != null && filename.toString().isNotEmpty) {
+                          // Construct PocketBase file URL
+                          final baseUrl = PocketBaseService.client.baseUrl;
+                          final recordId = message['id'];
+                          final collectionId = message['collectionId'];
+                          voiceUrl = '$baseUrl/api/files/$collectionId/$recordId/$filename';
+                        }
+                      }
 
                       return Align(
                         alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
