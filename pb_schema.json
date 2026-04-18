@@ -236,6 +236,22 @@
         "presentable": false,
         "unique": false,
         "options": {}
+      },
+      {
+        "system": false,
+        "id": "msg_file",
+        "name": "file",
+        "type": "file",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSelect": 1,
+          "maxSize": 10485760,
+          "mimeTypes": [],
+          "thumbs": [],
+          "protected": false
+        }
       }
     ],
     "indexes": [],

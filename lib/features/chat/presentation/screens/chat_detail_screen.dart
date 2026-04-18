@@ -2,7 +2,7 @@ import 'package:blind_social/features/chat/presentation/screens/call_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
-import 'package:pocketbase/pocketbase.dart';
+import 'package:pocketbase/pocketbase.dart' hide SettingsService;
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:intl/intl.dart';
@@ -156,7 +156,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         // Yeni mesaj geldiyse aşağı kaydır
         if (isNewMessageArrived) {
            final lastMsg = response.last;
-           if (lastMsg['sender_id'] != _myUserId) {
+           if (lastMsg.getStringValue('sender_id') != _myUserId) {
               final settings = SettingsService();
               if (settings.messageVibrationEnabled) {
                 Vibration.vibrate(duration: 100);
