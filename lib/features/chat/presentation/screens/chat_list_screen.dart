@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
-import 'package:pocketbase/pocketbase.dart';
+import 'package:pocketbase/pocketbase.dart' hide SettingsService;
 import 'package:blind_social/features/chat/presentation/screens/voice_rooms_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/my_profile_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/user_profile_screen.dart';

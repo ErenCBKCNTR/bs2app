@@ -56,7 +56,15 @@ class _AuthWrapperState extends State<AuthWrapper> {
           _isAuthenticated = true;
           // Eğer kullanıcı veritabanında varsa ve dob alanı doluysa profil tamamlanmıştır
           final dob = record.getStringValue('dob');
-          _isProfileComplete = dob.isNotEmpty;
+          final username = record.getStringValue('username');
+          
+          // Profil tamamlama şartı: 
+          // 1. Doğum tarihi dolu olmalı
+          // 2. Kullanıcı adı PocketBase'in varsayılan "users_..." formatında olmamalı (opsiyonel ama sağlıklı)
+          bool isDobFilled = dob.isNotEmpty && dob != '0001-01-01 00:00:00Z';
+          bool isUsernameCustom = username.isNotEmpty && !username.startsWith('users_');
+          
+          _isProfileComplete = isDobFilled; // Kullanıcı özellikle doğum tarihi dediği için ona odaklanıyoruz
           _isLoading = false;
         });
       }

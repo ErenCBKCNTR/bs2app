@@ -14,6 +14,16 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _dobController = TextEditingController();
   bool _isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // Mevcut kullanıcı adını otomatik doldur (PB tarafından rastgele oluşturulmuş olsa bile)
+    final user = PocketBaseService.client.authStore.model;
+    if (user != null) {
+      _usernameController.text = user.getStringValue('username');
+    }
+  }
+
   Future<void> _saveProfile() async {
     final username = _usernameController.text.trim();
     String dob = _dobController.text.trim();
