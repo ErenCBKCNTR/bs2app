@@ -5,6 +5,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:vibration/vibration.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/services/settings_service.dart';
 
@@ -34,6 +36,7 @@ class _CallScreenState extends State<CallScreen> {
   bool _isCamOff = false;
   bool _isJoined = false;
   bool _isAccepted = false; // Arama cevaplandı mı?
+  String _connectionStatus = 'Başlatılıyor...';
   
   // Timer for call duration
   Timer? _durationTimer;
@@ -58,9 +61,22 @@ class _CallScreenState extends State<CallScreen> {
         final msg = e.record;
         if (msg != null && msg.getStringValue('chat_id') == widget.chatId && msg.getStringValue('sender_id') != _myId) {
           final content = msg.getStringValue('content');
+          
           if (content.contains('CALL_ENDED')) {
             if (mounted) {
               Navigator.pop(context);
+            }
+          } else if (content == '[CALL_ACCEPTED]') {
+            // Arayan taraf için: Karşı taraf aramayı kabul etti
+            if (!widget.isIncoming && !_isAccepted) {
+               _stopRingtone();
+               if (mounted) {
+                 setState(() {
+                   _isAccepted = true;
+                 });
+                 _startTimer();
+                 _connectToLiveKitRoom();
+               }
             }
           }
         }
@@ -124,33 +140,121 @@ class _CallScreenState extends State<CallScreen> {
           'content': widget.isVideo ? '[VIDEO_CALL_STARTED]' : '[VOICE_CALL_STARTED]',
         });
       }
-      
-      _room = Room();
-      final listener = _room!.createListener();
-      listener.on<RoomDisconnectedEvent>((event) {
-        if (mounted) Navigator.pop(context);
-      });
-
-      setState(() {
-        _isJoined = true;
-      });
-      
-      if (widget.isIncoming) {
-        // Gelen aramada henüz timer başlamaz, "Kabul Et" tıklanınca başlar.
-      }
-      
     } catch (e) {
       AppLogger.instance.error('Arama başlatma hatası: $e');
       if (mounted) Navigator.pop(context);
     }
   }
 
-  void _handleAccept() {
+  String _generateToken(String apiKey, String apiSecret, String roomName, String participantIdentity) {
+    final jwt = JWT({
+      'exp': (DateTime.now().millisecondsSinceEpoch / 1000).round() + (60 * 60 * 24), // 24 hours valid
+      'iss': apiKey,
+      'sub': participantIdentity,
+      'nbf': 0,
+      'video': {
+        'room': roomName,
+        'roomJoin': true,
+        'canPublish': true,
+        'canSubscribe': true,
+      }
+    });
+
+    return jwt.sign(SecretKey(apiSecret));
+  }
+
+  Future<void> _connectToLiveKitRoom() async {
+    final String livekitUrl = dotenv.env['LIVEKIT_URL'] ?? 'wss://live.cabukcan.com';
+    final String apiKey = dotenv.env['LIVEKIT_API_KEY'] ?? '';
+    final String apiSecret = dotenv.env['LIVEKIT_API_SECRET'] ?? '';
+
+    if (apiKey.isEmpty || apiSecret.isEmpty) {
+      AppLogger.instance.warning('LiveKit API key/secret eksik. Medya bağlantısı kurulamayabilir.');
+      return;
+    }
+
+    try {
+      final String roomName = widget.chatId; // Odanın adı chatId olsun (benzersiz)
+      final String token = _generateToken(apiKey, apiSecret, roomName, _myId);
+
+      _room = Room();
+      
+      // Olay dinleyicileri
+      _room!.createListener()
+        ..on<RoomDisconnectedEvent>((event) {
+          AppLogger.instance.info('LiveKit bağlantısı kesildi.');
+          if (mounted) {
+            setState(() => _connectionStatus = 'Bağlantı Kesildi');
+            Future.delayed(const Duration(seconds: 2), () {
+              if (mounted) Navigator.pop(context);
+            });
+          }
+        })
+        ..on<ConnectionStateChangeEvent>((event) {
+          AppLogger.instance.info('Bağlantı durumu değişti: ${event.state}');
+          if (mounted) {
+            setState(() {
+              switch (event.state) {
+                case ConnectionState.connecting:
+                  _connectionStatus = 'Bağlanıyor...';
+                  break;
+                case ConnectionState.connected:
+                  _connectionStatus = 'Bağlandı';
+                  break;
+                case ConnectionState.reconnecting:
+                  _connectionStatus = 'Yeniden Bağlanıyor...';
+                  break;
+                case ConnectionState.disconnected:
+                  _connectionStatus = 'Bağlantı Kesildi';
+                  break;
+              }
+            });
+          }
+        });
+
+      const roomOptions = RoomOptions(
+        adaptiveStream: true,
+        dynacast: true,
+      );
+
+      await _room!.connect(livekitUrl, token, roomOptions: roomOptions);
+      
+      if (mounted) {
+        setState(() {
+          _isJoined = true;
+        });
+        
+        // Mikrofonu ve varsa kamerayı aç
+        await _room!.localParticipant?.setMicrophoneEnabled(true);
+        if (widget.isVideo) {
+          await _room!.localParticipant?.setCameraEnabled(true);
+        }
+      }
+      AppLogger.instance.info('LiveKit odasına bağlanıldı: $roomName');
+    } catch (e) {
+      AppLogger.instance.error('LiveKit bağlantı hatası: $e');
+    }
+  }
+
+  void _handleAccept() async {
     _stopRingtone();
     setState(() {
       _isAccepted = true;
     });
+    
+    // Kabul edildi mesajı gönder (Arayanı uyarmak için)
+    try {
+      await PocketBaseService.client.collection('messages').create(body: {
+        'chat_id': widget.chatId,
+        'sender_id': _myId,
+        'content': '[CALL_ACCEPTED]',
+      });
+    } catch (e) {
+      AppLogger.instance.error('Arama kabul mesajı gönderilemedi: $e');
+    }
+
     _startTimer();
+    _connectToLiveKitRoom();
   }
 
   void _startTimer() {
@@ -255,7 +359,7 @@ class _CallScreenState extends State<CallScreen> {
                     const SizedBox(width: 8),
                     Text(
                       _isAccepted 
-                        ? (widget.isVideo ? "Görüntülü Görüşme" : "Sesli Görüşme")
+                        ? (widget.isVideo ? "Görüntülü Görüşme (" + _connectionStatus + ")" : "Sesli Görüşme (" + _connectionStatus + ")")
                         : (widget.isIncoming ? "Gelen Arama" : "Çalıyor..."),
                       style: const TextStyle(fontSize: 16, color: Colors.white70),
                     ),
