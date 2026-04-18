@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:livekit_client/livekit_client.dart';
+import 'package:livekit_client/livekit_client.dart' as lk;
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
@@ -31,7 +31,7 @@ class CallScreen extends StatefulWidget {
 }
 
 class _CallScreenState extends State<CallScreen> {
-  Room? _room;
+  lk.Room? _room;
   bool _isMuted = false;
   bool _isCamOff = false;
   bool _isJoined = false;
@@ -177,11 +177,11 @@ class _CallScreenState extends State<CallScreen> {
       final String roomName = widget.chatId; // Odanın adı chatId olsun (benzersiz)
       final String token = _generateToken(apiKey, apiSecret, roomName, _myId);
 
-      _room = Room();
+      _room = lk.Room();
       
       // Olay dinleyicileri
       _room!.createListener()
-        ..on<RoomDisconnectedEvent>((event) {
+        ..on<lk.RoomDisconnectedEvent>((event) {
           AppLogger.instance.info('LiveKit bağlantısı kesildi.');
           if (mounted) {
             setState(() => _connectionStatus = 'Bağlantı Kesildi');
@@ -190,21 +190,21 @@ class _CallScreenState extends State<CallScreen> {
             });
           }
         })
-        ..on<ConnectionStateChangeEvent>((event) {
+        ..on<lk.RoomConnectionStateChangedEvent>((event) {
           AppLogger.instance.info('Bağlantı durumu değişti: ${event.state}');
           if (mounted) {
             setState(() {
               switch (event.state) {
-                case ConnectionState.connecting:
+                case lk.ConnectionState.connecting:
                   _connectionStatus = 'Bağlanıyor...';
                   break;
-                case ConnectionState.connected:
+                case lk.ConnectionState.connected:
                   _connectionStatus = 'Bağlandı';
                   break;
-                case ConnectionState.reconnecting:
+                case lk.ConnectionState.reconnecting:
                   _connectionStatus = 'Yeniden Bağlanıyor...';
                   break;
-                case ConnectionState.disconnected:
+                case lk.ConnectionState.disconnected:
                   _connectionStatus = 'Bağlantı Kesildi';
                   break;
               }
@@ -212,7 +212,7 @@ class _CallScreenState extends State<CallScreen> {
           }
         });
 
-      const roomOptions = RoomOptions(
+      const roomOptions = lk.RoomOptions(
         adaptiveStream: true,
         dynacast: true,
       );
