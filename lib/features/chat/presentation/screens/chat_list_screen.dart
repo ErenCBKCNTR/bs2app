@@ -28,6 +28,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   bool _isDeleting = false;
   final Set<String> _pendingOperations = {}; // İşlem gören chat ID'leri
   Timer? _pollingTimer;
+  RealtimeChannel? _realtimeChannel;
   bool _showArchived = false;
 
   final ScrollController _chatListScrollController = ScrollController();
@@ -42,11 +43,41 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     });
     
     _fetchChats();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+    _setupRealtime();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       _fetchChats(isBackground: true);
     });
     
     _chatListScrollController.addListener(_scrollListener);
+  }
+
+  void _setupRealtime() {
+    final myId = Supabase.instance.client.auth.currentUser!.id;
+    
+    // Mesajlar, sohbetler veya katılımcılar değiştiğinde listeyi yenile
+    _realtimeChannel = Supabase.instance.client.channel('chat_list_updates')
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'messages',
+        callback: (payload) => _fetchChats(isBackground: true),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'chats',
+        callback: (payload) => _fetchChats(isBackground: true),
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'chat_participants',
+        callback: (payload) {
+          // Eğer bana ait bir katılımcı kaydı eklendiyse (yeni sohbet) her türlü yenile
+          _fetchChats(isBackground: true);
+        },
+      )
+      .subscribe();
   }
 
   void _scrollListener() {
@@ -66,26 +97,45 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   @override
   void dispose() {
     _pollingTimer?.cancel();
+    _realtimeChannel?.unsubscribe();
     _tabController.dispose();
     _chatListScrollController.dispose();
     super.dispose();
   }
 
   Future<void> _fetchChats({bool isBackground = false}) async {
-    if (_isDeleting && isBackground) return; // Silme işlemi sırasında arka plan verisiyle yerel durumu bozma
+    if (_isDeleting && isBackground) return; 
     
     try {
       final userId = Supabase.instance.client.auth.currentUser!.id;
+      
+      // Daha gelişmiş sorgu: Katılımcısı olduğum sohbetleri ve o sohbetlerin TÜM katılımcılarını çekiyoruz.
+      // Not: PostgREST'te bu tip "bana ait sohbetler" filtresi için chat_participants üzerinden gitmek daha sağlıklıdır.
       final response = await Supabase.instance.client
           .from('chats')
-          .select('*, chat_participants!inner(user_id, last_read_message_id, is_archived), messages(id, content, sender_id, created_at)')
-          .eq('chat_participants.user_id', userId) // SERVER-SIDE FILTER: ONLY MY CHATS
+          .select('''
+            *,
+            chat_participants!inner(user_id),
+            all_participants:chat_participants(
+              user_id,
+              is_archived,
+              last_read_message_id,
+              users(id, username, full_name, avatar_url)
+            ),
+            messages(id, content, sender_id, created_at)
+          ''')
+          .eq('chat_participants.user_id', userId)
           .order('updated_at', ascending: false);
           
       if (mounted) {
         setState(() {
-          final rawChats = List<Map<String, dynamic>>.from(response);
-          // İşlemdeki chat'leri listeden hariç tut (senkronizasyon gecikmesi için)
+          final List<Map<String, dynamic>> rawChats = List<Map<String, dynamic>>.from(response);
+          
+          // API cevabını chat_participants formatına uyumlu hale getirmek (all_participants -> chat_participants)
+          for (var chat in rawChats) {
+            chat['chat_participants'] = chat['all_participants'];
+          }
+          
           _chats = rawChats.where((c) => !_pendingOperations.contains(c['id'])).toList();
           _isLoadingChats = false;
         });
@@ -554,7 +604,6 @@ Widget? _buildFAB() {
         }
         
         final chat = filteredChats[index - 1];
-              final chatName = chat['name'] ?? 'İsimsiz Sohbet';
               
               // Katılımcı bilgisinden arşiv durumunu al
               final participants = chat['chat_participants'] as List<dynamic>? ?? [];
@@ -563,11 +612,26 @@ Widget? _buildFAB() {
               
               String? targetUserId;
               String? lastReadId;
-              for (var p in participants) {
-                if (p['user_id'] != currentUserId) {
-                  targetUserId = p['user_id'];
-                } else {
-                   lastReadId = p['last_read_message_id'];
+              String displayChatName = chat['name'] ?? 'İsimsiz Sohbet';
+
+              // Birebir sohbetlerde karşı tarafın adını göster
+              if (chat['is_group'] == false) {
+                for (var p in participants) {
+                  if (p['user_id'] != currentUserId) {
+                    targetUserId = p['user_id'];
+                    if (p['users'] != null) {
+                      displayChatName = p['users']['username'] ?? displayChatName;
+                    }
+                  } else {
+                    lastReadId = p['last_read_message_id'];
+                  }
+                }
+              } else {
+                // Grup sohbeti ise benim lastReadId'mi al
+                for (var p in participants) {
+                  if (p['user_id'] == currentUserId) {
+                    lastReadId = p['last_read_message_id'];
+                  }
                 }
               }
               
@@ -593,7 +657,7 @@ Widget? _buildFAB() {
               final semanticSubtitle = lastMessage != null ? "Son mesaj: $subtitleText." : "";
               
               return Semantics(
-                label: "$chatName. $semanticSubtitle $semanticUnreadSuffix",
+                label: "$displayChatName. $semanticSubtitle $semanticUnreadSuffix",
                 button: true,
                 onTapHint: "Sohbeti açmak için çift dokunun",
                 customSemanticsActions: {
@@ -627,7 +691,7 @@ Widget? _buildFAB() {
                               radius: 24,
                               backgroundColor: Colors.grey[800],
                               child: Text(
-                                chatName.toString().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join(''),
+                                displayChatName.toString().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join(''),
                                 style: const TextStyle(fontSize: 16, color: Colors.white),
                               ),
                             ),
@@ -650,7 +714,7 @@ Widget? _buildFAB() {
                     ),
                   ),
                   title: Text(
-                    chatName.toString(),
+                    displayChatName.toString(),
                     style: TextStyle(fontWeight: isUnread ? FontWeight.w900 : FontWeight.bold, fontSize: 16),
                   ),
                   subtitle: Row(
