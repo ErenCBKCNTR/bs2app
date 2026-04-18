@@ -7,9 +7,27 @@ import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/providers/theme_provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:blind_social/core/services/settings_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:blind_social/core/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Firebase'i başlat (Web config'i kullanarak manuel initialization)
+  try {
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: "AIzaSyCK9ayY6TUhFoZ32JkzSraldUAwSzY_Wdg",
+        appId: "1:681771970848:web:6700bba826c4c43f23e745",
+        messagingSenderId: "681771970848",
+        projectId: "gen-lang-client-0566800967",
+      ),
+    );
+    // Bildirim servisini başlat
+    await NotificationService().init();
+  } catch (e) {
+    debugPrint("Firebase başlatılamadı: $e");
+  }
   
   // Settings servislerini başlat
   await SettingsService().init();
