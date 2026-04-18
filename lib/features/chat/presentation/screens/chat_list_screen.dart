@@ -71,6 +71,16 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
             final chatId = msg.getStringValue('chat_id');
             final senderId = msg.getStringValue('sender_id');
 
+            // Eğer sohbet gizliyse, yeni mesaj gelince onu göster (WhatsApp tarzı unhide)
+            try {
+              final myPart = await PocketBaseService.client.collection('chat_participants').getFirstListItem('chat_id = "$chatId" && user_id = "$myId"');
+              if (myPart.getBoolValue('is_hidden')) {
+                await PocketBaseService.client.collection('chat_participants').update(myPart.id, body: {
+                  'is_hidden': false
+                });
+              }
+            } catch (_) {}
+
             // Gelen mesaj bir arama ise direkt CallScreen'e yönlendir
             if (content == '[VOICE_CALL_STARTED]' || content == '[VIDEO_CALL_STARTED]') {
               try {
@@ -156,6 +166,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       
       List<RecordModel> chatRecords = [];
       for(var p in myParticipants) {
+         if (p.getBoolValue('is_hidden')) continue;
          if (p.expand['chat_id'] != null) {
             final chatData = p.expand['chat_id']!.first as RecordModel;
             // Kendi katılımcı kaydımızı (arşiv ve last read) chat nesnesine ekle (kolay işlem için)
@@ -551,6 +562,17 @@ Widget? _buildFAB() {
         if (intersection.isNotEmpty) {
           final chatId = intersection.first;
           AppLogger.instance.info('Mevcut sohbet bulundu: $chatId');
+          
+          // Eger bu sohbet A kullanıcısı tarafından silinmişse (is_hidden ise), onu tekrar aktif et
+          try {
+             final myPart = existingChatRes.firstWhere((p) => p.getStringValue('chat_id') == chatId);
+             if (myPart.getBoolValue('is_hidden')) {
+               await PocketBaseService.client.collection('chat_participants').update(myPart.id, body: {
+                 'is_hidden': false
+               });
+             }
+          } catch (_) {}
+
           if (mounted) {
             _navigateToChat(chatId, targetUser.getStringValue('username'));
           }
@@ -995,8 +1017,15 @@ Widget? _buildFAB() {
     });
 
     try {
-      // Sohbeti tamamen siliyoruz. Bu işlem, PocketBase'deki ayarlarla mesajları ve tüm katılımcı kayıtlarını da cascade ile silecektir.
-      await PocketBaseService.client.collection('chats').delete(chatId);
+      final myId = PocketBaseService.client.authStore.model!.id;
+      final myPart = await PocketBaseService.client.collection('chat_participants').getFirstListItem('chat_id = "$chatId" && user_id = "$myId"');
+      
+      // WhatsApp mantığı: sohbet odasını veya katılımcıyı tamamen silmek yerine katılımcı listesinde kendimiz için "is_hidden" işaretliyoruz.
+      // Eşzamanlı olarak geçmiş mesajları görmemek için "cleared_at" ayarlıyoruz. 
+      await PocketBaseService.client.collection('chat_participants').update(myPart.id, body: {
+         'is_hidden': true,
+         'cleared_at': DateTime.now().toUtc().toIso8601String() 
+      });
       
       _fetchChats(isBackground: true);
       if (mounted) {

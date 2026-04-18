@@ -112,8 +112,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   Future<void> _fetchMessages({bool isBackground = false}) async {
     try {
       final chatId = widget.chat['id'];
+      
+      String filter = 'chat_id = "$chatId"';
+      try {
+        final myPart = await PocketBaseService.client.collection('chat_participants').getFirstListItem('chat_id = "$chatId" && user_id = "$_myUserId"');
+        final clearedAtStr = myPart.getStringValue('cleared_at');
+        if (clearedAtStr.isNotEmpty) {
+          filter += ' && created > "$clearedAtStr"';
+        }
+      } catch (_) {}
+
       final response = await PocketBaseService.client.collection('messages').getFullList(
-          filter: 'chat_id = "$chatId"',
+          filter: filter,
           sort: 'created'
       );
 
