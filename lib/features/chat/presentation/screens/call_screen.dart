@@ -189,28 +189,10 @@ class _CallScreenState extends State<CallScreen> {
               if (mounted) Navigator.pop(context);
             });
           }
-        })
-        ..on<lk.RoomConnectionStateChangedEvent>((event) {
-          AppLogger.instance.info('Bağlantı durumu değişti: ${event.state}');
-          if (mounted) {
-            setState(() {
-              switch (event.state) {
-                case lk.ConnectionState.connecting:
-                  _connectionStatus = 'Bağlanıyor...';
-                  break;
-                case lk.ConnectionState.connected:
-                  _connectionStatus = 'Bağlandı';
-                  break;
-                case lk.ConnectionState.reconnecting:
-                  _connectionStatus = 'Yeniden Bağlanıyor...';
-                  break;
-                case lk.ConnectionState.disconnected:
-                  _connectionStatus = 'Bağlantı Kesildi';
-                  break;
-              }
-            });
-          }
         });
+
+      // Bağlantı durumunu dinle (addListener kullanarak daha güvenli)
+      _room!.addListener(_onRoomStateChanged);
 
       const roomOptions = lk.RoomOptions(
         adaptiveStream: true,
@@ -234,6 +216,29 @@ class _CallScreenState extends State<CallScreen> {
     } catch (e) {
       AppLogger.instance.error('LiveKit bağlantı hatası: $e');
     }
+  }
+
+  void _onRoomStateChanged() {
+    if (!mounted || _room == null) return;
+    
+    setState(() {
+      switch (_room!.connectionState) {
+        case lk.ConnectionState.connecting:
+          _connectionStatus = 'Bağlanıyor...';
+          break;
+        case lk.ConnectionState.connected:
+          _connectionStatus = 'Bağlandı';
+          break;
+        case lk.ConnectionState.reconnecting:
+          _connectionStatus = 'Yeniden Bağlanıyor...';
+          break;
+        case lk.ConnectionState.disconnected:
+          _connectionStatus = 'Bağlantı Kesildi';
+          break;
+      }
+    });
+    
+    AppLogger.instance.info('Oda durumu güncellendi: ${_room!.connectionState}');
   }
 
   void _handleAccept() async {
@@ -279,6 +284,7 @@ class _CallScreenState extends State<CallScreen> {
   void dispose() {
     _durationTimer?.cancel();
     _ringtonePlayer.dispose();
+    _room?.removeListener(_onRoomStateChanged);
     _room?.disconnect();
     _messagesUnsub?.call();
     super.dispose();
