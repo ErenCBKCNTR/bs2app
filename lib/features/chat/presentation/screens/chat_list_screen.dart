@@ -11,7 +11,11 @@ import 'package:blind_social/features/developer/presentation/screens/developer_l
 import 'package:blind_social/features/chat/presentation/screens/blog_screen.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:vibration/vibration.dart';
+import 'package:blind_social/core/services/settings_service.dart';
 import 'chat_detail_screen.dart';
+import 'call_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -59,7 +63,45 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     if (myId == null) return;
     
     // Mesajlar eklendiğinde
-    _realtimeMessagesUnsub = await PocketBaseService.client.collection('messages').subscribe('*', (e) {
+    _realtimeMessagesUnsub = await PocketBaseService.client.collection('messages').subscribe('*', (e) async {
+       if (e.action == 'create') {
+         final msg = e.record;
+         if (msg != null && msg.getStringValue('sender_id') != myId) {
+            final content = msg.getStringValue('content');
+            final chatId = msg.getStringValue('chat_id');
+            final senderId = msg.getStringValue('sender_id');
+
+            // Gelen mesaj bir arama ise direkt CallScreen'e yönlendir
+            if (content == '[VOICE_CALL_STARTED]' || content == '[VIDEO_CALL_STARTED]') {
+              try {
+                final senderRecord = await PocketBaseService.client.collection('users').getOne(senderId);
+                final senderName = senderRecord.getStringValue('username');
+                
+                if (mounted) {
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (context) => CallScreen(
+                      chatId: chatId,
+                      targetUserId: senderId,
+                      targetUsername: senderName,
+                      isVideo: content == '[VIDEO_CALL_STARTED]',
+                      isIncoming: true,
+                    )
+                  ));
+                }
+              } catch (_) {}
+            } else {
+              // Normal mesaj ise genel bildirim çal (titreşim+ses)
+              final settings = SettingsService();
+              if (settings.messageVibrationEnabled) {
+                Vibration.vibrate(duration: 100);
+              }
+              if (settings.messageSoundEnabled) {
+                final player = AudioPlayer();
+                player.play(AssetSource('sounds/new_message.mp3')).catchError((_) => null);
+              }
+            }
+         }
+       }
        _fetchChats(isBackground: true);
     });
 
@@ -953,10 +995,8 @@ Widget? _buildFAB() {
     });
 
     try {
-      final myId = PocketBaseService.client.authStore.model!.id;
-      // Önce katılımcıyı bul ve sil
-      final myPart = await PocketBaseService.client.collection('chat_participants').getFirstListItem('chat_id = "$chatId" && user_id = "$myId"');
-      await PocketBaseService.client.collection('chat_participants').delete(myPart.id);
+      // Sohbeti tamamen siliyoruz. Bu işlem, PocketBase'deki ayarlarla mesajları ve tüm katılımcı kayıtlarını da cascade ile silecektir.
+      await PocketBaseService.client.collection('chats').delete(chatId);
       
       _fetchChats(isBackground: true);
       if (mounted) {

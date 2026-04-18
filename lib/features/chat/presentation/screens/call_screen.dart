@@ -41,21 +41,37 @@ class _CallScreenState extends State<CallScreen> {
   
   late final String _myId;
   final AudioPlayer _ringtonePlayer = AudioPlayer();
+  VoidCallback? _messagesUnsub;
   
   @override
   void initState() {
     super.initState();
     _myId = PocketBaseService.client.authStore.model!.id;
     _initCall();
-    if (!widget.isIncoming) {
-      _playRingtone();
-    }
+    _playRingtone();
+    _listenToCallEndEvents();
+  }
+
+  void _listenToCallEndEvents() async {
+    _messagesUnsub = await PocketBaseService.client.collection('messages').subscribe('*', (e) {
+      if (e.action == 'create') {
+        final msg = e.record;
+        if (msg != null && msg.getStringValue('chat_id') == widget.chatId && msg.getStringValue('sender_id') != _myId) {
+          final content = msg.getStringValue('content');
+          if (content.contains('CALL_ENDED')) {
+            if (mounted) {
+              Navigator.pop(context);
+            }
+          }
+        }
+      }
+    });
   }
 
   Future<void> _playRingtone() async {
     final settings = SettingsService();
     
-    // Yalnızca gelen aramada titreşim çalmalı, giden aramada sadece ses duyulmalı
+    // Gelen aramada titreşim çal
     if (widget.isIncoming && settings.callVibrationEnabled) {
       Vibration.vibrate(pattern: [500, 1000, 500, 1000], repeat: 0);
     }
@@ -160,27 +176,25 @@ class _CallScreenState extends State<CallScreen> {
     _durationTimer?.cancel();
     _ringtonePlayer.dispose();
     _room?.disconnect();
+    _messagesUnsub?.call();
     super.dispose();
   }
 
   void _hangUp() async {
     _stopRingtone();
-    if (!widget.isIncoming) {
-       // Arama kaydı sadece başlatan taraf kapattığında veya cevaplanmadığında mantıklı olabilir.
-       // Gerçek bir sistemde status (answered, cancelled, etc) tutulmalıdır.
-       final durationText = _secondsElapsed > 0 ? " (${_formatDuration(_secondsElapsed)})" : "";
-       final status = _secondsElapsed > 0 ? "TAMAMLANDI" : "CEVAPLANMADI";
+    final durationText = _secondsElapsed > 0 ? " (${_formatDuration(_secondsElapsed)})" : "";
+    final status = _secondsElapsed > 0 ? "TAMAMLANDI" : "CEVAPLANMADI";
        
-       try {
-         await PocketBaseService.client.collection('messages').create(body: {
-            'chat_id': widget.chatId,
-            'sender_id': _myId,
-            'content': widget.isVideo ? '[VIDEO_CALL_ENDED]$status$durationText' : '[VOICE_CALL_ENDED]$status$durationText',
-          });
-       } catch (e) {
-         AppLogger.instance.error('Arama kapanış mesajı hatası: $e');
-       }
+    try {
+      await PocketBaseService.client.collection('messages').create(body: {
+         'chat_id': widget.chatId,
+         'sender_id': _myId,
+         'content': widget.isVideo ? '[VIDEO_CALL_ENDED]$status$durationText' : '[VOICE_CALL_ENDED]$status$durationText',
+      });
+    } catch (e) {
+      AppLogger.instance.error('Arama kapanış mesajı hatası: $e');
     }
+    
     await _room?.disconnect();
     if (mounted) Navigator.pop(context);
   }

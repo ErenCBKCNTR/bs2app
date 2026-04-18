@@ -430,7 +430,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       final message = _messages[index];
                       final isMyMessage = message['sender_id'] == _myUserId;
                       final content = message['content'];
-                      final createdAt = DateTime.parse(message['created_at']).toLocal();
+                      final createdAt = DateTime.parse(message['created'] ?? DateTime.now().toIso8601String()).toLocal();
                       final timeString = DateFormat('HH:mm').format(createdAt);
                       
                       final isCallMessage = content.toString().contains('_CALL_');
