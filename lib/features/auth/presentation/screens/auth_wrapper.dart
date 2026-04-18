@@ -54,8 +54,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
       if (mounted) {
         setState(() {
           _isAuthenticated = true;
-          // Eğer kullanıcı veritabanında varsa ve username ile dob alanları doluysa profil tamamlanmıştır
-          _isProfileComplete = record.data['username'] != null && record.data['dob'] != null && record.data['username'].toString().isNotEmpty;
+          // Eğer kullanıcı veritabanında varsa ve dob alanı doluysa profil tamamlanmıştır
+          final dob = record.getStringValue('dob');
+          _isProfileComplete = dob.isNotEmpty;
           _isLoading = false;
         });
       }
