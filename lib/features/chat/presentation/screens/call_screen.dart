@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
@@ -45,7 +45,7 @@ class _CallScreenState extends State<CallScreen> {
   @override
   void initState() {
     super.initState();
-    _myId = Supabase.instance.client.auth.currentUser!.id;
+    _myId = PocketBaseService.client.authStore.model!.id;
     _initCall();
     if (!widget.isIncoming) {
       _playRingtone();
@@ -102,7 +102,7 @@ class _CallScreenState extends State<CallScreen> {
     try {
       if (!widget.isIncoming) {
         // Arama başlatılıyorsa karşı tarafa bildirim gönder (signaling)
-        await Supabase.instance.client.from('messages').insert({
+        await PocketBaseService.client.collection('messages').create(body: {
           'chat_id': widget.chatId,
           'sender_id': _myId,
           'content': widget.isVideo ? '[VIDEO_CALL_STARTED]' : '[VOICE_CALL_STARTED]',
@@ -171,11 +171,15 @@ class _CallScreenState extends State<CallScreen> {
        final durationText = _secondsElapsed > 0 ? " (${_formatDuration(_secondsElapsed)})" : "";
        final status = _secondsElapsed > 0 ? "TAMAMLANDI" : "CEVAPLANMADI";
        
-       await Supabase.instance.client.from('messages').insert({
-          'chat_id': widget.chatId,
-          'sender_id': _myId,
-          'content': widget.isVideo ? '[VIDEO_CALL_ENDED]$status$durationText' : '[VOICE_CALL_ENDED]$status$durationText',
-        });
+       try {
+         await PocketBaseService.client.collection('messages').create(body: {
+            'chat_id': widget.chatId,
+            'sender_id': _myId,
+            'content': widget.isVideo ? '[VIDEO_CALL_ENDED]$status$durationText' : '[VOICE_CALL_ENDED]$status$durationText',
+          });
+       } catch (e) {
+         AppLogger.instance.error('Arama kapanış mesajı hatası: $e');
+       }
     }
     await _room?.disconnect();
     if (mounted) Navigator.pop(context);

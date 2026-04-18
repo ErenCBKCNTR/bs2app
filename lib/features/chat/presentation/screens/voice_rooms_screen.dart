@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/features/chat/presentation/screens/active_voice_room_screen.dart';
 import 'dart:async';
 import '../../../../core/utils/logger.dart';
@@ -33,15 +33,14 @@ class _VoiceRoomsScreenState extends State<VoiceRoomsScreen> {
 
   Future<void> _fetchRooms({bool isBackground = false}) async {
     try {
-      final response = await Supabase.instance.client
-          .from('voice_rooms')
-          .select()
-          .eq('is_active', true)
-          .order('created_at');
+      final response = await PocketBaseService.client.collection('voice_rooms').getFullList(
+          filter: 'is_active = true',
+          sort: 'created'
+      );
           
       if (mounted) {
         setState(() {
-          _rooms = List<Map<String, dynamic>>.from(response);
+          _rooms = response.map((e) => e.toJson()).toList();
           _isLoading = false;
         });
       }

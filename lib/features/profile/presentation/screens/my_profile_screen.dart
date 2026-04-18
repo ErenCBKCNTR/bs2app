@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
+import 'package:pocketbase/pocketbase.dart';
 import 'package:intl/intl.dart';
 import 'package:blind_social/features/auth/presentation/screens/auth_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +13,7 @@ class MyProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
-  Map<String, dynamic>? _userData;
+  RecordModel? _userData;
   bool _isLoading = true;
 
   @override
@@ -23,19 +24,17 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
 
   Future<void> _fetchProfile() async {
     try {
-      final user = Supabase.instance.client.auth.currentUser;
+      final user = PocketBaseService.client.authStore.model;
       if (user != null) {
-        final data = await Supabase.instance.client
-            .from('users')
-            .select()
-            .eq('id', user.id)
-            .single();
+        final data = await PocketBaseService.client.collection('users').getOne(user.id);
         if (mounted) {
           setState(() {
             _userData = data;
             _isLoading = false;
           });
         }
+      } else {
+        if (mounted) setState(() => _isLoading = false);
       }
     } catch (e) {
       if (mounted) {
@@ -50,7 +49,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   }
 
   Future<void> _signOut() async {
-    await Supabase.instance.client.auth.signOut();
+    PocketBaseService.client.authStore.clear();
     if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const AuthScreen()),
@@ -78,9 +77,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
       );
     }
 
-    final username = _userData?['username'] ?? 'Bilinmiyor';
-    final dob = _userData?['dob'];
-    final createdAt = _userData?['created_at'];
+    final username = _userData?.getStringValue('username') ?? 'Bilinmiyor';
+    final dob = _userData?.getStringValue('dob');
+    final createdAt = _userData?.created;
 
     return Scaffold(
       appBar: AppBar(
@@ -123,7 +122,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             ListTile(
               leading: const Icon(Icons.email),
               title: const Text('E-posta'),
-              subtitle: Text(Supabase.instance.client.auth.currentUser?.email ?? 'Belirtilmemiş'),
+              subtitle: Text(PocketBaseService.client.authStore.model?.getStringValue('email') ?? 'Belirtilmemiş'),
             ),
             const Divider(),
             ListTile(

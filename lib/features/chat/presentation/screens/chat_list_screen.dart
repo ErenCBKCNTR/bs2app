@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
+import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/features/chat/presentation/screens/voice_rooms_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/my_profile_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/user_profile_screen.dart';
@@ -23,12 +24,14 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   late TabController _tabController;
   int _refreshKey = 0;
   
-  List<Map<String, dynamic>> _chats = [];
+  List<RecordModel> _chats = [];
   bool _isLoadingChats = true;
   bool _isDeleting = false;
   final Set<String> _pendingOperations = {}; // İşlem gören chat ID'leri
   Timer? _pollingTimer;
-  RealtimeChannel? _realtimeChannel;
+  UnsubscribeFunc? _realtimeMessagesUnsub;
+  UnsubscribeFunc? _realtimeChatsUnsub;
+  UnsubscribeFunc? _realtimeParticipantsUnsub;
   bool _showArchived = false;
 
   final ScrollController _chatListScrollController = ScrollController();
@@ -51,33 +54,24 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     _chatListScrollController.addListener(_scrollListener);
   }
 
-  void _setupRealtime() {
-    final myId = Supabase.instance.client.auth.currentUser!.id;
+  void _setupRealtime() async {
+    final myId = PocketBaseService.client.authStore.model?.id;
+    if (myId == null) return;
     
-    // Mesajlar, sohbetler veya katılımcılar değiştiğinde listeyi yenile
-    _realtimeChannel = Supabase.instance.client.channel('chat_list_updates')
-      .onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: 'messages',
-        callback: (payload) => _fetchChats(isBackground: true),
-      )
-      .onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: 'chats',
-        callback: (payload) => _fetchChats(isBackground: true),
-      )
-      .onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: 'chat_participants',
-        callback: (payload) {
-          // Eğer bana ait bir katılımcı kaydı eklendiyse (yeni sohbet) her türlü yenile
-          _fetchChats(isBackground: true);
-        },
-      )
-      .subscribe();
+    // Mesajlar eklendiğinde
+    _realtimeMessagesUnsub = await PocketBaseService.client.collection('messages').subscribe('*', (e) {
+       _fetchChats(isBackground: true);
+    });
+
+    // Sohbet eklendiğinde
+    _realtimeChatsUnsub = await PocketBaseService.client.collection('chats').subscribe('*', (e) {
+       _fetchChats(isBackground: true);
+    });
+
+    // Katılımcı eklendiğinde
+    _realtimeParticipantsUnsub = await PocketBaseService.client.collection('chat_participants').subscribe('*', (e) {
+       _fetchChats(isBackground: true);
+    });
   }
 
   void _scrollListener() {
@@ -97,7 +91,9 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   @override
   void dispose() {
     _pollingTimer?.cancel();
-    _realtimeChannel?.unsubscribe();
+    _realtimeMessagesUnsub?.call();
+    _realtimeChatsUnsub?.call();
+    _realtimeParticipantsUnsub?.call();
     _tabController.dispose();
     _chatListScrollController.dispose();
     super.dispose();
@@ -107,36 +103,33 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     if (_isDeleting && isBackground) return; 
     
     try {
-      final userId = Supabase.instance.client.auth.currentUser!.id;
+      final userId = PocketBaseService.client.authStore.model?.id;
+      if (userId == null) return;
       
-      // Daha gelişmiş sorgu: Katılımcısı olduğum sohbetleri ve o sohbetlerin TÜM katılımcılarını çekiyoruz.
-      // Not: PostgREST'te bu tip "bana ait sohbetler" filtresi için chat_participants üzerinden gitmek daha sağlıklıdır.
-      final response = await Supabase.instance.client
-          .from('chats')
-          .select('''
-            *,
-            chat_participants!inner(user_id),
-            all_participants:chat_participants(
-              user_id,
-              is_archived,
-              last_read_message_id,
-              users(id, username, full_name, avatar_url)
-            ),
-            messages(id, content, sender_id, created_at)
-          ''')
-          .eq('chat_participants.user_id', userId)
-          .order('updated_at', ascending: false);
+      // PocketBase'de önce kullanıcının katılımcı olduğu chat ID'lerini bulalım.
+      final myParticipants = await PocketBaseService.client.collection('chat_participants').getFullList(
+         filter: 'user_id = "$userId"',
+         expand: 'chat_id,chat_id.chat_participants_via_chat_id,chat_id.chat_participants_via_chat_id.user_id,chat_id.messages_via_chat_id'
+      );
+      
+      List<RecordModel> chatRecords = [];
+      for(var p in myParticipants) {
+         if (p.expand['chat_id'] != null) {
+            final chatData = p.expand['chat_id']!.first as RecordModel;
+            // Kendi katılımcı kaydımızı (arşiv ve last read) chat nesnesine ekle (kolay işlem için)
+            chatData.data['my_participant'] = p;
+            chatRecords.add(chatData);
+         }
+      }
+      
+      // Chatleri updated veya son mesaja göre sırala
+      chatRecords.sort((a, b) {
+         return b.updated.compareTo(a.updated);
+      });
           
       if (mounted) {
         setState(() {
-          final List<Map<String, dynamic>> rawChats = List<Map<String, dynamic>>.from(response);
-          
-          // API cevabını chat_participants formatına uyumlu hale getirmek (all_participants -> chat_participants)
-          for (var chat in rawChats) {
-            chat['chat_participants'] = chat['all_participants'];
-          }
-          
-          _chats = rawChats.where((c) => !_pendingOperations.contains(c['id'])).toList();
+          _chats = chatRecords.where((c) => !_pendingOperations.contains(c.id)).toList();
           _isLoadingChats = false;
         });
       }
@@ -159,25 +152,24 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     // Yerel UI güncelemesi (Optimizasyon)
     setState(() {
       _pendingOperations.add(chatId);
-      final chatIndex = _chats.indexWhere((c) => c['id'] == chatId);
+      final chatIndex = _chats.indexWhere((c) => c.id == chatId);
       if (chatIndex != -1) {
-        final participants = List<dynamic>.from(_chats[chatIndex]['chat_participants'] ?? []);
-        final myId = Supabase.instance.client.auth.currentUser!.id;
-        final myPartIndex = participants.indexWhere((p) => p['user_id'] == myId);
-        if (myPartIndex != -1) {
-          participants[myPartIndex]['is_archived'] = !currentStatus;
-          _chats[chatIndex]['chat_participants'] = participants;
-        }
+         final myPart = _chats[chatIndex].data['my_participant'] as RecordModel?;
+         if (myPart != null) {
+            myPart.data['is_archived'] = !currentStatus;
+            _chats[chatIndex].data['my_participant'] = myPart;
+         }
       }
     });
 
     try {
-      final myId = Supabase.instance.client.auth.currentUser!.id;
-      await Supabase.instance.client
-          .from('chat_participants')
-          .update({'is_archived': !currentStatus})
-          .eq('chat_id', chatId)
-          .eq('user_id', myId);
+      final chatIndex = _chats.indexWhere((c) => c.id == chatId);
+      final myPart = _chats[chatIndex].data['my_participant'] as RecordModel?;
+      if (myPart != null) {
+         await PocketBaseService.client.collection('chat_participants').update(myPart.id, body: {
+            'is_archived': !currentStatus
+         });
+      }
           
       _fetchChats(isBackground: true);
       if (mounted) {
@@ -366,7 +358,7 @@ Widget? _buildFAB() {
                     final username = searchController.text.trim();
                     if (username.isEmpty) return;
                     
-                    final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+                    final currentUserId = PocketBaseService.client.authStore.model!.id;
 
                     setStateDialog(() {
                       isSearching = true;
@@ -374,18 +366,9 @@ Widget? _buildFAB() {
                     });
                     
                     try {
-                      final response = await Supabase.instance.client
-                          .from('users')
-                          .select()
-                          .eq('username', username)
-                          .maybeSingle();
+                      final response = await PocketBaseService.client.collection('users').getFirstListItem('username = "$username"');
 
-                      if (response == null) {
-                         setStateDialog(() {
-                           isSearching = false;
-                           errorMessage = "Böyle bir kullanıcı bulunamadı.";
-                         });
-                      } else if (response['id'] == currentUserId) {
+                      if (response.id == currentUserId) {
                          setStateDialog(() {
                            isSearching = false;
                            errorMessage = "Kendinizle sohbet edemezsiniz.";
@@ -401,7 +384,7 @@ Widget? _buildFAB() {
                       AppLogger.instance.error('Kullanıcı arama hatası: $e');
                       setStateDialog(() {
                         isSearching = false;
-                        errorMessage = "Bir hata oluştu.";
+                        errorMessage = "Böyle bir kullanıcı bulunamadı.";
                       });
                     }
                   },
@@ -450,8 +433,8 @@ Widget? _buildFAB() {
                     setStateDialog(() => isSaving = true);
                     
                     try {
-                      final userId = Supabase.instance.client.auth.currentUser!.id;
-                      await Supabase.instance.client.from('voice_rooms').insert({
+                      final userId = PocketBaseService.client.authStore.model!.id;
+                      await PocketBaseService.client.collection('voice_rooms').create(body: {
                         'name': name,
                         'created_by': userId,
                         'is_active': true,
@@ -496,56 +479,63 @@ Widget? _buildFAB() {
     _fetchChats();
   }
 
-  Future<void> _createOrOpenChat(Map<String, dynamic> targetUser) async {
+  Future<void> _createOrOpenChat(RecordModel targetUser) async {
     try {
-      final myId = Supabase.instance.client.auth.currentUser!.id;
-      final targetId = targetUser['id'];
+      final myId = PocketBaseService.client.authStore.model!.id;
+      final targetId = targetUser.id;
       
       // 1. Önce bu kullanıcıyla mevcut bir özel sohbet (dm) var mı kontrol et
-      // Bu sorgu: both usersin katıldığı ve is_group = false olan sohbetleri getirir
-      final existingChatRes = await Supabase.instance.client
-          .from('chat_participants')
-          .select('chat_id, chats!inner(is_group)')
-          .eq('user_id', myId)
-          .eq('chats.is_group', false);
+      final existingChatRes = await PocketBaseService.client.collection('chat_participants').getFullList(
+          filter: 'user_id = "$myId"',
+          expand: 'chat_id'
+      );
 
-      final myPrivateChatIds = (existingChatRes as List).map((p) => p['chat_id']).toList();
+      final myPrivateChatIds = existingChatRes
+          .where((p) => p.expand['chat_id'] != null && p.expand['chat_id']!.first.data['is_group'] == false)
+          .map((p) => p.getStringValue('chat_id'))
+          .toList();
 
       if (myPrivateChatIds.isNotEmpty) {
-        final findTargetRes = await Supabase.instance.client
-            .from('chat_participants')
-            .select('chat_id')
-            .filter('chat_id', 'in', myPrivateChatIds)
-            .eq('user_id', targetId);
+        // filter: "chat_id ?= 'id1' || chat_id ?= 'id2' ..." is not standard, we can fetch target's participation
+        final findTargetRes = await PocketBaseService.client.collection('chat_participants').getFullList(
+            filter: 'user_id = "$targetId"'
+        );
+        
+        final targetChatIds = findTargetRes.map((p) => p.getStringValue('chat_id')).toList();
+        
+        // Kesişim bul (ikisinin de olduğu dm odası)
+        final intersection = myPrivateChatIds.toSet().intersection(targetChatIds.toSet());
 
-        if ((findTargetRes as List).isNotEmpty) {
-          final chatId = findTargetRes[0]['chat_id'];
+        if (intersection.isNotEmpty) {
+          final chatId = intersection.first;
           AppLogger.instance.info('Mevcut sohbet bulundu: $chatId');
           if (mounted) {
-            _navigateToChat(chatId, targetUser['username']);
+            _navigateToChat(chatId, targetUser.getStringValue('username'));
           }
           return;
         }
       }
 
       // 2. Mevcut sohbet yoksa yeni oluştur
-      final chatRes = await Supabase.instance.client.from('chats').insert({
+      final chatRes = await PocketBaseService.client.collection('chats').create(body: {
         'is_group': false,
-        'name': '${targetUser['username']}', 
+        'name': targetUser.getStringValue('username'), 
         'created_by': myId,
-      }).select().single();
+      });
       
-      final chatId = chatRes['id'];
+      final chatId = chatRes.id;
       
       // Katılımcıları ekle
-      await Supabase.instance.client.from('chat_participants').insert([
-        {'chat_id': chatId, 'user_id': myId},
-        {'chat_id': chatId, 'user_id': targetId},
-      ]);
+      await PocketBaseService.client.collection('chat_participants').create(body: {
+         'chat_id': chatId, 'user_id': myId
+      });
+      await PocketBaseService.client.collection('chat_participants').create(body: {
+         'chat_id': chatId, 'user_id': targetId
+      });
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sohbet oluşturuldu!')));
-        _navigateToChat(chatId, targetUser['username']);
+        _navigateToChat(chatId, targetUser.getStringValue('username'));
       }
       AppLogger.instance.info('Sohbet oluşturuldu: $chatId');
     } catch (e) {
@@ -561,12 +551,11 @@ Widget? _buildFAB() {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final currentUserId = PocketBaseService.client.authStore.model?.id;
 
     final filteredChats = _chats.where((c) {
-       final participants = c['chat_participants'] as List<dynamic>? ?? [];
-       final myPart = participants.firstWhere((p) => p['user_id'] == currentUserId, orElse: () => null);
-       final isArchived = myPart != null ? (myPart['is_archived'] ?? false) : (c['is_archived'] ?? false);
+       final myPart = c.data['my_participant'] as RecordModel?;
+       final isArchived = myPart != null ? (myPart.data['is_archived'] ?? false) : false;
        return isArchived == _showArchived;
     }).toList();
 
@@ -604,164 +593,165 @@ Widget? _buildFAB() {
         }
         
         final chat = filteredChats[index - 1];
-              
-              // Katılımcı bilgisinden arşiv durumunu al
-              final participants = chat['chat_participants'] as List<dynamic>? ?? [];
-              final myPart = participants.firstWhere((p) => p['user_id'] == currentUserId, orElse: () => null);
-              final isArchived = myPart != null ? (myPart['is_archived'] ?? false) : (chat['is_archived'] ?? false);
-              
-              String? targetUserId;
-              String? lastReadId;
-              String displayChatName = chat['name'] ?? 'İsimsiz Sohbet';
+        final myPart = chat.data['my_participant'] as RecordModel?;
+        final isArchived = myPart != null ? (myPart.data['is_archived'] ?? false) : false;
+        
+        String? targetUserId;
+        String? lastReadId;
+        String displayChatName = chat.getStringValue('name');
+        if (displayChatName.isEmpty) displayChatName = 'İsimsiz Sohbet';
 
-              // Birebir sohbetlerde karşı tarafın adını göster
-              if (chat['is_group'] == false) {
-                for (var p in participants) {
-                  if (p['user_id'] != currentUserId) {
-                    targetUserId = p['user_id'];
-                    if (p['users'] != null) {
-                      displayChatName = p['users']['username'] ?? displayChatName;
-                    }
-                  } else {
-                    lastReadId = p['last_read_message_id'];
-                  }
-                }
-              } else {
-                // Grup sohbeti ise benim lastReadId'mi al
-                for (var p in participants) {
-                  if (p['user_id'] == currentUserId) {
-                    lastReadId = p['last_read_message_id'];
-                  }
-                }
+        final participants = chat.expand['chat_participants_via_chat_id'] ?? [];
+        final messages = chat.expand['messages_via_chat_id'] ?? [];
+
+        if (chat.getBoolValue('is_group') == false) {
+          for (var p in participants) {
+            final uid = p.getStringValue('user_id');
+            if (uid != currentUserId) {
+              targetUserId = uid;
+              if (p.expand['user_id'] != null) {
+                 displayChatName = p.expand['user_id']!.first.getStringValue('username');
               }
-              
-              final messages = chat['messages'] as List<dynamic>? ?? [];
-              messages.sort((a, b) => b['created_at'].compareTo(a['created_at'])); // sort descending
-              final lastMessage = messages.isNotEmpty ? messages.first : null;
-              
-              String subtitleText = 'Sohbete gitmek için dokunun';
-              bool isUnread = false;
-              
-              if (lastMessage != null) {
-                 final content = lastMessage['content'].toString();
-                 subtitleText = content.startsWith('[VOICE]') ? 'Sesli Mesaj' : content;
-                 
-                 if (lastMessage['sender_id'] != currentUserId) {
-                    if (lastReadId == null || lastReadId != lastMessage['id']) {
-                       isUnread = true;
-                    }
-                 }
+            } else {
+              lastReadId = p.getStringValue('last_read_message_id');
+            }
+          }
+        } else {
+          for (var p in participants) {
+            if (p.getStringValue('user_id') == currentUserId) {
+              lastReadId = p.getStringValue('last_read_message_id');
+            }
+          }
+        }
+        
+        // Sorting messages ascending originally means last is at end.
+        // If sorting descending then last is first. Let's find latest by created date.
+        messages.sort((a, b) => b.created.compareTo(a.created)); 
+        final lastMessage = messages.isNotEmpty ? messages.first : null;
+        
+        String subtitleText = 'Sohbete gitmek için dokunun';
+        bool isUnread = false;
+        
+        if (lastMessage != null) {
+           final content = lastMessage.getStringValue('content');
+           subtitleText = content.startsWith('[VOICE]') ? 'Sesli Mesaj' : content;
+           
+           if (lastMessage.getStringValue('sender_id') != currentUserId) {
+              if (lastReadId == null || lastReadId != lastMessage.id) {
+                 isUnread = true;
               }
-              
-              final semanticUnreadSuffix = isUnread ? "Okunmamış yeni mesajınız var." : "";
-              final semanticSubtitle = lastMessage != null ? "Son mesaj: $subtitleText." : "";
-              
-              return Semantics(
-                label: "$displayChatName. $semanticSubtitle $semanticUnreadSuffix",
-                button: true,
-                onTapHint: "Sohbeti açmak için çift dokunun",
-                customSemanticsActions: {
-                  CustomSemanticsAction(label: isArchived ? 'Arşivden Çıkar' : 'Arşivle'): () {
-                    _toggleArchive(chat['id'], isArchived);
-                  },
-                  CustomSemanticsAction(label: 'Sohbeti Sil'): () {
-                    _confirmDeleteChat(chat);
-                  },
-                },
-                child: ListTile(
-                  leading: GestureDetector(
-                    onTap: () {
-                      if (targetUserId != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => UserProfileScreen(userId: targetUserId!),
-                          ),
-                        );
-                      }
-                    },
-                    child: Semantics(
-                      label: "Profili gör",
-                      button: true,
-                      child: Hero(
-                        tag: 'chat_avatar_$targetUserId',
-                        child: Stack(
-                          children: [
-                            CircleAvatar(
-                              radius: 24,
-                              backgroundColor: Colors.grey[800],
-                              child: Text(
-                                displayChatName.toString().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join(''),
-                                style: const TextStyle(fontSize: 16, color: Colors.white),
-                              ),
-                            ),
-                            if (isUnread)
-                              Positioned(
-                                right: 0,
-                                bottom: 0,
-                                child: Container(
-                                  width: 14,
-                                  height: 14,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.green,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
+           }
+        }
+        
+        final semanticUnreadSuffix = isUnread ? "Okunmamış yeni mesajınız var." : "";
+        final semanticSubtitle = lastMessage != null ? "Son mesaj: $subtitleText." : "";
+        
+        return Semantics(
+          label: "$displayChatName. $semanticSubtitle $semanticUnreadSuffix",
+          button: true,
+          onTapHint: "Sohbeti açmak için çift dokunun",
+          customSemanticsActions: {
+            CustomSemanticsAction(label: isArchived ? 'Arşivden Çıkar' : 'Arşivle'): () {
+              _toggleArchive(chat.id, isArchived);
+            },
+            CustomSemanticsAction(label: 'Sohbeti Sil'): () {
+              _confirmDeleteChat(chat);
+            },
+          },
+          child: ListTile(
+            leading: GestureDetector(
+              onTap: () {
+                if (targetUserId != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => UserProfileScreen(userId: targetUserId!),
                     ),
-                  ),
-                  title: Text(
-                    displayChatName.toString(),
-                    style: TextStyle(fontWeight: isUnread ? FontWeight.w900 : FontWeight.bold, fontSize: 16),
-                  ),
-                  subtitle: Row(
+                  );
+                }
+              },
+              child: Semantics(
+                label: "Profili gör",
+                button: true,
+                child: Hero(
+                  tag: 'chat_avatar_$targetUserId',
+                  child: Stack(
                     children: [
-                      if (lastMessage != null && lastMessage['sender_id'] == currentUserId) ...[
-                        _buildSmallReadStatus(chat, lastMessage),
-                        const SizedBox(width: 4),
-                      ],
-                      Expanded(
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Colors.grey[800],
                         child: Text(
-                          subtitleText,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 14, 
-                            color: isUnread ? Colors.white : Colors.grey, 
-                            fontWeight: isUnread ? FontWeight.bold : FontWeight.normal
-                          ),
+                          displayChatName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join(''),
+                          style: const TextStyle(fontSize: 16, color: Colors.white),
                         ),
                       ),
+                      if (isUnread)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 14,
+                            height: 14,
+                            decoration: const BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onLongPress: () {
-                    _showChatOptions(chat);
-                  },
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChatDetailScreen(chat: chat),
-                      ),
-                    );
-                    _fetchChats();
-                  },
+                ),
+              ),
+            ),
+            title: Text(
+              displayChatName,
+              style: TextStyle(fontWeight: isUnread ? FontWeight.w900 : FontWeight.bold, fontSize: 16),
+            ),
+            subtitle: Row(
+              children: [
+                if (lastMessage != null && lastMessage.getStringValue('sender_id') == currentUserId) ...[
+                  _buildSmallReadStatus(chat, lastMessage),
+                  const SizedBox(width: 4),
+                ],
+                Expanded(
+                  child: Text(
+                    subtitleText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14, 
+                      color: isUnread ? Colors.white : Colors.grey, 
+                      fontWeight: isUnread ? FontWeight.bold : FontWeight.normal
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onLongPress: () {
+              _showChatOptions(chat);
+            },
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  // Pass a simple map to ChatDetailScreen to simulate how it used it
+                  builder: (context) => ChatDetailScreen(chat: {'id': chat.id, 'name': displayChatName, 'is_group': chat.getBoolValue('is_group')}),
                 ),
               );
+              _fetchChats();
             },
+          ),
+        );
+      },
     );
   }
 
   Widget _buildArchiveToggle() {
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final currentUserId = PocketBaseService.client.authStore.model?.id;
     final archivedCount = _chats.where((c) {
-      final participants = c['chat_participants'] as List<dynamic>? ?? [];
-      final myPart = participants.firstWhere((p) => p['user_id'] == currentUserId, orElse: () => null);
-      return myPart != null ? (myPart['is_archived'] == true) : false;
+      final myPart = c.data['my_participant'] as RecordModel?;
+      return myPart != null ? (myPart.data['is_archived'] == true) : false;
     }).length;
     
     if (archivedCount == 0) return const SizedBox.shrink();
@@ -794,11 +784,10 @@ Widget? _buildFAB() {
     );
   }
 
-  void _showChatOptions(Map<String, dynamic> chat) {
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
-    final participants = chat['chat_participants'] as List<dynamic>? ?? [];
-    final myPart = participants.firstWhere((p) => p['user_id'] == currentUserId, orElse: () => null);
-    final isArchived = myPart != null ? (myPart['is_archived'] ?? false) : (chat['is_archived'] ?? false);
+  void _showChatOptions(RecordModel chat) {
+    final currentUserId = PocketBaseService.client.authStore.model?.id;
+    final myPart = chat.data['my_participant'] as RecordModel?;
+    final isArchived = myPart != null ? (myPart.data['is_archived'] ?? false) : false;
 
     showModalBottomSheet(
       context: context,
@@ -830,7 +819,7 @@ Widget? _buildFAB() {
                     title: Text(isArchived ? 'Arşivden Çıkar' : 'Arşivle'),
                     onTap: () {
                       Navigator.pop(context);
-                      _toggleArchive(chat['id'], isArchived);
+                      _toggleArchive(chat.id, isArchived);
                     },
                   ),
                   ListTile(
@@ -851,8 +840,8 @@ Widget? _buildFAB() {
   }
 
   Widget _buildDrawer(BuildContext context) {
-    final user = Supabase.instance.client.auth.currentUser;
-    final email = user?.email ?? 'Hesap Bilgisi Yok';
+    final user = PocketBaseService.client.authStore.model;
+    final email = user?.getStringValue('email') ?? 'Hesap Bilgisi Yok';
     
     return Drawer(
       child: Column(
@@ -906,14 +895,14 @@ Widget? _buildFAB() {
     );
   }
 
-  Widget _buildSmallReadStatus(Map<String, dynamic> chat, Map<String, dynamic> lastMessage) {
-    final participants = chat['chat_participants'] as List<dynamic>? ?? [];
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+  Widget _buildSmallReadStatus(RecordModel chat, RecordModel lastMessage) {
+    final currentUserId = PocketBaseService.client.authStore.model?.id;
+    final participants = chat.expand['chat_participants_via_chat_id'] ?? [];
     
     String? otherLastReadId;
     for (var p in participants) {
-      if (p['user_id'] != currentUserId) {
-        otherLastReadId = p['last_read_message_id'];
+      if (p.getStringValue('user_id') != currentUserId) {
+        otherLastReadId = p.getStringValue('last_read_message_id');
         break;
       }
     }
@@ -923,7 +912,7 @@ Widget? _buildFAB() {
     // Gelişmiş durumda 'messages' listesindeki sıralamaya bakılabilir.
     // Ancak genellikle lastMessage okunduysa isRead true'dur.
     
-    bool isRead = otherLastReadId != null && otherLastReadId == lastMessage['id'];
+    bool isRead = otherLastReadId != null && otherLastReadId == lastMessage.id;
     
     return Icon(
       isRead ? Icons.done_all : Icons.done,
@@ -932,7 +921,7 @@ Widget? _buildFAB() {
     );
   }
 
-  void _confirmDeleteChat(Map<String, dynamic> chat) {
+  void _confirmDeleteChat(RecordModel chat) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -946,7 +935,7 @@ Widget? _buildFAB() {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _deleteChat(chat['id']);
+              _deleteChat(chat.id);
             },
             child: const Text('SİL', style: TextStyle(color: Colors.red)),
           ),
@@ -960,13 +949,14 @@ Widget? _buildFAB() {
     setState(() {
       _isDeleting = true;
       _pendingOperations.add(chatId);
-      _chats.removeWhere((c) => c['id'] == chatId);
+      _chats.removeWhere((c) => c.id == chatId);
     });
 
     try {
-      final myId = Supabase.instance.client.auth.currentUser!.id;
-      // Önce katılımcıyı sil
-      await Supabase.instance.client.from('chat_participants').delete().eq('chat_id', chatId).eq('user_id', myId);
+      final myId = PocketBaseService.client.authStore.model!.id;
+      // Önce katılımcıyı bul ve sil
+      final myPart = await PocketBaseService.client.collection('chat_participants').getFirstListItem('chat_id = "$chatId" && user_id = "$myId"');
+      await PocketBaseService.client.collection('chat_participants').delete(myPart.id);
       
       _fetchChats(isBackground: true);
       if (mounted) {

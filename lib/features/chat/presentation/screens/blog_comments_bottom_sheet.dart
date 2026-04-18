@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:intl/intl.dart';
 import 'package:blind_social/core/utils/logger.dart';
 
@@ -26,20 +26,20 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
 
   Future<void> _fetchComments() async {
     try {
-      final response = await Supabase.instance.client
-          .from('post_comments')
-          .select('*, users!inner(username)')
-          .eq('post_id', widget.postId)
-          .order('created_at', ascending: true);
+      final response = await PocketBaseService.client.collection('post_comments').getFullList(
+          filter: 'post_id = "${widget.postId}"',
+          expand: 'user_id',
+          sort: 'created'
+      );
 
       if (mounted) {
         setState(() {
-          _comments = List<Map<String, dynamic>>.from(response);
+          _comments = response.map((e) => e.toJson()).toList();
           _isLoading = false;
         });
       }
     } catch (e) {
-      AppLogger.instance.error('Yorumlar getirilirken hata (Belki tablo henüz yok): $e');
+      AppLogger.instance.error('Yorumlar getirilirken hata: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -56,9 +56,9 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
     });
 
     try {
-      await Supabase.instance.client.from('post_comments').insert({
+      await PocketBaseService.client.collection('post_comments').create(body: {
         'post_id': widget.postId,
-        'user_id': Supabase.instance.client.auth.currentUser!.id,
+        'user_id': PocketBaseService.client.authStore.model!.id,
         'content': _commentController.text.trim(),
       });
       _commentController.clear();
@@ -78,6 +78,7 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
   }
 
   String _formatTime(String isoString) {
+    if (isoString.isEmpty) return '';
     try {
       final date = DateTime.parse(isoString).toLocal();
       return DateFormat('HH:mm').format(date);
@@ -115,9 +116,10 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
                         itemCount: _comments.length,
                         itemBuilder: (context, index) {
                           final c = _comments[index];
-                          final username = c['users']?['username'] ?? 'Bilinmeyen';
+                          final user = c['expand']?['user_id'];
+                          final username = user != null ? (user['name'] ?? user['full_name'] ?? 'Bilinmeyen') : 'Bilinmeyen';
                           final content = c['content'];
-                          final timeStr = _formatTime(c['created_at']);
+                          final timeStr = _formatTime(c['created'] ?? '');
                           
                           return ListTile(
                             leading: const Icon(Icons.person),

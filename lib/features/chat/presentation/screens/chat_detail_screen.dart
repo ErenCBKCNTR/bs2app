@@ -1,7 +1,8 @@
 import 'package:blind_social/features/chat/presentation/screens/call_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
+import 'package:pocketbase/pocketbase.dart';
 import 'package:intl/intl.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -64,7 +65,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _myUserId = Supabase.instance.client.auth.currentUser!.id;
+    _myUserId = PocketBaseService.client.authStore.model!.id;
     _chat = Map<String, dynamic>.from(widget.chat);
     
     // Eğer katılımcılar yoksa (başka ekrandan sadece id/name ile gelindiyse) çek
@@ -93,15 +94,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   Future<void> _fetchChatDetails() async {
     try {
-      final response = await Supabase.instance.client
-          .from('chats')
-          .select('*, chat_participants(*)')
-          .eq('id', _chat['id'])
-          .single();
+      final response = await PocketBaseService.client.collection('chats').getOne(
+        _chat['id'],
+        expand: 'chat_participants_via_chat_id'
+      );
       
       if (mounted) {
         setState(() {
-          _chat = response;
+          _chat = response.toJson();
+          _chat['chat_participants'] = response.expand['chat_participants_via_chat_id']?.map((e) => e.toJson()).toList() ?? [];
         });
       }
     } catch (e) {
@@ -112,22 +113,20 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   Future<void> _fetchMessages({bool isBackground = false}) async {
     try {
       final chatId = widget.chat['id'];
-      final response = await Supabase.instance.client
-          .from('messages')
-          .select()
-          .eq('chat_id', chatId)
-          .order('created_at', ascending: true);
+      final response = await PocketBaseService.client.collection('messages').getFullList(
+          filter: 'chat_id = "$chatId"',
+          sort: 'created'
+      );
 
       // Katılımcıların durumlarını (okunma bilgisi için) her seferinde çekelim
-      final participantsResponse = await Supabase.instance.client
-          .from('chat_participants')
-          .select()
-          .eq('chat_id', chatId);
+      final participantsResponse = await PocketBaseService.client.collection('chat_participants').getFullList(
+          filter: 'chat_id = "$chatId"'
+      );
 
       if (mounted) {
         bool isNewMessageArrived = false;
         if (_messages.isNotEmpty && response.isNotEmpty) {
-           if (_messages.last['id'] != response.last['id']) {
+           if (_messages.last['id'] != response.last.id) {
              isNewMessageArrived = true;
            }
         } else if (_messages.isEmpty && response.isNotEmpty) {
@@ -135,21 +134,24 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         }
 
         setState(() {
-          _messages = List<Map<String, dynamic>>.from(response);
+          _messages = response.map((e) => e.toJson()).toList();
           _chat = {
             ..._chat,
-            'chat_participants': participantsResponse,
+            'chat_participants': participantsResponse.map((e) => e.toJson()).toList(),
           };
           _isLoading = false;
         });
 
         // Mark as read in participants table if we have messages
         if (response.isNotEmpty) {
-            Supabase.instance.client.from('chat_participants').update({
-              'last_read_message_id': response.last['id']
-            }).eq('chat_id', _chat['id']).eq('user_id', _myUserId).catchError((e) {
-              AppLogger.instance.error('Okunma durumu güncellenemedi (Sütun eksik olabilir): $e');
-            });
+            try {
+              final myPartId = participantsResponse.firstWhere((p) => p.getStringValue('user_id') == _myUserId).id;
+              PocketBaseService.client.collection('chat_participants').update(myPartId, body: {
+                'last_read_message_id': response.last.id
+              }).catchError((e) {
+                AppLogger.instance.error('Okunma durumu güncellenemedi: $e');
+              });
+            } catch (_) {}
         }
 
         // Yeni mesaj geldiyse aşağı kaydır
@@ -191,16 +193,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     _messageController.clear();
 
     try {
-      await Supabase.instance.client.from('messages').insert({
+      await PocketBaseService.client.collection('messages').create(body: {
         'chat_id': _chat['id'],
         'sender_id': _myUserId,
         'content': text,
       });
 
       // Sohbetin updated_at alanını güncelle
-      await Supabase.instance.client.from('chats').update({
+      await PocketBaseService.client.collection('chats').update(_chat['id'], body: {
         'updated_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', _chat['id']);
+      });
 
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -254,41 +256,35 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       });
 
       if (path != null) {
-        final file = File(path);
-        final fileName = 'ses_mesaji_${widget.chat['id']}_${DateTime.now().millisecondsSinceEpoch}.m4a';
-        
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses mesajı gönderiliyor...')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses mesajı özelliği için backend file alanı eklemeniz gerekiyor.')));
         }
         
-        // Supabase Storage'a yükle
-        final storageRes = await Supabase.instance.client.storage
-            .from('chat_audio')
-            .upload(fileName, file);
-            
-        // Dosyanın public URL'sini al
-        final publicUrl = Supabase.instance.client.storage
-            .from('chat_audio')
-            .getPublicUrl(fileName);
-            
-        // Mesaj tablosuna [VOICE] prefixi ile URL'i kaydet
-        await _sendMessage('[VOICE]$publicUrl');
+        // TODO: PocketBase messages tablosuna 'file' adında bir dosya alanı eklendiğinde kullanılabilir:
+        // final fileBytes = File(path).readAsBytesSync();
+        // await PocketBaseService.client.collection('messages').create(
+        //   body: {
+        //     'chat_id': widget.chat['id'],
+        //     'sender_id': _myUserId,
+        //     'content': '[VOICE]',
+        //   },
+        //   files: [
+        //     http.MultipartFile.fromBytes('file', fileBytes, filename: 'ses.m4a')
+        //   ],
+        // );
       }
     } catch (e) {
-      AppLogger.instance.error('Ses yükleme hatası: $e');
+      AppLogger.instance.error('Ses kaydı durdurulamadı: $e');
       _stopTimer();
       setState(() {
         _isRecording = false;
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ses yüklenemedi: $e')));
-      }
     }
   }
 
   Future<void> _deleteMessage(String messageId) async {
     try {
-      await Supabase.instance.client.from('messages').delete().eq('id', messageId);
+      await PocketBaseService.client.collection('messages').delete(messageId);
       _fetchMessages();
     } catch (e) {
       AppLogger.instance.error('Mesaj silinemedi: $e');
@@ -320,10 +316,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               onPressed: () async {
                 Navigator.pop(context);
                 try {
-                  await Supabase.instance.client
-                      .from('messages')
-                      .update({'content': editController.text})
-                      .eq('id', messageId);
+                  await PocketBaseService.client.collection('messages').update(messageId, body: {
+                    'content': editController.text
+                  });
                   _fetchMessages();
                 } catch (e) {
                   AppLogger.instance.error('Mesaj düzenlenemedi: $e');

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
+import 'package:pocketbase/pocketbase.dart';
 import 'package:intl/intl.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:blind_social/features/chat/presentation/screens/blog_comments_bottom_sheet.dart';
@@ -39,14 +40,14 @@ class _BlogScreenState extends State<BlogScreen> {
 
   Future<void> _fetchPosts({bool isBackground = false}) async {
     try {
-      final response = await Supabase.instance.client
-          .from('posts')
-          .select('*, users!posts_user_id_fkey(username), post_comments(count)')
-          .order('created_at', ascending: false);
+      final response = await PocketBaseService.client.collection('posts').getFullList(
+          sort: '-created',
+          expand: 'user_id'
+      );
           
       if (mounted) {
         setState(() {
-          _posts = List<Map<String, dynamic>>.from(response);
+          _posts = response.map((e) => e.toJson()).toList();
           _isLoading = false;
         });
       }
@@ -64,10 +65,11 @@ class _BlogScreenState extends State<BlogScreen> {
     setState(() => _isPosting = true);
     
     try {
-      final userId = Supabase.instance.client.auth.currentUser!.id;
-      await Supabase.instance.client.from('posts').insert({
+      final userId = PocketBaseService.client.authStore.model!.id;
+      await PocketBaseService.client.collection('posts').create(body: {
         'user_id': userId,
         'content': text,
+        'likes_count': 0
       });
       _postController.clear();
       AppLogger.instance.info('Yeni blog postu oluşturuldu');
@@ -123,7 +125,7 @@ class _BlogScreenState extends State<BlogScreen> {
 
     if (confirmed == true) {
       try {
-        await Supabase.instance.client.from('posts').delete().eq('id', id);
+        await PocketBaseService.client.collection('posts').delete(id);
         AppLogger.instance.info('Gönderi silindi: $id');
         _fetchPosts();
         if (mounted) {
@@ -138,9 +140,25 @@ class _BlogScreenState extends State<BlogScreen> {
     }
   }
 
-  Future<void> _toggleLike(String postId) async {
+  Future<void> _toggleLike(String postId, int currentLikes) async {
     try {
-      await Supabase.instance.client.rpc('toggle_post_like', params: {'p_post_id': postId});
+      final myId = PocketBaseService.client.authStore.model!.id;
+      
+      // Check if user already liked
+      final likes = await PocketBaseService.client.collection('post_likes').getFullList(
+        filter: 'post_id = "$postId" && user_id = "$myId"'
+      );
+      
+      if (likes.isNotEmpty) {
+        // Un-like
+        await PocketBaseService.client.collection('post_likes').delete(likes.first.id);
+        await PocketBaseService.client.collection('posts').update(postId, body: {'likes_count': currentLikes - 1});
+      } else {
+        // Like
+        await PocketBaseService.client.collection('post_likes').create(body: {'post_id': postId, 'user_id': myId});
+        await PocketBaseService.client.collection('posts').update(postId, body: {'likes_count': currentLikes + 1});
+      }
+      
       _fetchPosts(isBackground: true);
     } catch (e) {
       AppLogger.instance.error('Beğeni işlemi başarısız: $e');
@@ -175,10 +193,9 @@ class _BlogScreenState extends State<BlogScreen> {
                 
                 Navigator.pop(context);
                 try {
-                  await Supabase.instance.client
-                      .from('posts')
-                      .update({'content': newContent})
-                      .eq('id', id);
+                  await PocketBaseService.client.collection('posts').update(id, body: {
+                     'content': newContent
+                  });
                   AppLogger.instance.info('Gönderi düzenlendi: $id');
                   _fetchPosts();
                   if (mounted) {
@@ -260,18 +277,16 @@ class _BlogScreenState extends State<BlogScreen> {
                   separatorBuilder: (context, index) => const Divider(),
                   itemBuilder: (context, index) {
                     final post = _posts[index];
-                    final user = post['users'] as Map<String, dynamic>?;
-                    final username = user?['username'] ?? 'Bilinmeyen';
+                    final user = post['expand']?['user_id'];
+                    final username = user != null ? (user['name'] ?? user['full_name'] ?? 'Bilinmeyen') : 'Bilinmeyen';
                     final content = post['content'] ?? '';
                     final likes = post['likes_count'] ?? 0;
-                    final commentsData = post['post_comments'] as List<dynamic>?;
-                    final commentCount = (commentsData != null && commentsData.isNotEmpty) 
-                        ? (commentsData.first['count'] ?? 0) 
-                        : 0;
-                    final timeStr = _formatTime(post['created_at']);
+                    // TODO: We could fetch comment count independently or use a view, for now we will assume 0 or handle it later
+                    final commentCount = 0;
+                    final timeStr = _formatTime(post['created']);
 
                     return Semantics(
-                      label: "$username. $timeStr. $content. $likes beğeni, $commentCount yorum.",
+                      label: "$username. $timeStr. $content. $likes beğeni.",
                       button: true, // Clickable for future actions or reading context
                       onTap: () {
                         showModalBottomSheet(
@@ -281,7 +296,7 @@ class _BlogScreenState extends State<BlogScreen> {
                         );
                       },
                       onTapHint: "Yorumları okumak ve yazmak için çift dokunun",
-                      customSemanticsActions: post['user_id'] == Supabase.instance.client.auth.currentUser?.id
+                      customSemanticsActions: post['user_id'] == PocketBaseService.client.authStore.model?.id
                         ? {
                             CustomSemanticsAction(label: 'Gönderiyi Düzenle'): () {
                               _showEditDialog(post['id'], content);
@@ -343,7 +358,7 @@ class _BlogScreenState extends State<BlogScreen> {
                                       button: true,
                                       onTapHint: "Gönderiyi beğenmek veya beğeniyi geri almak için çift dokunun",
                                       child: InkWell(
-                                        onTap: () => _toggleLike(post['id']),
+                                        onTap: () => _toggleLike(post['id'], likes),
                                         borderRadius: BorderRadius.circular(20),
                                         child: Padding(
                                           padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),

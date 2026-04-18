@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
 
 class ActiveVoiceRoomScreen extends StatefulWidget {
@@ -68,7 +68,7 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
     }
 
     try {
-      final user = Supabase.instance.client.auth.currentUser;
+      final user = PocketBaseService.client.authStore.model;
       final userId = user?.id ?? 'anonymous_${DateTime.now().millisecondsSinceEpoch}';
       
       // Tokeni lokal imzalayarak oluşturuyoruz

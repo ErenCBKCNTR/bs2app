@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
+import 'package:pocketbase/pocketbase.dart';
 import 'package:intl/intl.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -13,7 +14,7 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
   bool _isLoading = true;
-  Map<String, dynamic>? _userProfile;
+  RecordModel? _userProfile;
   String? _errorMessage;
 
   @override
@@ -24,11 +25,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   Future<void> _fetchProfile() async {
     try {
-      final response = await Supabase.instance.client
-          .from('users')
-          .select()
-          .eq('id', widget.userId)
-          .single();
+      final response = await PocketBaseService.client.collection('users').getOne(widget.userId);
 
       setState(() {
         _userProfile = response;
@@ -70,20 +67,21 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       return const Center(child: Text("Kullanıcı bulunamadı."));
     }
 
-    final username = _userProfile!['username'] ?? 'İsimsiz';
-    final dobRaw = _userProfile!['dob'];
+    final username = _userProfile!.getStringValue('username');
+    final displayName = username.isNotEmpty ? username : 'İsimsiz';
+    final dobRaw = _userProfile!.getStringValue('dob');
     
     String formattedDob = "Belirtilmemiş";
-    if (dobRaw != null) {
+    if (dobRaw.isNotEmpty) {
       try {
         final date = DateTime.parse(dobRaw);
         formattedDob = DateFormat('dd.MM.yyyy').format(date);
       } catch (_) {}
     }
 
-    final createdAtRaw = _userProfile!['created_at'];
+    final createdAtRaw = _userProfile!.created;
     String formattedJoined = "Bilinmiyor";
-    if (createdAtRaw != null) {
+    if (createdAtRaw.isNotEmpty) {
       try {
         final date = DateTime.parse(createdAtRaw);
         formattedJoined = DateFormat('dd.MM.yyyy').format(date);
@@ -96,14 +94,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           children: [
             const SizedBox(height: 40),
             Semantics(
-              label: "$username adlı kullanıcının profil fotoğrafı",
+              label: "$displayName adlı kullanıcının profil fotoğrafı",
               child: Hero(
                 tag: 'avatar_${widget.userId}',
                 child: CircleAvatar(
                   radius: 60,
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   child: Text(
-                    username.toString().isNotEmpty ? username.toString().substring(0, 1).toUpperCase() : '?',
+                    displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : '?',
                     style: const TextStyle(fontSize: 48, color: Colors.black, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -111,7 +109,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              username,
+              displayName,
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),

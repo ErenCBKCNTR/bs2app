@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/features/auth/presentation/screens/auth_wrapper.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
@@ -43,19 +43,22 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) throw Exception('Kullanıcı bulunamadı');
+      final user = PocketBaseService.client.authStore.model;
+      if (user == null || !PocketBaseService.client.authStore.isValid) {
+        throw Exception('Kullanıcı bulunamadı');
+      }
 
       // Tarihi veritabanı formatına çevir (YYYY-MM-DD)
       final parts = dob.split('/');
-      final formattedDate = '${parts[2]}-${parts[1]}-${parts[0]}';
+      final formattedDate = '${parts[2]}-${parts[1]}-${parts[0]} 12:00:00Z'; // Timezone eklendi PB Date nesnesi için
 
-      await Supabase.instance.client.from('users').upsert({
-        'id': user.id,
+      await PocketBaseService.client.collection('users').update(user.id, body: {
         'username': username,
         'dob': formattedDate,
-        'created_at': DateTime.now().toIso8601String(),
       });
+
+      // PocketBase modelini yenilemek için token güncelliyoruz
+      await PocketBaseService.client.collection('users').authRefresh();
 
       // İşlem başarılı olunca AuthWrapper'a geri dönüyoruz.
       // AuthWrapper yeni durumu algılayıp ChatListScreen'e yönlendirecek.
