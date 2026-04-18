@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blind_social/features/auth/presentation/screens/auth_wrapper.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/providers/theme_provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:blind_social/core/services/settings_service.dart';
@@ -16,21 +16,12 @@ void main() async {
 
   // Çevre değişkenlerini yükle
   await dotenv.load(fileName: ".env");
-  
-  // URL'deki sondaki '/' işaretini kaldır (varsa)
-  String url = dotenv.env['SUPABASE_URL']!;
-  if(url.endsWith('/')) {
-    url = url.substring(0, url.length - 1);
-  }
 
-  // Supabase'i başlat
+  // PocketBase'i başlat
   try {
-    await Supabase.initialize(
-      url: url,
-      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-    );
+    await PocketBaseService.init();
   } catch (e) {
-    debugPrint("Supabase başlatılamadı: $e");
+    debugPrint("PocketBase başlatılamadı: $e");
   }
 
   runApp(

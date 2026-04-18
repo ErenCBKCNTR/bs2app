@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
+import 'package:pocketbase/pocketbase.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -28,31 +29,35 @@ class _AuthScreenState extends State<AuthScreen> {
 
     try {
       // Önce giriş yapmayı dene
-      await Supabase.instance.client.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
-    } on AuthException catch (e) {
-      // Eğer kullanıcı bulunamadıysa (Invalid login credentials) kayıt olmayı dene
-      if (e.message.contains('Invalid login credentials') || e.statusCode == '400') {
+      await PocketBaseService.client.collection('users').authWithPassword(email, password);
+    } on ClientException catch (e) {
+      // Eğer kullanıcı bulunamadıysa (400 Bad Request) kayıt olmayı dene
+      if (e.statusCode == 400 || e.statusCode == 404) {
         try {
-          await Supabase.instance.client.auth.signUp(
-            email: email,
-            password: password,
-          );
-          // Not: Supabase'de "Confirm Email" kapalı olmalıdır.
-          // Kapalıysa signUp sonrası otomatik giriş yapılır ve AuthWrapper yönlendirmeyi devralır.
-        } on AuthException catch (signUpError) {
+          // PocketBase'de kayıt yaparken password ve passwordConfirm alanları zorunludur
+          await PocketBaseService.client.collection('users').create(body: {
+            'email': email,
+            'password': password,
+            'passwordConfirm': password,
+          });
+          
+          // Kayıt başarılıysa hemen giriş yap
+          await PocketBaseService.client.collection('users').authWithPassword(email, password);
+        } on ClientException catch (signUpError) {
           if (mounted) {
+            String errorMessage = signUpError.response['message'] ?? signUpError.toString();
+            if (signUpError.response['data'] != null) {
+               errorMessage += " Details: ${signUpError.response['data']}";
+            }
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Kayıt hatası: ${signUpError.message}')),
+              SnackBar(content: Text('Kayıt hatası: $errorMessage')),
             );
           }
         }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Giriş hatası: ${e.message}')),
+            SnackBar(content: Text('Giriş hatası: ${e.response['message'] ?? e.toString()}')),
           );
         }
       }

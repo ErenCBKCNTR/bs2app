@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
+import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/features/auth/presentation/screens/auth_screen.dart';
 import 'package:blind_social/features/auth/presentation/screens/profile_setup_screen.dart';
 import 'package:blind_social/features/chat/presentation/screens/chat_list_screen.dart';
@@ -24,19 +25,17 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   void _checkInitialSession() {
-    final session = Supabase.instance.client.auth.currentSession;
-    if (session != null) {
-      _checkProfile(session.user.id);
+    if (PocketBaseService.client.authStore.isValid) {
+      _checkProfile(PocketBaseService.client.authStore.model.id);
     } else {
       _isLoading = false;
     }
   }
 
   void _setupAuthListener() {
-    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-      final session = data.session;
-      if (session != null) {
-        _checkProfile(session.user.id);
+    PocketBaseService.client.authStore.onChange.listen((e) {
+      if (e.model != null && e.token.isNotEmpty) {
+        _checkProfile(e.model.id);
       } else {
         if (mounted) {
           setState(() {
@@ -50,21 +49,18 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   Future<void> _checkProfile(String userId) async {
     try {
-      final data = await Supabase.instance.client
-          .from('users')
-          .select()
-          .eq('id', userId)
-          .maybeSingle();
+      final record = await PocketBaseService.client.collection('users').getOne(userId);
 
       if (mounted) {
         setState(() {
           _isAuthenticated = true;
           // Eğer kullanıcı veritabanında varsa ve username ile dob alanları doluysa profil tamamlanmıştır
-          _isProfileComplete = data != null && data['username'] != null && data['dob'] != null;
+          _isProfileComplete = record.data['username'] != null && record.data['dob'] != null && record.data['username'].toString().isNotEmpty;
           _isLoading = false;
         });
       }
     } catch (e) {
+      // Offline fallback or new account with no profile
       if (mounted) {
         setState(() {
           _isAuthenticated = true;

@@ -16,7 +16,7 @@ dependencies:
   riverpod_annotation: ^2.6.1
 
   # Backend
-  supabase_flutter: ^2.12.2
+  pocketbase: ^0.20.0
   
   # Real-time & Communication
   flutter_webrtc: 1.4.0
