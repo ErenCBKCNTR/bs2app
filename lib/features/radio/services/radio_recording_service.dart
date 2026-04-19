@@ -45,11 +45,18 @@ class RadioRecordingService {
     final command = "-y -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -c:a libmp3lame -q:a 2 \"$_currentFilePath\"";
 
     _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
-      final state = await session.getState();
       final returnCode = await session.getReturnCode();
-      if (returnCode?.isError() ?? false) {
+      if (ReturnCode.isCancel(returnCode)) {
+        print("FFmpeg recording cancelled by user.");
+      } else if (ReturnCode.isSuccess(returnCode)) {
+        print("FFmpeg recording completed successfully.");
+      } else {
         final logs = await session.getLogs();
-        print("FFmpeg recording error: ${logs.last.getMessage()}");
+        if (logs.isNotEmpty) {
+          print("FFmpeg recording error: ${logs.last.getMessage()}");
+        } else {
+          print("FFmpeg recording failed with return code: ${returnCode?.getValue()}");
+        }
       }
     });
   }
