@@ -94,11 +94,14 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
               tooltip: 'Önceki Kanal',
             ),
             const SizedBox(width: 24),
-            IconButton(
-              icon: Icon(_isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled, size: 80, color: Colors.white),
-              onPressed: _togglePlayback,
-              tooltip: _isPlaying ? 'Yayını Durdur' : 'Yayını Başlat',
-              semanticsLabel: _isPlaying ? 'Yayını durdur' : 'Yayını başlat',
+            Semantics(
+              label: _isPlaying ? 'Yayını durdur' : 'Yayını başlat',
+              button: true,
+              child: IconButton(
+                icon: Icon(_isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled, size: 80, color: Colors.white),
+                onPressed: _togglePlayback,
+                tooltip: _isPlaying ? 'Yayını Durdur' : 'Yayını Başlat',
+              ),
             ),
             const SizedBox(width: 24),
             IconButton(
