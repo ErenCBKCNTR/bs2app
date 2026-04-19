@@ -614,64 +614,70 @@ class _CallScreenState extends State<CallScreen> {
                 // Control ButtonsBar - Sadece arama kabul edildiyse göster
                 if (_isAccepted)
                   Container(
-                    margin: const EdgeInsets.all(24),
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(40),
+                      color: Colors.grey[900]?.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(32),
+                      border: Border.all(color: Colors.white10),
                     ),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildControlButton(
-                            icon: _isMuted ? Icons.mic_off : Icons.mic,
-                            color: _isMuted ? Colors.white : Colors.white24,
-                            iconColor: _isMuted ? Colors.black : Colors.white,
-                            onPressed: _toggleMute,
-                            label: _isMuted ? "Mikrofonu aç" : "Mikrofonu kapat",
-                          ),
-                          _buildControlButton(
-                            icon: _isSpeakerOn ? Icons.volume_up : Icons.volume_down,
-                            color: _isSpeakerOn ? Colors.white : Colors.white24,
-                            iconColor: _isSpeakerOn ? Colors.black : Colors.white,
-                            onPressed: _toggleSpeaker,
-                            label: _isSpeakerOn ? "Hoparlörü kapat" : "Hoparlörü aç",
-                          ),
-                          if (!_isVideoCall)
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
                             _buildControlButton(
-                              icon: Icons.videocam,
-                              color: Colors.white24,
-                              iconColor: Colors.white,
-                              onPressed: _requestVideoTransition,
-                              label: "Görüntüye Geç",
-                            ),
-                          if (_isVideoCall) ...[
-                            _buildControlButton(
-                              icon: _isCamOff ? Icons.videocam_off : Icons.videocam,
-                              color: _isCamOff ? Colors.white : Colors.white24,
-                              iconColor: _isCamOff ? Colors.black : Colors.white,
-                              onPressed: _toggleCam,
-                              label: _isCamOff ? "Kamerayı aç" : "Kamerayı kapat",
+                              icon: _isSpeakerOn ? Icons.volume_up : Icons.volume_down,
+                              color: _isSpeakerOn ? Colors.white : Colors.white10,
+                              iconColor: _isSpeakerOn ? Colors.black : Colors.white,
+                              onPressed: _toggleSpeaker,
+                              label: "Hoparlör",
                             ),
                             _buildControlButton(
-                              icon: Icons.flip_camera_ios,
-                              color: Colors.white24,
-                              iconColor: Colors.white,
-                              onPressed: _switchCamera,
-                              label: "Kamerayı Değiştir",
+                              icon: _isVideoCall ? Icons.videocam : Icons.videocam_off,
+                              color: _isVideoCall ? Colors.white : Colors.white10,
+                              iconColor: _isVideoCall ? Colors.black : Colors.white,
+                              onPressed: _isVideoCall ? _toggleCam : _requestVideoTransition,
+                              label: "Video",
+                            ),
+                            _buildControlButton(
+                              icon: _isMuted ? Icons.mic_off : Icons.mic,
+                              color: _isMuted ? Colors.white : Colors.white10,
+                              iconColor: _isMuted ? Colors.black : Colors.white,
+                              onPressed: _toggleMute,
+                              label: "Sessize al",
                             ),
                           ],
-                          _buildControlButton(
-                            icon: Icons.call_end,
-                            color: Colors.red,
-                            iconColor: Colors.white,
-                            onPressed: _hangUp,
-                            label: "Görüşmeyi sonlandır",
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildControlButton(
+                              icon: Icons.more_horiz,
+                              color: Colors.white10,
+                              iconColor: Colors.white,
+                              onPressed: () {}, // Diğer/Genişletme (Şimdilik boş)
+                              label: "Diğer",
+                            ),
+                            _buildControlButton(
+                              icon: _isVideoCall ? Icons.flip_camera_ios : Icons.share,
+                              color: Colors.white10,
+                              iconColor: Colors.white,
+                              onPressed: _isVideoCall ? _switchCamera : () {}, // Paylaş veya Kamera Değiştir
+                              label: _isVideoCall ? "Kamera Değiştir" : "Paylaş",
+                            ),
+                            _buildControlButton(
+                              icon: Icons.call_end,
+                              color: Colors.red,
+                              iconColor: Colors.white,
+                              onPressed: _hangUp,
+                              label: "Bitir",
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   )
                 else if (!widget.isIncoming)

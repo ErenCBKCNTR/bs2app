@@ -19,6 +19,10 @@ class ChatDetailScreen extends StatefulWidget {
 
   const ChatDetailScreen({super.key, required this.chat});
 
+  static void clearCache(String chatId) {
+    _ChatDetailScreenState.clearCacheForChat(chatId);
+  }
+
   @override
   State<ChatDetailScreen> createState() => _ChatDetailScreenState();
 }
@@ -26,6 +30,10 @@ class ChatDetailScreen extends StatefulWidget {
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   static final Map<String, List<Map<String, dynamic>>> _messageCache = {};
   
+  static void clearCacheForChat(String chatId) {
+    _messageCache.remove(chatId);
+  }
+
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   
@@ -63,6 +71,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     return '$minutes:$secs';
   }
 
+  bool _isInitialLoad = true;
+
   @override
   void initState() {
     super.initState();
@@ -72,7 +82,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final chatId = _chat['id'];
     if (_messageCache.containsKey(chatId)) {
       _messages = _messageCache[chatId]!;
-      _isLoading = false;
+      // Eğer önbellek varsa loading gösterme ama fetch yapınca veriler değişirse (silme vs) güncelleme olacak
+      _isLoading = false; 
     }
     
     // Eğer katılımcılar yoksa (başka ekrandan sadece id/name ile gelindiyse) çek
@@ -81,7 +92,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     }
     
     // İlk yükleme
-    _fetchMessages();
+    _fetchMessages().then((_) {
+      if (mounted) {
+        setState(() => _isInitialLoad = false);
+      }
+    });
     
     // 2 saniyede bir gizlice yenileme (Polling / WebSockets alternatifi)
     _pollingTimer = Timer.periodic(const Duration(seconds: 2), (_) {
@@ -177,10 +192,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
            final lastMsg = response.last;
            if (lastMsg.getStringValue('sender_id') != _myUserId) {
               final settings = SettingsService();
-              if (settings.messageVibrationEnabled) {
+              if (settings.messageVibrationEnabled && !_isInitialLoad) {
                 Vibration.vibrate(duration: 100);
               }
-              if (settings.messageSoundEnabled) {
+              if (settings.messageSoundEnabled && !_isInitialLoad) {
                 // Try to play a short notification sound
                 final player = AudioPlayer();
                 player.play(AssetSource('sounds/message_received.mp3')).catchError((e) => null);

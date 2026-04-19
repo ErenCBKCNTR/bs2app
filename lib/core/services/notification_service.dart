@@ -10,7 +10,19 @@ import 'pocketbase_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  try {
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: "AIzaSyCK9ayY6TUhFoZ32JkzSraldUAwSzY_Wdg",
+        appId: "1:681771970848:web:6700bba826c4c43f23e745",
+        messagingSenderId: "681771970848",
+        projectId: "gen-lang-client-0566800967",
+      ),
+    );
+  } catch (_) {
+    // Zaten initialize edilmiş olabilir
+  }
+  
   AppLogger.instance.info("Background message received: ${message.messageId}");
   
   final notificationService = NotificationService();
@@ -125,21 +137,23 @@ class NotificationService {
     final androidPlugin = _localNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin != null) {
       await androidPlugin.createNotificationChannel(const AndroidNotificationChannel(
-        'high_importance_channel_v3',
+        'high_importance_channel_v4',
         'Mesaj Bildirimleri',
         description: 'Bu kanal üzerinden mesaj bildirimleri gelir.',
         importance: Importance.max,
         playSound: true,
         enableVibration: true,
+        showBadge: true,
       ));
 
       await androidPlugin.createNotificationChannel(const AndroidNotificationChannel(
-        'call_channel_v3',
+        'call_channel_v4',
         'Gelen Aramalar',
-        description: 'Gelen çağrılar için bildirim kanalı',
+        description: 'Gelen çağrılar için tam ekran bildirim kanalı',
         importance: Importance.max,
         playSound: true,
         enableVibration: true,
+        showBadge: true,
       ));
     }
 
@@ -188,16 +202,17 @@ class NotificationService {
         body,
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'high_importance_channel_v3', // Kanal ID'yi yine değiştirelim ki ayarlar sıfırlansın
+            'high_importance_channel_v4', 
             'Mesaj Bildirimleri', 
             channelDescription: 'Bu kanal üzerinden mesaj bildirimleri gelir.',
             importance: Importance.max,
             priority: Priority.max,
             ticker: title,
-            icon: android?.smallIcon ?? '@mipmap/ic_launcher',
+            icon: android?.smallIcon ?? 'ic_launcher', // @mipmap/ kaldırıp deniyoruz bazen bu da çözüm olur
             playSound: true,
             enableVibration: true,
             visibility: NotificationVisibility.public,
+            styleInformation: BigTextStyleInformation(body),
           ),
         ),
         payload: message.data['chat_id'] ?? message.data['type'],
@@ -209,7 +224,7 @@ class NotificationService {
   Future<void> showCallNotification(String title, String body, String chatId) async {
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'call_channel_v3',
+      'call_channel_v4',
       'Gelen Aramalar',
       channelDescription: 'Gelen çağrılar için tam ekran bildirim kanalı',
       importance: Importance.max,
@@ -222,6 +237,7 @@ class NotificationService {
       playSound: true,
       enableVibration: true,
       ticker: title,
+      styleInformation: BigTextStyleInformation(body),
       actions: <AndroidNotificationAction>[
         AndroidNotificationAction(
           'accept_call',

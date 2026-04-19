@@ -1020,6 +1020,9 @@ Widget? _buildFAB() {
       final myId = PocketBaseService.client.authStore.model!.id;
       final myPart = await PocketBaseService.client.collection('chat_participants').getFirstListItem('chat_id = "$chatId" && user_id = "$myId"');
       
+      // Önce yerel önbelleği temizleyelim ki girince eskiler gözükmesin
+      ChatDetailScreen.clearCache(chatId);
+      
       // WhatsApp mantığı: sohbet odasını veya katılımcıyı tamamen silmek yerine katılımcı listesinde kendimiz için "is_hidden" işaretliyoruz.
       // Eşzamanlı olarak geçmiş mesajları görmemek için "cleared_at" ayarlıyoruz. 
       await PocketBaseService.client.collection('chat_participants').update(myPart.id, body: {
