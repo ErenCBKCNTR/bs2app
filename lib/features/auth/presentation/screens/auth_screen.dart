@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
+import 'package:blind_social/core/services/notification_service.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -30,6 +31,9 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       // Önce giriş yapmayı dene
       await PocketBaseService.client.collection('users').authWithPassword(email, password);
+      
+      // Giriş başarılı, bildirim token'ını güncelle
+      await NotificationService().syncWithServer();
     } on ClientException catch (e) {
       // Eğer kullanıcı bulunamadıysa (400 Bad Request) kayıt olmayı dene
       if (e.statusCode == 400 || e.statusCode == 404) {
@@ -43,6 +47,9 @@ class _AuthScreenState extends State<AuthScreen> {
           
           // Kayıt başarılıysa hemen giriş yap
           await PocketBaseService.client.collection('users').authWithPassword(email, password);
+          
+          // Kayıt sonrası bildirim token'ını güncelle
+          await NotificationService().syncWithServer();
         } on ClientException catch (signUpError) {
           if (mounted) {
             String errorMessage = signUpError.response['message'] ?? signUpError.toString();

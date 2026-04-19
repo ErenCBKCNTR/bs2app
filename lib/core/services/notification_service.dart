@@ -4,12 +4,22 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
 import '../utils/logger.dart';
+import 'pocketbase_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   AppLogger.instance.info("Background message received: ${message.messageId}");
-  // Background mesajları için özel mantık buraya eklenebilir
+  
+  // Eğer bu bir 'call' tipinde bir mesajsa bildirimi göster
+  if (message.data['type'] == 'call') {
+    final notificationService = NotificationService();
+    await notificationService.showCallNotification(
+      message.data['title'] ?? 'Gelen Arama',
+      message.data['body'] ?? 'Size bir çağrı var',
+      message.data['chat_id'] ?? '',
+    );
+  }
 }
 
 class NotificationService {
@@ -37,9 +47,13 @@ class NotificationService {
       AppLogger.instance.warning('Kullanıcı bildirim izinlerini reddetti.');
     }
 
-    // FCM Token al (Backend'e kaydetmek için kullanılabilir)
-    String? token = await FirebaseMessaging.instance.getToken();
-    AppLogger.instance.info('FCM Token: $token');
+    // FCM Token al ve sunucuya senkronize et
+    _syncToken();
+
+    // Token yenilendiğinde tekrar senkronize et
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+      _syncToken(token: newToken);
+    });
 
     // Yerel bildirimleri ayarla
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -64,15 +78,43 @@ class NotificationService {
     });
   }
 
+  Future<void> syncWithServer() async {
+    await _syncToken();
+  }
+
+  Future<void> _syncToken({String? token}) async {
+    try {
+      final fcmToken = token ?? await FirebaseMessaging.instance.getToken();
+      if (fcmToken == null) return;
+      
+      AppLogger.instance.info('FCM Token senkronize ediliyor: $fcmToken');
+      
+      final authStore = PocketBaseService.client.authStore;
+      if (authStore.isValid && authStore.model != null) {
+        final userId = authStore.model.id;
+        await PocketBaseService.client.collection('users').update(userId, body: {
+          'fcm_token': fcmToken,
+        });
+        AppLogger.instance.info('FCM Token PocketBase sunucusuna başarıyla kaydedildi.');
+      }
+    } catch (e) {
+      AppLogger.instance.error('FCM Token senkronizasyon hatası: $e');
+    }
+  }
+
   Future<void> _showLocalNotification(RemoteMessage message) async {
     final notification = message.notification;
     final android = message.notification?.android;
+    
+    // Eğer notification objesi yoksa data'daki title/body'yi kullan
+    final title = notification?.title ?? message.data['title'] ?? 'Yeni Mesaj';
+    final body = notification?.body ?? message.data['body'] ?? 'Size bir mesaj geldi';
 
-    if (notification != null && !kIsWeb) {
+    if (!kIsWeb) {
       await _localNotificationsPlugin.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
+        message.hashCode,
+        title,
+        body,
         NotificationDetails(
           android: AndroidNotificationDetails(
             'high_importance_channel', // id
@@ -81,9 +123,11 @@ class NotificationService {
             importance: Importance.max,
             priority: Priority.high,
             icon: android?.smallIcon ?? '@mipmap/ic_launcher',
+            playSound: true,
+            enableVibration: true,
           ),
         ),
-        payload: message.data['chat_id'],
+        payload: message.data['chat_id'] ?? message.data['type'],
       );
     }
   }
@@ -92,7 +136,7 @@ class NotificationService {
   Future<void> showCallNotification(String title, String body, String chatId) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'call_channel',
+      'call_channel_v2', // Kanal ID değişti (sound ayarını zorlamak için)
       'Aramalar',
       channelDescription: 'Gelen çağrılar için bildirim kanalı',
       importance: Importance.max,
@@ -100,6 +144,10 @@ class NotificationService {
       fullScreenIntent: true,
       category: AndroidNotificationCategory.call,
       visibility: NotificationVisibility.public,
+      ongoing: true,
+      autoCancel: false,
+      playSound: true,
+      enableVibration: true,
     );
     
     const NotificationDetails platformChannelSpecifics =

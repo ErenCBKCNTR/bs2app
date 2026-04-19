@@ -282,15 +282,18 @@ class _CallScreenState extends State<CallScreen> {
 
   @override
   void dispose() {
+    _stopRingtone();
     _durationTimer?.cancel();
     _ringtonePlayer.dispose();
     _room?.removeListener(_onRoomStateChanged);
     _room?.disconnect();
     _messagesUnsub?.call();
+    _room = null; // Bellek yönetimi için null yap
     super.dispose();
   }
 
   void _hangUp() async {
+    if (!mounted) return;
     _stopRingtone();
     final durationText = _secondsElapsed > 0 ? " (${_formatDuration(_secondsElapsed)})" : "";
     final status = _secondsElapsed > 0 ? "TAMAMLANDI" : "CEVAPLANMADI";
@@ -305,7 +308,11 @@ class _CallScreenState extends State<CallScreen> {
       AppLogger.instance.error('Arama kapanış mesajı hatası: $e');
     }
     
+    // Odayı kapatmadan önce dinleyiciyi kaldır
+    _room?.removeListener(_onRoomStateChanged);
     await _room?.disconnect();
+    _room = null;
+    
     if (mounted) Navigator.pop(context);
   }
 
@@ -380,68 +387,85 @@ class _CallScreenState extends State<CallScreen> {
                 ],
                 const Spacer(),
                 
-                // Control ButtonsBar
-                Container(
-                  margin: const EdgeInsets.all(24),
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(40),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildControlButton(
-                        icon: _isMuted ? Icons.mic_off : Icons.mic,
-                        color: _isMuted ? Colors.white : Colors.white24,
-                        iconColor: _isMuted ? Colors.black : Colors.white,
-                        onPressed: _toggleMute,
-                        label: "Sessiz",
-                      ),
-                      if (widget.isVideo)
+                // Control ButtonsBar - Sadece arama kabul edildiyse göster
+                if (_isAccepted)
+                  Container(
+                    margin: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
                         _buildControlButton(
-                          icon: _isCamOff ? Icons.videocam_off : Icons.videocam,
-                          color: _isCamOff ? Colors.white : Colors.white24,
-                          iconColor: _isCamOff ? Colors.black : Colors.white,
-                          onPressed: _toggleCam,
-                          label: "Kamera",
+                          icon: _isMuted ? Icons.mic_off : Icons.mic,
+                          color: _isMuted ? Colors.white : Colors.white24,
+                          iconColor: _isMuted ? Colors.black : Colors.white,
+                          onPressed: _toggleMute,
+                          label: "Sessiz",
                         ),
-                      _buildControlButton(
-                        icon: Icons.call_end,
-                        color: Colors.red,
-                        iconColor: Colors.white,
-                        onPressed: _hangUp,
-                        label: "Kapat",
-                      ),
-                    ],
+                        if (widget.isVideo)
+                          _buildControlButton(
+                            icon: _isCamOff ? Icons.videocam_off : Icons.videocam,
+                            color: _isCamOff ? Colors.white : Colors.white24,
+                            iconColor: _isCamOff ? Colors.black : Colors.white,
+                            onPressed: _toggleCam,
+                            label: "Kamera",
+                          ),
+                        _buildControlButton(
+                          icon: Icons.call_end,
+                          color: Colors.red,
+                          iconColor: Colors.white,
+                          onPressed: _hangUp,
+                          label: "Kapat",
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 48),
               ],
             ),
           ),
           
+          // Gelen arama butonları - Sadece arama henüz kabul edilmediyse ve gelense göster
           if (widget.isIncoming && !_isAccepted)
-             Positioned(
-               bottom: 120,
-               left: 0,
-               right: 0,
-               child: Row(
-                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                 children: [
-                   FloatingActionButton(
-                     heroTag: "accept",
-                     onPressed: _handleAccept,
-                     backgroundColor: Colors.green,
-                     child: const Icon(Icons.call),
-                   ),
-                   FloatingActionButton(
-                     heroTag: "decline",
-                     onPressed: _hangUp,
-                     backgroundColor: Colors.red,
-                     child: const Icon(Icons.call_end),
-                   ),
-                 ],
+             Align(
+               alignment: Alignment.bottomCenter,
+               child: Padding(
+                 padding: const EdgeInsets.only(bottom: 60),
+                 child: Row(
+                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                   children: [
+                     Column(
+                       mainAxisSize: MainAxisSize.min,
+                       children: [
+                         FloatingActionButton(
+                           heroTag: "accept",
+                           onPressed: _handleAccept,
+                           backgroundColor: Colors.green,
+                           child: const Icon(Icons.call, color: Colors.white, size: 30),
+                         ),
+                         const SizedBox(height: 12),
+                         const Text("Cevapla", style: TextStyle(color: Colors.white)),
+                       ],
+                     ),
+                     Column(
+                       mainAxisSize: MainAxisSize.min,
+                       children: [
+                         FloatingActionButton(
+                           heroTag: "decline",
+                           onPressed: _hangUp,
+                           backgroundColor: Colors.red,
+                           child: const Icon(Icons.call_end, color: Colors.white, size: 30),
+                         ),
+                         const SizedBox(height: 12),
+                         const Text("Reddet", style: TextStyle(color: Colors.white)),
+                       ],
+                     ),
+                   ],
+                 ),
                ),
              ),
         ],
