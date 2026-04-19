@@ -3,6 +3,7 @@ import 'package:flutter/semantics.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:intl/intl.dart';
+import 'package:blind_social/core/utils/profanity_filter.dart';
 import '../../../../core/utils/logger.dart';
 
 class FavoriteMessagesScreen extends StatefulWidget {
@@ -168,7 +169,7 @@ class _FavoriteMessagesScreenState extends State<FavoriteMessagesScreen> {
                   itemCount: _filteredMessages.length,
                   itemBuilder: (context, index) {
                     final message = _filteredMessages[index];
-                    final content = message.getStringValue('content');
+                    final content = ProfanityFilter.filter(message.getStringValue('content'));
                     final isVoice = content.startsWith('[VOICE]');
                     final isCall = content.contains('CALL_');
                     final createdAt = DateTime.parse(message.created).toLocal();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:intl/intl.dart';
 import 'package:blind_social/core/utils/logger.dart';
+import 'package:blind_social/core/utils/profanity_filter.dart';
 
 class BlogCommentsBottomSheet extends StatefulWidget {
   final String postId;
@@ -117,8 +118,8 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
                         itemBuilder: (context, index) {
                           final c = _comments[index];
                           final user = c['expand']?['user_id'];
-                          final username = user != null ? (user['name'] ?? user['full_name'] ?? 'Bilinmeyen') : 'Bilinmeyen';
-                          final content = c['content'];
+                          final username = ProfanityFilter.filter(user != null ? (user['name'] ?? user['full_name'] ?? 'Bilinmeyen') : 'Bilinmeyen');
+                          final content = ProfanityFilter.filter(c['content'] ?? '');
                           final timeStr = _formatTime(c['created'] ?? '');
                           
                           return ListTile(

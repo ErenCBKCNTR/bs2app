@@ -5,7 +5,15 @@ import '../../data/radio_stations.dart';
 
 class RadioPlayerWidget extends StatefulWidget {
   final RadioStation station;
-  const RadioPlayerWidget({super.key, required this.station});
+  final VoidCallback onNext;
+  final VoidCallback onPrevious;
+  
+  const RadioPlayerWidget({
+    super.key, 
+    required this.station,
+    required this.onNext,
+    required this.onPrevious,
+  });
 
   @override
   State<RadioPlayerWidget> createState() => _RadioPlayerWidgetState();
@@ -15,6 +23,7 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
   late AudioPlayer _player;
   bool _isPlaying = false;
   double _volume = 0.8;
+  bool _isBuffering = false;
 
   @override
   void initState() {
@@ -26,14 +35,39 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
       if (mounted) {
         setState(() {
           _isPlaying = state == PlayerState.playing;
+          _isBuffering = state == PlayerState.completed || state == PlayerState.stopped ? false : _isBuffering;
         });
       }
     });
 
-    // Otomatik Oynatma
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-       _togglePlayback();
-    });
+    // Otomatik Oynatma Zorlaması
+    _startPlayback();
+  }
+
+  @override
+  void didUpdateWidget(RadioPlayerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.station.url != widget.station.url) {
+      _startPlayback();
+    }
+  }
+
+  Future<void> _startPlayback() async {
+    if (mounted) setState(() => _isBuffering = true);
+    try {
+      await _player.stop();
+      await _player.play(UrlSource(widget.station.url));
+      if (mounted) setState(() => _isBuffering = false);
+    } catch (e) {
+      debugPrint("Autoplay error: $e");
+      // Bazı platformlarda etkileşim bekler, biraz gecikme ile tekrar dene
+      Future.delayed(const Duration(milliseconds: 500), () async {
+        try {
+          await _player.play(UrlSource(widget.station.url));
+          if (mounted) setState(() => _isBuffering = false);
+        } catch (_) {}
+      });
+    }
   }
 
   @override
@@ -46,113 +80,167 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
     if (_isPlaying) {
       await _player.stop();
     } else {
-      try {
-        await _player.play(UrlSource(widget.station.url));
-      } catch (e) {
-        debugPrint("Playback error: $e");
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Yayın şu an dinlenemiyor.')),
-          );
-        }
-      }
+      _startPlayback();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Radyo Görseli (Şablon Tasarım)
-        Container(
-          width: 250,
-          height: 250,
-          decoration: BoxDecoration(
-            color: Colors.grey[800],
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))],
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Radyo Görseli / Logo Alanı
+          Container(
+            width: 220,
+            height: 220,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blueGrey[900]!, Colors.black],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blueAccent.withOpacity(0.2),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                )
+              ],
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const Icon(Icons.radio, size: 100, color: Colors.blueAccent),
+                if (_isBuffering)
+                  const SizedBox(
+                    width: 140,
+                    height: 140,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+                    ),
+                  ),
+              ],
+            ),
           ),
-          child: const Icon(Icons.radio, size: 100, color: Colors.white70),
-        ),
-        const SizedBox(height: 16),
-        // CANLI Etiketi
-        const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.circle, color: Colors.red, size: 12),
-            SizedBox(width: 8),
-            Text("CANLI", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-          ],
-        ),
-        const SizedBox(height: 8),
-        // Kanal İsmi
-        Text(widget.station.name, 
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-          semanticsLabel: "Şu an oynatılan: ${widget.station.name}",
-        ),
-        const SizedBox(height: 32),
-        // Oynatıcı Kontrolleri
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.skip_previous, size: 48, color: Colors.white),
-              onPressed: () {}, // Gelecekteki özellik
-              tooltip: 'Önceki Kanal',
+          const SizedBox(height: 30),
+          // Kanal Bilgisi
+          Text(
+            widget.station.name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 0.5,
             ),
-            const SizedBox(width: 24),
-            Semantics(
-              label: _isPlaying ? 'Yayını durdur' : 'Yayını başlat',
-              button: true,
-              child: IconButton(
-                icon: Icon(_isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled, size: 80, color: Colors.white),
-                onPressed: _togglePlayback,
-                tooltip: _isPlaying ? 'Yayını Durdur' : 'Yayını Başlat',
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: _isPlaying ? Colors.red.withOpacity(0.1) : Colors.white10,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: _isPlaying ? Colors.red : Colors.white24,
+                width: 1,
               ),
             ),
-            const SizedBox(width: 24),
-            IconButton(
-              icon: const Icon(Icons.skip_next, size: 48, color: Colors.white),
-              onPressed: () {}, // Gelecekteki özellik
-              tooltip: 'Sonraki Kanal',
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.circle, color: _isPlaying ? Colors.red : Colors.white24, size: 10),
+                const SizedBox(width: 6),
+                Text(
+                  _isPlaying ? "YAYINDA" : "DURDURULDU",
+                  style: TextStyle(
+                    color: _isPlaying ? Colors.red : Colors.white38,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        const SizedBox(height: 32),
-        // Ses Kontrolü
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40.0),
-          child: Column(
+          ),
+          const SizedBox(height: 48),
+          // Ana Kontroller
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.volume_down, color: Colors.white70),
-                  Spacer(),
-                  Icon(Icons.volume_up, color: Colors.white70),
-                ],
+              IconButton(
+                icon: const Icon(Icons.skip_previous_rounded, size: 44, color: Colors.white),
+                onPressed: widget.onPrevious,
+                tooltip: 'Önceki Kanal',
               ),
-              Slider(
-                value: _volume,
-                min: 0.0,
-                max: 1.0,
-                activeColor: Colors.white,
-                inactiveColor: Colors.white24,
-                onChanged: (value) {
-                  setState(() {
-                    _volume = value;
-                  });
-                  _player.setVolume(value);
-                },
+              const SizedBox(width: 32),
+              GestureDetector(
+                onTap: _togglePlayback,
+                child: Container(
+                  width: 84,
+                  height: 84,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    size: 56,
+                    color: Colors.black,
+                  ),
+                ),
               ),
-              const Text(
-                "Ses Düzeyi",
-                style: TextStyle(color: Colors.white70, fontSize: 12),
+              const SizedBox(width: 32),
+              IconButton(
+                icon: const Icon(Icons.skip_next_rounded, size: 44, color: Colors.white),
+                onPressed: widget.onNext,
+                tooltip: 'Sonraki Kanal',
               ),
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: 48),
+          // Ses Kontrol Ünitesi
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.volume_mute, color: Colors.white54, size: 20),
+                    Expanded(
+                      child: SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          trackHeight: 4,
+                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+                        ),
+                        child: Slider(
+                          value: _volume,
+                          onChanged: (v) {
+                            setState(() => _volume = v);
+                            _player.setVolume(v);
+                          },
+                        ),
+                      ),
+                    ),
+                    const Icon(Icons.volume_up, color: Colors.white54, size: 20),
+                  ],
+                ),
+                Text(
+                  "Ses Seviyesi: %${(_volume * 100).toInt()}",
+                  style: const TextStyle(color: Colors.white54, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

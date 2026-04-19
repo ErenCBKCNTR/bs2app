@@ -11,6 +11,7 @@ import 'package:blind_social/features/profile/presentation/screens/app_settings_
 import 'package:blind_social/features/developer/presentation/screens/developer_logs_screen.dart';
 import 'package:blind_social/features/chat/presentation/screens/blog_screen.dart';
 import 'package:blind_social/core/utils/logger.dart';
+import 'package:blind_social/core/utils/profanity_filter.dart';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:vibration/vibration.dart';
@@ -690,7 +691,7 @@ Widget? _buildFAB() {
         
         String? targetUserId;
         String? lastReadId;
-        String displayChatName = chat.getStringValue('name');
+        String displayChatName = ProfanityFilter.filter(chat.getStringValue('name'));
         if (displayChatName.isEmpty) displayChatName = 'İsimsiz Sohbet';
 
         final participants = chat.expand['chat_participants_via_chat_id'] ?? [];
@@ -741,7 +742,7 @@ Widget? _buildFAB() {
         String subtitleText = 'Sohbete gitmek için dokunun';
         
         if (lastMessage != null) {
-           final content = lastMessage.getStringValue('content');
+           final content = ProfanityFilter.filter(lastMessage.getStringValue('content'));
            subtitleText = content.startsWith('[VOICE]') ? 'Sesli Mesaj' : content;
         }
         

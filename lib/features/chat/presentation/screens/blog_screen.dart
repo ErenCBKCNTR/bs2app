@@ -5,6 +5,7 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:intl/intl.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:blind_social/features/chat/presentation/screens/blog_comments_bottom_sheet.dart';
+import 'package:blind_social/core/utils/profanity_filter.dart';
 import 'dart:async';
 
 class BlogScreen extends StatefulWidget {
@@ -336,8 +337,8 @@ class _BlogScreenState extends State<BlogScreen> {
                   itemBuilder: (context, index) {
                     final post = _posts[index];
                     final user = post['expand']?['user_id'];
-                    final username = user != null ? (user['username'] ?? user['name'] ?? user['full_name'] ?? 'Bilinmeyen') : 'Bilinmeyen';
-                    final content = post['content'] ?? '';
+                    final username = ProfanityFilter.filter(user != null ? (user['username'] ?? user['name'] ?? user['full_name'] ?? 'Bilinmeyen') : 'Bilinmeyen');
+                    final content = ProfanityFilter.filter(post['content'] ?? '');
                     final likes = post['likes_count'] ?? 0;
                     final myId = PocketBaseService.client.authStore.model!.id;
                     // Check if current user liked

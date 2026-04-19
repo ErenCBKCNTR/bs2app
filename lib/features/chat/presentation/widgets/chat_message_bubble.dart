@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:intl/intl.dart';
+import 'package:blind_social/core/utils/profanity_filter.dart';
 
 class ChatMessageBubble extends StatelessWidget {
   final Map<String, dynamic> message;
@@ -28,7 +29,7 @@ class ChatMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = message['content'];
+    final content = ProfanityFilter.filter(message['content'].toString());
     final createdAt = DateTime.parse(message['created'] ?? DateTime.now().toIso8601String()).toLocal();
     final timeString = DateFormat('HH:mm').format(createdAt);
     final isCallMessage = content.toString().contains('CALL_');

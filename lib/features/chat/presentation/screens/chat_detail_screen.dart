@@ -14,6 +14,7 @@ import '../../../../core/utils/logger.dart';
 import 'package:http/http.dart' as http;
 import 'package:vibration/vibration.dart';
 import 'package:blind_social/core/services/settings_service.dart';
+import 'package:blind_social/core/utils/profanity_filter.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final Map<String, dynamic> chat;
@@ -615,7 +616,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final chatName = widget.chat['name'] ?? 'Sohbet';
+    final chatName = ProfanityFilter.filter(widget.chat['name'] ?? 'Sohbet');
 
     return Scaffold(
       appBar: AppBar(

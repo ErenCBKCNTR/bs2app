@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:intl/intl.dart';
+import 'package:blind_social/core/utils/profanity_filter.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final String userId;
@@ -68,7 +69,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
 
     final username = _userProfile!.getStringValue('username');
-    final displayName = username.isNotEmpty ? username : 'İsimsiz';
+    final displayName = ProfanityFilter.filter(username.isNotEmpty ? username : 'İsimsiz');
     final dobRaw = _userProfile!.getStringValue('dob');
     
     String formattedDob = "Belirtilmemiş";

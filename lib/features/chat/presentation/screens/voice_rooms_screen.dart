@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/features/chat/presentation/screens/active_voice_room_screen.dart';
+import 'package:blind_social/core/utils/profanity_filter.dart';
 import 'dart:async';
 import 'package:blind_social/features/chat/presentation/widgets/voice_room_item.dart';
 import 'package:blind_social/core/utils/logger.dart';
@@ -76,15 +77,16 @@ class _VoiceRoomsScreenState extends State<VoiceRoomsScreen> {
       separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.white10),
       itemBuilder: (context, index) {
         final room = _rooms[index];
+        final roomName = ProfanityFilter.filter(room['name'].toString());
         return VoiceRoomItem(
-          roomName: room['name'].toString(),
+          roomName: roomName,
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => ActiveVoiceRoomScreen(
                   roomId: room['id'].toString(),
-                  roomName: room['name'].toString(),
+                  roomName: roomName,
                 ),
               ),
             );
