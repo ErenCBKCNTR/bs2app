@@ -389,14 +389,20 @@ class _CallScreenState extends State<CallScreen> {
     );
   }
 
+  bool _isFrontCamera = true;
+
   void _switchCamera() async {
     try {
       final localPart = _room?.localParticipant;
       if (localPart != null) {
         final videoTrack = localPart.videoTrackPublications.firstOrNull?.track as lk.LocalVideoTrack?;
         if (videoTrack != null) {
-          // LiveKit Flutter SDK provides switchCamera() on LocalVideoTrack
-          await videoTrack.switchCamera(); 
+          // LiveKit Flutter SDK switchCamera() signature might vary by version.
+          // Using restartTrack with toggled position for better compatibility.
+          _isFrontCamera = !_isFrontCamera;
+          await videoTrack.restartTrack(lk.CameraCaptureOptions(
+            cameraPosition: _isFrontCamera ? lk.CameraPosition.front : lk.CameraPosition.back,
+          ));
           SemanticsService.announce("Kamera değiştirildi", TextDirection.ltr);
         }
       }
