@@ -1,3 +1,5 @@
+import 'package:blind_social/core/services/notification_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/utils/logger.dart';
@@ -11,6 +13,31 @@ class DeveloperLogsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Geliştirici Günlükleri'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_active_outlined),
+            tooltip: 'Test Bildirimi Gönder',
+            onPressed: () async {
+              try {
+                // Yerel bildirim testi
+                await NotificationService().showCallNotification(
+                  "Test Çağrısı", 
+                  "Bu bir geliştirici test bildirimidir.", 
+                  "test_id"
+                );
+                
+                final token = await FirebaseMessaging.instance.getToken();
+                AppLogger.instance.info("FCM Token: $token");
+                
+                if (context.mounted) {
+                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                     content: Text("Test bildirimi gönderildi ve FCM Token loglara kaydedildi."),
+                   ));
+                }
+              } catch (e) {
+                AppLogger.instance.error("Test bildirimi hatası: $e");
+              }
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.delete),
             tooltip: 'Logları Temizle',

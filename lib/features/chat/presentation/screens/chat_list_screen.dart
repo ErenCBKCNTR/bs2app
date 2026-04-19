@@ -14,8 +14,10 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:vibration/vibration.dart';
 import 'package:blind_social/core/services/settings_service.dart';
+import 'chat_screen.dart'; // Eğer chat_screen.dart varsa
 import 'chat_detail_screen.dart';
 import 'call_screen.dart';
+import 'favorite_messages_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -927,6 +929,14 @@ Widget? _buildFAB() {
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.star_outline),
+            title: const Text('Yıldızlı Mesajlar'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoriteMessagesScreen()));
             },
           ),
           ListTile(

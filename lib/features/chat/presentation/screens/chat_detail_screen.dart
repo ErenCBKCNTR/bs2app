@@ -1,4 +1,5 @@
 import 'package:blind_social/features/chat/presentation/screens/call_screen.dart';
+import 'package:blind_social/features/chat/presentation/screens/favorite_messages_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
@@ -136,7 +137,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     try {
       final chatId = widget.chat['id'];
       
-      String filter = 'chat_id = "$chatId"';
+      String filter = 'chat_id = "$chatId" && deleted_for !~ "$_myUserId"';
       try {
         final myPart = await PocketBaseService.client.collection('chat_participants').getFirstListItem('chat_id = "$chatId" && user_id = "$_myUserId"');
         final clearedAtStr = myPart.getStringValue('cleared_at');
@@ -325,11 +326,109 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   Future<void> _deleteMessage(String messageId) async {
     try {
-      await PocketBaseService.client.collection('messages').delete(messageId);
+      // WhatsApp mantığı: Mesajı tamamen silmek yerine sadece "benden sil" yapıyoruz.
+      // Diğer tarafın sohbet geçmişini ve favorilerini etkilememesi için.
+      final currentMsg = await PocketBaseService.client.collection('messages').getOne(messageId);
+      final currentDeletedFor = currentMsg.getStringValue('deleted_for');
+      
+      String newValue = _myUserId;
+      if (currentDeletedFor.isNotEmpty) {
+        if (currentDeletedFor.contains(_myUserId)) return; // Zaten silinmişse
+        newValue = "$currentDeletedFor,$_myUserId";
+      }
+
+      await PocketBaseService.client.collection('messages').update(messageId, body: {
+        'deleted_for': newValue
+      });
       _fetchMessages();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Mesaj sizden silindi.'),
+          duration: Duration(seconds: 1),
+        ));
+      }
     } catch (e) {
       AppLogger.instance.error('Mesaj silinemedi: $e');
     }
+  }
+
+  void _toggleFavorite(String messageId, bool currentStatus) async {
+    try {
+      await PocketBaseService.client.collection('messages').update(messageId, body: {
+        'is_favorite': !currentStatus
+      });
+      _fetchMessages();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(!currentStatus ? 'Mesaj favorilere eklendi.' : 'Mesaj favorilerden çıkarıldı.'),
+          duration: const Duration(seconds: 1),
+        ));
+      }
+    } catch (e) {
+      AppLogger.instance.error('Favori işlemi başarısız: $e');
+    }
+  }
+
+  void _showLongPressMenu(Map<String, dynamic> message, bool isMyMessage, String textContent, bool isFavorite) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isCallOrVoice = textContent.startsWith('[VOICE]') || textContent.contains('CALL_');
+        
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                ListTile(
+                  leading: Icon(isFavorite ? Icons.star : Icons.star_border, color: Colors.amber),
+                  title: Text(isFavorite ? 'Favorilerden Çıkar' : 'Favorilere Ekle'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _toggleFavorite(message['id'], isFavorite);
+                  },
+                ),
+                if (isMyMessage && !isCallOrVoice)
+                  ListTile(
+                    leading: const Icon(Icons.edit_outlined),
+                    title: const Text('Düzenle'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showEditMessageDialog(message['id'], textContent);
+                    },
+                  ),
+                if (isMyMessage)
+                  ListTile(
+                    leading: const Icon(Icons.delete_outline, color: Colors.red),
+                    title: const Text('Sil', style: TextStyle(color: Colors.red)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _deleteMessage(message['id']);
+                    },
+                  ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _showEditMessageDialog(String messageId, String currentContent) {
@@ -446,6 +545,21 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         title: Text(chatName),
         actions: [
           IconButton(
+            icon: const Icon(Icons.star_outline),
+            tooltip: 'Yıldızlı Mesajlar',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FavoriteMessagesScreen(
+                    chatId: _chat['id'],
+                    chatName: chatName,
+                  ),
+                ),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.videocam),
             tooltip: 'Görüntülü Arama',
             onPressed: () => _startCall(isVideo: true),
@@ -476,6 +590,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       
                       final isCallMessage = content.toString().contains('CALL_');
                       final isVoiceMessage = content.toString().startsWith('[VOICE]');
+                      final bool isFavorite = message['is_favorite'] == true;
+                      
+                      // Mesaj düzenlenmiş mi kontrol et (updated ve created arasındaki fark 1 saniyeden fazlaysa)
+                      final created = DateTime.parse(message['created']).toUtc();
+                      final updated = DateTime.parse(message['updated']).toUtc();
+                      final bool isEdited = updated.difference(created).inSeconds > 1;
                       
                       String displayContent = content.toString();
                       IconData? callIcon;
@@ -538,115 +658,46 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       return Align(
                         alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
                         child: Semantics(
-                          label: isVoiceMessage 
+                          label: "${isFavorite ? 'Yıldızlı. ' : ''}${isVoiceMessage 
                             ? (isMyMessage ? "Gönderdiğiniz sesli mesaj. $timeString" : "Gelen sesli mesaj. $timeString") 
                             : (isCallMessage 
                                 ? "$displayContent. $timeString" 
-                                : (isMyMessage ? "Gönderdiğiniz mesaj: $textContent. $timeString" : "Gelen mesaj: $textContent. $timeString")),
-                          customSemanticsActions: isMyMessage && !isVoiceMessage && !isCallMessage
-                            ? {
-                                CustomSemanticsAction(label: 'Mesajı Düzenle'): () {
-                                  _showEditMessageDialog(message['id'], textContent);
-                                },
-                                CustomSemanticsAction(label: 'Mesajı Sil'): () {
-                                  _deleteMessage(message['id']);
-                                },
-                              }
-                            : ((isMyMessage && (isVoiceMessage || isCallMessage)) ? {
-                                CustomSemanticsAction(label: 'Mesajı Sil'): () {
-                                  _deleteMessage(message['id']);
-                                },
-                              } : {}),
-                          child: isVoiceMessage 
-                                ? Container(
-                                    margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                                    decoration: BoxDecoration(
-                                      color: isMyMessage ? Colors.green[700] : Colors.grey[800],
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                                      children: [
-                                        if (voiceUrl != null) 
-                                          VoiceMessageWidget(url: voiceUrl, isMyMessage: isMyMessage),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              timeString,
-                                              style: const TextStyle(fontSize: 10, color: Colors.white70),
-                                            ),
-                                            if (isMyMessage) ...[
-                                              const SizedBox(width: 4),
-                                              _buildReadStatus(message),
-                                            ],
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : ExcludeSemantics(
-                                    child: Container(
+                                : (isMyMessage ? "Gönderdiğiniz mesaj: $textContent. $timeString" : "Gelen mesaj: $textContent. $timeString"))}${isEdited ? '. Düzenlendi' : ''}",
+                          customSemanticsActions: {
+                            CustomSemanticsAction(label: isFavorite ? 'Favorilerden Çıkar' : 'Favorilere Ekle'): () {
+                              _toggleFavorite(message['id'], isFavorite);
+                            },
+                            if (isMyMessage && !isVoiceMessage && !isCallMessage)
+                              CustomSemanticsAction(label: 'Mesajı Düzenle'): () {
+                                _showEditMessageDialog(message['id'], textContent);
+                              },
+                            if (isMyMessage)
+                              CustomSemanticsAction(label: 'Mesajı Sil'): () {
+                                _deleteMessage(message['id']);
+                              },
+                          },
+                          child: GestureDetector(
+                            onLongPress: () => _showLongPressMenu(message, isMyMessage, textContent, isFavorite),
+                            child: isVoiceMessage 
+                                  ? Container(
                                       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                                       decoration: BoxDecoration(
-                                        color: isCallMessage 
-                                          ? Colors.blueGrey[900]?.withOpacity(0.5) 
-                                          : (isMyMessage ? Colors.green[700] : Colors.grey[800]),
+                                        color: isMyMessage ? Colors.green[700] : Colors.grey[800],
                                         borderRadius: BorderRadius.circular(12),
-                                        border: isCallMessage ? Border.all(color: Colors.white24, width: 0.5) : null,
                                       ),
                                       child: Column(
                                         crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                                         children: [
-                                          if (isCallMessage)
-                                            Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(
-                                                  callIcon, 
-                                                  color: content.toString().contains('CEVAPLANMADI') || content.toString().contains('CANCELLED') || content.toString().contains('REJECTED')
-                                                    ? Colors.redAccent 
-                                                    : (isMyMessage ? Colors.white : Colors.greenAccent), 
-                                                  size: 28,
-                                                ),
-                                                const SizedBox(width: 12),
-                                                Flexible(
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(
-                                                        displayContent.split('\n').first,
-                                                        style: const TextStyle(
-                                                          color: Colors.white, 
-                                                          fontWeight: FontWeight.bold,
-                                                          fontSize: 16,
-                                                        ),
-                                                      ),
-                                                      if (displayContent.contains('\n'))
-                                                        Text(
-                                                          displayContent.split('\n').last,
-                                                          style: const TextStyle(
-                                                            color: Colors.white70,
-                                                            fontSize: 13,
-                                                          ),
-                                                        ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            )
-                                          else
-                                            Text(
-                                              textContent,
-                                              style: const TextStyle(fontSize: 16),
-                                            ),
+                                          if (voiceUrl != null) 
+                                            VoiceMessageWidget(url: voiceUrl, isMyMessage: isMyMessage),
                                           const SizedBox(height: 4),
                                           Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
+                                              if (isFavorite)
+                                                const Icon(Icons.star, color: Colors.amber, size: 12),
+                                              if (isFavorite) const SizedBox(width: 4),
                                               Text(
                                                 timeString,
                                                 style: const TextStyle(fontSize: 10, color: Colors.white70),
@@ -659,8 +710,90 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                           ),
                                         ],
                                       ),
+                                    )
+                                  : ExcludeSemantics(
+                                      child: Container(
+                                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                        decoration: BoxDecoration(
+                                          color: isCallMessage 
+                                            ? Colors.blueGrey[900]?.withOpacity(0.5) 
+                                            : (isMyMessage ? Colors.green[700] : Colors.grey[800]),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: isCallMessage ? Border.all(color: Colors.white24, width: 0.5) : null,
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                          children: [
+                                            if (isCallMessage)
+                                              Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    callIcon, 
+                                                    color: content.toString().contains('CEVAPLANMADI') || content.toString().contains('CANCELLED') || content.toString().contains('REJECTED')
+                                                      ? Colors.redAccent 
+                                                      : (isMyMessage ? Colors.white : Colors.greenAccent), 
+                                                    size: 28,
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  Flexible(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          displayContent.split('\n').first,
+                                                          style: const TextStyle(
+                                                            color: Colors.white, 
+                                                            fontWeight: FontWeight.bold,
+                                                            fontSize: 16,
+                                                          ),
+                                                        ),
+                                                        if (displayContent.contains('\n'))
+                                                          Text(
+                                                            displayContent.split('\n').last,
+                                                            style: const TextStyle(
+                                                              color: Colors.white70,
+                                                              fontSize: 13,
+                                                            ),
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              )
+                                            else
+                                              Text(
+                                                textContent,
+                                                style: const TextStyle(fontSize: 16),
+                                              ),
+                                            const SizedBox(height: 4),
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                if (isEdited)
+                                                  const Text(
+                                                    'düzenlendi  ',
+                                                    style: TextStyle(fontSize: 10, color: Colors.white60, fontStyle: FontStyle.italic),
+                                                  ),
+                                                if (isFavorite)
+                                                  const Icon(Icons.star, color: Colors.amber, size: 12),
+                                                if (isFavorite) const SizedBox(width: 4),
+                                                Text(
+                                                  timeString,
+                                                  style: const TextStyle(fontSize: 10, color: Colors.white70),
+                                                ),
+                                                if (isMyMessage) ...[
+                                                  const SizedBox(width: 4),
+                                                  _buildReadStatus(message),
+                                                ],
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                          ),
                         ),
                       );
                     },
