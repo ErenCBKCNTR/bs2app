@@ -52,7 +52,7 @@ class NotificationService {
   Future<void> _initForBackground() async {
     if (_isInitialized) return;
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('ic_notification');
+        AndroidInitializationSettings('@mipmap/ic_launcher');
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
     );
@@ -115,9 +115,9 @@ class NotificationService {
 
     // Yerel bildirimleri ayarla
     // Android tarafında ic_launcher ikonu genelde varsayılan olarak bulunur. 
-    // Ancak bildirimler için şeffaf arka planlı ic_notification kullanımı önerilir.
+    // Eğer @mipmap/ic_launcher hata veriyorsa @drawable/ic_notification veya ic_launcher denenebilir.
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('ic_notification');
+        AndroidInitializationSettings('ic_launcher');
     
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
@@ -210,7 +210,7 @@ class NotificationService {
             importance: Importance.max,
             priority: Priority.max,
             ticker: title,
-            icon: android?.smallIcon ?? 'ic_notification',
+            icon: android?.smallIcon ?? 'ic_launcher', // @mipmap/ kaldırıp deniyoruz bazen bu da çözüm olur
             playSound: true,
             enableVibration: true,
             visibility: NotificationVisibility.public,

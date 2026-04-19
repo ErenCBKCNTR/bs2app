@@ -98,6 +98,28 @@ class _FavoriteMessagesScreenState extends State<FavoriteMessagesScreen> {
     }
   }
 
+  Future<void> _removeFromFavorites(RecordModel message) async {
+    try {
+      await PocketBaseService.client.collection('messages').update(
+        message.id,
+        body: {'is_favorite': false},
+      );
+      if (mounted) {
+        _fetchFavoriteMessages();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Favorilerden kaldırıldı.')),
+        );
+      }
+    } catch (e) {
+      AppLogger.instance.error('Favoriden kaldırılamadı: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final title = widget.chatId != null 
@@ -170,6 +192,11 @@ class _FavoriteMessagesScreenState extends State<FavoriteMessagesScreen> {
                         onTap: () {
                            // İsteğe bağlı
                         },
+                        trailing: IconButton(
+                          icon: const Icon(Icons.close, color: Colors.red),
+                          onPressed: () => _removeFromFavorites(message),
+                          tooltip: 'Favorilerden kaldır',
+                        ),
                       ),
                     );
                   },
