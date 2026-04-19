@@ -47,6 +47,15 @@ class NotificationService {
       AppLogger.instance.warning('Kullanıcı bildirim izinlerini reddetti.');
     }
 
+    // Pil optimizasyonunu devre dışı bırakmayı iste (Arka plan bildirimleri için önemli)
+    try {
+      if (await Permission.ignoreBatteryOptimizations.isDenied) {
+        await Permission.ignoreBatteryOptimizations.request();
+      }
+    } catch (e) {
+      AppLogger.instance.warning('Pil optimizasyon izni istenemedi: $e');
+    }
+
     // FCM Token al ve sunucuya senkronize et
     _syncToken();
 
@@ -71,7 +80,28 @@ class NotificationService {
       },
     );
 
-    // Foreground mesaj dinleyicisi
+    // Kanalları önceden oluştur (Ses ve öncelik ayarlarının geçerli olması için)
+    final androidPlugin = _localNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    if (androidPlugin != null) {
+      await androidPlugin.createNotificationChannel(const AndroidNotificationChannel(
+        'high_importance_channel',
+        'Yüksek Öncelikli Bildirimler',
+        description: 'Bu kanal üzerinden mesaj ve arama bildirimleri gelir.',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+      ));
+
+      await androidPlugin.createNotificationChannel(const AndroidNotificationChannel(
+        'call_channel_v2',
+        'Aramalar',
+        description: 'Gelen çağrılar için bildirim kanalı',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+      ));
+    }
+
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       AppLogger.instance.info('Foreground mesaj alındı: ${message.notification?.title}');
       _showLocalNotification(message);

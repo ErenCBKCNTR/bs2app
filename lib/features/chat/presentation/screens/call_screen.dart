@@ -38,6 +38,10 @@ class _CallScreenState extends State<CallScreen> {
   bool _isAccepted = false; // Arama cevaplandı mı?
   String _connectionStatus = 'Başlatılıyor...';
   
+  // Video tracks
+  lk.VideoTrack? _localVideoTrack;
+  lk.VideoTrack? _remoteVideoTrack;
+  
   // Timer for call duration
   Timer? _durationTimer;
   int _secondsElapsed = 0;
@@ -62,7 +66,8 @@ class _CallScreenState extends State<CallScreen> {
         if (msg != null && msg.getStringValue('chat_id') == widget.chatId && msg.getStringValue('sender_id') != _myId) {
           final content = msg.getStringValue('content');
           
-          if (content.contains('CALL_ENDED')) {
+          if (content.contains('CALL_ENDED') || content.contains('CALL_REJECTED') || content.contains('CALL_CANCELLED')) {
+            _stopRingtone();
             if (mounted) {
               Navigator.pop(context);
             }
@@ -188,6 +193,33 @@ class _CallScreenState extends State<CallScreen> {
             Future.delayed(const Duration(seconds: 2), () {
               if (mounted) Navigator.pop(context);
             });
+          }
+        })
+        ..on<lk.TrackSubscribedEvent>((event) {
+          if (event.track.kind == lk.TrackType.VIDEO) {
+            if (mounted) {
+              setState(() {
+                _remoteVideoTrack = event.track as lk.VideoTrack;
+              });
+            }
+          }
+        })
+        ..on<lk.TrackUnsubscribedEvent>((event) {
+          if (event.track.kind == lk.TrackType.VIDEO) {
+            if (mounted) {
+              setState(() {
+                _remoteVideoTrack = null;
+              });
+            }
+          }
+        })
+        ..on<lk.LocalTrackPublishedEvent>((event) {
+          if (event.publication.track?.kind == lk.TrackType.VIDEO) {
+            if (mounted) {
+              setState(() {
+                _localVideoTrack = event.publication.track as lk.VideoTrack;
+              });
+            }
           }
         });
 
@@ -336,30 +368,56 @@ class _CallScreenState extends State<CallScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Video background (if video enabled)
-          if (widget.isVideo && _isJoined)
-             const Center(
-               child: Icon(Icons.videocam_off, color: Colors.white24, size: 80),
-             ),
+          // Background - Remote Video if available
+          if (widget.isVideo && _remoteVideoTrack != null && !_isCamOff)
+            Positioned.fill(
+              child: lk.VideoTrackRenderer(_remoteVideoTrack!),
+            )
+          else if (widget.isVideo && _isJoined)
+            const Center(
+              child: Icon(Icons.videocam_off, color: Colors.white24, size: 80),
+            ),
+          
+          // Local Video (PiP)
+          if (widget.isVideo && _localVideoTrack != null)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 20,
+              right: 20,
+              child: Container(
+                width: 100,
+                height: 150,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: lk.VideoTrackRenderer(_localVideoTrack!),
+                ),
+              ),
+            ),
              
           // WhatsApp Style Overlay
           SafeArea(
             child: Column(
               children: [
                 const SizedBox(height: 60),
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.grey[800],
-                  child: Text(
-                    widget.targetUsername[0].toUpperCase(),
-                    style: const TextStyle(fontSize: 40, color: Colors.white, fontWeight: FontWeight.bold),
+                if (_remoteVideoTrack == null) ...[
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.grey[800],
+                    child: Text(
+                      widget.targetUsername[0].toUpperCase(),
+                      style: const TextStyle(fontSize: 40, color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  widget.targetUsername,
-                  style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
-                ),
+                  const SizedBox(height: 16),
+                  Text(
+                    widget.targetUsername,
+                    style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -391,7 +449,7 @@ class _CallScreenState extends State<CallScreen> {
                 if (_isAccepted)
                   Container(
                     margin: const EdgeInsets.all(24),
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                    padding: const Duration(milliseconds: 10).inMilliseconds > 0 ? const EdgeInsets.symmetric(vertical: 16, horizontal: 24) : EdgeInsets.zero,
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(40),
@@ -421,6 +479,24 @@ class _CallScreenState extends State<CallScreen> {
                           onPressed: _hangUp,
                           label: "Kapat",
                         ),
+                      ],
+                    ),
+                  )
+                else if (!widget.isIncoming)
+                  // Arayan taraf için vazgeç butonu
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 60),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FloatingActionButton(
+                          heroTag: "cancel",
+                          onPressed: _cancelCall,
+                          backgroundColor: Colors.red,
+                          child: const Icon(Icons.call_end, color: Colors.white, size: 30),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text("Vazgeç", style: TextStyle(color: Colors.white)),
                       ],
                     ),
                   ),
@@ -456,7 +532,7 @@ class _CallScreenState extends State<CallScreen> {
                        children: [
                          FloatingActionButton(
                            heroTag: "decline",
-                           onPressed: _hangUp,
+                           onPressed: _hangUpRejected, // Reddetme için özel işlem
                            backgroundColor: Colors.red,
                            child: const Icon(Icons.call_end, color: Colors.white, size: 30),
                          ),
@@ -471,6 +547,34 @@ class _CallScreenState extends State<CallScreen> {
         ],
       ),
     );
+  }
+
+  void _cancelCall() async {
+    _stopRingtone();
+    try {
+      await PocketBaseService.client.collection('messages').create(body: {
+         'chat_id': widget.chatId,
+         'sender_id': _myId,
+         'content': '[CALL_CANCELLED]',
+      });
+    } catch (e) {
+      AppLogger.instance.error('Arama iptal mesajı hatası: $e');
+    }
+    if (mounted) Navigator.pop(context);
+  }
+
+  void _hangUpRejected() async {
+    _stopRingtone();
+    try {
+      await PocketBaseService.client.collection('messages').create(body: {
+         'chat_id': widget.chatId,
+         'sender_id': _myId,
+         'content': '[CALL_REJECTED]',
+      });
+    } catch (e) {
+      AppLogger.instance.error('Arama reddetme mesajı hatası: $e');
+    }
+    if (mounted) Navigator.pop(context);
   }
 
   Widget _buildControlButton({
