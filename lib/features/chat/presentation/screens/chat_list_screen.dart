@@ -627,7 +627,7 @@ Widget? _buildFAB() {
     if (filteredChats.isEmpty) {
       return Column(
         children: [
-          if (!_showArchived) _buildArchiveToggle(),
+          if (!_showArchived) _buildTopActionButtons(),
           Expanded(
             child: Center(
               child: Text(
@@ -654,7 +654,7 @@ Widget? _buildFAB() {
       itemBuilder: (context, index) {
         if (index == 0) {
           if (!_archivedVisible || _showArchived) return const SizedBox.shrink();
-          return _buildArchiveToggle();
+          return _buildTopActionButtons();
         }
         
         final chat = filteredChats[index - 1];
@@ -812,39 +812,47 @@ Widget? _buildFAB() {
     );
   }
 
-  Widget _buildArchiveToggle() {
+  Widget _buildTopActionButtons() {
     final currentUserId = PocketBaseService.client.authStore.model?.id;
     final archivedCount = _chats.where((c) {
       final myPart = c.data['my_participant'] as RecordModel?;
       return myPart != null ? (myPart.data['is_archived'] == true) : false;
     }).length;
-    
-    if (archivedCount == 0) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        leading: const Icon(Icons.archive, color: Colors.blue, size: 28),
-        title: Text(
-          "Arşivlenmiş",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade300),
-        ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () {
+                setState(() => _showArchived = true);
+              },
+              icon: const Icon(Icons.archive, size: 18),
+              label: Text("Arşivlenmiş ($archivedCount)"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
           ),
-          child: Text(
-            archivedCount.toString(),
-            style: const TextStyle(color: Colors.blue, fontSize: 12),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoriteMessagesScreen()));
+              },
+              icon: const Icon(Icons.star, size: 18),
+              label: const Text("Favori Mesajlar"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
           ),
-        ),
-        onTap: () {
-          setState(() {
-            _showArchived = true;
-          });
-        },
+        ],
       ),
     );
   }
@@ -928,14 +936,6 @@ Widget? _buildFAB() {
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.star_outline),
-            title: const Text('Favori Mesajlar'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoriteMessagesScreen()));
             },
           ),
           ListTile(
