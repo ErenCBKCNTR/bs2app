@@ -392,6 +392,26 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     }
   }
 
+  void _addReaction(String messageId, String emoji) async {
+    try {
+      final msg = await PocketBaseService.client.collection('messages').getOne(messageId);
+      String currentReactions = msg.getStringValue('reactions');
+      
+      if (currentReactions.contains(emoji)) {
+        currentReactions = currentReactions.replaceAll(emoji, '');
+      } else {
+        currentReactions += emoji;
+      }
+      
+      await PocketBaseService.client.collection('messages').update(messageId, body: {
+        'reactions': currentReactions
+      });
+      _fetchMessages();
+    } catch (e) {
+      AppLogger.instance.error('Tepki eklenemedi: $e');
+    }
+  }
+
   void _showLongPressMenu(Map<String, dynamic> message, bool isMyMessage, String textContent, bool isFavorite) {
     showModalBottomSheet(
       context: context,
@@ -408,13 +428,17 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: ['❤️', '😂', '👍', '😢', '🙏'].map((emoji) => InkWell(
+                      onTap: () {
+                        Navigator.pop(context);
+                        _addReaction(message['id'], emoji);
+                      },
+                      child: Text(emoji, style: const TextStyle(fontSize: 28)),
+                    )).toList(),
                   ),
                 ),
                 ListTile(
@@ -443,7 +467,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       _deleteMessage(message['id']);
                     },
                   ),
-                const SizedBox(height: 8),
               ],
             ),
           ),

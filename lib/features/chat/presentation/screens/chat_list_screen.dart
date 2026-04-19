@@ -17,6 +17,8 @@ import 'package:blind_social/core/services/settings_service.dart';
 import 'chat_detail_screen.dart';
 import 'call_screen.dart';
 import 'favorite_messages_screen.dart';
+import 'archived_messages_screen.dart';
+import '../../../radio/presentation/screens/radio_list_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -32,15 +34,13 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   List<RecordModel> _chats = [];
   bool _isLoadingChats = true;
   bool _isDeleting = false;
-  final Set<String> _pendingOperations = {}; // İşlem gören chat ID'leri
+  final Set<String> _pendingOperations = {}; 
   Timer? _pollingTimer;
   UnsubscribeFunc? _realtimeMessagesUnsub;
   UnsubscribeFunc? _realtimeChatsUnsub;
   UnsubscribeFunc? _realtimeParticipantsUnsub;
-  bool _showArchived = false;
 
   final ScrollController _chatListScrollController = ScrollController();
-  bool _archivedVisible = false;
 
   @override
   void initState() {
@@ -127,18 +127,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     });
   }
 
-  void _scrollListener() {
-    if (_tabController.index != 0) return;
-    
-    // WhatsApp tarzı arşiv görünürlüğü: Listenin en başındayken aşağıya doğru çekme (overscroll)
-    // Offset negatif olduğunda (iOS bounc veya Android glow/overscroll) tetiklenir
-    if (_chatListScrollController.position.pixels < -30 && !_archivedVisible && !_showArchived) {
-      if (mounted) {
-        setState(() {
-          _archivedVisible = true;
-        });
-      }
-    }
+  void _scrollListener() {                
   }
 
   @override
@@ -176,8 +165,16 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
          }
       }
       
-      // Chatleri updated veya son mesaja göre sırala
+      // Chatleri sabitlemeye ve güncellenme tarihine göre sırala
       chatRecords.sort((a, b) {
+         final aPart = a.data['my_participant'] as RecordModel;
+         final bPart = b.data['my_participant'] as RecordModel;
+         final aPinned = aPart.getBoolValue('is_pinned');
+         final bPinned = bPart.getBoolValue('is_pinned');
+
+         if (aPinned != bPinned) {
+           return aPinned ? -1 : 1;
+         }
          return b.updated.compareTo(a.updated);
       });
           
@@ -200,6 +197,51 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       _refreshKey++;
     });
     _fetchChats();
+  }
+
+  Future<void> _togglePin(String chatId, bool currentStatus) async {
+    setState(() {
+      _pendingOperations.add(chatId);
+      final chatIndex = _chats.indexWhere((c) => c.id == chatId);
+      if (chatIndex != -1) {
+         final myPart = _chats[chatIndex].data['my_participant'] as RecordModel?;
+         if (myPart != null) {
+            myPart.data['is_pinned'] = !currentStatus;
+            _chats[chatIndex].data['my_participant'] = myPart;
+         }
+      }
+    });
+
+    try {
+      final chatIndex = _chats.indexWhere((c) => c.id == chatId);
+      final myPart = _chats[chatIndex].data['my_participant'] as RecordModel?;
+      if (myPart != null) {
+         await PocketBaseService.client.collection('chat_participants').update(myPart.id, body: {
+            'is_pinned': !currentStatus
+         });
+      }
+           
+      _fetchChats(isBackground: true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(!currentStatus ? 'Sohbet sabitlendi' : 'Sohbet sabitlemesi kaldırıldı'),
+            duration: const Duration(seconds: 2),
+          )
+        );
+      }
+    } catch (e) {
+      AppLogger.instance.error('Sabitleme hatası: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      }
+    } finally {
+       if (mounted) {
+         setState(() {
+           _pendingOperations.remove(chatId);
+         });
+       }
+    }
   }
 
   Future<void> _toggleArchive(String chatId, bool currentStatus) async {
@@ -261,37 +303,36 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: _showArchived && _tabController.index == 0
-              ? IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => setState(() => _showArchived = false),
-                  tooltip: "Sohbetlere dön",
-                )
-              : null,
-          title: Semantics(
-            label: _showArchived && _tabController.index == 0 ? "Arşivlenmiş Sohbetler" : "Blind Social Ana Sayfa",
+          title: const Semantics(
+            label: "Blind Social Ana Sayfa",
             header: true,
             child: Text(
-              _showArchived && _tabController.index == 0 ? "Arşivlenmiş" : 'Blind Social',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              'Blind Social',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
             ),
           ),
           actions: [
-            if (!_showArchived || _tabController.index != 0) ...[
-              Semantics(
-                label: "Kullanıcı Ara",
-                child: IconButton(
-                  icon: const Icon(Icons.search, size: 18), // Biraz daha küçük ikon
-                  onPressed: _showUserSearchDialog,
-                  tooltip: "Kullanıcı Ara",
-                ),
+            Semantics(
+              label: "Arşivlenmiş Sohbetler",
+              child: IconButton(
+                icon: const Icon(Icons.archive, size: 18),
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ArchivedMessagesScreen())),
+                tooltip: "Arşivlenmiş Sohbetler",
               ),
-              IconButton(
-                onPressed: _refresh,
-                icon: const Icon(Icons.refresh, size: 18),
-                tooltip: "Sayfayı Yenile",
+            ),
+            Semantics(
+              label: "Kullanıcı Ara",
+              child: IconButton(
+                icon: const Icon(Icons.search, size: 18),
+                onPressed: _showUserSearchDialog,
+                tooltip: "Kullanıcı Ara",
               ),
-            ]
+            ),
+            IconButton(
+              onPressed: _refresh,
+              icon: const Icon(Icons.refresh, size: 18),
+              tooltip: "Sayfayı Yenile",
+            ),
           ],
           bottom: TabBar(
             controller: _tabController,
@@ -320,11 +361,6 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   }
 
   Future<void> _handleBackNavigation() async {
-    if (_showArchived) {
-      setState(() => _showArchived = false);
-      return;
-    }
-
     if (_tabController.index != 0) {
       _tabController.animateTo(0);
       return;
@@ -621,21 +657,19 @@ Widget? _buildFAB() {
     final filteredChats = _chats.where((c) {
        final myPart = c.data['my_participant'] as RecordModel?;
        final isArchived = myPart != null ? (myPart.data['is_archived'] ?? false) : false;
-       return isArchived == _showArchived;
+       return !isArchived;
     }).toList();
 
-    if (filteredChats.isEmpty) {
+    if (_chats.isEmpty) {
       return Column(
         children: [
-          if (!_showArchived) _buildTopActionButtons(),
-          Expanded(
+          _buildTopActionButtons(),
+          const Expanded(
             child: Center(
               child: Text(
-                _showArchived 
-                    ? 'Arşivlenmiş sohbet yok.' 
-                    : 'Henüz bir sohbetiniz yok.\nYeni bir sohbet başlatın.',
+                'Henüz bir sohbetiniz yok.\nYeni bir sohbet başlatın.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, color: Colors.grey),
+                style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
             ),
           ),
@@ -648,16 +682,10 @@ Widget? _buildFAB() {
       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       itemCount: filteredChats.length + 1,
       separatorBuilder: (context, index) {
-        if (index == 0 && (!_archivedVisible || _showArchived)) return const SizedBox.shrink();
         return const Divider(height: 1, color: Colors.white10);
       },
       itemBuilder: (context, index) {
-        if (index == 0) {
-          if (!_archivedVisible || _showArchived) return const SizedBox.shrink();
-          return _buildTopActionButtons();
-        }
-        
-        final chat = filteredChats[index - 1];
+        final chat = filteredChats[index];
         final myPart = chat.data['my_participant'] as RecordModel?;
         final isArchived = myPart != null ? (myPart.data['is_archived'] ?? false) : false;
         
@@ -694,21 +722,31 @@ Widget? _buildFAB() {
         messages.sort((a, b) => b.created.compareTo(a.created)); 
         final lastMessage = messages.isNotEmpty ? messages.first : null;
         
-        String subtitleText = 'Sohbete gitmek için dokunun';
-        bool isUnread = false;
+        // Calculate unread count
+        int unreadCount = 0;
+        final lastReadMessage = messages.firstWhere(
+          (m) => m.id == lastReadId,
+          orElse: () => RecordModel(id: '')
+        );
+        final lastReadTime = lastReadMessage.id.isNotEmpty ? DateTime.parse(lastReadMessage.created) : DateTime(0);
         
-        if (lastMessage != null) {
-           final content = lastMessage.getStringValue('content');
-           subtitleText = content.startsWith('[VOICE]') ? 'Sesli Mesaj' : content;
-           
-           if (lastMessage.getStringValue('sender_id') != currentUserId) {
-              if (lastReadId == null || lastReadId != lastMessage.id) {
-                 isUnread = true;
+        for (var msg in messages) {
+           if (msg.getStringValue('sender_id') != currentUserId) {
+              final msgTime = DateTime.parse(msg.created);
+              if (msgTime.isAfter(lastReadTime)) {
+                unreadCount++;
               }
            }
         }
         
-        final semanticUnreadSuffix = isUnread ? "Okunmamış yeni mesajınız var." : "";
+        String subtitleText = 'Sohbete gitmek için dokunun';
+        
+        if (lastMessage != null) {
+           final content = lastMessage.getStringValue('content');
+           subtitleText = content.startsWith('[VOICE]') ? 'Sesli Mesaj' : content;
+        }
+        
+        final semanticUnreadSuffix = unreadCount > 0 ? "Okunmamış $unreadCount yeni mesajınız var." : "";
         final semanticSubtitle = lastMessage != null ? "Son mesaj: $subtitleText." : "";
         
         return Semantics(
@@ -719,93 +757,30 @@ Widget? _buildFAB() {
             CustomSemanticsAction(label: isArchived ? 'Arşivden Çıkar' : 'Arşivle'): () {
               _toggleArchive(chat.id, isArchived);
             },
+            CustomSemanticsAction(label: myPart?.getBoolValue('is_pinned') == true ? 'Sabitlemeyi Kaldır' : 'Sohbeti Sabitle'): () {
+               _togglePin(chat.id, myPart?.getBoolValue('is_pinned') ?? false);
+            },
             CustomSemanticsAction(label: 'Sohbeti Sil'): () {
               _confirmDeleteChat(chat);
             },
           },
-          child: ListTile(
-            leading: GestureDetector(
-              onTap: () {
-                if (targetUserId != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => UserProfileScreen(userId: targetUserId!),
-                    ),
-                  );
-                }
-              },
-              child: Semantics(
-                label: "Profili gör",
-                button: true,
-                child: Hero(
-                  tag: 'chat_avatar_$targetUserId',
-                  child: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Colors.grey[800],
-                        child: Text(
-                          displayChatName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join(''),
-                          style: const TextStyle(fontSize: 16, color: Colors.white),
-                        ),
-                      ),
-                      if (isUnread)
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: Container(
-                            width: 14,
-                            height: 14,
-                            decoration: const BoxDecoration(
-                              color: Colors.green,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            title: Text(
-              displayChatName,
-              style: TextStyle(fontWeight: isUnread ? FontWeight.w900 : FontWeight.bold, fontSize: 16),
-            ),
-            subtitle: Row(
-              children: [
-                if (lastMessage != null && lastMessage.getStringValue('sender_id') == currentUserId) ...[
-                  _buildSmallReadStatus(chat, lastMessage),
-                  const SizedBox(width: 4),
-                ],
-                Expanded(
-                  child: Text(
-                    subtitleText,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14, 
-                      color: isUnread ? Colors.white : Colors.grey, 
-                      fontWeight: isUnread ? FontWeight.bold : FontWeight.normal
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onLongPress: () {
-              _showChatOptions(chat);
-            },
+          child: ChatListItem(
+            chat: chat,
+            currentUserId: currentUserId ?? '',
+            unreadCount: unreadCount,
             onTap: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  // Pass a simple map to ChatDetailScreen to simulate how it used it
-                  builder: (context) => ChatDetailScreen(chat: {'id': chat.id, 'name': displayChatName, 'is_group': chat.getBoolValue('is_group')}),
-                ),
-              );
-              _fetchChats();
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatDetailScreen(chat: {'id': chat.id, 'name': displayChatName, 'is_group': chat.getBoolValue('is_group')}),
+                  ),
+                );
+                _fetchChats();
             },
+            onLongPress: () => _showChatOptions(chat),
+            onArchive: () => _toggleArchive(chat.id, isArchived),
+            onDelete: () => _confirmDeleteChat(chat),
+            onPin: () => _togglePin(chat.id, myPart?.getBoolValue('is_pinned') ?? false),
           ),
         );
       },
@@ -861,6 +836,19 @@ Widget? _buildFAB() {
     final currentUserId = PocketBaseService.client.authStore.model?.id;
     final myPart = chat.data['my_participant'] as RecordModel?;
     final isArchived = myPart != null ? (myPart.data['is_archived'] ?? false) : false;
+    
+    // Sohbetin diğer katılımcısını bul
+    String? targetUserId;
+    final participants = chat.expand['chat_participants_via_chat_id'] ?? [];
+    if (chat.getBoolValue('is_group') == false) {
+      for (var p in participants) {
+        final uid = p.getStringValue('user_id');
+        if (uid != currentUserId) {
+          targetUserId = uid;
+          break;
+        }
+      }
+    }
 
     showModalBottomSheet(
       context: context,
@@ -887,12 +875,34 @@ Widget? _buildFAB() {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
+                  if (targetUserId != null)
+                   ListTile(
+                    leading: const Icon(Icons.person_outline),
+                    title: const Text('Profili Görüntüle'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => UserProfileScreen(userId: targetUserId!),
+                        ),
+                      );
+                    },
+                  ),
                   ListTile(
                     leading: Icon(isArchived ? Icons.unarchive : Icons.archive),
                     title: Text(isArchived ? 'Arşivden Çıkar' : 'Arşivle'),
                     onTap: () {
                       Navigator.pop(context);
                       _toggleArchive(chat.id, isArchived);
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(myPart?.getBoolValue('is_pinned') == true ? Icons.push_pin_outlined : Icons.push_pin),
+                    title: Text(myPart?.getBoolValue('is_pinned') == true ? 'Sabitlemeyi Kaldır' : 'Sabitle'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _togglePin(chat.id, myPart?.getBoolValue('is_pinned') ?? false);
                     },
                   ),
                   ListTile(
@@ -944,6 +954,14 @@ Widget? _buildFAB() {
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (_) => const AppSettingsScreen()));
+            },
+          ),
+           ListTile(
+            leading: const Icon(Icons.radio_outlined),
+            title: const Text('Canlı Radyo'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const RadioListScreen()));
             },
           ),
           const Divider(),
