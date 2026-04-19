@@ -64,7 +64,7 @@ class _CallScreenState extends State<CallScreen> {
     // Sesli görüşmedeyse varsayılan ahize (speaker off)
     // Görüntülü görüşmedeyse varsayılan hoparlör (isteğe bağlı ama kullanıcı "varsayılan ahize" dedi)
     _isSpeakerOn = false; 
-    lk.HardwareSettings().setSpeakerphoneOn(_isSpeakerOn);
+    lk.Hardware.instance.setSpeakerphoneOn(_isSpeakerOn);
 
     _initCall();
     _playRingtone();
@@ -227,7 +227,7 @@ class _CallScreenState extends State<CallScreen> {
       _room = lk.Room();
       
       // Ses çıkışını ayarla
-      lk.HardwareSettings().setSpeakerphoneOn(_isSpeakerOn);
+      lk.Hardware.instance.setSpeakerphoneOn(_isSpeakerOn);
       // Olay dinleyicileri
       _room!.createListener()
         ..on<lk.RoomDisconnectedEvent>((event) {
@@ -446,7 +446,7 @@ class _CallScreenState extends State<CallScreen> {
     setState(() {
       _isSpeakerOn = !_isSpeakerOn;
     });
-    lk.HardwareSettings().setSpeakerphoneOn(_isSpeakerOn);
+    lk.Hardware.instance.setSpeakerphoneOn(_isSpeakerOn);
     
     SemanticsService.announce(
       _isSpeakerOn ? "Hoparlör açıldı" : "Hoparlör kapatıldı (Ahizeye geçildi)",
@@ -520,7 +520,7 @@ class _CallScreenState extends State<CallScreen> {
     await _room!.localParticipant?.setCameraEnabled(enable);
     
     // Görüntü geldikten sonra hoparlörü açmak mantıklı olabilir ama kullanıcı "varsayılan ahize" dediği için dokunmuyorum
-    // lk.HardwareSettings().setSpeakerphoneOn(enable); 
+    // lk.Hardware.instance.setSpeakerphoneOn(enable); 
     
     SemanticsService.announce(
       enable ? "Görüntülü görüşmeye geçildi" : "Sesli görüşmeye dönüldü",

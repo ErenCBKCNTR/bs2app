@@ -207,7 +207,7 @@ class NotificationService {
 
   // Arama bildirimi özel (daha yüksek öncelikli ve zilli)
   Future<void> showCallNotification(String title, String body, String chatId) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'call_channel_v3',
       'Gelen Aramalar',
@@ -237,7 +237,7 @@ class NotificationService {
       ],
     );
     
-    const NotificationDetails platformChannelSpecifics =
+    final NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
     
     await _localNotificationsPlugin.show(
