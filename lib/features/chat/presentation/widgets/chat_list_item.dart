@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
-import '../../../core/services/pocketbase_service.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
 
 class ChatListItem extends StatelessWidget {
   final RecordModel chat;
