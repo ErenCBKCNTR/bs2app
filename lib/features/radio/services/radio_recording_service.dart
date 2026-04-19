@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:intl/intl.dart';
 import '../models/radio_recording.dart';
 import '../data/recording_database.dart';
 
@@ -12,6 +13,7 @@ class RadioRecordingService {
   StreamSubscription? _subscription;
   IOSink? _fileSink;
   DateTime? _startTime;
+  DateTime? _actualDataStartTime;
   String? _currentFilePath;
   String? _currentStationName;
 
@@ -22,9 +24,17 @@ class RadioRecordingService {
 
     _startTime = DateTime.now();
     _currentStationName = stationName;
+    _actualDataStartTime = null;
+
+    // Filename format: blindsocial_radyoadi_tarih.mp3
+    final formattedDate = DateFormat('ddMMyyyy_HHmmss').format(_startTime!);
+    final sanitizedStation = stationName
+        .replaceAll(RegExp(r'[^\w\s]'), '')
+        .replaceAll(' ', '_')
+        .toLowerCase();
+    final fileName = 'blindsocial_${sanitizedStation}_$formattedDate.mp3';
     
     final directory = await getApplicationDocumentsDirectory();
-    final fileName = 'recording_${_startTime!.millisecondsSinceEpoch}.mp3';
     _currentFilePath = p.join(directory.path, fileName);
     
     final file = File(_currentFilePath!);
@@ -32,17 +42,19 @@ class RadioRecordingService {
 
     try {
       _httpClient = HttpClient();
-      // Set reasonable timeout
       _httpClient!.connectionTimeout = const Duration(seconds: 10);
       _request = await _httpClient!.getUrl(Uri.parse(url));
       final response = await _request!.close();
 
       if (response.statusCode != 200) {
-        throw Exception("Stream source error: ${response.statusCode}");
+        throw Exception("Yayın kaynağı hatası: ${response.statusCode}");
       }
 
       _subscription = response.listen(
         (data) {
+          if (_actualDataStartTime == null) {
+            _actualDataStartTime = DateTime.now();
+          }
           _fileSink?.add(data);
         },
         onDone: () => stopRecording(),
@@ -51,7 +63,7 @@ class RadioRecordingService {
       );
     } catch (e) {
       await _fileSink?.close();
-      _httpClient?.close();
+      _httpClient?.close(force: true);
       _subscription = null;
       _fileSink = null;
       _httpClient = null;
@@ -62,11 +74,20 @@ class RadioRecordingService {
   Future<RadioRecording?> stopRecording() async {
     if (!isRecording) return null;
 
-    final duration = DateTime.now().difference(_startTime!);
+    // Use actual data start time for duration to avoid connection delay bias
+    final durationStartTime = _actualDataStartTime ?? _startTime!;
+    final duration = DateTime.now().difference(durationStartTime);
     
-    await _subscription?.cancel();
+    // Stop subscription immediately
+    final sub = _subscription;
+    _subscription = null;
+    await sub?.cancel();
+    
+    // Close sink and client
     await _fileSink?.close();
-    _httpClient?.close();
+    _fileSink = null;
+    _httpClient?.close(force: true);
+    _httpClient = null;
 
     final recording = RadioRecording(
       stationName: _currentStationName!,
@@ -74,10 +95,6 @@ class RadioRecordingService {
       date: _startTime!,
       duration: duration,
     );
-
-    _subscription = null;
-    _fileSink = null;
-    _httpClient = null;
 
     // Save to DB
     final id = await RecordingDatabase.instance.insert(recording);
