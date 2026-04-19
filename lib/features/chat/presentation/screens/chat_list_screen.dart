@@ -3,6 +3,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart' hide SettingsService;
+import 'package:blind_social/features/chat/presentation/widgets/chat_list_item.dart';
 import 'package:blind_social/features/chat/presentation/screens/voice_rooms_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/my_profile_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/user_profile_screen.dart';
@@ -34,6 +35,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   List<RecordModel> _chats = [];
   bool _isLoadingChats = true;
   bool _isDeleting = false;
+  bool _showArchived = false;
   final Set<String> _pendingOperations = {}; 
   Timer? _pollingTimer;
   UnsubscribeFunc? _realtimeMessagesUnsub;
@@ -303,10 +305,10 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Semantics(
+          title: Semantics(
             label: "Blind Social Ana Sayfa",
             header: true,
-            child: Text(
+            child: const Text(
               'Blind Social',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
             ),
@@ -726,7 +728,7 @@ Widget? _buildFAB() {
         int unreadCount = 0;
         final lastReadMessage = messages.firstWhere(
           (m) => m.id == lastReadId,
-          orElse: () => RecordModel(id: '')
+          orElse: () => RecordModel()
         );
         final lastReadTime = lastReadMessage.id.isNotEmpty ? DateTime.parse(lastReadMessage.created) : DateTime(0);
         

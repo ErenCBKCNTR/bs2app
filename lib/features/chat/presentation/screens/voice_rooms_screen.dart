@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/features/chat/presentation/screens/active_voice_room_screen.dart';
 import 'dart:async';
-import '../../../../core/utils/logger.dart';
+import 'package:blind_social/features/chat/presentation/widgets/voice_room_item.dart';
+import 'package:blind_social/core/utils/logger.dart';
 
 class VoiceRoomsScreen extends StatefulWidget {
   const VoiceRoomsScreen({super.key});
