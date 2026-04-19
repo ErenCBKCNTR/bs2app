@@ -174,7 +174,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               if (settings.messageSoundEnabled) {
                 // Try to play a short notification sound
                 final player = AudioPlayer();
-                player.play(AssetSource('sounds/new_message.mp3')).catchError((e) => null);
+                player.play(AssetSource('sounds/message_received.mp3')).catchError((e) => null);
               }
            }
 
@@ -212,6 +212,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       await PocketBaseService.client.collection('chats').update(_chat['id'], body: {
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       });
+
+      // Mesaj gönderildi sesi
+      final settings = SettingsService();
+      if (settings.messageSoundEnabled) {
+        final player = AudioPlayer();
+        player.play(AssetSource('sounds/message_sent.mp3')).catchError((_) => null);
+      }
 
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -450,20 +457,32 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       IconData? callIcon;
                       
                       if (isCallMessage) {
-                        if (content.toString().contains('VOICE_CALL_STARTED')) {
-                          displayContent = "Sesli görüşme başlatıldı";
-                          callIcon = Icons.call_made;
-                        } else if (content.toString().contains('VOICE_CALL_ENDED')) {
-                          final duration = content.toString().contains('(') ? content.toString().split('(').last.replaceAll(')', '') : '';
-                          displayContent = content.toString().contains('CEVAPLANMADI') ? "Cevaplanmayan sesli görüşme" : "Sesli görüşme bitti: $duration";
-                          callIcon = content.toString().contains('CEVAPLANMADI') ? Icons.call_missed : Icons.call_end;
-                        } else if (content.toString().contains('VIDEO_CALL_STARTED')) {
-                          displayContent = "Görüntülü görüşme başlatıldı";
-                          callIcon = Icons.videocam;
-                        } else if (content.toString().contains('VIDEO_CALL_ENDED')) {
-                          final duration = content.toString().contains('(') ? content.toString().split('(').last.replaceAll(')', '') : '';
-                          displayContent = content.toString().contains('CEVAPLANMADI') ? "Cevaplanmayan görüntülü görüşme" : "Görüntülü görüşme bitti: $duration";
-                          callIcon = content.toString().contains('CEVAPLANMADI') ? Icons.missed_video_call : Icons.videocam_off;
+                        final rawContent = content.toString();
+                        final isCallEnded = rawContent.contains('CALL_ENDED');
+                        final isCallRejected = rawContent.contains('CALL_REJECTED');
+                        final isCallCancelled = rawContent.contains('CALL_CANCELLED');
+                        final isVideo = rawContent.contains('VIDEO');
+                        final duration = rawContent.contains('(') ? rawContent.split('(').last.replaceAll(')', '') : '';
+                        final isUnanswered = rawContent.contains('CEVAPLANMADI') || isCallCancelled || isCallRejected;
+
+                        if (rawContent.contains('CALL_STARTED')) {
+                          displayContent = isMyMessage 
+                            ? (isVideo ? "Giden Görüntülü Arama" : "Giden Sesli Arama")
+                            : (isVideo ? "Gelen Görüntülü Arama" : "Gelen Sesli Arama");
+                          callIcon = isVideo ? Icons.videocam : Icons.call;
+                        } else if (isCallEnded || isCallRejected || isCallCancelled) {
+                          if (isUnanswered) {
+                            displayContent = isMyMessage 
+                              ? (isVideo ? "Cevaplanmayan Görüntülü Arama" : "Cevaplanmayan Sesli Arama")
+                              : (isVideo ? "Cevapsız Görüntülü Arama" : "Cevapsız Gelen Arama");
+                            callIcon = isVideo ? Icons.missed_video_call : Icons.call_missed;
+                          } else {
+                            displayContent = isMyMessage
+                              ? (isVideo ? "Giden Görüntülü Arama" : "Giden Sesli Arama")
+                              : (isVideo ? "Gelen Görüntülü Arama" : "Gelen Sesli Arama");
+                            if (duration.isNotEmpty) displayContent += "\nSüre: $duration";
+                            callIcon = isVideo ? Icons.videocam : Icons.call;
+                          }
                         }
                       }
 
@@ -551,11 +570,36 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                             Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                if (callIcon != null) Icon(callIcon, color: Colors.white70, size: 16),
-                                                if (callIcon != null) const SizedBox(width: 8),
-                                                Text(
-                                                  displayContent,
-                                                  style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Colors.white),
+                                                Icon(
+                                                  callIcon, 
+                                                  color: content.toString().contains('CEVAPLANMADI') || content.toString().contains('CANCELLED') || content.toString().contains('REJECTED')
+                                                    ? Colors.redAccent 
+                                                    : (isMyMessage ? Colors.white : Colors.greenAccent), 
+                                                  size: 28,
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Flexible(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        displayContent.split('\n').first,
+                                                        style: const TextStyle(
+                                                          color: Colors.white, 
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 16,
+                                                        ),
+                                                      ),
+                                                      if (displayContent.contains('\n'))
+                                                        Text(
+                                                          displayContent.split('\n').last,
+                                                          style: const TextStyle(
+                                                            color: Colors.white70,
+                                                            fontSize: 13,
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
                                                 ),
                                               ],
                                             )

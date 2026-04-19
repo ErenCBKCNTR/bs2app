@@ -107,7 +107,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
               }
               if (settings.messageSoundEnabled) {
                 final player = AudioPlayer();
-                player.play(AssetSource('sounds/new_message.mp3')).catchError((_) => null);
+                player.play(AssetSource('sounds/message_received.mp3')).catchError((_) => null);
               }
             }
          }

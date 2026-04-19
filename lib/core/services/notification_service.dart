@@ -12,14 +12,19 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   AppLogger.instance.info("Background message received: ${message.messageId}");
   
-  // Eğer bu bir 'call' tipinde bir mesajsa bildirimi göster
-  if (message.data['type'] == 'call') {
-    final notificationService = NotificationService();
+  // Eğer bu bir 'call' tipinde bir mesajsa veya normal bir mesajsa bildirimi göster
+  final type = message.data['type'];
+  final notificationService = NotificationService();
+  
+  if (type == 'call') {
     await notificationService.showCallNotification(
       message.data['title'] ?? 'Gelen Arama',
       message.data['body'] ?? 'Size bir çağrı var',
       message.data['chat_id'] ?? '',
     );
+  } else {
+    // Normal mesajlar için de arka planda bildirimi manuel tetikle (FCM bazen kısıtlayabiliyor)
+    await notificationService._showLocalNotification(message);
   }
 }
 
@@ -51,10 +56,26 @@ class NotificationService {
     // Pil optimizasyonunu devre dışı bırakmayı iste (Arka plan bildirimleri için önemli)
     try {
       if (await Permission.ignoreBatteryOptimizations.isDenied) {
+        // Doğrudan sistemi uyarmayı dene
         await Permission.ignoreBatteryOptimizations.request();
+        
+        // Eğer hala reddedilmişse ayarları açması için kullanıcıyı uyarabiliriz ama 
+        // şu an için log atıp devam edelim.
+        if (await Permission.ignoreBatteryOptimizations.isDenied) {
+           AppLogger.instance.warning('Pil optimizasyon izni kullanıcı tarafından manuel reddedildi.');
+        }
       }
     } catch (e) {
       AppLogger.instance.warning('Pil optimizasyon izni istenemedi: $e');
+    }
+
+    // Android 13+ bildirim izni (permission_handler ile ek kontrol)
+    try {
+      if (await Permission.notification.isDenied) {
+        await Permission.notification.request();
+      }
+    } catch (e) {
+      AppLogger.instance.warning('Bildirim izni istenemedi: $e');
     }
 
     // FCM Token al ve sunucuya senkronize et

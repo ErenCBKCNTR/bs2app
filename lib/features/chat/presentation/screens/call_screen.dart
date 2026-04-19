@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart'; // SemanticsService için eklendi
 import 'package:livekit_client/livekit_client.dart' as lk;
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -101,9 +102,21 @@ class _CallScreenState extends State<CallScreen> {
 
     try {
       await _ringtonePlayer.setReleaseMode(ReleaseMode.loop);
-      await _ringtonePlayer.play(AssetSource('sounds/outgoing_call.mp3'));
+      final soundPath = widget.isIncoming ? 'sounds/incoming_call.mp3' : 'sounds/outgoing_call.mp3';
+      await _ringtonePlayer.play(AssetSource(soundPath));
     } catch (e) {
       AppLogger.instance.warning('Zil sesi çalınamadı: $e');
+    }
+  }
+
+  Future<void> _playEndSound() async {
+    try {
+      final player = AudioPlayer();
+      await player.play(AssetSource('sounds/call_ended.mp3'));
+      await Future.delayed(const Duration(seconds: 2));
+      await player.dispose();
+    } catch (e) {
+      AppLogger.instance.warning('Bitiş sesi çalınamadı: $e');
     }
   }
 
@@ -345,6 +358,8 @@ class _CallScreenState extends State<CallScreen> {
     await _room?.disconnect();
     _room = null;
     
+    _playEndSound();
+    
     if (mounted) Navigator.pop(context);
   }
 
@@ -353,6 +368,12 @@ class _CallScreenState extends State<CallScreen> {
       _isMuted = !_isMuted;
     });
     _room?.localParticipant?.setMicrophoneEnabled(!_isMuted);
+    
+    // Sesli okuma uyarısı
+    SemanticsService.announce(
+      _isMuted ? "Mikrofon şu anda kapalı" : "Mikrofon şu anda açık",
+      TextDirection.ltr,
+    );
   }
 
   void _toggleCam() {
@@ -360,6 +381,28 @@ class _CallScreenState extends State<CallScreen> {
       _isCamOff = !_isCamOff;
     });
     _room?.localParticipant?.setCameraEnabled(!_isCamOff);
+    
+    // Sesli okuma uyarısı
+    SemanticsService.announce(
+      _isCamOff ? "Kamera şu anda kapalı" : "Kamera şu anda açık",
+      TextDirection.ltr,
+    );
+  }
+
+  void _switchCamera() async {
+    try {
+      final localPart = _room?.localParticipant;
+      if (localPart != null) {
+        final videoTrack = localPart.videoTrackPublications.firstOrNull?.track as lk.LocalVideoTrack?;
+        if (videoTrack != null) {
+          // LiveKit Flutter SDK provides switchCamera() on LocalVideoTrack
+          await videoTrack.switchCamera(); 
+          SemanticsService.announce("Kamera değiştirildi", TextDirection.ltr);
+        }
+      }
+    } catch (e) {
+      AppLogger.instance.error('Kamera değiştirme hatası: $e');
+    }
   }
 
   @override
@@ -462,22 +505,30 @@ class _CallScreenState extends State<CallScreen> {
                           color: _isMuted ? Colors.white : Colors.white24,
                           iconColor: _isMuted ? Colors.black : Colors.white,
                           onPressed: _toggleMute,
-                          label: "Sessiz",
+                          label: _isMuted ? "Mikrofonu aç" : "Mikrofonu kapat",
                         ),
-                        if (widget.isVideo)
+                        if (widget.isVideo) ...[
                           _buildControlButton(
                             icon: _isCamOff ? Icons.videocam_off : Icons.videocam,
                             color: _isCamOff ? Colors.white : Colors.white24,
                             iconColor: _isCamOff ? Colors.black : Colors.white,
                             onPressed: _toggleCam,
-                            label: "Kamera",
+                            label: _isCamOff ? "Kamerayı aç" : "Kamerayı kapat",
                           ),
+                          _buildControlButton(
+                            icon: Icons.flip_camera_ios,
+                            color: Colors.white24,
+                            iconColor: Colors.white,
+                            onPressed: _switchCamera,
+                            label: "Kamerayı Değiştir",
+                          ),
+                        ],
                         _buildControlButton(
                           icon: Icons.call_end,
                           color: Colors.red,
                           iconColor: Colors.white,
                           onPressed: _hangUp,
-                          label: "Kapat",
+                          label: "Görüşmeyi sonlandır",
                         ),
                       ],
                     ),
@@ -551,6 +602,7 @@ class _CallScreenState extends State<CallScreen> {
 
   void _cancelCall() async {
     _stopRingtone();
+    _playEndSound();
     try {
       await PocketBaseService.client.collection('messages').create(body: {
          'chat_id': widget.chatId,
@@ -565,6 +617,7 @@ class _CallScreenState extends State<CallScreen> {
 
   void _hangUpRejected() async {
     _stopRingtone();
+    _playEndSound();
     try {
       await PocketBaseService.client.collection('messages').create(body: {
          'chat_id': widget.chatId,
