@@ -302,10 +302,20 @@ class _BlogScreenState extends State<BlogScreen> {
               },
               child: const Text('Paylaş'),
             ),
-   @override
+          ],
+        );
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Blog'),
+      ),
+      body: SafeArea(
+        child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(12.0),

@@ -908,8 +908,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           _buildMessageInput(),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildReadStatus(Map<String, dynamic> message) {
     if (message['sender_id'] != _myUserId) return const SizedBox.shrink();
