@@ -42,7 +42,7 @@ class _BlogScreenState extends State<BlogScreen> {
     try {
       final response = await PocketBaseService.client.collection('posts').getFullList(
           sort: '-created',
-          expand: 'user_id'
+          expand: 'user_id,post_likes_via_post_id'
       );
           
       if (mounted) {
@@ -278,9 +278,14 @@ class _BlogScreenState extends State<BlogScreen> {
                   itemBuilder: (context, index) {
                     final post = _posts[index];
                     final user = post['expand']?['user_id'];
-                    final username = user != null ? (user['name'] ?? user['full_name'] ?? 'Bilinmeyen') : 'Bilinmeyen';
+                    final username = user != null ? (user['username'] ?? user['name'] ?? user['full_name'] ?? 'Bilinmeyen') : 'Bilinmeyen';
                     final content = post['content'] ?? '';
                     final likes = post['likes_count'] ?? 0;
+                    final myId = PocketBaseService.client.authStore.model!.id;
+                    // Check if current user liked
+                    final likesList = post['expand']?['post_likes_via_post_id'] ?? [];
+                    final isLiked = likesList.any((l) => l['user_id'] == myId);
+                    
                     // TODO: We could fetch comment count independently or use a view, for now we will assume 0 or handle it later
                     final commentCount = 0;
                     final timeStr = _formatTime(post['created']);
@@ -354,7 +359,7 @@ class _BlogScreenState extends State<BlogScreen> {
                                 Row(
                                   children: [
                                     Semantics(
-                                      label: "Beğen. Şu anki beğeni sayısı $likes",
+                                      label: isLiked ? "Beğenildi. Şu anki beğeni sayısı $likes" : "Beğen. Şu anki beğeni sayısı $likes",
                                       button: true,
                                       onTapHint: "Gönderiyi beğenmek veya beğeniyi geri almak için çift dokunun",
                                       child: InkWell(
@@ -364,7 +369,7 @@ class _BlogScreenState extends State<BlogScreen> {
                                           padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
                                           child: Row(
                                             children: [
-                                              Icon(Icons.favorite_border, size: 20, color: Colors.red.shade400),
+                                              Icon(isLiked ? Icons.favorite : Icons.favorite_border, size: 20, color: Colors.red.shade400),
                                               const SizedBox(width: 4),
                                               Text(likes.toString(), style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.bold)),
                                             ],

@@ -659,7 +659,7 @@ Widget? _buildFAB() {
     final filteredChats = _chats.where((c) {
        final myPart = c.data['my_participant'] as RecordModel?;
        final isArchived = myPart != null ? (myPart.data['is_archived'] ?? false) : false;
-       return !isArchived;
+       return _showArchived ? isArchived : !isArchived;
     }).toList();
 
     if (_chats.isEmpty) {
@@ -803,12 +803,12 @@ Widget? _buildFAB() {
           Expanded(
             child: ElevatedButton.icon(
               onPressed: () {
-                setState(() => _showArchived = true);
+                setState(() => _showArchived = !_showArchived);
               },
-              icon: const Icon(Icons.archive, size: 18),
-              label: Text("Arşivlenmiş ($archivedCount)"),
+              icon: Icon(_showArchived ? Icons.chat : Icons.archive, size: 18),
+              label: Text(_showArchived ? "Sohbetlere Dön" : "Arşivlenmiş ($archivedCount)"),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: _showArchived ? Colors.green : Colors.blue,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
