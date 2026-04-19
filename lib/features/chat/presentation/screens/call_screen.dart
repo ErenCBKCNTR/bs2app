@@ -37,6 +37,10 @@ class _CallScreenState extends State<CallScreen> {
   bool _isCamOff = false;
   bool _isJoined = false;
   bool _isAccepted = false; // Arama cevaplandı mı?
+  bool _isSpeakerOn = false;
+  bool _isVideoCall = false;
+  bool _showVideoRequest = false;
+  String _videoRequesterName = '';
   String _connectionStatus = 'Başlatılıyor...';
   
   // Video tracks
@@ -55,6 +59,13 @@ class _CallScreenState extends State<CallScreen> {
   void initState() {
     super.initState();
     _myId = PocketBaseService.client.authStore.model!.id;
+    _isVideoCall = widget.isVideo;
+    
+    // Sesli görüşmedeyse varsayılan ahize (speaker off)
+    // Görüntülü görüşmedeyse varsayılan hoparlör (isteğe bağlı ama kullanıcı "varsayılan ahize" dedi)
+    _isSpeakerOn = false; 
+    lk.HardwareSettings().setSpeakerphoneOn(_isSpeakerOn);
+
     _initCall();
     _playRingtone();
     _listenToCallEndEvents();
@@ -84,6 +95,24 @@ class _CallScreenState extends State<CallScreen> {
                  _connectToLiveKitRoom();
                }
             }
+          } else if (content == '[VIDEO_REQUEST]') {
+             if (mounted && _isAccepted && !_isVideoCall) {
+               setState(() {
+                 _videoRequesterName = widget.targetUsername;
+                 _showVideoRequest = true;
+               });
+               SemanticsService.announce("$_videoRequesterName görüntülü görüşmeye geçmek istiyor", TextDirection.ltr);
+             }
+          } else if (content == '[VIDEO_ACCEPTED]') {
+             if (mounted && _isAccepted && !_isVideoCall) {
+               _enableVideo(true);
+             }
+          } else if (content == '[VIDEO_REJECTED]') {
+             if (mounted) {
+               ScaffoldMessenger.of(context).showSnackBar(
+                 const SnackBar(content: Text('Görüntülü görüşme isteği reddedildi.')),
+               );
+             }
           }
         }
       }
@@ -197,6 +226,8 @@ class _CallScreenState extends State<CallScreen> {
 
       _room = lk.Room();
       
+      // Ses çıkışını ayarla
+      lk.HardwareSettings().setSpeakerphoneOn(_isSpeakerOn);
       // Olay dinleyicileri
       _room!.createListener()
         ..on<lk.RoomDisconnectedEvent>((event) {
@@ -253,7 +284,7 @@ class _CallScreenState extends State<CallScreen> {
         
         // Mikrofonu ve varsa kamerayı aç
         await _room!.localParticipant?.setMicrophoneEnabled(true);
-        if (widget.isVideo) {
+        if (_isVideoCall) {
           await _room!.localParticipant?.setCameraEnabled(true);
         }
       }
@@ -347,7 +378,7 @@ class _CallScreenState extends State<CallScreen> {
       await PocketBaseService.client.collection('messages').create(body: {
          'chat_id': widget.chatId,
          'sender_id': _myId,
-         'content': widget.isVideo ? '[VIDEO_CALL_ENDED]$status$durationText' : '[VOICE_CALL_ENDED]$status$durationText',
+         'content': _isVideoCall ? '[VIDEO_CALL_ENDED]$status$durationText' : '[VOICE_CALL_ENDED]$status$durationText',
       });
     } catch (e) {
       AppLogger.instance.error('Arama kapanış mesajı hatası: $e');
@@ -411,6 +442,92 @@ class _CallScreenState extends State<CallScreen> {
     }
   }
 
+  void _toggleSpeaker() {
+    setState(() {
+      _isSpeakerOn = !_isSpeakerOn;
+    });
+    lk.HardwareSettings().setSpeakerphoneOn(_isSpeakerOn);
+    
+    SemanticsService.announce(
+      _isSpeakerOn ? "Hoparlör açıldı" : "Hoparlör kapatıldı (Ahizeye geçildi)",
+      TextDirection.ltr,
+    );
+  }
+
+  void _requestVideoTransition() async {
+    try {
+      await PocketBaseService.client.collection('messages').create(body: {
+        'chat_id': widget.chatId,
+        'sender_id': _myId,
+        'content': '[VIDEO_REQUEST]',
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Görüntülü görüşme isteği gönderildi...')),
+      );
+    } catch (e) {
+      AppLogger.instance.error('Video isteği hatası: $e');
+    }
+  }
+
+  void _acceptVideoRequest() async {
+    setState(() {
+      _showVideoRequest = false;
+    });
+    try {
+      await PocketBaseService.client.collection('messages').create(body: {
+        'chat_id': widget.chatId,
+        'sender_id': _myId,
+        'content': '[VIDEO_ACCEPTED]',
+      });
+      _enableVideo(true);
+    } catch (e) {
+      AppLogger.instance.error('Video kabul hatası: $e');
+    }
+  }
+
+  void _rejectVideoRequest() async {
+    setState(() {
+      _showVideoRequest = false;
+    });
+    try {
+      await PocketBaseService.client.collection('messages').create(body: {
+        'chat_id': widget.chatId,
+        'sender_id': _myId,
+        'content': '[VIDEO_REJECTED]',
+      });
+    } catch (e) {
+      AppLogger.instance.error('Video reddetme hatası: $e');
+    }
+  }
+
+  void _enableVideo(bool enable) async {
+    if (_room == null) return;
+    
+    // Kamera izni kontrol et
+    if (enable) {
+      final status = await Permission.camera.request();
+      if (!status.isGranted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Kamera izni verilmedi.')),
+        );
+        return;
+      }
+    }
+
+    setState(() {
+      _isVideoCall = enable;
+    });
+    await _room!.localParticipant?.setCameraEnabled(enable);
+    
+    // Görüntü geldikten sonra hoparlörü açmak mantıklı olabilir ama kullanıcı "varsayılan ahize" dediği için dokunmuyorum
+    // lk.HardwareSettings().setSpeakerphoneOn(enable); 
+    
+    SemanticsService.announce(
+      enable ? "Görüntülü görüşmeye geçildi" : "Sesli görüşmeye dönüldü",
+      TextDirection.ltr,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -418,17 +535,17 @@ class _CallScreenState extends State<CallScreen> {
       body: Stack(
         children: [
           // Background - Remote Video if available
-          if (widget.isVideo && _remoteVideoTrack != null && !_isCamOff)
+          if (_isVideoCall && _remoteVideoTrack != null && !_isCamOff)
             Positioned.fill(
               child: lk.VideoTrackRenderer(_remoteVideoTrack!),
             )
-          else if (widget.isVideo && _isJoined)
+          else if (_isVideoCall && _isJoined)
             const Center(
               child: Icon(Icons.videocam_off, color: Colors.white24, size: 80),
             ),
           
           // Local Video (PiP)
-          if (widget.isVideo && _localVideoTrack != null)
+          if (_isVideoCall && _localVideoTrack != null)
             Positioned(
               top: MediaQuery.of(context).padding.top + 20,
               right: 20,
@@ -452,7 +569,7 @@ class _CallScreenState extends State<CallScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 60),
-                if (_remoteVideoTrack == null) ...[
+                if (_remoteVideoTrack == null || !_isVideoCall) ...[
                   CircleAvatar(
                     radius: 50,
                     backgroundColor: Colors.grey[800],
@@ -472,14 +589,14 @@ class _CallScreenState extends State<CallScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      widget.isVideo ? Icons.videocam : Icons.call,
+                      _isVideoCall ? Icons.videocam : Icons.call,
                       size: 16,
                       color: Colors.white70,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       _isAccepted 
-                        ? (widget.isVideo ? "Görüntülü Görüşme (" + _connectionStatus + ")" : "Sesli Görüşme (" + _connectionStatus + ")")
+                        ? (_isVideoCall ? "Görüntülü Görüşme (" + _connectionStatus + ")" : "Sesli Görüşme (" + _connectionStatus + ")")
                         : (widget.isIncoming ? "Gelen Arama" : "Çalıyor..."),
                       style: const TextStyle(fontSize: 16, color: Colors.white70),
                     ),
@@ -498,45 +615,63 @@ class _CallScreenState extends State<CallScreen> {
                 if (_isAccepted)
                   Container(
                     margin: const EdgeInsets.all(24),
-                    padding: const Duration(milliseconds: 10).inMilliseconds > 0 ? const EdgeInsets.symmetric(vertical: 16, horizontal: 24) : EdgeInsets.zero,
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(40),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildControlButton(
-                          icon: _isMuted ? Icons.mic_off : Icons.mic,
-                          color: _isMuted ? Colors.white : Colors.white24,
-                          iconColor: _isMuted ? Colors.black : Colors.white,
-                          onPressed: _toggleMute,
-                          label: _isMuted ? "Mikrofonu aç" : "Mikrofonu kapat",
-                        ),
-                        if (widget.isVideo) ...[
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
                           _buildControlButton(
-                            icon: _isCamOff ? Icons.videocam_off : Icons.videocam,
-                            color: _isCamOff ? Colors.white : Colors.white24,
-                            iconColor: _isCamOff ? Colors.black : Colors.white,
-                            onPressed: _toggleCam,
-                            label: _isCamOff ? "Kamerayı aç" : "Kamerayı kapat",
+                            icon: _isMuted ? Icons.mic_off : Icons.mic,
+                            color: _isMuted ? Colors.white : Colors.white24,
+                            iconColor: _isMuted ? Colors.black : Colors.white,
+                            onPressed: _toggleMute,
+                            label: _isMuted ? "Mikrofonu aç" : "Mikrofonu kapat",
                           ),
                           _buildControlButton(
-                            icon: Icons.flip_camera_ios,
-                            color: Colors.white24,
+                            icon: _isSpeakerOn ? Icons.volume_up : Icons.volume_down,
+                            color: _isSpeakerOn ? Colors.white : Colors.white24,
+                            iconColor: _isSpeakerOn ? Colors.black : Colors.white,
+                            onPressed: _toggleSpeaker,
+                            label: _isSpeakerOn ? "Hoparlörü kapat" : "Hoparlörü aç",
+                          ),
+                          if (!_isVideoCall)
+                            _buildControlButton(
+                              icon: Icons.videocam,
+                              color: Colors.white24,
+                              iconColor: Colors.white,
+                              onPressed: _requestVideoTransition,
+                              label: "Görüntüye Geç",
+                            ),
+                          if (_isVideoCall) ...[
+                            _buildControlButton(
+                              icon: _isCamOff ? Icons.videocam_off : Icons.videocam,
+                              color: _isCamOff ? Colors.white : Colors.white24,
+                              iconColor: _isCamOff ? Colors.black : Colors.white,
+                              onPressed: _toggleCam,
+                              label: _isCamOff ? "Kamerayı aç" : "Kamerayı kapat",
+                            ),
+                            _buildControlButton(
+                              icon: Icons.flip_camera_ios,
+                              color: Colors.white24,
+                              iconColor: Colors.white,
+                              onPressed: _switchCamera,
+                              label: "Kamerayı Değiştir",
+                            ),
+                          ],
+                          _buildControlButton(
+                            icon: Icons.call_end,
+                            color: Colors.red,
                             iconColor: Colors.white,
-                            onPressed: _switchCamera,
-                            label: "Kamerayı Değiştir",
+                            onPressed: _hangUp,
+                            label: "Görüşmeyi sonlandır",
                           ),
                         ],
-                        _buildControlButton(
-                          icon: Icons.call_end,
-                          color: Colors.red,
-                          iconColor: Colors.white,
-                          onPressed: _hangUp,
-                          label: "Görüşmeyi sonlandır",
-                        ),
-                      ],
+                      ),
                     ),
                   )
                 else if (!widget.isIncoming)
@@ -546,11 +681,16 @@ class _CallScreenState extends State<CallScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        FloatingActionButton(
-                          heroTag: "cancel",
-                          onPressed: _cancelCall,
-                          backgroundColor: Colors.red,
-                          child: const Icon(Icons.call_end, color: Colors.white, size: 30),
+                        Semantics(
+                          label: "Vazgeç",
+                          button: true,
+                          child: FloatingActionButton(
+                            heroTag: "cancel",
+                            onPressed: _cancelCall,
+                            backgroundColor: Colors.red,
+                            tooltip: "Vazgeç",
+                            child: const Icon(Icons.call_end, color: Colors.white, size: 30),
+                          ),
                         ),
                         const SizedBox(height: 12),
                         const Text("Vazgeç", style: TextStyle(color: Colors.white)),
@@ -574,11 +714,16 @@ class _CallScreenState extends State<CallScreen> {
                      Column(
                        mainAxisSize: MainAxisSize.min,
                        children: [
-                         FloatingActionButton(
-                           heroTag: "accept",
-                           onPressed: _handleAccept,
-                           backgroundColor: Colors.green,
-                           child: const Icon(Icons.call, color: Colors.white, size: 30),
+                         Semantics(
+                           label: "Cevapla",
+                           button: true,
+                           child: FloatingActionButton(
+                             heroTag: "accept",
+                             onPressed: _handleAccept,
+                             backgroundColor: Colors.green,
+                             tooltip: "Cevapla",
+                             child: const Icon(Icons.call, color: Colors.white, size: 30),
+                           ),
                          ),
                          const SizedBox(height: 12),
                          const Text("Cevapla", style: TextStyle(color: Colors.white)),
@@ -587,17 +732,81 @@ class _CallScreenState extends State<CallScreen> {
                      Column(
                        mainAxisSize: MainAxisSize.min,
                        children: [
-                         FloatingActionButton(
-                           heroTag: "decline",
-                           onPressed: _hangUpRejected, // Reddetme için özel işlem
-                           backgroundColor: Colors.red,
-                           child: const Icon(Icons.call_end, color: Colors.white, size: 30),
+                         Semantics(
+                           label: "Reddet",
+                           button: true,
+                           child: FloatingActionButton(
+                             heroTag: "decline",
+                             onPressed: _hangUpRejected,
+                             backgroundColor: Colors.red,
+                             tooltip: "Reddet",
+                             child: const Icon(Icons.call_end, color: Colors.white, size: 30),
+                           ),
                          ),
                          const SizedBox(height: 12),
                          const Text("Reddet", style: TextStyle(color: Colors.white)),
                        ],
                      ),
                    ],
+                 ),
+               ),
+             ),
+          
+          // Görüntülü Görüşme İsteği Overly/Dialog
+          if (_showVideoRequest)
+             Positioned.fill(
+               child: Container(
+                 color: Colors.black87,
+                 child: Center(
+                   child: Container(
+                     margin: const EdgeInsets.symmetric(horizontal: 32),
+                     padding: const EdgeInsets.all(24),
+                     decoration: BoxDecoration(
+                       color: Colors.grey[900],
+                       borderRadius: BorderRadius.circular(24),
+                       border: Border.all(color: Colors.white12),
+                     ),
+                     child: Column(
+                       mainAxisSize: MainAxisSize.min,
+                       children: [
+                         const Icon(Icons.videocam, color: Colors.greenAccent, size: 48),
+                         const SizedBox(height: 16),
+                         Text(
+                           "$_videoRequesterName görüntülü görüşmeye geçmek istiyor",
+                           textAlign: TextAlign.center,
+                           style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                         ),
+                         const SizedBox(height: 24),
+                         Row(
+                           children: [
+                             Expanded(
+                               child: ElevatedButton(
+                                 onPressed: _rejectVideoRequest,
+                                 style: ElevatedButton.styleFrom(
+                                   backgroundColor: Colors.red[800],
+                                   foregroundColor: Colors.white,
+                                   padding: const EdgeInsets.symmetric(vertical: 12),
+                                 ),
+                                 child: const Text("İptal"),
+                               ),
+                             ),
+                             const SizedBox(width: 16),
+                             Expanded(
+                               child: ElevatedButton(
+                                 onPressed: _acceptVideoRequest,
+                                 style: ElevatedButton.styleFrom(
+                                   backgroundColor: Colors.green[800],
+                                   foregroundColor: Colors.white,
+                                   padding: const EdgeInsets.symmetric(vertical: 12),
+                                 ),
+                                 child: const Text("Geç"),
+                               ),
+                             ),
+                           ],
+                         ),
+                       ],
+                     ),
+                   ),
                  ),
                ),
              ),

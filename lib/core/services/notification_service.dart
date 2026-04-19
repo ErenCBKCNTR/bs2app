@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../utils/logger.dart';
 import 'pocketbase_service.dart';
@@ -12,10 +13,11 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   AppLogger.instance.info("Background message received: ${message.messageId}");
   
-  // Eğer bu bir 'call' tipinde bir mesajsa veya normal bir mesajsa bildirimi göster
-  final type = message.data['type'];
   final notificationService = NotificationService();
+  // Arka plan izolesinde yerel bildirim eklentisini hazırla
+  await notificationService._initForBackground();
   
+  final type = message.data['type'];
   if (type == 'call') {
     await notificationService.showCallNotification(
       message.data['title'] ?? 'Gelen Arama',
@@ -23,7 +25,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       message.data['chat_id'] ?? '',
     );
   } else {
-    // Normal mesajlar için de arka planda bildirimi manuel tetikle (FCM bazen kısıtlayabiliyor)
     await notificationService._showLocalNotification(message);
   }
 }
@@ -34,8 +35,22 @@ class NotificationService {
   NotificationService._internal();
 
   final FlutterLocalNotificationsPlugin _localNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  bool _isInitialized = false;
+
+  Future<void> _initForBackground() async {
+    if (_isInitialized) return;
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+    );
+    await _localNotificationsPlugin.initialize(initializationSettings);
+    _isInitialized = true;
+  }
 
   Future<void> init() async {
+    if (_isInitialized) return;
+    
     // Firebase Messaging altyapısını kur
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
@@ -97,8 +112,12 @@ class NotificationService {
     await _localNotificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        // Bildirime tıklandığında yapılacak işlemler
-        AppLogger.instance.info('Bildirime tıklandı: ${response.payload}');
+        // Bildirime veya butonlara (Cevapla/Reddet) tıklandığında yapılacak işlemler
+        AppLogger.instance.info('Bildirime tıklandı. Action: ${response.actionId}, Payload: ${response.payload}');
+        
+        if (response.actionId == 'reject_call') {
+          _localNotificationsPlugin.cancel(response.id ?? 0);
+        }
       },
     );
 
@@ -106,17 +125,17 @@ class NotificationService {
     final androidPlugin = _localNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin != null) {
       await androidPlugin.createNotificationChannel(const AndroidNotificationChannel(
-        'high_importance_channel',
-        'Yüksek Öncelikli Bildirimler',
-        description: 'Bu kanal üzerinden mesaj ve arama bildirimleri gelir.',
+        'high_importance_channel_v3',
+        'Mesaj Bildirimleri',
+        description: 'Bu kanal üzerinden mesaj bildirimleri gelir.',
         importance: Importance.max,
         playSound: true,
         enableVibration: true,
       ));
 
       await androidPlugin.createNotificationChannel(const AndroidNotificationChannel(
-        'call_channel_v2',
-        'Aramalar',
+        'call_channel_v3',
+        'Gelen Aramalar',
         description: 'Gelen çağrılar için bildirim kanalı',
         importance: Importance.max,
         playSound: true,
@@ -169,14 +188,16 @@ class NotificationService {
         body,
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'high_importance_channel', // id
-            'Yüksek Öncelikli Bildirimler', // title
-            channelDescription: 'Bu kanal üzerinden mesaj ve arama bildirimleri gelir.',
+            'high_importance_channel_v3', // Kanal ID'yi yine değiştirelim ki ayarlar sıfırlansın
+            'Mesaj Bildirimleri', 
+            channelDescription: 'Bu kanal üzerinden mesaj bildirimleri gelir.',
             importance: Importance.max,
-            priority: Priority.high,
+            priority: Priority.max,
+            ticker: title,
             icon: android?.smallIcon ?? '@mipmap/ic_launcher',
             playSound: true,
             enableVibration: true,
+            visibility: NotificationVisibility.public,
           ),
         ),
         payload: message.data['chat_id'] ?? message.data['type'],
@@ -188,11 +209,11 @@ class NotificationService {
   Future<void> showCallNotification(String title, String body, String chatId) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'call_channel_v2', // Kanal ID değişti (sound ayarını zorlamak için)
-      'Aramalar',
-      channelDescription: 'Gelen çağrılar için bildirim kanalı',
+      'call_channel_v3',
+      'Gelen Aramalar',
+      channelDescription: 'Gelen çağrılar için tam ekran bildirim kanalı',
       importance: Importance.max,
-      priority: Priority.high,
+      priority: Priority.max,
       fullScreenIntent: true,
       category: AndroidNotificationCategory.call,
       visibility: NotificationVisibility.public,
@@ -200,6 +221,20 @@ class NotificationService {
       autoCancel: false,
       playSound: true,
       enableVibration: true,
+      ticker: title,
+      actions: <AndroidNotificationAction>[
+        AndroidNotificationAction(
+          'accept_call',
+          'Cevapla',
+          titleColor: Color.fromARGB(255, 76, 175, 80),
+          showsUserInterface: true,
+        ),
+        AndroidNotificationAction(
+          'reject_call',
+          'Reddet',
+          titleColor: Color.fromARGB(255, 244, 67, 54),
+        ),
+      ],
     );
     
     const NotificationDetails platformChannelSpecifics =

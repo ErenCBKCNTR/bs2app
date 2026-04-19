@@ -24,6 +24,8 @@ class ChatDetailScreen extends StatefulWidget {
 }
 
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
+  static final Map<String, List<Map<String, dynamic>>> _messageCache = {};
+  
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   
@@ -66,6 +68,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     super.initState();
     _myUserId = PocketBaseService.client.authStore.model!.id;
     _chat = Map<String, dynamic>.from(widget.chat);
+    
+    final chatId = _chat['id'];
+    if (_messageCache.containsKey(chatId)) {
+      _messages = _messageCache[chatId]!;
+      _isLoading = false;
+    }
     
     // Eğer katılımcılar yoksa (başka ekrandan sadece id/name ile gelindiyse) çek
     if (!_chat.containsKey('chat_participants') || (_chat['chat_participants'] as List).isEmpty) {
@@ -144,6 +152,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
         setState(() {
           _messages = response.map((e) => e.toJson()).toList();
+          _messageCache[chatId] = _messages; // Cache güncelle
           _chat = {
             ..._chat,
             'chat_participants': participantsResponse.map((e) => e.toJson()).toList(),
@@ -450,7 +459,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       final createdAt = DateTime.parse(message['created'] ?? DateTime.now().toIso8601String()).toLocal();
                       final timeString = DateFormat('HH:mm').format(createdAt);
                       
-                      final isCallMessage = content.toString().contains('_CALL_');
+                      final isCallMessage = content.toString().contains('CALL_');
                       final isVoiceMessage = content.toString().startsWith('[VOICE]');
                       
                       String displayContent = content.toString();
@@ -461,6 +470,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                         final isCallEnded = rawContent.contains('CALL_ENDED');
                         final isCallRejected = rawContent.contains('CALL_REJECTED');
                         final isCallCancelled = rawContent.contains('CALL_CANCELLED');
+                        final isCallAccepted = rawContent.contains('CALL_ACCEPTED');
                         final isVideo = rawContent.contains('VIDEO');
                         final duration = rawContent.contains('(') ? rawContent.split('(').last.replaceAll(')', '') : '';
                         final isUnanswered = rawContent.contains('CEVAPLANMADI') || isCallCancelled || isCallRejected;
@@ -470,11 +480,21 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                             ? (isVideo ? "Giden Görüntülü Arama" : "Giden Sesli Arama")
                             : (isVideo ? "Gelen Görüntülü Arama" : "Gelen Sesli Arama");
                           callIcon = isVideo ? Icons.videocam : Icons.call;
+                        } else if (isCallAccepted) {
+                          displayContent = isMyMessage ? "Aramayı Kabul Ettiniz" : "Arama Kabul Edildi";
+                          callIcon = Icons.call_made;
                         } else if (isCallEnded || isCallRejected || isCallCancelled) {
                           if (isUnanswered) {
                             displayContent = isMyMessage 
-                              ? (isVideo ? "Cevaplanmayan Görüntülü Arama" : "Cevaplanmayan Sesli Arama")
+                              ? (isVideo ? "Giden Arama Cevaplanmadı" : "Giden Arama Cevaplanmadı")
                               : (isVideo ? "Cevapsız Görüntülü Arama" : "Cevapsız Gelen Arama");
+                            
+                            if (isCallRejected) {
+                               displayContent = isMyMessage ? "Aramayı Reddetiniz" : "Arama Reddedildi";
+                            } else if (isCallCancelled) {
+                               displayContent = isMyMessage ? "Aramayı İptal Ettiniz" : "Arama İptal Edildi";
+                            }
+                            
                             callIcon = isVideo ? Icons.missed_video_call : Icons.call_missed;
                           } else {
                             displayContent = isMyMessage
