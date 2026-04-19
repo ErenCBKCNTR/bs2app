@@ -2,6 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../data/radio_stations.dart';
+import '../services/radio_recording_service.dart';
+import '../models/radio_recording.dart';
+import 'package:intl/intl.dart';
 
 class RadioPlayerWidget extends StatefulWidget {
   final RadioStation station;
@@ -24,6 +27,8 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
   bool _isPlaying = false;
   double _volume = 0.8;
   bool _isBuffering = false;
+  final RadioRecordingService _recordingService = RadioRecordingService();
+  bool _isRecording = false;
 
   @override
   void initState() {
@@ -89,6 +94,44 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
         _startPlayback();
       } else {
         _player.play();
+      }
+    }
+  }
+
+  Future<void> _toggleRecording() async {
+    try {
+      if (_isRecording) {
+        final recording = await _recordingService.stopRecording();
+        setState(() => _isRecording = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Kayıt tamamlandı: ${recording?.stationName}'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          // Announce to screen reader
+          SemanticsService.announce("Kayıt durduruldu ve kaydedildi", TextDirection.ltr);
+        }
+      } else {
+        setState(() => _isRecording = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Kayıt başlatıldı...'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        // Announce to screen reader
+        SemanticsService.announce("Canlı yayın kaydı başlatıldı", TextDirection.ltr);
+        
+        await _recordingService.startRecording(widget.station.url, widget.station.name);
+      }
+    } catch (e) {
+      setState(() => _isRecording = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Kayıt hatası: $e')),
+        );
       }
     }
   }
@@ -213,7 +256,55 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
               ),
             ],
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: 32),
+          // Kayıt Butonu
+          Semantics(
+            label: _isRecording ? "Kaydı Durdur" : "Kaydı Başlat",
+            button: true,
+            hint: _isRecording ? "Kaydı bitirmek için çift dokunun" : "Canlı yayını kaydetmek için çift dokunun",
+            child: InkWell(
+              onTap: _toggleRecording,
+              borderRadius: BorderRadius.circular(30),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                    color: _isRecording ? Colors.red : Colors.blueAccent,
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (_isRecording ? Colors.red : Colors.blueAccent).withOpacity(0.3),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                    )
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _isRecording ? Icons.stop_circle : Icons.fiber_manual_record,
+                      color: Colors.red,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      _isRecording ? "Kaydı Durdur" : "Kaydı Başlat",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
           // Ses Kontrol Ünitesi
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

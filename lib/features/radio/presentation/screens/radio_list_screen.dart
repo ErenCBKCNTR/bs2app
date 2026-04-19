@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../data/radio_stations.dart';
 import 'radio_player_screen.dart';
+import 'saved_recordings_screen.dart';
 
 class RadioListScreen extends StatefulWidget {
   const RadioListScreen({super.key});
@@ -51,9 +52,41 @@ class _RadioListScreenState extends State<RadioListScreen> {
           ),
         ),
       ),
-      body: ListView.builder(
-        itemCount: _filteredStations.length,
-        itemBuilder: (context, index) {
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Semantics(
+              label: "Kaydedilen Canlı Yayınlar",
+              button: true,
+              hint: "Önceden kaydettiğiniz yayınları görmek için çift dokunun",
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SavedRecordingsScreen()),
+                  );
+                },
+                icon: const Icon(Icons.album, color: Colors.white),
+                label: const Text(
+                  'Kaydedilen Canlı Yayınlar',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  elevation: 8,
+                  shadowColor: Colors.blueAccent.withOpacity(0.5),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _filteredStations.length,
+              itemBuilder: (context, index) {
           final station = _filteredStations[index];
           return ListTile(
             leading: CircleAvatar(
@@ -76,6 +109,9 @@ class _RadioListScreenState extends State<RadioListScreen> {
           );
         },
       ),
+    ),
+  ],
+),
     );
   }
 }
