@@ -14,7 +14,6 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:vibration/vibration.dart';
 import 'package:blind_social/core/services/settings_service.dart';
-import 'chat_screen.dart'; // Eğer chat_screen.dart varsa
 import 'chat_detail_screen.dart';
 import 'call_screen.dart';
 import 'favorite_messages_screen.dart';
