@@ -28,13 +28,28 @@ class _ArchivedMessagesScreenState extends State<ArchivedMessagesScreen> {
 
       final participants = await PocketBaseService.client.collection('chat_participants').getFullList(
           filter: 'user_id = "$userId" && is_archived = true',
-          expand: 'chat_id'
+          expand: 'chat_id,chat_id.chat_participants_via_chat_id,chat_id.chat_participants_via_chat_id.user_id'
       );
 
       List<RecordModel> chatRecords = [];
       for(var p in participants) {
          if (p.expand['chat_id'] != null) {
             final chatData = p.expand['chat_id']!.first as RecordModel;
+            
+            // Eğer DM ise (is_group false) karşı tarafın adını belirle
+            String displayName = chatData.getStringValue('name');
+            if (!chatData.getBoolValue('is_group')) {
+               final chatParticipants = chatData.expand['chat_participants_via_chat_id'] ?? [];
+               for (var cp in chatParticipants) {
+                  if (cp.getStringValue('user_id') != userId && cp.expand['user_id'] != null) {
+                     displayName = cp.expand['user_id']!.first.getStringValue('username');
+                     break;
+                  }
+               }
+            }
+            if (displayName.isEmpty) displayName = 'İsimsiz Sohbet';
+            
+            chatData.data['display_name'] = displayName;
             chatData.data['my_participant'] = p;
             chatRecords.add(chatData);
          }
@@ -67,7 +82,8 @@ class _ArchivedMessagesScreenState extends State<ArchivedMessagesScreen> {
                   itemBuilder: (context, index) {
                     final chat = _chats[index];
                     return ListTile(
-                      title: Text(chat.getStringValue('name')),
+                      title: Text(chat.data['display_name'] ?? 'Sohbet'),
+                      subtitle: const Text('Arşivlenmiş'),
                       onTap: () async {
                         await Navigator.push(
                           context,

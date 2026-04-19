@@ -366,6 +366,26 @@
       },
       {
         "system": false,
+        "id": "part_is_archived",
+        "name": "is_archived",
+        "type": "bool",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {}
+      },
+      {
+        "system": false,
+        "id": "part_is_pinned",
+        "name": "is_pinned",
+        "type": "bool",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {}
+      },
+      {
+        "system": false,
         "id": "part_cleared_at",
         "name": "cleared_at",
         "type": "date",

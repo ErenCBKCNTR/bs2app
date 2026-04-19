@@ -393,22 +393,51 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   void _addReaction(String messageId, String emoji) async {
+    // Optimistic UI Update
+    final messageIndex = _messages.indexWhere((m) => m['id'] == messageId);
+    if (messageIndex == -1) return;
+
+    final originalMessage = Map<String, dynamic>.from(_messages[messageIndex]);
+    String currentReactions = _messages[messageIndex]['reactions'] as String? ?? '';
+    
+    setState(() {
+      if (currentReactions.contains(emoji)) {
+        // Remove emoji (handling multi-byte characters correctly)
+        List<String> emojiList = currentReactions.characters.toList();
+        emojiList.remove(emoji);
+        _messages[messageIndex]['reactions'] = emojiList.join('');
+      } else {
+        // Add emoji
+        _messages[messageIndex]['reactions'] = currentReactions + emoji;
+      }
+    });
+
     try {
       final msg = await PocketBaseService.client.collection('messages').getOne(messageId);
-      String currentReactions = msg.getStringValue('reactions');
+      String realCurrentReactions = msg.getStringValue('reactions');
       
-      if (currentReactions.contains(emoji)) {
-        currentReactions = currentReactions.replaceAll(emoji, '');
+      String updatedReactions;
+      if (realCurrentReactions.contains(emoji)) {
+        List<String> emojiList = realCurrentReactions.characters.toList();
+        emojiList.remove(emoji);
+        updatedReactions = emojiList.join('');
       } else {
-        currentReactions += emoji;
+        updatedReactions = realCurrentReactions + emoji;
       }
       
       await PocketBaseService.client.collection('messages').update(messageId, body: {
-        'reactions': currentReactions
+        'reactions': updatedReactions
       });
-      _fetchMessages();
+      // Silent fetch to sync with server
+      _fetchMessages(isBackground: true);
     } catch (e) {
-      AppLogger.instance.error('Tepki eklenemedi: $e');
+      AppLogger.instance.error('Tepki işlemi başarısız: $e');
+      // Revert on error
+      if (mounted) {
+        setState(() {
+          _messages[messageIndex] = originalMessage;
+        });
+      }
     }
   }
 
