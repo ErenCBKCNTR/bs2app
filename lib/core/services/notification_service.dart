@@ -114,8 +114,10 @@ class NotificationService {
     });
 
     // Yerel bildirimleri ayarla
+    // Android tarafında ic_launcher ikonu genelde varsayılan olarak bulunur. 
+    // Eğer @mipmap/ic_launcher hata veriyorsa @drawable/ic_notification veya ic_launcher denenebilir.
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('ic_launcher');
     
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,

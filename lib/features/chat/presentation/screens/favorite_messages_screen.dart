@@ -57,21 +57,29 @@ class _FavoriteMessagesScreenState extends State<FavoriteMessagesScreen> {
       final myId = PocketBaseService.client.authStore.model?.id;
       if (myId == null) return;
 
-      String filter = 'is_favorite = true && deleted_for !~ "$myId"';
+      final baseFilter = widget.chatId != null 
+          ? 'is_favorite = true && chat_id = "${widget.chatId}"'
+          : 'is_favorite = true';
+          
+      String filter = '$baseFilter && deleted_for !~ "$myId"';
       
-      // Eğer belirli bir sohbetse sadece o sohbeti getir
-      if (widget.chatId != null) {
-        filter += ' && chat_id = "${widget.chatId}"';
-      } else {
-        // Global ise sadece benim dahil olduğum mesajları getir (opsiyonel ama güvenlik için iyi)
-        // Ancak PocketBase API kuralları zaten bunu engeller. 
-        // Şimdilik sadece is_favorite yeterli çünkü kurallar buna göre ayarlandı.
+      List<RecordModel> records;
+      try {
+        records = await PocketBaseService.client.collection('messages').getFullList(
+          filter: filter,
+          sort: '-created',
+        );
+      } catch (e) {
+        // deleted_for alanı yoksa yedek filtre ile çek
+        if (e.toString().contains('400') || e.toString().contains('deleted_for')) {
+          records = await PocketBaseService.client.collection('messages').getFullList(
+            filter: baseFilter,
+            sort: '-created',
+          );
+        } else {
+          rethrow;
+        }
       }
-
-      final records = await PocketBaseService.client.collection('messages').getFullList(
-        filter: filter,
-        sort: '-created',
-      );
       
       if (mounted) {
         setState(() {
@@ -94,7 +102,7 @@ class _FavoriteMessagesScreenState extends State<FavoriteMessagesScreen> {
   Widget build(BuildContext context) {
     final title = widget.chatId != null 
         ? '${widget.chatName} - Favoriler' 
-        : 'Tüm Favori Mesajlarım';
+        : 'Favori Mesajlar';
 
     return Scaffold(
       appBar: AppBar(

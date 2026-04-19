@@ -252,6 +252,30 @@
           "thumbs": [],
           "protected": false
         }
+      },
+      {
+        "system": false,
+        "id": "msg_is_favorite",
+        "name": "is_favorite",
+        "type": "bool",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {}
+      },
+      {
+        "system": false,
+        "id": "msg_deleted_for",
+        "name": "deleted_for",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "pattern": ""
+        }
       }
     ],
     "indexes": [],

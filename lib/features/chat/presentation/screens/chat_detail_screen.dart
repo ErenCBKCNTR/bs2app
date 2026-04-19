@@ -137,87 +137,108 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     try {
       final chatId = widget.chat['id'];
       
-      String filter = 'chat_id = "$chatId" && deleted_for !~ "$_myUserId"';
+      String filter = 'chat_id = "$chatId"';
+      
+      // PoketBase'de deleted_for alanı yoksa hata vermemesi için korumalı ekliyoruz.
+      // Eğer veritabanı 400 verirse bu alanı içermeyen yedek filtreye döner.
+      String currentFilter = '$filter && deleted_for !~ "$_myUserId"';
+
       try {
         final myPart = await PocketBaseService.client.collection('chat_participants').getFirstListItem('chat_id = "$chatId" && user_id = "$_myUserId"');
         final clearedAtStr = myPart.getStringValue('cleared_at');
         if (clearedAtStr.isNotEmpty) {
+          currentFilter += ' && created > "$clearedAtStr"';
           filter += ' && created > "$clearedAtStr"';
         }
       } catch (_) {}
 
-      final response = await PocketBaseService.client.collection('messages').getFullList(
-          filter: filter,
-          sort: 'created'
-      );
+      List<RecordModel> response;
+      try {
+        response = await PocketBaseService.client.collection('messages').getFullList(
+            filter: currentFilter,
+            sort: 'created'
+        );
+      } catch (e) {
+        // Eğer 400 hatası (deleted_for alanı yoksa) yedek filtre ile çek
+        if (e.toString().contains('400') || e.toString().contains('deleted_for')) {
+          response = await PocketBaseService.client.collection('messages').getFullList(
+              filter: filter,
+              sort: 'created'
+          );
+        } else {
+          rethrow;
+        }
+      }
 
-      // Katılımcıların durumlarını (okunma bilgisi için) her seferinde çekelim
+      // Katılımcıların durumlarını çek
       final participantsResponse = await PocketBaseService.client.collection('chat_participants').getFullList(
           filter: 'chat_id = "$chatId"'
       );
 
-      if (mounted) {
-        bool isNewMessageArrived = false;
-        if (_messages.isNotEmpty && response.isNotEmpty) {
-           if (_messages.last['id'] != response.last.id) {
-             isNewMessageArrived = true;
-           }
-        } else if (_messages.isEmpty && response.isNotEmpty) {
-           isNewMessageArrived = true;
-        }
-
-        setState(() {
-          _messages = response.map((e) => e.toJson()).toList();
-          _messageCache[chatId] = _messages; // Cache güncelle
-          _chat = {
-            ..._chat,
-            'chat_participants': participantsResponse.map((e) => e.toJson()).toList(),
-          };
-          _isLoading = false;
-        });
-
-        // Mark as read in participants table if we have messages
-        if (response.isNotEmpty) {
-            try {
-              final myPartId = participantsResponse.firstWhere((p) => p.getStringValue('user_id') == _myUserId).id;
-              PocketBaseService.client.collection('chat_participants').update(myPartId, body: {
-                'last_read_message_id': response.last.id
-              }).catchError((e) {
-                AppLogger.instance.error('Okunma durumu güncellenemedi: $e');
-              });
-            } catch (_) {}
-        }
-
-        // Yeni mesaj geldiyse aşağı kaydır
-        if (isNewMessageArrived) {
-           final lastMsg = response.last;
-           if (lastMsg.getStringValue('sender_id') != _myUserId) {
-              final settings = SettingsService();
-              if (settings.messageVibrationEnabled && !_isInitialLoad) {
-                Vibration.vibrate(duration: 100);
-              }
-              if (settings.messageSoundEnabled && !_isInitialLoad) {
-                // Try to play a short notification sound
-                final player = AudioPlayer();
-                player.play(AssetSource('sounds/message_received.mp3')).catchError((e) => null);
-              }
-           }
-
-           Future.delayed(const Duration(milliseconds: 100), () {
-             if (_scrollController.hasClients) {
-                _scrollController.animateTo(
-                  _scrollController.position.maxScrollExtent + 200,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                );
-             }
-           });
-        }
-      }
+      _handleMessagesResponse(response, participantsResponse, isBackground);
     } catch (e) {
       if (!isBackground) {
          AppLogger.instance.error('Mesajlar yüklenirken hata: $e');
       }
+    }
+  }
+
+  void _handleMessagesResponse(List<RecordModel> response, List<RecordModel> participantsResponse, bool isBackground) {
+    if (!mounted) return;
+
+    final chatId = widget.chat['id'];
+    bool isNewMessageArrived = false;
+    if (_messages.isNotEmpty && response.isNotEmpty) {
+       if (_messages.last['id'] != response.last.id) {
+         isNewMessageArrived = true;
+       }
+    } else if (_messages.isEmpty && response.isNotEmpty) {
+       isNewMessageArrived = true;
+    }
+
+    setState(() {
+      _messages = response.map((e) => e.toJson()).toList();
+      _messageCache[chatId] = _messages; // Cache güncelle
+      _chat = {
+        ..._chat,
+        'chat_participants': participantsResponse.map((e) => e.toJson()).toList(),
+      };
+      _isLoading = false;
+    });
+
+    // Mark as read
+    if (response.isNotEmpty) {
+        try {
+          final myPartId = participantsResponse.firstWhere((p) => p.getStringValue('user_id') == _myUserId).id;
+          PocketBaseService.client.collection('chat_participants').update(myPartId, body: {
+            'last_read_message_id': response.last.id
+          }).catchError((e) => null);
+        } catch (_) {}
+    }
+
+    // Yeni mesaj geldiyse kaydır
+    if (isNewMessageArrived) {
+       final lastMsg = response.last;
+       if (lastMsg.getStringValue('sender_id') != _myUserId) {
+          final settings = SettingsService();
+          if (settings.messageVibrationEnabled && !_isInitialLoad) {
+            Vibration.vibrate(duration: 100);
+          }
+          if (settings.messageSoundEnabled && !_isInitialLoad) {
+            final player = AudioPlayer();
+            player.play(AssetSource('sounds/message_received.mp3')).catchError((e) => null);
+          }
+       }
+
+       Future.delayed(const Duration(milliseconds: 100), () {
+         if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent + 200,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+         }
+       });
     }
   }
 
@@ -546,7 +567,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.star_outline),
-            tooltip: 'Yıldızlı Mesajlar',
+            tooltip: 'Favori Mesajlar',
             onPressed: () {
               Navigator.push(
                 context,

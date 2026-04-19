@@ -932,7 +932,7 @@ Widget? _buildFAB() {
           ),
           ListTile(
             leading: const Icon(Icons.star_outline),
-            title: const Text('Yıldızlı Mesajlar'),
+            title: const Text('Favori Mesajlar'),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoriteMessagesScreen()));
