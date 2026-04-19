@@ -14,17 +14,25 @@ class RadioPlayerWidget extends StatefulWidget {
 class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
   late AudioPlayer _player;
   bool _isPlaying = false;
+  double _volume = 0.8;
 
   @override
   void initState() {
     super.initState();
     _player = AudioPlayer();
+    _player.setVolume(_volume);
+    
     _player.onPlayerStateChanged.listen((state) {
       if (mounted) {
         setState(() {
           _isPlaying = state == PlayerState.playing;
         });
       }
+    });
+
+    // Otomatik Oynatma
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+       _togglePlayback();
     });
   }
 
@@ -112,19 +120,36 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
           ],
         ),
         const SizedBox(height: 32),
-        // Ses Dalgası Görseli (Temsili)
-        Container(
-          width: double.infinity,
-          height: 60,
-          color: Colors.transparent,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(20, (index) => Container(
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              width: 4,
-              height: _isPlaying ? (20 + (index % 10) * 4).toDouble() : 10,
-              color: Colors.white.withOpacity(0.5),
-            )),
+        // Ses Kontrolü
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40.0),
+          child: Column(
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.volume_down, color: Colors.white70),
+                  Spacer(),
+                  Icon(Icons.volume_up, color: Colors.white70),
+                ],
+              ),
+              Slider(
+                value: _volume,
+                min: 0.0,
+                max: 1.0,
+                activeColor: Colors.white,
+                inactiveColor: Colors.white24,
+                onChanged: (value) {
+                  setState(() {
+                    _volume = value;
+                  });
+                  _player.setVolume(value);
+                },
+              ),
+              const Text(
+                "Ses Düzeyi",
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ],
           ),
         ),
       ],

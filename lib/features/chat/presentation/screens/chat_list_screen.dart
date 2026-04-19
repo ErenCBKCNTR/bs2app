@@ -315,14 +315,6 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
           ),
           actions: [
             Semantics(
-              label: "Arşivlenmiş Sohbetler",
-              child: IconButton(
-                icon: const Icon(Icons.archive, size: 18),
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ArchivedMessagesScreen())),
-                tooltip: "Arşivlenmiş Sohbetler",
-              ),
-            ),
-            Semantics(
               label: "Kullanıcı Ara",
               child: IconButton(
                 icon: const Icon(Icons.search, size: 18),
@@ -684,10 +676,15 @@ Widget? _buildFAB() {
       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       itemCount: filteredChats.length + 1,
       separatorBuilder: (context, index) {
+        if (index == 0) return const SizedBox.shrink();
         return const Divider(height: 1, color: Colors.white10);
       },
       itemBuilder: (context, index) {
-        final chat = filteredChats[index];
+        if (index == 0) {
+          return _buildTopActionButtons();
+        }
+        
+        final chat = filteredChats[index - 1];
         final myPart = chat.data['my_participant'] as RecordModel?;
         final isArchived = myPart != null ? (myPart.data['is_archived'] ?? false) : false;
         
@@ -803,12 +800,12 @@ Widget? _buildFAB() {
           Expanded(
             child: ElevatedButton.icon(
               onPressed: () {
-                setState(() => _showArchived = !_showArchived);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ArchivedMessagesScreen()));
               },
-              icon: Icon(_showArchived ? Icons.chat : Icons.archive, size: 18),
-              label: Text(_showArchived ? "Sohbetlere Dön" : "Arşivlenmiş ($archivedCount)"),
+              icon: const Icon(Icons.archive, size: 18),
+              label: const Text("Arşivlenmiş"),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _showArchived ? Colors.green : Colors.blue,
+                backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
