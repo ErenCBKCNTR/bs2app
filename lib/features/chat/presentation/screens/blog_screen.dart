@@ -481,6 +481,7 @@ class _BlogScreenState extends State<BlogScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

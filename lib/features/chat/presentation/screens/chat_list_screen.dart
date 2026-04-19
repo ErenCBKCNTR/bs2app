@@ -787,10 +787,9 @@ Widget? _buildFAB() {
           ),
         );
       },
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildTopActionButtons() {
     final currentUserId = PocketBaseService.client.authStore.model?.id;
