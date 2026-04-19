@@ -64,35 +64,39 @@ class _VoiceRoomsScreenState extends State<VoiceRoomsScreen> {
 
     if (_rooms.isEmpty) {
       return const Center(
-        child: Text(
-          'Şu an aktif bir sesli oda bulunmuyor.\nYeni bir oda oluşturabilirsiniz.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, color: Colors.grey),
+        child: SafeArea(
+          child: Text(
+            'Şu an aktif bir sesli oda bulunmuyor.\nYeni bir oda oluşturabilirsiniz.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
         ),
       );
     }
 
-    return ListView.separated(
-      itemCount: _rooms.length,
-      separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.white10),
-      itemBuilder: (context, index) {
-        final room = _rooms[index];
-        final roomName = ProfanityFilter.filter(room['name'].toString());
-        return VoiceRoomItem(
-          roomName: roomName,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ActiveVoiceRoomScreen(
-                  roomId: room['id'].toString(),
-                  roomName: roomName,
+    return SafeArea(
+      child: ListView.separated(
+        itemCount: _rooms.length,
+        separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.white10),
+        itemBuilder: (context, index) {
+          final room = _rooms[index];
+          final roomName = ProfanityFilter.filter(room['name'].toString());
+          return VoiceRoomItem(
+            roomName: roomName,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ActiveVoiceRoomScreen(
+                    roomId: room['id'].toString(),
+                    roomName: roomName,
+                  ),
                 ),
-              ),
-            );
-          },
-        );
-      },
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

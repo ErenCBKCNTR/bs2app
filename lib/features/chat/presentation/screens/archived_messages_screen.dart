@@ -114,53 +114,55 @@ class _ArchivedMessagesScreenState extends State<ArchivedMessagesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Arşivlenmiş Sohbetler')),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _chats.isEmpty
-              ? const Center(child: Text('Arşivlenmiş sohbet yok.'))
-              : ListView.builder(
-                  itemCount: _chats.length,
-                  itemBuilder: (context, index) {
-                    final chat = _chats[index];
-                    final myParticipant = chat.data['my_participant'] as RecordModel;
-                    
-                    return Semantics(
-                      label: "${chat.data['display_name'] ?? 'Sohbet'}. Arşivlenmiş.",
-                      hint: "Sohbeti açmak için çift dokunun, seçenekler için uzun dokunun",
-                      customSemanticsActions: {
-                        CustomSemanticsAction(label: 'Arşivden çıkar'): () {
-                          _unarchiveChat(myParticipant.id);
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _chats.isEmpty
+                ? const Center(child: Text('Arşivlenmiş sohbet yok.'))
+                : ListView.builder(
+                    itemCount: _chats.length,
+                    itemBuilder: (context, index) {
+                      final chat = _chats[index];
+                      final myParticipant = chat.data['my_participant'] as RecordModel;
+                      
+                      return Semantics(
+                        label: "${chat.data['display_name'] ?? 'Sohbet'}. Arşivlenmiş.",
+                        hint: "Sohbeti açmak için çift dokunun, seçenekler için uzun dokunun",
+                        customSemanticsActions: {
+                          CustomSemanticsAction(label: 'Arşivden çıkar'): () {
+                            _unarchiveChat(myParticipant.id);
+                          },
                         },
-                      },
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.blueGrey,
-                          child: Text(
-                            (chat.data['display_name'] as String? ?? 'S')[0].toUpperCase(),
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ),
-                        title: Text(chat.data['display_name'] ?? 'Sohbet'),
-                        subtitle: const Text('Arşivden çıkarmak için basılı tutun'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.unarchive_outlined),
-                          onPressed: () => _unarchiveChat(myParticipant.id),
-                          tooltip: 'Arşivden Çıkar',
-                        ),
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChatDetailScreen(chat: {'id': chat.id, 'name': chat.getStringValue('name')}),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.blueGrey,
+                            child: Text(
+                              (chat.data['display_name'] as String? ?? 'S')[0].toUpperCase(),
+                              style: const TextStyle(color: Colors.white),
                             ),
-                          );
-                          _fetchArchivedChats();
-                        },
-                        onLongPress: () => _showOptions(chat),
-                      ),
-                    );
-                  },
-                ),
+                          ),
+                          title: Text(chat.data['display_name'] ?? 'Sohbet'),
+                          subtitle: const Text('Arşivden çıkarmak için basılı tutun'),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.unarchive_outlined),
+                            onPressed: () => _unarchiveChat(myParticipant.id),
+                            tooltip: 'Arşivden Çıkar',
+                          ),
+                          onTap: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChatDetailScreen(chat: {'id': chat.id, 'name': chat.getStringValue('name')}),
+                              ),
+                            );
+                            _fetchArchivedChats();
+                          },
+                          onLongPress: () => _showOptions(chat),
+                        ),
+                      );
+                    },
+                  ),
+      ),
     );
   }
 }

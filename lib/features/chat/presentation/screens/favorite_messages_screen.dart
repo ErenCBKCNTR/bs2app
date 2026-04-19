@@ -156,78 +156,80 @@ class _FavoriteMessagesScreenState extends State<FavoriteMessagesScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _filteredMessages.isEmpty
-              ? Center(
-                  child: Text(_isSearching 
-                      ? 'Arama sonucu bulunamadı.' 
-                      : 'Favoriye eklenmiş mesaj bulunamadı.'),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(8),
-                  itemCount: _filteredMessages.length,
-                  itemBuilder: (context, index) {
-                    final message = _filteredMessages[index];
-                    final content = ProfanityFilter.filter(message.getStringValue('content'));
-                    final isVoice = content.startsWith('[VOICE]');
-                    final isCall = content.contains('CALL_');
-                    final createdAt = DateTime.parse(message.created).toLocal();
-                    final timeStr = DateFormat('dd.MM.yyyy HH:mm').format(createdAt);
-                    
-                    return Semantics(
-                      label: isVoice ? '[Sesli Mesaj]' : (isCall ? '[Sistem Mesajı]' : content),
-                      button: true,
-                      customSemanticsActions: {
-                        CustomSemanticsAction(label: 'Favorilerden Kaldır'): () => _removeFromFavorites(message),
-                      },
-                      child: Card(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        color: Colors.grey[900],
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        child: ListTile(
-                          leading: const Icon(Icons.star, color: Colors.amber),
-                          title: Text(
-                            isVoice ? '[Sesli Mesaj]' : (isCall ? '[Sistem Mesajı]' : content),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                          subtitle: Text(
-                            timeStr,
-                            style: const TextStyle(color: Colors.grey, fontSize: 11),
-                          ),
-                          onTap: () {
-                             // İsteğe bağlı
-                          },
-                          onLongPress: () {
-                            showModalBottomSheet(
-                              context: context,
-                              builder: (context) => Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  ListTile(
-                                    leading: const Icon(Icons.delete, color: Colors.red),
-                                    title: const Text('Favorilerden Kaldır'),
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                      _removeFromFavorites(message);
-                                    },
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                          trailing: IconButton(
-                            icon: const Icon(Icons.close, color: Colors.red),
-                            onPressed: () => _removeFromFavorites(message),
-                            tooltip: 'Favorilerden kaldır',
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _filteredMessages.isEmpty
+                ? Center(
+                    child: Text(_isSearching 
+                        ? 'Arama sonucu bulunamadı.' 
+                        : 'Favoriye eklenmiş mesaj bulunamadı.'),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(8),
+                    itemCount: _filteredMessages.length,
+                    itemBuilder: (context, index) {
+                      final message = _filteredMessages[index];
+                      final content = ProfanityFilter.filter(message.getStringValue('content'));
+                      final isVoice = content.startsWith('[VOICE]');
+                      final isCall = content.contains('CALL_');
+                      final createdAt = DateTime.parse(message.created).toLocal();
+                      final timeStr = DateFormat('dd.MM.yyyy HH:mm').format(createdAt);
+                      
+                      return Semantics(
+                        label: isVoice ? '[Sesli Mesaj]' : (isCall ? '[Sistem Mesajı]' : content),
+                        button: true,
+                        customSemanticsActions: {
+                          CustomSemanticsAction(label: 'Favorilerden Kaldır'): () => _removeFromFavorites(message),
+                        },
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          color: Colors.grey[900],
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: ListTile(
+                            leading: const Icon(Icons.star, color: Colors.amber),
+                            title: Text(
+                              isVoice ? '[Sesli Mesaj]' : (isCall ? '[Sistem Mesajı]' : content),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            subtitle: Text(
+                              timeStr,
+                              style: const TextStyle(color: Colors.grey, fontSize: 11),
+                            ),
+                            onTap: () {
+                               // İsteğe bağlı
+                            },
+                            onLongPress: () {
+                              showModalBottomSheet(
+                                context: context,
+                                builder: (context) => Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ListTile(
+                                      leading: const Icon(Icons.delete, color: Colors.red),
+                                      title: const Text('Favorilerden Kaldır'),
+                                      onTap: () {
+                                        Navigator.pop(context);
+                                        _removeFromFavorites(message);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            trailing: IconButton(
+                              icon: const Icon(Icons.close, color: Colors.red),
+                              onPressed: () => _removeFromFavorites(message),
+                              tooltip: 'Favorilerden kaldır',
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
+                      );
+                    },
+                  ),
+      ),
     );
   }
 }

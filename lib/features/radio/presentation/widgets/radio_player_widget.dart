@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart';
 import '../../data/radio_stations.dart';
 
 class RadioPlayerWidget extends StatefulWidget {
@@ -31,16 +31,17 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
     _player = AudioPlayer();
     _player.setVolume(_volume);
     
-    _player.onPlayerStateChanged.listen((state) {
+    // Status stream
+    _player.playerStateStream.listen((state) {
       if (mounted) {
         setState(() {
-          _isPlaying = state == PlayerState.playing;
-          _isBuffering = state == PlayerState.completed || state == PlayerState.stopped ? false : _isBuffering;
+          _isPlaying = state.playing;
+          _isBuffering = state.processingState == ProcessingState.buffering || 
+                         state.processingState == ProcessingState.loading;
         });
       }
     });
 
-    // Otomatik Oynatma Zorlaması
     _startPlayback();
   }
 
@@ -55,18 +56,22 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
   Future<void> _startPlayback() async {
     if (mounted) setState(() => _isBuffering = true);
     try {
+      // just_audio is better for m3u8 and shoutcast
       await _player.stop();
-      await _player.play(UrlSource(widget.station.url));
+      await _player.setUrl(widget.station.url);
+      _player.play(); // No need to await play() for streams as it returns when done playing
       if (mounted) setState(() => _isBuffering = false);
     } catch (e) {
-      debugPrint("Autoplay error: $e");
-      // Bazı platformlarda etkileşim bekler, biraz gecikme ile tekrar dene
-      Future.delayed(const Duration(milliseconds: 500), () async {
-        try {
-          await _player.play(UrlSource(widget.station.url));
-          if (mounted) setState(() => _isBuffering = false);
-        } catch (_) {}
-      });
+      debugPrint("Playback error: $e");
+      if (mounted) {
+        setState(() => _isBuffering = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${widget.station.name} oynatılamadı. Bağlantı hatası.'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
@@ -78,9 +83,13 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
 
   void _togglePlayback() async {
     if (_isPlaying) {
-      await _player.stop();
+      await _player.pause();
     } else {
-      _startPlayback();
+      if (_player.processingState == ProcessingState.idle) {
+        _startPlayback();
+      } else {
+        _player.play();
+      }
     }
   }
 
@@ -176,9 +185,13 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
                 tooltip: 'Önceki Kanal',
               ),
               const SizedBox(width: 32),
-              GestureDetector(
-                onTap: _togglePlayback,
-                child: Container(
+              // Erişilebilirlik etiketi IconButton tooltip ile sağlanır.
+              IconButton(
+                onPressed: _togglePlayback,
+                tooltip: _isPlaying ? 'Yayını Durdur' : 'Yayını Başlat',
+                iconSize: 84,
+                padding: EdgeInsets.zero,
+                icon: Container(
                   width: 84,
                   height: 84,
                   decoration: const BoxDecoration(

@@ -44,6 +44,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   bool _isLoading = true;
   Timer? _pollingTimer;
   late final String _myUserId;
+  Map<String, dynamic>? _replyingTo;
 
   // Ses kaydı için değişkenler
   final AudioRecorder _audioRecorder = AudioRecorder();
@@ -249,10 +250,21 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     _messageController.clear();
 
     try {
-      await PocketBaseService.client.collection('messages').create(body: {
+      final body = {
         'chat_id': _chat['id'],
         'sender_id': _myUserId,
         'content': text,
+      };
+
+      if (_replyingTo != null) {
+        body['reply_to'] = _replyingTo!['id'];
+        body['reply_content'] = _replyingTo!['content']?.toString() ?? '';
+      }
+
+      await PocketBaseService.client.collection('messages').create(body: body);
+
+      setState(() {
+        _replyingTo = null;
       });
 
       // Sohbetin updated_at alanını güncelle
@@ -475,6 +487,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   ),
                 ),
                 ListTile(
+                  leading: const Icon(Icons.reply),
+                  title: const Text('Yanıtla'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _replyingTo = message;
+                    });
+                  },
+                ),
+                ListTile(
                   leading: Icon(isFavorite ? Icons.star : Icons.star_border, color: Colors.amber),
                   title: Text(isFavorite ? 'Favorilerden Çıkar' : 'Favorilere Ekle'),
                   onTap: () {
@@ -649,18 +671,19 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _isLoading 
-              ? const Center(child: CircularProgressIndicator())
-              : _messages.isEmpty 
-                ? const Center(child: Text('Henüz mesaj yok.'))
-                : ListView.builder(
-                    controller: _scrollController,
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final message = _messages[index];
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : _messages.isEmpty 
+                  ? const Center(child: Text('Henüz mesaj yok.'))
+                  : ListView.builder(
+                      controller: _scrollController,
+                      itemCount: _messages.length,
+                      itemBuilder: (context, index) {
+                        final message = _messages[index];
                       final isMyMessage = message['sender_id'] == _myUserId;
                       final content = message['content'];
                       final createdAt = DateTime.parse(message['created'] ?? DateTime.now().toIso8601String()).toLocal();
@@ -733,10 +756,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                         }
                       }
 
+                      final hasReply = message['reply_to'] != null;
+                      final replyText = hasReply ? "Yanıtlanan mesaj: ${ProfanityFilter.filter(message['reply_content']?.toString() ?? '')}. " : "";
+
                       return Align(
                         alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
                         child: Semantics(
-                          label: "${isFavorite ? 'Yıldızlı. ' : ''}${isVoiceMessage 
+                          label: "${isFavorite ? 'Yıldızlı. ' : ''}$replyText${isVoiceMessage 
                             ? (isMyMessage ? "Gönderdiğiniz sesli mesaj. $timeString" : "Gelen sesli mesaj. $timeString") 
                             : (isCallMessage 
                                 ? "$displayContent. $timeString" 
@@ -767,6 +793,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                       child: Column(
                                         crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                                         children: [
+                                          _buildReplyBubbleHeader(message, isMyMessage),
                                           if (voiceUrl != null) 
                                             VoiceMessageWidget(url: voiceUrl, isMyMessage: isMyMessage),
                                           const SizedBox(height: 4),
@@ -803,6 +830,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                         child: Column(
                                           crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                                           children: [
+                                            _buildReplyBubbleHeader(message, isMyMessage),
                                             if (isCallMessage)
                                               Row(
                                                 mainAxisSize: MainAxisSize.min,
@@ -918,79 +946,164 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     );
   }
 
+  Widget _buildReplyBubbleHeader(Map<String, dynamic> message, bool isMyMessage) {
+    final replyContent = message['reply_content']?.toString() ?? '';
+    if (replyContent.isEmpty || message['reply_to'] == null) return const SizedBox.shrink();
+
+    String displayReply = ProfanityFilter.filter(replyContent);
+    if (displayReply.startsWith('[VOICE]')) displayReply = '🎤 Sesli Mesaj';
+    if (displayReply.contains('CALL_')) displayReply = '📞 Arama Kaydı';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black26,
+        borderRadius: BorderRadius.circular(8),
+        border: Border(left: BorderSide(color: isMyMessage ? Colors.white38 : Colors.blueAccent, width: 3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            isMyMessage ? 'Siz' : 'Yanıtlanan',
+            style: TextStyle(
+              color: isMyMessage ? Colors.white70 : Colors.blueAccent,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            displayReply,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white60, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMessageInput() {
     return SafeArea(
       top: false,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
         color: Colors.grey[900],
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: TextField(
-                controller: _messageController,
-                decoration: InputDecoration(
-                  hintText: _isRecording ? 'Kayıt: ${_formatRecordDuration(_recordDuration)}' : 'Mesaj yaz...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: _isRecording ? Colors.red.withOpacity(0.2) : Colors.grey[800],
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            if (_replyingTo != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[850],
+                  border: Border(left: BorderSide(color: Colors.blueAccent, width: 4)),
                 ),
-                enabled: !_isRecording,
-                onSubmitted: (val) {
-                  final text = val.trim();
-                  if (text.isNotEmpty) _sendMessage(text);
-                },
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Yanıtlama:',
+                            style: TextStyle(
+                              color: Colors.blueAccent,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                          Text(
+                            ProfanityFilter.filter(_replyingTo!['content']?.toString() ?? ''),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white70, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20, color: Colors.white70),
+                      onPressed: () => setState(() => _replyingTo = null),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
+                      decoration: InputDecoration(
+                        hintText: _isRecording ? 'Kayıt: ${_formatRecordDuration(_recordDuration)}' : 'Mesaj yaz...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: _isRecording ? Colors.red.withOpacity(0.2) : Colors.grey[800],
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      ),
+                      enabled: !_isRecording,
+                      onSubmitted: (val) {
+                        final text = val.trim();
+                        if (text.isNotEmpty) _sendMessage(text);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  
+                  if (_isRecording)
+                    Semantics(
+                      label: "Ses kaydını durdur ve gönder",
+                      button: true,
+                      child: GestureDetector(
+                        onTap: _stopRecordingAndSend,
+                        child: const CircleAvatar(
+                          radius: 22,
+                          backgroundColor: Colors.red,
+                          child: Icon(Icons.stop, color: Colors.white, size: 28),
+                        ),
+                      ),
+                    )
+                  else ...[
+                    Semantics(
+                      label: "Sesli mesaj kaydet",
+                      button: true,
+                      child: GestureDetector(
+                        onTap: _startRecording,
+                        child: const CircleAvatar(
+                          radius: 20,
+                          backgroundColor: Colors.blueAccent,
+                          child: Icon(Icons.mic, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Semantics(
+                      label: "Mesajı gönder",
+                      button: true,
+                      child: GestureDetector(
+                        onTap: () {
+                          final text = _messageController.text.trim();
+                          if (text.isNotEmpty) _sendMessage(text);
+                        },
+                        child: const CircleAvatar(
+                          radius: 20,
+                          backgroundColor: Colors.green,
+                          child: Icon(Icons.send, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-            const SizedBox(width: 8),
-            
-            if (_isRecording)
-              Semantics(
-                label: "Ses kaydını durdur ve gönder",
-                button: true,
-                child: GestureDetector(
-                  onTap: _stopRecordingAndSend,
-                  child: const CircleAvatar(
-                    radius: 22,
-                    backgroundColor: Colors.red,
-                    child: Icon(Icons.stop, color: Colors.white, size: 28),
-                  ),
-                ),
-              )
-            else ...[
-              Semantics(
-                label: "Sesli mesaj kaydet",
-                button: true,
-                child: GestureDetector(
-                  onTap: _startRecording,
-                  child: const CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Colors.blueAccent,
-                    child: Icon(Icons.mic, color: Colors.white),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Semantics(
-                label: "Mesaj gönder",
-                button: true,
-                child: GestureDetector(
-                  onTap: () {
-                    final text = _messageController.text.trim();
-                    if (text.isNotEmpty) _sendMessage(text);
-                  },
-                  child: const CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Colors.green,
-                    child: Icon(Icons.send, color: Colors.white),
-                  ),
-                ),
-              ),
-            ]
           ],
         ),
       ),

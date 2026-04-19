@@ -302,179 +302,175 @@ class _BlogScreenState extends State<BlogScreen> {
               },
               child: const Text('Paylaş'),
             ),
-          ],
-        );
-      }
-    );
-  }
-
-  @override
+   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: ElevatedButton.icon(
-            onPressed: _showCreatePostDialog,
-            icon: const Icon(Icons.edit),
-            label: const Text("Yeni Gönderi Paylaş"),
-            style: ElevatedButton.styleFrom(
-               minimumSize: const Size(double.infinity, 50),
+    return SafeArea(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: ElevatedButton.icon(
+              onPressed: _showCreatePostDialog,
+              icon: const Icon(Icons.edit),
+              label: const Text("Yeni Gönderi Paylaş"),
+              style: ElevatedButton.styleFrom(
+                 minimumSize: const Size(double.infinity, 50),
+              ),
             ),
           ),
-        ),
-        if (_isPosting)
-          const LinearProgressIndicator(),
-        Expanded(
-          child: _isLoading 
-            ? const Center(child: CircularProgressIndicator())
-            : _posts.isEmpty 
-              ? const Center(child: Text("Henüz hiç gönderi paylaşılmamış."))
-              : ListView.separated(
-                  padding: const EdgeInsets.all(8),
-                  itemCount: _posts.length,
-                  separatorBuilder: (context, index) => const Divider(),
-                  itemBuilder: (context, index) {
-                    final post = _posts[index];
-                    final user = post['expand']?['user_id'];
-                    final username = ProfanityFilter.filter(user != null ? (user['username'] ?? user['name'] ?? user['full_name'] ?? 'Bilinmeyen') : 'Bilinmeyen');
-                    final content = ProfanityFilter.filter(post['content'] ?? '');
-                    final likes = post['likes_count'] ?? 0;
-                    final myId = PocketBaseService.client.authStore.model!.id;
-                    // Check if current user liked
-                    final likesList = post['expand']?['post_likes_via_post_id'] ?? [];
-                    final isLiked = likesList.any((l) => l['user_id'] == myId);
-                    
-                    // TODO: We could fetch comment count independently or use a view, for now we will assume 0 or handle it later
-                    final commentCount = 0;
-                    final timeStr = _formatTime(post['created']);
-
-                    return Semantics(
-                      label: "$username. $timeStr. $content. $likes beğeni.",
-                      button: true, // Clickable for future actions or reading context
-                      onTap: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          builder: (_) => BlogCommentsBottomSheet(postId: post['id']),
-                        );
-                      },
-                      onTapHint: "Yorumları okumak ve yazmak için çift dokunun",
-                      customSemanticsActions: post['user_id'] == PocketBaseService.client.authStore.model?.id
-                        ? {
-                            CustomSemanticsAction(label: 'Gönderiyi Düzenle'): () {
-                              _showEditDialog(post['id'], content);
-                            },
-                            CustomSemanticsAction(label: 'Gönderiyi Sil'): () {
-                              _deletePost(post['id']);
-                            },
-                          }
-                        : {},
-                      child: ExcludeSemantics(
-                        child: Card(
-                          elevation: 0,
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                builder: (_) => BlogCommentsBottomSheet(postId: post['id']),
-                              );
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                Row(
+          if (_isPosting)
+            const LinearProgressIndicator(),
+          Expanded(
+            child: _isLoading 
+              ? const Center(child: CircularProgressIndicator())
+              : _posts.isEmpty 
+                ? const Center(child: Text("Henüz hiç gönderi paylaşılmamış."))
+                : ListView.separated(
+                    padding: const EdgeInsets.all(8),
+                    itemCount: _posts.length,
+                    separatorBuilder: (context, index) => const Divider(),
+                    itemBuilder: (context, index) {
+                      final post = _posts[index];
+                      final user = post['expand']?['user_id'];
+                      final username = ProfanityFilter.filter(user != null ? (user['username'] ?? user['name'] ?? user['full_name'] ?? 'Bilinmeyen') : 'Bilinmeyen');
+                      final content = ProfanityFilter.filter(post['content'] ?? '');
+                      final likes = post['likes_count'] ?? 0;
+                      final myId = PocketBaseService.client.authStore.model!.id;
+                      // Check if current user liked
+                      final likesList = post['expand']?['post_likes_via_post_id'] ?? [];
+                      final isLiked = likesList.any((l) => l['user_id'] == myId);
+                      
+                      // TODO: We could fetch comment count independently or use a view, for now we will assume 0 or handle it later
+                      final commentCount = 0;
+                      final timeStr = _formatTime(post['created']);
+  
+                      return Semantics(
+                        label: "$username. $timeStr. $content. $likes beğeni.",
+                        button: true, // Clickable for future actions or reading context
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => BlogCommentsBottomSheet(postId: post['id']),
+                          );
+                        },
+                        onTapHint: "Yorumları okumak ve yazmak için çift dokunun",
+                        customSemanticsActions: post['user_id'] == PocketBaseService.client.authStore.model?.id
+                          ? {
+                              CustomSemanticsAction(label: 'Gönderiyi Düzenle'): () {
+                                _showEditDialog(post['id'], content);
+                              },
+                              CustomSemanticsAction(label: 'Gönderiyi Sil'): () {
+                                _deletePost(post['id']);
+                              },
+                            }
+                          : {},
+                        child: ExcludeSemantics(
+                          child: Card(
+                            elevation: 0,
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  builder: (_) => BlogCommentsBottomSheet(postId: post['id']),
+                                );
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    CircleAvatar(
-                                      radius: 16,
-                                      backgroundColor: Colors.green.shade800,
-                                      child: Text(
-                                        username.isNotEmpty ? username[0].toUpperCase() : '?',
-                                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                                  Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 16,
+                                        backgroundColor: Colors.green.shade800,
+                                        child: Text(
+                                          username.isNotEmpty ? username[0].toUpperCase() : '?',
+                                          style: const TextStyle(color: Colors.white, fontSize: 14),
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      username,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                    ),
-                                    const Spacer(),
-                                    Text(
-                                      timeStr,
-                                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  content,
-                                  style: const TextStyle(fontSize: 15),
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Semantics(
-                                      label: isLiked ? "Beğenildi. Şu anki beğeni sayısı $likes" : "Beğen. Şu anki beğeni sayısı $likes",
-                                      button: true,
-                                      onTapHint: "Gönderiyi beğenmek veya beğeniyi geri almak için çift dokunun",
-                                      child: InkWell(
-                                        onTap: () => _toggleLike(post['id'], likes),
-                                        borderRadius: BorderRadius.circular(20),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-                                          child: Row(
-                                            children: [
-                                              Icon(isLiked ? Icons.favorite : Icons.favorite_border, size: 20, color: Colors.red.shade400),
-                                              const SizedBox(width: 4),
-                                              Text(likes.toString(), style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.bold)),
-                                            ],
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        username,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        timeStr,
+                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    content,
+                                    style: const TextStyle(fontSize: 15),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Semantics(
+                                        label: isLiked ? "Beğenildi. Şu anki beğeni sayısı $likes" : "Beğen. Şu anki beğeni sayısı $likes",
+                                        button: true,
+                                        onTapHint: "Gönderiyi beğenmek veya beğeniyi geri almak için çift dokunun",
+                                        child: InkWell(
+                                          onTap: () => _toggleLike(post['id'], likes),
+                                          borderRadius: BorderRadius.circular(20),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                                            child: Row(
+                                              children: [
+                                                Icon(isLiked ? Icons.favorite : Icons.favorite_border, size: 20, color: Colors.red.shade400),
+                                                const SizedBox(width: 4),
+                                                Text(likes.toString(), style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.bold)),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Semantics(
-                                      label: "Yorumlar. $commentCount yorum var.",
-                                      button: true,
-                                      onTapHint: "Yorumları görmek için çift dokunun",
-                                      child: InkWell(
-                                        onTap: () {
-                                          showModalBottomSheet(
-                                            context: context,
-                                            isScrollControlled: true,
-                                            builder: (_) => BlogCommentsBottomSheet(postId: post['id']),
-                                          );
-                                        },
-                                        borderRadius: BorderRadius.circular(20),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.chat_bubble_outline, size: 20, color: Colors.grey.shade400),
-                                              const SizedBox(width: 4),
-                                              Text(commentCount.toString(), style: TextStyle(color: Colors.grey.shade400)),
-                                            ],
+                                      const SizedBox(width: 16),
+                                      Semantics(
+                                        label: "Yorumlar. $commentCount yorum var.",
+                                        button: true,
+                                        onTapHint: "Yorumları görmek için çift dokunun",
+                                        child: InkWell(
+                                          onTap: () {
+                                            showModalBottomSheet(
+                                              context: context,
+                                              isScrollControlled: true,
+                                              builder: (_) => BlogCommentsBottomSheet(postId: post['id']),
+                                            );
+                                          },
+                                          borderRadius: BorderRadius.circular(20),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.chat_bubble_outline, size: 20, color: Colors.grey.shade400),
+                                                const SizedBox(width: 4),
+                                                Text(commentCount.toString(), style: TextStyle(color: Colors.grey.shade400)),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                )
-                              ],
+                                    ],
+                                  )
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
+          ),
+        ],
       ),
-    ],
-  );
-}
+    );
+  }
 }

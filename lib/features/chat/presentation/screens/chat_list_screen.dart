@@ -656,30 +656,33 @@ Widget? _buildFAB() {
     }).toList();
 
     if (_chats.isEmpty) {
-      return Column(
-        children: [
-          _buildTopActionButtons(),
-          const Expanded(
-            child: Center(
-              child: Text(
-                'Henüz bir sohbetiniz yok.\nYeni bir sohbet başlatın.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+      return SafeArea(
+        child: Column(
+          children: [
+            _buildTopActionButtons(),
+            const Expanded(
+              child: Center(
+                child: Text(
+                  'Henüz bir sohbetiniz yok.\nYeni bir sohbet başlatın.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
-    return ListView.separated(
-      controller: _chatListScrollController,
-      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-      itemCount: filteredChats.length + 1,
-      separatorBuilder: (context, index) {
-        if (index == 0) return const SizedBox.shrink();
-        return const Divider(height: 1, color: Colors.white10);
-      },
+    return SafeArea(
+      child: ListView.separated(
+        controller: _chatListScrollController,
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        itemCount: filteredChats.length + 1,
+        separatorBuilder: (context, index) {
+          if (index == 0) return const SizedBox.shrink();
+          return const Divider(height: 1, color: Colors.white10);
+        },
       itemBuilder: (context, index) {
         if (index == 0) {
           return _buildTopActionButtons();
