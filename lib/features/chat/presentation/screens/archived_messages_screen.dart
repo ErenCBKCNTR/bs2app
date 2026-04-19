@@ -69,6 +69,46 @@ class _ArchivedMessagesScreenState extends State<ArchivedMessagesScreen> {
     }
   }
 
+  Future<void> _unarchiveChat(String participantId) async {
+    try {
+      await PocketBaseService.client.collection('chat_participants').update(participantId, body: {
+        'is_archived': false
+      });
+      _fetchArchivedChats();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sohbet arşivden çıkarıldı'), duration: Duration(seconds: 2))
+        );
+      }
+    } catch (e) {
+      AppLogger.instance.error('Arşivden çıkarma hatası: $e');
+    }
+  }
+
+  void _showOptions(RecordModel chat) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        final myParticipant = chat.data['my_participant'] as RecordModel;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.unarchive),
+                title: const Text('Arşivden Çıkar'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _unarchiveChat(myParticipant.id);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,18 +121,42 @@ class _ArchivedMessagesScreenState extends State<ArchivedMessagesScreen> {
                   itemCount: _chats.length,
                   itemBuilder: (context, index) {
                     final chat = _chats[index];
-                    return ListTile(
-                      title: Text(chat.data['display_name'] ?? 'Sohbet'),
-                      subtitle: const Text('Arşivlenmiş'),
-                      onTap: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ChatDetailScreen(chat: {'id': chat.id, 'name': chat.getStringValue('name')}),
-                          ),
-                        );
-                        _fetchArchivedChats();
+                    final myParticipant = chat.data['my_participant'] as RecordModel;
+                    
+                    return Semantics(
+                      label: "${chat.data['display_name'] ?? 'Sohbet'}. Arşivlenmiş.",
+                      hint: "Sohbeti açmak için çift dokunun, seçenekler için uzun dokunun",
+                      customSemanticsActions: {
+                        CustomSemanticsAction(label: 'Arşivden çıkar'): () {
+                          _unarchiveChat(myParticipant.id);
+                        },
                       },
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.blueGrey,
+                          child: Text(
+                            (chat.data['display_name'] as String? ?? 'S')[0].toUpperCase(),
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                        title: Text(chat.data['display_name'] ?? 'Sohbet'),
+                        subtitle: const Text('Arşivden çıkarmak için basılı tutun'),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.unarchive_outlined),
+                          onPressed: () => _unarchiveChat(myParticipant.id),
+                          tooltip: 'Arşivden Çıkar',
+                        ),
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatDetailScreen(chat: {'id': chat.id, 'name': chat.getStringValue('name')}),
+                            ),
+                          );
+                          _fetchArchivedChats();
+                        },
+                        onLongPress: () => _showOptions(chat),
+                      ),
                     );
                   },
                 ),

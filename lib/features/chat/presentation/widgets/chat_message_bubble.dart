@@ -34,9 +34,7 @@ class ChatMessageBubble extends StatelessWidget {
     final isVoiceMessage = content.toString().startsWith('[VOICE]');
     final bool isFavorite = message['is_favorite'] == true;
     final reactions = message['reactions'] as String? ?? '';
-    final created = DateTime.parse(message['created']).toUtc();
-    final updated = DateTime.parse(message['updated']).toUtc();
-    final bool isEdited = updated.difference(created).inSeconds > 1;
+    final bool isEdited = message['is_edited'] == true;
 
     return Align(
       alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
@@ -48,70 +46,95 @@ class ChatMessageBubble extends StatelessWidget {
                 : (isMyMessage ? "Gönderdiğiniz mesaj: $content. $timeString" : "Gelen mesaj: $content. $timeString"))}${isEdited ? '. Düzenlendi' : ''}${reactions.isNotEmpty ? '. Tepkiler: $reactions' : ''}",
         button: true,
         onLongPressHint: "Tepki eklemek veya diğer seçenekler için uzun dokunun",
+        customSemanticsActions: {
+          CustomSemanticsAction(label: 'Mesaja durum ifadesi bırak'): () {
+            onLongPress();
+          },
+        },
         child: GestureDetector(
           onLongPress: onLongPress,
           child: Column(
             crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                decoration: BoxDecoration(
-                  color: isCallMessage 
-                    ? Colors.blueGrey[900]?.withOpacity(0.5) 
-                    : (isMyMessage ? Colors.green[700] : Colors.grey[800]),
-                  borderRadius: BorderRadius.circular(12),
-                  border: isCallMessage ? Border.all(color: Colors.white24, width: 0.5) : null,
-                ),
-                child: Column(
-                  crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                  children: [
-                    if (voiceWidget != null) voiceWidget!,
-                    if (!isVoiceMessage)
-                      Text(
-                        content.toString(),
-                        style: const TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                    if (isEdited)
-                      const Text(
-                        'Düzenlendi',
-                        style: TextStyle(fontSize: 10, color: Colors.white70, fontStyle: FontStyle.italic),
-                      ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: isCallMessage 
+                        ? Colors.blueGrey[900]?.withOpacity(0.5) 
+                        : (isMyMessage ? Colors.green[700] : Colors.grey[800]),
+                      borderRadius: BorderRadius.circular(12),
+                      border: isCallMessage ? Border.all(color: Colors.white24, width: 0.5) : null,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                       children: [
-                        if (isFavorite)
-                          const Icon(Icons.star, color: Colors.amber, size: 12),
-                        if (isFavorite) const SizedBox(width: 4),
-                        Text(
-                          timeString,
-                          style: const TextStyle(fontSize: 10, color: Colors.white70),
+                        if (voiceWidget != null) voiceWidget!,
+                        if (!isVoiceMessage)
+                          Text(
+                            content.toString(),
+                            style: const TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                        if (isEdited)
+                          const Text(
+                            'Düzenlendi',
+                            style: TextStyle(fontSize: 10, color: Colors.white70, fontStyle: FontStyle.italic),
+                          ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isFavorite)
+                              const Icon(Icons.star, color: Colors.amber, size: 12),
+                            if (isFavorite) const SizedBox(width: 4),
+                            Text(
+                              timeString,
+                              style: const TextStyle(fontSize: 10, color: Colors.white70),
+                            ),
+                            if (isMyMessage) ...[
+                              const SizedBox(width: 4),
+                              readStatus,
+                            ],
+                          ],
                         ),
-                        if (isMyMessage) ...[
-                          const SizedBox(width: 4),
-                          readStatus,
-                        ],
                       ],
                     ),
-                  ],
-                ),
-              ),
-              if (reactions.isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text(reactions, style: const TextStyle(fontSize: 16)),
-                ),
+                  if (reactions.isNotEmpty)
+                    Positioned(
+                      bottom: -10,
+                      right: isMyMessage ? 12 : null,
+                      left: !isMyMessage ? 12 : null,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[900],
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white10, width: 0.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          reactions, 
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              if (reactions.isNotEmpty) const SizedBox(height: 10),
             ],
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

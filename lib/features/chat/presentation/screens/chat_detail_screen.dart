@@ -461,12 +461,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   padding: const EdgeInsets.all(12),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: ['❤️', '😂', '👍', '😢', '🙏'].map((emoji) => InkWell(
+                    children: ['❤️', '😂', '👍', '😢', '🙏', '🔥', '😮', '👏'].map((emoji) => InkWell(
                       onTap: () {
                         Navigator.pop(context);
                         _addReaction(message['id'], emoji);
                       },
-                      child: Text(emoji, style: const TextStyle(fontSize: 28)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(emoji, style: const TextStyle(fontSize: 28)),
+                      ),
                     )).toList(),
                   ),
                 ),
@@ -530,7 +533,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 Navigator.pop(context);
                 try {
                   await PocketBaseService.client.collection('messages').update(messageId, body: {
-                    'content': editController.text
+                    'content': editController.text,
+                    'is_edited': true,
                   });
                   _fetchMessages();
                 } catch (e) {

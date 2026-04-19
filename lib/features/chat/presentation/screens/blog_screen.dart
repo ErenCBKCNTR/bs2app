@@ -15,13 +15,16 @@ class BlogScreen extends StatefulWidget {
 }
 
 class _BlogScreenState extends State<BlogScreen> {
+  static List<Map<String, dynamic>>? _cachedPosts;
+  
   final _postController = TextEditingController();
   bool _isPosting = false;
   
-  List<Map<String, dynamic>> _posts = [];
-  bool _isLoading = true;
+  List<Map<String, dynamic>> _posts = _cachedPosts ?? [];
+  bool _isLoading = _cachedPosts == null;
   Timer? _pollingTimer;
   final Set<String> _processingLikes = {};
+  final Map<String, Timer> _likeDebouncers = {};
 
   @override
   void initState() {
@@ -48,7 +51,23 @@ class _BlogScreenState extends State<BlogScreen> {
           
       if (mounted) {
         setState(() {
-          _posts = response.map((e) => e.toJson()).toList();
+          // If we have processing likes, we don't want to override those posts with stale data from server
+          if (_processingLikes.isEmpty) {
+            _posts = response.map((e) => e.toJson()).toList();
+          } else {
+            final newPosts = response.map((e) => e.toJson()).toList();
+            for (var i = 0; i < newPosts.length; i++) {
+              if (_processingLikes.contains(newPosts[i]['id'])) {
+                // Keep the local optimistic state
+                final localIndex = _posts.indexWhere((p) => p['id'] == newPosts[i]['id']);
+                if (localIndex != -1) {
+                  newPosts[i] = _posts[localIndex];
+                }
+              }
+            }
+            _posts = newPosts;
+          }
+          _cachedPosts = _posts;
           _isLoading = false;
         });
       }
@@ -142,66 +161,66 @@ class _BlogScreenState extends State<BlogScreen> {
   }
 
   Future<void> _toggleLike(String postId, int currentLikes) async {
-    if (_processingLikes.contains(postId)) return;
-
     final myId = PocketBaseService.client.authStore.model!.id;
     final postIndex = _posts.indexWhere((p) => p['id'] == postId);
     if (postIndex == -1) return;
 
-    final originalPost = Map<String, dynamic>.from(_posts[postIndex]);
     final likesList = List.from(_posts[postIndex]['expand']?['post_likes_via_post_id'] ?? []);
     final isCurrentlyLiked = likesList.any((l) => l['user_id'] == myId);
 
-    // Optimistic UI Update
+    // Optimistic UI Update - Instant feedback
     setState(() {
       _processingLikes.add(postId);
       if (isCurrentlyLiked) {
-        _posts[postIndex]['likes_count'] = currentLikes - 1;
+        _posts[postIndex]['likes_count'] = (currentLikes - 1).clamp(0, 999999);
         likesList.removeWhere((l) => l['user_id'] == myId);
       } else {
         _posts[postIndex]['likes_count'] = currentLikes + 1;
-        likesList.add({'user_id': myId});
+        likesList.add({'user_id': myId, 'id': 'temp_$myId'}); // Temp ID for list management
       }
       _posts[postIndex]['expand'] ??= {};
       _posts[postIndex]['expand']['post_likes_via_post_id'] = likesList;
+      _cachedPosts = _posts;
     });
 
-    try {
-      // Check latest real like status from DB to avoid count sync issues
-      final realLikes = await PocketBaseService.client.collection('post_likes').getFullList(
-        filter: 'post_id = "$postId" && user_id = "$myId"',
-      );
-      
-      // Get the most up-to-date post to ensure we don't use a stale count
-      final updatedPostRecord = await PocketBaseService.client.collection('posts').getOne(postId);
-      int freshCount = updatedPostRecord.getIntValue('likes_count');
+    // Debounce the actual API call to sector standards
+    _likeDebouncers[postId]?.cancel();
+    _likeDebouncers[postId] = Timer(const Duration(milliseconds: 500), () async {
+      try {
+        // Double check likes collection first
+        final realLikes = await PocketBaseService.client.collection('post_likes').getFullList(
+          filter: 'post_id = "$postId" && user_id = "$myId"',
+        );
+        
+        // Final check on server to sync the count accurately
+        final updatedPostRecord = await PocketBaseService.client.collection('posts').getOne(postId);
+        int freshCount = updatedPostRecord.getIntValue('likes_count');
 
-      if (realLikes.isNotEmpty) {
-        // Un-like
-        await PocketBaseService.client.collection('post_likes').delete(realLikes.first.id);
-        await PocketBaseService.client.collection('posts').update(postId, body: {'likes_count': freshCount - 1});
-      } else {
-        // Like
-        await PocketBaseService.client.collection('post_likes').create(body: {'post_id': postId, 'user_id': myId});
-        await PocketBaseService.client.collection('posts').update(postId, body: {'likes_count': freshCount + 1});
+        if (realLikes.isNotEmpty) {
+          if (!isCurrentlyLiked) {
+             // We un-liked, but it was already liked in DB, good
+             await PocketBaseService.client.collection('post_likes').delete(realLikes.first.id);
+             await PocketBaseService.client.collection('posts').update(postId, body: {'likes_count': (freshCount - 1).clamp(0, 999999)});
+          }
+        } else {
+          if (isCurrentlyLiked == false) {
+             // We liked, it's NOT in DB, good
+             await PocketBaseService.client.collection('post_likes').create(body: {'post_id': postId, 'user_id': myId});
+             await PocketBaseService.client.collection('posts').update(postId, body: {'likes_count': freshCount + 1});
+          }
+        }
+      } catch (e) {
+        AppLogger.instance.error('Beğeni işlemi başarısız: $e');
+        // On error, let the next background fetch fix it
+      } finally {
+        if (mounted) {
+          setState(() {
+            _processingLikes.remove(postId);
+          });
+          _likeDebouncers.remove(postId);
+        }
       }
-      
-      _fetchPosts(isBackground: true);
-    } catch (e) {
-      AppLogger.instance.error('Beğeni işlemi başarısız: $e');
-      // Revert on error
-      if (mounted) {
-        setState(() {
-          _posts[postIndex] = originalPost;
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _processingLikes.remove(postId);
-        });
-      }
-    }
+    });
   }
 
   void _showEditDialog(String id, String currentContent) {

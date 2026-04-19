@@ -13,8 +13,10 @@ class VoiceRoomsScreen extends StatefulWidget {
 }
 
 class _VoiceRoomsScreenState extends State<VoiceRoomsScreen> {
-  List<Map<String, dynamic>> _rooms = [];
-  bool _isLoading = true;
+  static List<Map<String, dynamic>>? _cachedRooms;
+  
+  List<Map<String, dynamic>> _rooms = _cachedRooms ?? [];
+  bool _isLoading = _cachedRooms == null;
   Timer? _pollingTimer;
 
   @override
@@ -42,6 +44,7 @@ class _VoiceRoomsScreenState extends State<VoiceRoomsScreen> {
       if (mounted) {
         setState(() {
           _rooms = response.map((e) => e.toJson()).toList();
+          _cachedRooms = _rooms;
           _isLoading = false;
         });
       }
