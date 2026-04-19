@@ -170,7 +170,6 @@ class _BlogScreenState extends State<BlogScreen> {
       // Check latest real like status from DB to avoid count sync issues
       final realLikes = await PocketBaseService.client.collection('post_likes').getFullList(
         filter: 'post_id = "$postId" && user_id = "$myId"',
-        requestOptions: const FetchOptions(cache: 'no-store'),
       );
       
       // Get the most up-to-date post to ensure we don't use a stale count
