@@ -1,68 +1,67 @@
 import 'dart:async';
-import 'dart:html' as html;
-import 'package:just_audio/just_audio.dart';
+import 'package:record/record.dart'; // Cross-platform native recording
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import '../models/radio_recording.dart';
 import '../data/recording_database.dart';
 
 class RadioRecordingService {
-  html.MediaRecorder? _mediaRecorder;
-  List<html.Blob> _chunks = [];
+  final _recorder = AudioRecorder(); // Native API'leri kullanan cross-platform recorder
   DateTime? _startTime;
+  String? _currentFilePath;
   String? _currentStationName;
-  Completer<RadioRecording>? _recordingCompleter;
 
-  bool get isRecording => _mediaRecorder != null && _mediaRecorder!.state == 'recording';
+  bool get isRecording => _recorder.isRecording();
 
   Future<void> startRecording(String url, String stationName) async {
-    if (isRecording) return;
+    if (await isRecording) return;
     
-    _startTime = DateTime.now();
-    _currentStationName = stationName;
-    _chunks.clear();
+    // Permission check
+    if (await _recorder.hasPermission()) {
+      _startTime = DateTime.now();
+      _currentStationName = stationName;
 
-    // Browser Web Audio API'den stream yakala
-    final audioContext = html.AudioContext();
-    final destination = audioContext.createMediaStreamDestination();
-    
-    // MediaRecorder ile stream'i kaydet
-    final options = {'mimeType': 'audio/webm'};
-    _mediaRecorder = html.MediaRecorder(destination.stream, options);
-    
-    _mediaRecorder!.addEventListener('dataavailable', (html.Event event) {
-      final blobEvent = event as html.BlobEvent;
-      _chunks.add(blobEvent.data!);
-    });
-
-    _mediaRecorder!.addEventListener('stop', (html.Event event) async {
-      final blob = html.Blob(_chunks, 'audio/webm');
-      final url = html.Url.createObjectUrlFromBlob(blob);
+      final formattedDate = DateFormat('ddMMyyyy_HHmmss').format(_startTime!);
+      final sanitizedStation = stationName
+          .replaceAll(RegExp(r'[^\w\s]'), '')
+          .replaceAll(' ', '_')
+          .toLowerCase();
+      final fileName = 'blindsocial_${sanitizedStation}_$formattedDate.m4a'; // M4A (AAC) native desteklenir
       
-      final duration = DateTime.now().difference(_startTime!);
-      final recording = RadioRecording(
-        stationName: _currentStationName!,
-        filePath: url, // Web object URL olarak saklıyoruz
-        date: _startTime!,
-        duration: duration,
+      final directory = await getApplicationDocumentsDirectory();
+      _currentFilePath = p.join(directory.path, fileName);
+
+      // Start recording natively
+      await _recorder.start(
+        const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000),
+        path: _currentFilePath!,
       );
-      
-      final id = await RecordingDatabase.instance.insert(recording);
-      _recordingCompleter?.complete(RadioRecording(
-        id: id,
-        stationName: recording.stationName,
-        filePath: recording.filePath,
-        date: recording.date,
-        duration: recording.duration,
-      ));
-    });
-
-    _mediaRecorder!.start();
+    }
   }
 
   Future<RadioRecording?> stopRecording() async {
-    if (!isRecording) return null;
-    _recordingCompleter = Completer<RadioRecording>();
-    _mediaRecorder!.stop();
-    return _recordingCompleter!.future;
+    if (!(await isRecording)) return null;
+
+    final path = await _recorder.stop();
+    
+    final duration = DateTime.now().difference(_startTime!);
+
+    final recording = RadioRecording(
+      stationName: _currentStationName!,
+      filePath: path!,
+      date: _startTime!,
+      duration: duration,
+    );
+
+    final id = await RecordingDatabase.instance.insert(recording);
+
+    return RadioRecording(
+      id: id,
+      stationName: recording.stationName,
+      filePath: recording.filePath,
+      date: recording.date,
+      duration: recording.duration,
+    );
   }
 }
