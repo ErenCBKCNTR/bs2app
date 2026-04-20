@@ -79,76 +79,77 @@ class _RadioListScreenState extends State<RadioListScreen> {
           ),
         ),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Semantics(
-                    label: "Kaydedilen Canlı Yayınlar",
-                    button: true,
-                    hint: "Önceden kaydettiğiniz yayınları görmek için çift dokunun",
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SavedRecordingsScreen()),
-                        );
-                      },
-                      icon: const Icon(Icons.album, color: Colors.white, size: 20),
-                      label: const Text(
-                        'Kayıtlar',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(0, 50),
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        elevation: 4,
-                        shadowColor: Colors.blueAccent.withOpacity(0.5),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 4,
-                  child: Semantics(
-                    label: _isFavoritesView ? "Tüm Kanallar" : "Favori Kanallar",
-                    button: true,
-                    child: ElevatedButton.icon(
-                      onPressed: _toggleFavoritesView,
-                      icon: Icon(
-                        _isFavoritesView ? Icons.list : Icons.favorite, 
-                        color: Colors.white, 
-                        size: 20
-                      ),
-                      label: Text(
-                        _isFavoritesView ? 'Tüm Kanallar' : 'Favori Kanallar',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _isFavoritesView ? Colors.teal : Colors.deepOrange,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(0, 50),
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        elevation: 4,
-                        shadowColor: (_isFavoritesView ? Colors.teal : Colors.deepOrange).withOpacity(0.5),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Semantics(
+                      label: "Kaydedilen Canlı Yayınlar",
+                      button: true,
+                      hint: "Önceden kaydettiğiniz yayınları görmek için çift dokunun",
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const SavedRecordingsScreen()),
+                          );
+                        },
+                        icon: const Icon(Icons.album, color: Colors.white, size: 18),
+                        label: const Text(
+                          'Kayıtlar',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(0, 48),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 4,
+                          shadowColor: Colors.blueAccent.withOpacity(0.4),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 5,
+                    child: Semantics(
+                      label: _isFavoritesView ? "Tüm Kanallar" : "Favori Kanallar",
+                      button: true,
+                      child: ElevatedButton.icon(
+                        onPressed: _toggleFavoritesView,
+                        icon: Icon(
+                          _isFavoritesView ? Icons.list : Icons.favorite, 
+                          color: Colors.white, 
+                          size: 18
+                        ),
+                        label: Text(
+                          _isFavoritesView ? 'Tüm Kanallar' : 'Favoriler',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isFavoritesView ? Colors.teal : Colors.deepOrange,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(0, 48),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 4,
+                          shadowColor: (_isFavoritesView ? Colors.teal : Colors.deepOrange).withOpacity(0.4),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
           Expanded(
             child: ListView.builder(
               itemCount: _filteredStations.length,
@@ -180,6 +181,7 @@ class _RadioListScreenState extends State<RadioListScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 }

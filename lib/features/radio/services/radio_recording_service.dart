@@ -42,8 +42,10 @@ class RadioRecordingService {
     
     if (isM3u8) {
       // HLS (.m3u8) streams can be tricky. Some contain video/metadata streams that cause muxers to fail.
-      // -protocol_whitelist is critical for Android environments where FFmpeg might block nested HLS playlists or crypto segments.
-      command = "-y -user_agent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36\" -protocol_whitelist file,http,https,tcp,tls,crypto -i \"$url\" -vn -sn -c:a aac -b:a 128k \"$_currentFilePath\"";
+      // -live_start_index -1 ensures we start from the very latest segment.
+      // -fflags +nobuffer/+genpts / -flags +low_delay minimizes buffering to ensure start/stop synchronization.
+      // -analyzeduration / -probesize reduced for faster initial sync.
+      command = "-y -user_agent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -live_start_index -1 -fflags +nobuffer+genpts -flags +low_delay -analyzeduration 1000000 -probesize 1000000 -i \"$url\" -vn -sn -c:a aac -b:a 128k -movflags +faststart+frag_keyframe \"$_currentFilePath\"";
     } else {
       command = "-y -user_agent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36\" -re -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -vn -sn -c:a aac -b:a 128k \"$_currentFilePath\"";
     }

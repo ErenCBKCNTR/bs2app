@@ -250,13 +250,14 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Radyo Görseli / Logo Alanı
-          Container(
+    return SingleChildScrollView(
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Radyo Görseli / Logo Alanı
+            Container(
             width: 220,
             height: 220,
             decoration: BoxDecoration(
@@ -291,10 +292,15 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
             ),
           ),
           const SizedBox(height: 30),
-          // Kanal Bilgisi ve Favori Butonu
+          // Kanal Bilgisi, Favori ve Uyku Butonları
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              IconButton(
+                icon: const Icon(Icons.bedtime_outlined, size: 28, color: Colors.white54),
+                onPressed: _showSleepTimerDialog,
+                tooltip: 'Uyku Zamanlayıcısı',
+              ),
               Expanded(
                 child: Text(
                   widget.station.name,
@@ -315,7 +321,7 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
                     icon: Icon(
                       isFav ? Icons.favorite : Icons.favorite_border,
                       color: isFav ? Colors.amber : Colors.white54,
-                      size: 32,
+                      size: 28,
                     ),
                     onPressed: () async {
                       await _favoriteService.toggleFavorite(widget.station.name);
@@ -392,17 +398,11 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.bedtime_outlined, size: 32, color: Colors.white54),
-                onPressed: _showSleepTimerDialog,
-                tooltip: 'Uyku Zamanlayıcısı',
-              ),
-              const SizedBox(width: 16),
-              IconButton(
                 icon: const Icon(Icons.skip_previous_rounded, size: 44, color: Colors.white),
                 onPressed: widget.onPrevious,
                 tooltip: 'Önceki Kanal',
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 32),
               // Erişilebilirlik etiketi IconButton tooltip ile sağlanır.
               IconButton(
                 onPressed: _togglePlayback,
@@ -518,7 +518,7 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
