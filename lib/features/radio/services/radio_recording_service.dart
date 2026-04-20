@@ -25,13 +25,13 @@ class RadioRecordingService {
     _startTime = DateTime.now();
     _currentStationName = stationName;
 
-    // Filename format: blindsocial_radyoadi_tarih.mp3
+    // Filename format: blindsocial_radyoadi_tarih.aac
     final formattedDate = DateFormat('ddMMyyyy_HHmmss').format(_startTime!);
     final sanitizedStation = stationName
         .replaceAll(RegExp(r'[^\w\s]'), '')
         .replaceAll(' ', '_')
         .toLowerCase();
-    final fileName = 'blindsocial_${sanitizedStation}_$formattedDate.mp3';
+    final fileName = 'blindsocial_${sanitizedStation}_$formattedDate.aac';
     
     final directory = await getApplicationDocumentsDirectory();
     _currentFilePath = p.join(directory.path, fileName);
@@ -42,13 +42,12 @@ class RadioRecordingService {
     
     if (isM3u8) {
       // THE SYNC MASTER SETTINGS:
-      // -live_start_index -3: Starts recording from 3 segments BACK to catch what the user is currently hearing.
-      // -c:a libmp3lame: Most compatible format, prevents playback errors.
-      // -af "asetpts=N/SR/TB": Re-generates timestamps to prevent drift.
-      command = "-y -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -fflags +nobuffer+genpts+discardcorrupt -analyzeduration 1000 -probesize 1000 -live_start_index -3 -i \"$url\" -vn -sn -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
+      // -live_start_index -4: Starts recording from ~20-30 seconds BACK to catch what the user is currently hearing.
+      // -c:a aac: Native encoder, always available in FFmpeg builds.
+      command = "-y -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -fflags +nobuffer+genpts+discardcorrupt -analyzeduration 1000 -probesize 1000 -live_start_index -4 -i \"$url\" -vn -sn -c:a aac -b:a 128k \"$_currentFilePath\"";
     } else {
       // Standard stream (Icecast/MP3)
-      command = "-y -user_agent \"Mozilla/5.0\" -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -fflags +nobuffer+genpts -i \"$url\" -vn -sn -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
+      command = "-y -user_agent \"Mozilla/5.0\" -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -fflags +nobuffer+genpts -i \"$url\" -vn -sn -c:a aac -b:a 128k \"$_currentFilePath\"";
     }
 
     _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
