@@ -40,17 +40,12 @@ class RadioRecordingService {
     final isM3u8 = url.toLowerCase().contains('.m3u8');
     late String command;
     
-    if (isM3u8) {
-      // SOLUTION 1: A Haber style m3u8 (HLS).
-      // Forced sync: Ignores stream timestamps, writes packets immediately as they arrive (-use_wallclock_as_timestamps).
-      // Gapless: Removes all internal segmentation logic (-fflags +nobuffer+genpts).
-      command = "-y -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -use_wallclock_as_timestamps 1 -fflags +nobuffer+genpts+discardcorrupt -analyzeduration 0 -probesize 32 -i \"$url\" -vn -sn -c:a aac -b:a 128k \"$_currentFilePath\"";
-    } else {
-      // SOLUTION 2: 90'lar style Icecast/MP3.
-      // Forced sync: Zero-latency buffer (-fflags +nobuffer) and no delay streaming (-flags +low_delay).
-      // Direct Capture: Forces FFmpeg to take every byte directly without waiting for packet analysis.
-      command = "-y -user_agent \"Mozilla/5.0\" -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -fflags +nobuffer -flags +low_delay -i \"$url\" -vn -sn -c:a aac -b:a 128k \"$_currentFilePath\"";
-    }
+    // FINAL SOLUTION: Raw stream capture.
+    // -fflags +nobuffer: Eliminates all internal processing bottlenecks.
+    // -c copy: Does NOT analyze, DOES NOT encode, just copies bytes from stream to file.
+    // -analyzeduration 0 -probesize 32: Stops FFmpeg from examining the stream, making it instant.
+    command = "-y -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -fflags +nobuffer+genpts+discardcorrupt -analyzeduration 0 -probesize 32 -i \"$url\" -vn -sn -c copy \"$_currentFilePath\"";
+    
 
     _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
       final returnCode = await session.getReturnCode();
