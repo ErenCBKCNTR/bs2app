@@ -13,7 +13,7 @@ allprojects {
 
 ext {
     ffmpegKitPackage = "audio"
-    ffmpegKitVersion = "6.0"
+    ffmpegKitVersion = "6.0-1"
 }
 
 rootProject.buildDir = "../build"
