@@ -5,9 +5,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:ffmpeg_kit_flutter_new_https_gpl/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_new_https_gpl/ffmpeg_session.dart';
-import 'package:ffmpeg_kit_flutter_new_https_gpl/return_code.dart';
+import 'package:ffmpeg_kit_flutter_new_https/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_new_https/ffmpeg_session.dart';
+import 'package:ffmpeg_kit_flutter_new_https/return_code.dart';
 import '../models/radio_recording.dart';
 import '../data/recording_database.dart';
 
@@ -31,7 +31,7 @@ class RadioRecordingService {
         .replaceAll(RegExp(r'[^\w\s]'), '')
         .replaceAll(' ', '_')
         .toLowerCase();
-    final fileName = 'blindsocial_${sanitizedStation}_$formattedDate.mp3';
+    final fileName = 'blindsocial_${sanitizedStation}_$formattedDate.m4a';
     
     final directory = await getApplicationDocumentsDirectory();
     _currentFilePath = p.join(directory.path, fileName);
@@ -41,11 +41,11 @@ class RadioRecordingService {
     late String command;
     
     if (isM3u8) {
-      // HLS (.m3u8) streams can be tricky. Some contain video/metadata streams that cause mp3 muxer to fail.
+      // HLS (.m3u8) streams can be tricky. Some contain video/metadata streams that cause muxers to fail.
       // -protocol_whitelist is critical for Android environments where FFmpeg might block nested HLS playlists or crypto segments.
-      command = "-y -user_agent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36\" -protocol_whitelist file,http,https,tcp,tls,crypto -i \"$url\" -vn -sn -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
+      command = "-y -user_agent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36\" -protocol_whitelist file,http,https,tcp,tls,crypto -i \"$url\" -vn -sn -c:a aac -b:a 128k \"$_currentFilePath\"";
     } else {
-      command = "-y -user_agent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36\" -re -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -vn -sn -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
+      command = "-y -user_agent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36\" -re -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -vn -sn -c:a aac -b:a 128k \"$_currentFilePath\"";
     }
 
     _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
