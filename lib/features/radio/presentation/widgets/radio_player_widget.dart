@@ -518,8 +518,9 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
               ],
             ),
           ),
-        ),
+        ],
       ),
+    ),
     );
   }
 }
