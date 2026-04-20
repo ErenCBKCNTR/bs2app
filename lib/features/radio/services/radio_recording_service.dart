@@ -5,9 +5,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:ffmpeg_kit_flutter_new_https/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_new_https/ffmpeg_session.dart';
-import 'package:ffmpeg_kit_flutter_new_https/return_code.dart';
+import 'package:ffmpeg_kit_flutter_new_https_gpl/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_new_https_gpl/ffmpeg_session.dart';
+import 'package:ffmpeg_kit_flutter_new_https_gpl/return_code.dart';
 import '../models/radio_recording.dart';
 import '../data/recording_database.dart';
 
