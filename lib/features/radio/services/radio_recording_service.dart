@@ -41,11 +41,11 @@ class RadioRecordingService {
     late String command;
     
     if (isM3u8) {
-      // HLS (.m3u8) streams can be tricky. Some contain video/metadata streams that cause mp3 muxer to fail (hence 0 bytes).
-      // Solution: Add -vn (no video), -sn (no subtitles), and explicit User-Agent. Remove -live_start_index which caused I/O errors on some Androids.
-      command = "-y -user_agent \"Mozilla/5.0\" -i \"$url\" -vn -sn -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
+      // HLS (.m3u8) streams can be tricky. Some contain video/metadata streams that cause mp3 muxer to fail.
+      // -protocol_whitelist is critical for Android environments where FFmpeg might block nested HLS playlists or crypto segments.
+      command = "-y -user_agent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36\" -protocol_whitelist file,http,https,tcp,tls,crypto -i \"$url\" -vn -sn -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
     } else {
-      command = "-y -user_agent \"Mozilla/5.0\" -re -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -vn -sn -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
+      command = "-y -user_agent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36\" -re -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -vn -sn -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
     }
 
     _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
@@ -84,7 +84,17 @@ class RadioRecordingService {
       if (await file.exists()) {
         await file.delete();
       }
-      throw Exception('Yayın kaynak bağlantısı reddedildi veya kayıt için yeterli veri alınamadı.');
+      
+      String errorDetails = 'Yayın kaynak bağlantısı reddedildi veya kayıt için yeterli veri alınamadı.';
+      if (session != null) {
+        final logs = await session.getLogs();
+        if (logs.isNotEmpty) {
+          final recentLogs = logs.reversed.take(4).map((l) => l.getMessage()).join(' | ');
+          errorDetails = 'Kayıt başarısız. FFmpeg Log: $recentLogs';
+        }
+      }
+      
+      throw Exception(errorDetails);
     }
 
     // Get real duration from the file metadata
