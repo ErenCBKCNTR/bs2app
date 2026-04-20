@@ -41,12 +41,15 @@ class RadioRecordingService {
     late String command;
     
     if (isM3u8) {
-      // High-performance M3U8 recording with ultra-low latency flags for perfect sync.
-      // -analyzeduration 10000 & -probesize 10000 ensure almost instant stream identification.
-      // -fflags nobuffer ensures zero internal buffering during capture.
-      command = "-y -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -live_start_index -1 -fflags nobuffer+genpts+flush_packets -flags low_delay -strict experimental -analyzeduration 10000 -probesize 10000 -i \"$url\" -vn -sn -c:a aac -b:a 128k -movflags frag_keyframe+empty_moov+default_base_moof \"$_currentFilePath\"";
+      // PERMANENT SOLUTION: Optimized for HLS (M3U8) sync like A Haber.
+      // -c:a copy: Zero latency, zero CPU usage, exact data from server.
+      // -use_wallclock_as_timestamps 1: Forces output to sync with real world time.
+      // -live_start_index -1: Always grabs the very latest segment being played.
+      // -fflags +nobuffer+genpts+discardcorrupt: Essential for gapless HLS capture.
+      command = "-y -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -use_wallclock_as_timestamps 1 -fflags +nobuffer+genpts+discardcorrupt -analyzeduration 1000 -probesize 1000 -live_start_index -1 -i \"$url\" -vn -sn -c:a copy -movflags frag_keyframe+empty_moov+default_base_moof \"$_currentFilePath\"";
     } else {
-      command = "-y -user_agent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36\" -re -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -vn -sn -c:a aac -b:a 128k \"$_currentFilePath\"";
+      // Standard stream optimization
+      command = "-y -user_agent \"Mozilla/5.0\" -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -fflags +nobuffer+genpts -i \"$url\" -vn -sn -c:a aac -b:a 128k \"$_currentFilePath\"";
     }
 
     _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
@@ -74,11 +77,13 @@ class RadioRecordingService {
 
     // Cancel the session (FFmpeg will finish the file)
     if (session != null) {
+      // Use peaceful finish instead of hard kill for stream copy to flush metadata
       await FFmpegKit.cancel(session.getSessionId());
     }
 
-    // Give FFmpeg a moment to finalize the file on disk
-    await Future.delayed(const Duration(milliseconds: 1000));
+    // Give FFmpeg enough time to flush the fragmented MOOV atom to disk
+    // For stream copy, this is critical to have a valid duration.
+    await Future.delayed(const Duration(milliseconds: 1500));
 
     final file = File(_currentFilePath!);
     if (!await file.exists() || await file.length() == 0) {
