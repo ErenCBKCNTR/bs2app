@@ -2,8 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:just_audio/just_audio.dart';
+import 'dart:async';
 import '../../data/radio_stations.dart';
 import '../../services/radio_recording_service.dart';
+import '../../services/favorite_stations_service.dart';
 import '../../models/radio_recording.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'dart:ui' show TextDirection;
@@ -30,7 +32,11 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
   double _volume = 0.8;
   bool _isBuffering = false;
   final RadioRecordingService _recordingService = RadioRecordingService();
+  final FavoriteStationsService _favoriteService = FavoriteStationsService();
   bool _isRecording = false;
+  Timer? _sleepTimer;
+  int _remainingSleepSeconds = 0;
+  Timer? _countdownTimer;
 
   @override
   void initState() {
@@ -85,7 +91,111 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
   @override
   void dispose() {
     _player.dispose();
+    _sleepTimer?.cancel();
+    _countdownTimer?.cancel();
     super.dispose();
+  }
+
+  void _setSleepTimer(int minutes) {
+    _sleepTimer?.cancel();
+    _countdownTimer?.cancel();
+
+    if (minutes == 0) {
+      setState(() {
+        _remainingSleepSeconds = 0;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Uyku zamanlayıcısı iptal edildi.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _remainingSleepSeconds = minutes * 60;
+    });
+
+    _sleepTimer = Timer(Duration(minutes: minutes), () async {
+      if (_isPlaying) {
+        await _player.pause();
+      }
+      if (_isRecording) {
+        await _toggleRecording();
+      }
+      setState(() {
+        _remainingSleepSeconds = 0;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Uyku zamanlayıcısı süresi doldu. Yayın durduruldu.')),
+        );
+      }
+    });
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_remainingSleepSeconds > 0) {
+        setState(() {
+          _remainingSleepSeconds--;
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Uyku zamanlayıcısı $minutes dakikaya ayarlandı.')),
+    );
+  }
+
+  void _showSleepTimerDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Uyku Zamanlayıcısı',
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              ListTile(
+                title: const Text('15 Dakika', style: TextStyle(color: Colors.white)),
+                onTap: () { Navigator.pop(context); _setSleepTimer(15); },
+              ),
+              ListTile(
+                title: const Text('30 Dakika', style: TextStyle(color: Colors.white)),
+                onTap: () { Navigator.pop(context); _setSleepTimer(30); },
+              ),
+              ListTile(
+                title: const Text('45 Dakika', style: TextStyle(color: Colors.white)),
+                onTap: () { Navigator.pop(context); _setSleepTimer(45); },
+              ),
+              ListTile(
+                title: const Text('60 Dakika', style: TextStyle(color: Colors.white)),
+                onTap: () { Navigator.pop(context); _setSleepTimer(60); },
+              ),
+              if (_remainingSleepSeconds > 0)
+                ListTile(
+                  title: const Text('Zamanlayıcıyı İptal Et', style: TextStyle(color: Colors.redAccent)),
+                  onTap: () { Navigator.pop(context); _setSleepTimer(0); },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _formatTime(int seconds) {
+    final m = (seconds / 60).floor();
+    final s = seconds % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   void _togglePlayback() async {
@@ -181,16 +291,51 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
             ),
           ),
           const SizedBox(height: 30),
-          // Kanal Bilgisi
-          Text(
-            widget.station.name,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              letterSpacing: 0.5,
-            ),
+          // Kanal Bilgisi ve Favori Butonu
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  widget.station.name,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              FutureBuilder<void>(
+                future: _favoriteService.init(),
+                builder: (context, snapshot) {
+                  final isFav = _favoriteService.isFavorite(widget.station.name);
+                  return IconButton(
+                    icon: Icon(
+                      isFav ? Icons.favorite : Icons.favorite_border,
+                      color: isFav ? Colors.amber : Colors.white54,
+                      size: 32,
+                    ),
+                    onPressed: () async {
+                      await _favoriteService.toggleFavorite(widget.station.name);
+                      setState(() {});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            isFav 
+                              ? '${widget.station.name} favorilerden çıkarıldı.' 
+                              : '${widget.station.name} favorilere eklendi.'
+                          ),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                    tooltip: isFav ? 'Favorilerden Çıkar' : 'Favorilere Ekle',
+                  );
+                },
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Container(
@@ -219,17 +364,45 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
               ],
             ),
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: 16),
+          // Uyku Zamanlayıcısı Bilgisi
+          if (_remainingSleepSeconds > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.amber.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.timer, color: Colors.amber, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Uyku Modu: ${_formatTime(_remainingSleepSeconds)}",
+                    style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 32),
           // Ana Kontroller
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
+                icon: const Icon(Icons.bedtime_outlined, size: 32, color: Colors.white54),
+                onPressed: _showSleepTimerDialog,
+                tooltip: 'Uyku Zamanlayıcısı',
+              ),
+              const SizedBox(width: 16),
+              IconButton(
                 icon: const Icon(Icons.skip_previous_rounded, size: 44, color: Colors.white),
                 onPressed: widget.onPrevious,
                 tooltip: 'Önceki Kanal',
               ),
-              const SizedBox(width: 32),
+              const SizedBox(width: 20),
               // Erişilebilirlik etiketi IconButton tooltip ile sağlanır.
               IconButton(
                 onPressed: _togglePlayback,
