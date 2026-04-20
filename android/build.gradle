@@ -2,18 +2,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven {
-            url "https://storage.googleapis.com/download.flutter.io"
-        }
-        maven {
-            url "https://jitpack.io"
-        }
     }
-}
-
-ext {
-    ffmpegKitPackage = "audio"
-    ffmpegKitVersion = "6.0.LTS"
 }
 
 rootProject.buildDir = "../build"
