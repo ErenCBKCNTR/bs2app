@@ -40,11 +40,11 @@ class RadioRecordingService {
     final isM3u8 = url.toLowerCase().contains('.m3u8');
     late String command;
     
-    // FINAL SOLUTION: Raw stream capture.
-    // -fflags +nobuffer: Eliminates all internal processing bottlenecks.
-    // -c copy: Does NOT analyze, DOES NOT encode, just copies bytes from stream to file.
-    // -analyzeduration 0 -probesize 32: Stops FFmpeg from examining the stream, making it instant.
-    command = "-y -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -fflags +nobuffer+genpts+discardcorrupt -analyzeduration 0 -probesize 32 -i \"$url\" -vn -sn -c copy \"$_currentFilePath\"";
+    // FINAL STABLE SOLUTION: Re-encoding with AAC encoder and bitstream filter.
+    // -c:a aac: Stable, built-in encoder.
+    // -bsf:a aac_adtstoasc: Fixes timestamp drift and stream compatibility between segments.
+    // -fflags +nobuffer: Eliminates delay.
+    command = "-y -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -fflags +nobuffer+genpts+discardcorrupt -analyzeduration 0 -probesize 32 -i \"$url\" -vn -sn -c:a aac -b:a 128k -bsf:a aac_adtstoasc \"$_currentFilePath\"";
     
 
     _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
