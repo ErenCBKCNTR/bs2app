@@ -37,11 +37,22 @@ class RadioRecordingService {
     _currentFilePath = p.join(directory.path, fileName);
 
     // Using FFmpeg (Native C++) for professional recording.
-    // -re (Read Input at native frame rate): This is the magic bullet! 
-    // It forces FFmpeg to capture audio at exactly 1.0x speed. This guarantees that if the user records for 10 seconds, 
-    // the output file is EXACTLY 10 seconds long, perfectly syncing the duration with the UI and ignoring the server's "burst" buffer.
-    // -b:a 128k (CBR): Fixes duration meta for Android media players compared to VBR.
-    final command = "-y -re -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
+    final isM3u8 = url.toLowerCase().contains('.m3u8');
+    late String command;
+    
+    if (isM3u8) {
+      // HLS (.m3u8) streams DO NOT have a huge initial burst buffer like Icecast, they fetch segments.
+      // -re parameter breaks HLS logic by making it fall behind the live edge.
+      // -live_start_index -1 fetches ONLY the extreme edge of the live feed so we don't start recording the past.
+      command = "-y -live_start_index -1 -i \"$url\" -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
+    } else {
+      // Direct MP3 streams (Shoutcast/Icecast) like '90'lar' send ~15-20 seconds of "burst buffer" 
+      // milliseconds after connecting to prevent lagging. If we don't block this, FFmpeg captures 10 secs 
+      // out of that burst buffer in 1 sec.
+      // -re (Read Input at native frame rate): Forces FFmpeg to capture precisely 1.0x speed without soaking the burst buffer.
+      // Reconnection flags are highly suitable for raw HTTP sockets.
+      command = "-y -re -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
+    }
 
     _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
       final returnCode = await session.getReturnCode();
