@@ -138,24 +138,28 @@ class _SavedRecordingsScreenState extends State<SavedRecordingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Kaydedilen Yayınlar')),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _recordings.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.album_outlined, size: 64, color: Colors.white24),
-                      SizedBox(height: 16),
-                      Text('Henüz kaydedilmiş yayın yok.', style: TextStyle(color: Colors.white54)),
-                    ],
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: _recordings.length,
-                  separatorBuilder: (context, index) => const Divider(color: Colors.white10),
-                  itemBuilder: (context, index) {
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _recordings.isEmpty
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.album_outlined, size: 64, color: Colors.white24),
+                        SizedBox(height: 16),
+                        Text('Henüz kaydedilmiş yayın yok.', style: TextStyle(color: Colors.white54)),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    padding: EdgeInsets.only(
+                      top: 8,
+                      bottom: MediaQuery.of(context).padding.bottom + 24,
+                    ),
+                    itemCount: _recordings.length,
+                    separatorBuilder: (context, index) => const Divider(color: Colors.white10),
+                    itemBuilder: (context, index) {
                     final rec = _recordings[index];
                     final dateStr = DateFormat('dd.MM.yyyy').format(rec.date);
                     final timeStr = DateFormat('HH:mm').format(rec.date);

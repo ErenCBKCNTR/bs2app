@@ -38,7 +38,7 @@ class _RadioPlayerScreenState extends State<RadioPlayerScreen> {
     final station = widget.stations[_currentIndex];
     return Scaffold(
       appBar: AppBar(title: Text(station.name)),
-      body: Center(
+      body: SafeArea(
         child: RadioPlayerWidget(
           station: station,
           onNext: _nextStation,

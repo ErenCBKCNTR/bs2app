@@ -83,105 +83,96 @@ class _RadioListScreenState extends State<RadioListScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 4,
-                    child: Semantics(
-                      label: "Kaydedilen Canlı Yayınlar",
-                      button: true,
-                      hint: "Önceden kaydettiğiniz yayınları görmek için çift dokunun",
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const SavedRecordingsScreen()),
-                          );
-                        },
-                        icon: const Icon(Icons.album, color: Colors.white, size: 18),
-                        label: const Text(
-                          'Kayıtlar',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(0, 48),
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 4,
-                          shadowColor: Colors.blueAccent.withOpacity(0.4),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 5,
-                    child: Semantics(
-                      label: _isFavoritesView ? "Tüm Kanallar" : "Favori Kanallar",
-                      button: true,
-                      child: ElevatedButton.icon(
-                        onPressed: _toggleFavoritesView,
-                        icon: Icon(
-                          _isFavoritesView ? Icons.list : Icons.favorite, 
-                          color: Colors.white, 
-                          size: 18
-                        ),
-                        label: Text(
-                          _isFavoritesView ? 'Tüm Kanallar' : 'Favoriler',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _isFavoritesView ? Colors.teal : Colors.deepOrange,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(0, 48),
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 4,
-                          shadowColor: (_isFavoritesView ? Colors.teal : Colors.deepOrange).withOpacity(0.4),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Semantics(
+                        label: "Kaydedilen Canlı Yayınlar",
+                        button: true,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const SavedRecordingsScreen()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueAccent,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            elevation: 2,
+                          ),
+                          child: const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.album, size: 20),
+                              SizedBox(height: 4),
+                              Text(
+                                'Kayıtlar',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 1,
+                      child: Semantics(
+                        label: _isFavoritesView ? "Tüm Kanallar" : "Favori Kanallar",
+                        button: true,
+                        child: ElevatedButton(
+                          onPressed: _toggleFavoritesView,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _isFavoritesView ? Colors.teal : Colors.deepOrange,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            elevation: 2,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(_isFavoritesView ? Icons.list : Icons.favorite, size: 20),
+                              const SizedBox(height: 4),
+                              Text(
+                                _isFavoritesView ? 'Tüm Kanallar' : 'Favoriler',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _filteredStations.length,
-              itemBuilder: (context, index) {
-                final station = _filteredStations[index];
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.blueAccent.withOpacity(0.2),
-                    child: const Icon(Icons.radio, color: Colors.blueAccent),
-                  ),
-                  title: Text(station.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white24),
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => RadioPlayerScreen(
-                          initialIndex: radioStations.indexOf(station),
-                          stations: radioStations,
-                        ),
-                      ),
-                    );
-                    // Refresh favorites list if we came back from player screen
-                    _filterStations(_searchController.text);
-                  },
-                );
-              },
+            const Divider(height: 1, color: Colors.white10),
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).padding.bottom + 16,
+                ),
+                itemCount: _filteredStations.length,
+                itemBuilder: (context, index) {
+...
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 }

@@ -150,45 +150,101 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
+      isScrollControlled: true,
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return Container(
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).padding.bottom + 20,
+          ),
+          decoration: const BoxDecoration(
+            color: Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Uyku Zamanlayıcısı',
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              ListTile(
-                title: const Text('15 Dakika', style: TextStyle(color: Colors.white)),
-                onTap: () { Navigator.pop(context); _setSleepTimer(15); },
-              ),
-              ListTile(
-                title: const Text('30 Dakika', style: TextStyle(color: Colors.white)),
-                onTap: () { Navigator.pop(context); _setSleepTimer(30); },
-              ),
-              ListTile(
-                title: const Text('45 Dakika', style: TextStyle(color: Colors.white)),
-                onTap: () { Navigator.pop(context); _setSleepTimer(45); },
-              ),
-              ListTile(
-                title: const Text('60 Dakika', style: TextStyle(color: Colors.white)),
-                onTap: () { Navigator.pop(context); _setSleepTimer(60); },
-              ),
-              if (_remainingSleepSeconds > 0)
-                ListTile(
-                  title: const Text('Zamanlayıcıyı İptal Et', style: TextStyle(color: Colors.redAccent)),
-                  onTap: () { Navigator.pop(context); _setSleepTimer(0); },
+              // Drag handle/indicator
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
                 ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Uyku Zamanlayıcısı',
+                      style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white70),
+                      onPressed: () => Navigator.pop(context),
+                      tooltip: 'Kapat',
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(color: Colors.white12),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildTimerOption(context, 15, Icons.timer_10),
+                      _buildTimerOption(context, 30, Icons.timer_30),
+                      _buildTimerOption(context, 45, Icons.timer_out),
+                      _buildTimerOption(context, 60, Icons.timer),
+                      _buildTimerOption(context, 90, Icons.more_time),
+                      _buildTimerOption(context, 120, Icons.more_time),
+                      if (_remainingSleepSeconds > 0)
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.timer_off, color: Colors.redAccent),
+                          ),
+                          title: const Text('Zamanlayıcıyı İptal Et', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                          onTap: () { Navigator.pop(context); _setSleepTimer(0); },
+                        ),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTimerOption(BuildContext context, int minutes, IconData icon) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.blueAccent.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.blueAccent, size: 24),
+      ),
+      title: Text('$minutes Dakika', style: const TextStyle(color: Colors.white, fontSize: 16)),
+      onTap: () { Navigator.pop(context); _setSleepTimer(minutes); },
     );
   }
 

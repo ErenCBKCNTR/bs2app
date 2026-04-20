@@ -41,11 +41,10 @@ class RadioRecordingService {
     late String command;
     
     if (isM3u8) {
-      // HLS (.m3u8) streams can be tricky. Some contain video/metadata streams that cause muxers to fail.
-      // -live_start_index -1 ensures we start from the very latest segment.
-      // -fflags +nobuffer/+genpts / -flags +low_delay minimizes buffering to ensure start/stop synchronization.
-      // -analyzeduration / -probesize reduced for faster initial sync.
-      command = "-y -user_agent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -live_start_index -1 -fflags +nobuffer+genpts -flags +low_delay -analyzeduration 1000000 -probesize 1000000 -i \"$url\" -vn -sn -c:a aac -b:a 128k -movflags +faststart+frag_keyframe \"$_currentFilePath\"";
+      // High-performance M3U8 recording with ultra-low latency flags for perfect sync.
+      // -analyzeduration 10000 & -probesize 10000 ensure almost instant stream identification.
+      // -fflags nobuffer ensures zero internal buffering during capture.
+      command = "-y -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -live_start_index -1 -fflags nobuffer+genpts+flush_packets -flags low_delay -strict experimental -analyzeduration 10000 -probesize 10000 -i \"$url\" -vn -sn -c:a aac -b:a 128k -movflags frag_keyframe+empty_moov+default_base_moof \"$_currentFilePath\"";
     } else {
       command = "-y -user_agent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36\" -re -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -vn -sn -c:a aac -b:a 128k \"$_currentFilePath\"";
     }
