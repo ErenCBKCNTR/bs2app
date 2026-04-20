@@ -37,13 +37,15 @@ class RadioRecordingService {
     _currentFilePath = p.join(directory.path, fileName);
 
     // Using FFmpeg (Native C++) for professional recording.
-    // This supports HLS (.m3u8), Shoutcast, and all common audio protocols.
-    // -y: overwrite if exists
-    // -i: input url
-    // -c:a libmp3lame: encode to mp3
-    // -q:a 2: good quality (VBR)
-    // We also add reconnection flags for better stability on unstable networks
-    final command = "-y -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -c:a libmp3lame -q:a 2 \"$_currentFilePath\"";
+    // -b:a 128k is CRITICAL here instead of -q:a 2 (VBR). 
+    // VBR without proper Xing headers (which happen on cancel) causes native audio players (ExoPlayer) 
+    // to miscalculate duration (e.g., showing 23 secs for a 10 sec record). CBR fixes this perfectly!
+    final isM3u8 = url.toLowerCase().contains('.m3u8');
+    // For HLS streams like 'A Haber', this flag ensures we start recording from the LIVE edge, 
+    // instead of capturing the past 3-5 segments (~30 secs) buffered in the playlist.
+    final liveIndexFlag = isM3u8 ? "-live_start_index -1 " : "";
+
+    final command = "-y -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 $liveIndexFlag-i \"$url\" -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
 
     _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
       final returnCode = await session.getReturnCode();
@@ -75,6 +77,14 @@ class RadioRecordingService {
 
     // Give FFmpeg a moment to finalize the file on disk
     await Future.delayed(const Duration(milliseconds: 1000));
+
+    final file = File(_currentFilePath!);
+    if (!await file.exists() || await file.length() < 4096) {
+      if (await file.exists()) {
+        await file.delete();
+      }
+      return null;
+    }
 
     // Get real duration from the file metadata
     Duration duration;
