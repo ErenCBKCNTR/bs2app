@@ -96,16 +96,8 @@ class RadioRecordingService {
       throw Exception(errorDetails);
     }
 
-    // Get real duration from the file metadata
-    Duration duration;
-    try {
-      final probePlayer = AudioPlayer();
-      final probeDuration = await probePlayer.setFilePath(_currentFilePath!);
-      duration = probeDuration ?? (DateTime.now().difference(_startTime!));
-      await probePlayer.dispose();
-    } catch (e) {
-      duration = DateTime.now().difference(_startTime!);
-    }
+    // Get duration via system time for instant UI feedback (replaces slow File Probing)
+    final duration = DateTime.now().difference(_startTime!);                
     
     final recording = RadioRecording(
       stationName: _currentStationName!,
