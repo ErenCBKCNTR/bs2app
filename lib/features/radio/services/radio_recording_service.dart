@@ -31,7 +31,7 @@ class RadioRecordingService {
         .replaceAll(RegExp(r'[^\w\s]'), '')
         .replaceAll(' ', '_')
         .toLowerCase();
-    final fileName = 'blindsocial_${sanitizedStation}_$formattedDate.m4a';
+    final fileName = 'blindsocial_${sanitizedStation}_$formattedDate.mp3';
     
     final directory = await getApplicationDocumentsDirectory();
     _currentFilePath = p.join(directory.path, fileName);
@@ -41,15 +41,14 @@ class RadioRecordingService {
     late String command;
     
     if (isM3u8) {
-      // PERMANENT SOLUTION: Optimized for HLS (M3U8) sync like A Haber.
-      // -c:a copy: Zero latency, zero CPU usage, exact data from server.
-      // -use_wallclock_as_timestamps 1: Forces output to sync with real world time.
-      // -live_start_index -1: Always grabs the very latest segment being played.
-      // -fflags +nobuffer+genpts+discardcorrupt: Essential for gapless HLS capture.
-      command = "-y -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -use_wallclock_as_timestamps 1 -fflags +nobuffer+genpts+discardcorrupt -analyzeduration 1000 -probesize 1000 -live_start_index -1 -i \"$url\" -vn -sn -c:a copy -movflags frag_keyframe+empty_moov+default_base_moof \"$_currentFilePath\"";
+      // THE SYNC MASTER SETTINGS:
+      // -live_start_index -3: Starts recording from 3 segments BACK to catch what the user is currently hearing.
+      // -c:a libmp3lame: Most compatible format, prevents playback errors.
+      // -af "asetpts=N/SR/TB": Re-generates timestamps to prevent drift.
+      command = "-y -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -fflags +nobuffer+genpts+discardcorrupt -analyzeduration 1000 -probesize 1000 -live_start_index -3 -i \"$url\" -vn -sn -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
     } else {
-      // Standard stream optimization
-      command = "-y -user_agent \"Mozilla/5.0\" -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -fflags +nobuffer+genpts -i \"$url\" -vn -sn -c:a aac -b:a 128k \"$_currentFilePath\"";
+      // Standard stream (Icecast/MP3)
+      command = "-y -user_agent \"Mozilla/5.0\" -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -fflags +nobuffer+genpts -i \"$url\" -vn -sn -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
     }
 
     _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
@@ -77,13 +76,11 @@ class RadioRecordingService {
 
     // Cancel the session (FFmpeg will finish the file)
     if (session != null) {
-      // Use peaceful finish instead of hard kill for stream copy to flush metadata
       await FFmpegKit.cancel(session.getSessionId());
     }
 
-    // Give FFmpeg enough time to flush the fragmented MOOV atom to disk
-    // For stream copy, this is critical to have a valid duration.
-    await Future.delayed(const Duration(milliseconds: 1500));
+    // Give FFmpeg a very short moment to release the file handle
+    await Future.delayed(const Duration(milliseconds: 300));
 
     final file = File(_currentFilePath!);
     if (!await file.exists() || await file.length() == 0) {

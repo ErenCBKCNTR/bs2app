@@ -58,7 +58,11 @@ class _SavedRecordingsScreenState extends State<SavedRecordingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Oynatma hatası: $e")));
+        String msg = "Oynatma hatası: $e";
+        if (e.toString().contains("Source error")) {
+          msg = "Dosya formatı veya içeriği hatalı. Lütfen kaydı teyit edin.";
+        }
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       }
     }
   }
