@@ -1,101 +1,100 @@
-
 import 'dart:async';
 import 'dart:io';
+import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:intl/intl.dart';
-import 'package:just_audio/just_audio.dart';
-import 'package:ffmpeg_kit_flutter_new_https/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_new_https/ffmpeg_session.dart';
-import 'package:ffmpeg_kit_flutter_new_https/return_code.dart';
 import '../models/radio_recording.dart';
 import '../data/recording_database.dart';
 
 class RadioRecordingService {
-  FFmpegSession? _ffmpegSession;
+  final AudioPlayer _player = AudioPlayer();
+
+  StreamSubscription<List<int>>? _streamSub;
+  IOSink? _fileSink;
+
   DateTime? _startTime;
   String? _currentFilePath;
   String? _currentStationName;
 
-  bool get isRecording => _ffmpegSession != null;
+  bool get isRecording => _streamSub != null;
 
+  /// CUSTOM STREAM SOURCE (player + recorder birlikte)
   Future<void> startRecording(String url, String stationName) async {
     if (isRecording) return;
 
     _startTime = DateTime.now();
     _currentStationName = stationName;
 
-    // Filename format: blindsocial_radyoadi_tarih.aac
-    final formattedDate = DateFormat('ddMMyyyy_HHmmss').format(_startTime!);
+    final formattedDate =
+        DateFormat('ddMMyyyy_HHmmss').format(_startTime!);
+
     final sanitizedStation = stationName
         .replaceAll(RegExp(r'[^\w\s]'), '')
         .replaceAll(' ', '_')
         .toLowerCase();
-    final fileName = 'blindsocial_${sanitizedStation}_$formattedDate.aac';
-    
+
+    final fileName =
+        'blindsocial_${sanitizedStation}_$formattedDate.aac';
+
     final directory = await getApplicationDocumentsDirectory();
     _currentFilePath = p.join(directory.path, fileName);
 
-    // Using FFmpeg (Native C++) for professional recording.
-    final isM3u8 = url.toLowerCase().contains('.m3u8');
-    late String command;
-    
-    final String hlsFlags = isM3u8 ? "-live_start_index -1" : "";
-    command = "-y -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -fflags +nobuffer+flush_packets+discardcorrupt -flags +low_delay -analyzeduration 0 -probesize 32 $hlsFlags -i \"$url\" -vn -sn -c:a aac -b:a 128k -f adts \"$_currentFilePath\"";
-    
+    final file = File(_currentFilePath!);
+    _fileSink = file.openWrite();
 
-    _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
-      final returnCode = await session.getReturnCode();
-      if (ReturnCode.isCancel(returnCode)) {
-        print("FFmpeg recording cancelled by user.");
-      } else if (ReturnCode.isSuccess(returnCode)) {
-        print("FFmpeg recording completed successfully.");
-      } else {
-        final logs = await session.getLogs();
-        if (logs.isNotEmpty) {
-          print("FFmpeg recording error: ${logs.last.getMessage()}");
-        } else {
-          print("FFmpeg recording failed with return code: ${returnCode?.getValue()}");
-        }
-      }
-    });
+    /// STREAM’i kendimiz çekiyoruz
+    final client = HttpClient();
+    final request = await client.getUrl(Uri.parse(url));
+    final response = await request.close();
+
+    /// PLAYER + RECORD aynı stream
+    final controller = StreamController<List<int>>();
+
+    _streamSub = response.listen(
+      (chunk) {
+        controller.add(chunk);      // player'a ver
+        _fileSink?.add(chunk);      // dosyaya yaz
+      },
+      onDone: () {
+        controller.close();
+      },
+      onError: (e) {
+        controller.addError(e);
+      },
+      cancelOnError: true,
+    );
+
+    /// Player bu stream'i çalıyor
+    await _player.setAudioSource(
+      StreamAudioSourceWrapper(controller.stream),
+    );
+
+    _player.play();
   }
 
   Future<RadioRecording?> stopRecording() async {
     if (!isRecording) return null;
 
-    final session = _ffmpegSession;
-    _ffmpegSession = null; // Mark as null immediately for UI state
+    await _streamSub?.cancel();
+    _streamSub = null;
 
-    // Cancel the session (FFmpeg will finish the file)
-    if (session != null) {
-      await FFmpegKit.cancel(session.getSessionId());
-    }
+    await _player.stop();
 
-    // Give FFmpeg minimal moment to finalize
-    await Future.delayed(const Duration(milliseconds: 50));
+    await _fileSink?.flush();
+    await _fileSink?.close();
 
     final file = File(_currentFilePath!);
+
     if (!await file.exists() || await file.length() == 0) {
       if (await file.exists()) {
         await file.delete();
       }
-      
-      String errorDetails = 'Yayın kaynak bağlantısı reddedildi veya kayıt için yeterli veri alınamadı.';
-      if (session != null) {
-        final logs = await session.getLogs();
-        if (logs.isNotEmpty) {
-          final recentLogs = logs.reversed.take(4).map((l) => l.getMessage()).join(' | ');
-          errorDetails = 'Kayıt başarısız. FFmpeg Log: $recentLogs';
-        }
-      }
-      
-      throw Exception(errorDetails);
+      throw Exception("Kayıt başarısız veya boş dosya.");
     }
 
-    // Get duration via system time for instant UI feedback (replaces slow File Probing)
-    final duration = DateTime.now().difference(_startTime!);                
-    
+    final duration = DateTime.now().difference(_startTime!);
+
     final recording = RadioRecording(
       stationName: _currentStationName!,
       filePath: _currentFilePath!,
@@ -103,15 +102,33 @@ class RadioRecordingService {
       duration: duration,
     );
 
-    // Save metadata to local database
-    final id = await RecordingDatabase.instance.insert(recording);
-    
+    final id =
+        await RecordingDatabase.instance.insert(recording);
+
     return RadioRecording(
       id: id,
       stationName: recording.stationName,
       filePath: recording.filePath,
       date: recording.date,
       duration: recording.duration,
+    );
+  }
+}
+
+/// STREAM SOURCE WRAPPER
+class StreamAudioSourceWrapper extends StreamAudioSource {
+  final Stream<List<int>> _stream;
+
+  StreamAudioSourceWrapper(this._stream);
+
+  @override
+  Future<StreamAudioResponse> request([int? start, int? end]) async {
+    return StreamAudioResponse(
+      sourceLength: null,
+      contentLength: null,
+      offset: 0,
+      stream: _stream,
+      contentType: 'audio/aac',
     );
   }
 }
