@@ -41,17 +41,11 @@ class RadioRecordingService {
     late String command;
     
     if (isM3u8) {
-      // HLS (.m3u8) streams DO NOT have a huge initial burst buffer like Icecast, they fetch segments.
-      // -re parameter breaks HLS logic by making it fall behind the live edge.
-      // -live_start_index -1 fetches ONLY the extreme edge of the live feed so we don't start recording the past.
-      command = "-y -live_start_index -1 -i \"$url\" -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
+      // HLS (.m3u8) streams can be tricky. Some contain video/metadata streams that cause mp3 muxer to fail (hence 0 bytes).
+      // Solution: Add -vn (no video), -sn (no subtitles), and explicit User-Agent. Remove -live_start_index which caused I/O errors on some Androids.
+      command = "-y -user_agent \"Mozilla/5.0\" -i \"$url\" -vn -sn -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
     } else {
-      // Direct MP3 streams (Shoutcast/Icecast) like '90'lar' send ~15-20 seconds of "burst buffer" 
-      // milliseconds after connecting to prevent lagging. If we don't block this, FFmpeg captures 10 secs 
-      // out of that burst buffer in 1 sec.
-      // -re (Read Input at native frame rate): Forces FFmpeg to capture precisely 1.0x speed without soaking the burst buffer.
-      // Reconnection flags are highly suitable for raw HTTP sockets.
-      command = "-y -re -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
+      command = "-y -user_agent \"Mozilla/5.0\" -re -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -vn -sn -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
     }
 
     _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
@@ -90,7 +84,7 @@ class RadioRecordingService {
       if (await file.exists()) {
         await file.delete();
       }
-      return null;
+      throw Exception('Yayın kaynak bağlantısı reddedildi veya kayıt için yeterli veri alınamadı.');
     }
 
     // Get real duration from the file metadata
