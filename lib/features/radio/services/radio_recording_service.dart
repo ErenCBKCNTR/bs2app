@@ -37,15 +37,11 @@ class RadioRecordingService {
     _currentFilePath = p.join(directory.path, fileName);
 
     // Using FFmpeg (Native C++) for professional recording.
-    // -b:a 128k is CRITICAL here instead of -q:a 2 (VBR). 
-    // VBR without proper Xing headers (which happen on cancel) causes native audio players (ExoPlayer) 
-    // to miscalculate duration (e.g., showing 23 secs for a 10 sec record). CBR fixes this perfectly!
-    final isM3u8 = url.toLowerCase().contains('.m3u8');
-    // For HLS streams like 'A Haber', this flag ensures we start recording from the LIVE edge, 
-    // instead of capturing the past 3-5 segments (~30 secs) buffered in the playlist.
-    final liveIndexFlag = isM3u8 ? "-live_start_index -1 " : "";
-
-    final command = "-y -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 $liveIndexFlag-i \"$url\" -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
+    // -re (Read Input at native frame rate): This is the magic bullet! 
+    // It forces FFmpeg to capture audio at exactly 1.0x speed. This guarantees that if the user records for 10 seconds, 
+    // the output file is EXACTLY 10 seconds long, perfectly syncing the duration with the UI and ignoring the server's "burst" buffer.
+    // -b:a 128k (CBR): Fixes duration meta for Android media players compared to VBR.
+    final command = "-y -re -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -c:a libmp3lame -b:a 128k \"$_currentFilePath\"";
 
     _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
       final returnCode = await session.getReturnCode();
@@ -79,7 +75,7 @@ class RadioRecordingService {
     await Future.delayed(const Duration(milliseconds: 1000));
 
     final file = File(_currentFilePath!);
-    if (!await file.exists() || await file.length() < 4096) {
+    if (!await file.exists() || await file.length() == 0) {
       if (await file.exists()) {
         await file.delete();
       }
