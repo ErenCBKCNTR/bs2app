@@ -12,7 +12,7 @@ class RadioRecordingService {
   String? _currentFilePath;
   String? _currentStationName;
 
-  bool get isRecording => _recorder.isRecording();
+  Future<bool> get isRecording => _recorder.isRecording();
 
   Future<void> startRecording(String url, String stationName) async {
     if (await isRecording) return;
