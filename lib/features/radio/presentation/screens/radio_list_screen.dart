@@ -166,7 +166,28 @@ class _RadioListScreenState extends State<RadioListScreen> {
                 ),
                 itemCount: _filteredStations.length,
                 itemBuilder: (context, index) {
-...
+                  final station = _filteredStations[index];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.blueAccent.withOpacity(0.2),
+                      child: const Icon(Icons.radio, color: Colors.blueAccent),
+                    ),
+                    title: Text(station.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white24),
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RadioPlayerScreen(
+                            initialIndex: radioStations.indexOf(station),
+                            stations: radioStations,
+                          ),
+                        ),
+                      );
+                      // Refresh favorites list if we came back from player screen
+                      _filterStations(_searchController.text);
+                    },
+                  );
                 },
               ),
             ),

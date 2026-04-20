@@ -223,6 +223,7 @@ class _SavedRecordingsScreenState extends State<SavedRecordingsScreen> {
                     );
                   },
                 ),
+      ),
     );
   }
 }

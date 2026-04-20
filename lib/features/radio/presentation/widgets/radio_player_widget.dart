@@ -200,12 +200,12 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildTimerOption(context, 15, Icons.timer_10),
-                      _buildTimerOption(context, 30, Icons.timer_30),
-                      _buildTimerOption(context, 45, Icons.timer_out),
+                      _buildTimerOption(context, 15, Icons.timer),
+                      _buildTimerOption(context, 30, Icons.av_timer),
+                      _buildTimerOption(context, 45, Icons.shutter_speed),
                       _buildTimerOption(context, 60, Icons.timer),
-                      _buildTimerOption(context, 90, Icons.more_time),
-                      _buildTimerOption(context, 120, Icons.more_time),
+                      _buildTimerOption(context, 90, Icons.hourglass_top),
+                      _buildTimerOption(context, 120, Icons.hourglass_bottom),
                       if (_remainingSleepSeconds > 0)
                         ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
