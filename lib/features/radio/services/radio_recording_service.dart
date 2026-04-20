@@ -40,11 +40,8 @@ class RadioRecordingService {
     final isM3u8 = url.toLowerCase().contains('.m3u8');
     late String command;
     
-    // FINAL STABLE SOLUTION: Re-encoding with AAC encoder and bitstream filter.
-    // -c:a aac: Stable, built-in encoder.
-    // -bsf:a aac_adtstoasc: Fixes timestamp drift and stream compatibility between segments.
-    // -fflags +nobuffer: Eliminates delay.
-    command = "-y -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -fflags +nobuffer+genpts+discardcorrupt -analyzeduration 0 -probesize 32 -i \"$url\" -vn -sn -c:a aac -b:a 128k -bsf:a aac_adtstoasc \"$_currentFilePath\"";
+    final String hlsFlags = isM3u8 ? "-live_start_index -1" : "";
+    command = "-y -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -fflags +nobuffer+flush_packets+discardcorrupt -flags +low_delay -analyzeduration 0 -probesize 32 $hlsFlags -i \"$url\" -vn -sn -c:a aac -b:a 128k -f adts \"$_currentFilePath\"";
     
 
     _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
@@ -75,8 +72,8 @@ class RadioRecordingService {
       await FFmpegKit.cancel(session.getSessionId());
     }
 
-    // Give FFmpeg a very short moment to release the file handle
-    await Future.delayed(const Duration(milliseconds: 300));
+    // Give FFmpeg minimal moment to finalize
+    await Future.delayed(const Duration(milliseconds: 50));
 
     final file = File(_currentFilePath!);
     if (!await file.exists() || await file.length() == 0) {
