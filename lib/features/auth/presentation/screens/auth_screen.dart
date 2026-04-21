@@ -98,17 +98,25 @@ class _AuthScreenState extends State<AuthScreen> {
       
       // Başarılı giriş sonrası bildirim token'ını güncelle
       await NotificationService().syncWithServer();
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (mounted) {
-        String message = e.toString();
-        if (message.contains('missing provider google')) {
-          message = "Google ile giriş şu anda sunucu tarafında aktif değil. Lütfen PocketBase Admin panelinden 'Auth Providers' sekmesinde Google'ı etkinleştirdiğinizden emin olun.";
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(label: 'Tamam', onPressed: () {}),
+        // Kullanıcı detaylı teknik hata görmek istediği için doğrudan dialog olarak basıyoruz
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Teknik Hata Detayı'),
+            content: SingleChildScrollView(
+              child: Text(
+                'Hata:\\n$e\\n\\nStackTrace:\\n$stackTrace',
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Kapat'),
+              ),
+            ],
           ),
         );
       }
