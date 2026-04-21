@@ -295,7 +295,7 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
         SemanticsService.announce("Canlı yayın kaydı başlatıldı", TextDirection.ltr);
         
         final directory = await getApplicationDocumentsDirectory();
-        final fileName = 'blindsocial_${widget.station.name.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.aac';
+        final fileName = 'blindsocial_${widget.station.name.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.ts';
         final path = p.join(directory.path, fileName);
         
         await _recordingService.startRecording(widget.station.url, widget.station.name, path);
