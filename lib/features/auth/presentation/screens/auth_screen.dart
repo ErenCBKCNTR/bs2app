@@ -102,12 +102,12 @@ class _AuthScreenState extends State<AuthScreen> {
       final authUrl = googleMap['authUrl'].toString();
       final codeVerifier = googleMap['codeVerifier'].toString();
 
-      // WebView veya tarayıcı üzerinden açıp, kullanıcının dönüş yapmasını bekleyeceğiz.
-      // (Bunu tam uyumlu yapmak için uygulamanın DeepLink ile geri çağrıyı yakalaması gerekir)
-      if (await canLaunchUrl(Uri.parse(authUrl))) {
+      // canLaunchUrl bazen Android 11+ cihazlarda <queries> tagi eksikse false dönebilir.
+      // Bu yüzden kontrolü kaldırıp direkt launch ediyoruz.
+      try {
         await launchUrl(Uri.parse(authUrl), mode: LaunchMode.externalApplication);
-      } else {
-        throw Exception("Google login sayfası açılamadı.");
+      } catch (e) {
+        throw Exception("Google login sayfası tarayıcıda açılamadı. URL: \$authUrl, Hata: \$e");
       }
 
       // Not: Bu aşamada kullanıcı geri döndükten sonra PocketbaseService üzerinden
