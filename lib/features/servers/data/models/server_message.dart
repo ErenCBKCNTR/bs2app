@@ -31,10 +31,10 @@ class ServerMessage {
       created: DateTime.parse(record.created),
       updated: DateTime.parse(record.updated),
       expand: record.expand.map((key, value) {
-        if (value is List) {
-          return MapEntry(key, value.map((e) => e.toJson()).toList());
+        if (value.isNotEmpty) {
+          return MapEntry(key, value.first.toJson());
         }
-        return MapEntry(key, value.toJson());
+        return MapEntry(key, value);
       }),
     );
   }

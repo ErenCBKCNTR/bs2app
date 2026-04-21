@@ -137,8 +137,8 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
       appBar: AppBar(
         title: Text(ProfanityFilter.filter(widget.server.name)),
         actions: [
-          if (widget.server.creatorId == ChatServerService()._pb.authStore.model.id ||
-              widget.server.admins.contains(ChatServerService()._pb.authStore.model.id))
+          if (widget.server.creatorId == ChatServerService().currentUserId ||
+              widget.server.admins.contains(ChatServerService().currentUserId))
             IconButton(
               icon: const Icon(Icons.settings),
               onPressed: () {

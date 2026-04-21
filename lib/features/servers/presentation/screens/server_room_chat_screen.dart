@@ -98,7 +98,7 @@ class _ServerRoomChatScreenState extends State<ServerRoomChatScreen> {
                       itemCount: _messages.length,
                       itemBuilder: (context, index) {
                         final message = _messages[index];
-                        final isMe = message.senderId == ChatServerService()._pb.authStore.model.id;
+                        final isMe = message.senderId == ChatServerService().currentUserId;
                         final senderName = message.expand?['sender_id']?['name'] ?? 'Bilinmeyen';
 
                         return Align(

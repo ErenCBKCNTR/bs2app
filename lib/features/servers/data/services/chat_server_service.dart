@@ -11,6 +11,8 @@ class ChatServerService {
 
   final _pb = PocketBaseService.client;
 
+  String get currentUserId => _pb.authStore.model.id;
+
   // Servers
   Future<List<ChatServer>> getServers() async {
     final records = await _pb.collection('chat_servers').getFullList(
