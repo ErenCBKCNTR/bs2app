@@ -85,9 +85,18 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _authenticateWithGoogle() async {
     setState(() => _isLoading = true);
     try {
+      // Önce mevcut auth metodlarını kontrol edelim (hata ayıklama için)
+      final authMethods = await PocketBaseService.client.collection('users').listAuthMethods();
+      debugPrint("Available auth methods: ${authMethods.authProviders.map((e) => e.name).toList()}");
+      
+      final googleProvider = authMethods.authProviders.firstWhere(
+        (p) => p.name == 'google',
+        orElse: () => throw Exception('PocketBase ayarlarında Google sağlayıcısı (provider) etkinleştirilmemiş veya yanlış yapılandırılmış.'),
+      );
+
       // ignore: unused_local_variable
       final authData = await PocketBaseService.client.collection('users').authWithOAuth2(
-        'google',
+        googleProvider.name,
         (url) async {
           if (await canLaunchUrl(url)) {
             await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -99,8 +108,16 @@ class _AuthScreenState extends State<AuthScreen> {
       await NotificationService().syncWithServer();
     } catch (e) {
       if (mounted) {
+        String message = e.toString();
+        if (message.contains('missing provider google')) {
+          message = "Google ile giriş şu anda sunucu tarafında aktif değil. Lütfen PocketBase Admin panelinden 'Auth Providers' sekmesinde Google'ı etkinleştirdiğinizden emin olun.";
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Google ile giriş hatası: $e')),
+          SnackBar(
+            content: Text(message),
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(label: 'Tamam', onPressed: () {}),
+          ),
         );
       }
     } finally {
@@ -185,18 +202,36 @@ class _AuthScreenState extends State<AuthScreen> {
               onPressed: _isLoading ? null : _authenticateWithGoogle,
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                side: const BorderSide(color: Colors.grey),
+                backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.white.withOpacity(0.05) 
+                    : Colors.white,
+                side: BorderSide(
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.white24 
+                      : Colors.grey,
+                ),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               icon: Image.network(
                 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
                 height: 24,
                 width: 24,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, size: 24),
+                errorBuilder: (context, error, stackTrace) => Icon(
+                  Icons.g_mobiledata, 
+                  size: 24,
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.white 
+                      : Colors.black87,
+                ),
               ),
-              label: const Text(
+              label: Text(
                 'Google ile Devam Et',
-                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.white 
+                      : Colors.black87, 
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
