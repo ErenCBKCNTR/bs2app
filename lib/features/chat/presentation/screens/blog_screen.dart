@@ -50,7 +50,7 @@ class _BlogScreenState extends State<BlogScreen> {
     try {
       final response = await PocketBaseService.client.collection('posts').getFullList(
           sort: '-created',
-          expand: 'user_id,post_likes_via_post_id'
+          expand: 'user_id,post_likes_via_post_id,post_comments_via_post_id'
       ).timeout(const Duration(seconds: 15));
           
       if (mounted) {
@@ -418,23 +418,25 @@ class _BlogScreenState extends State<BlogScreen> {
                         final likesList = post['expand']?['post_likes_via_post_id'] ?? [];
                         final isLiked = likesList.any((l) => l['user_id'] == myId);
                         
-                        final commentCount = 0; // Simplified for now
+                        final commentCount = (post['expand']?['post_comments_via_post_id'] as List?)?.length ?? 0;
                         final timeStr = _formatTime(post['created']);
     
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: Semantics(
-                            label: "$username. $timeStr. $content. $likes beğeni.",
+                            label: "$username. $timeStr. $content. $likes beğeni, $commentCount yorum.",
                             button: true,
                             onTap: () {
                               showModalBottomSheet(
                                 context: context,
                                 isScrollControlled: true,
+                                useSafeArea: true,
                                 builder: (_) => BlogCommentsBottomSheet(postId: post['id']),
                               );
                             },
                             onTapHint: "Yorumları okumak ve yazmak için çift dokunun",
-                            customSemanticsActions: post['user_id'] == PocketBaseService.client.authStore.model?.id
+                            customSemanticsActions: {
+                              ...post['user_id'] == PocketBaseService.client.authStore.model?.id
                               ? {
                                   CustomSemanticsAction(label: 'Gönderiyi Düzenle'): () {
                                     _showEditDialog(post['id'], content);
@@ -444,6 +446,18 @@ class _BlogScreenState extends State<BlogScreen> {
                                   },
                                 }
                               : {},
+                              CustomSemanticsAction(label: isLiked ? 'Beğeniyi Kaldır' : 'Beğen'): () {
+                                _toggleLike(post['id'], likes);
+                              },
+                              CustomSemanticsAction(label: 'Yorumları Aç'): () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  useSafeArea: true,
+                                  builder: (_) => BlogCommentsBottomSheet(postId: post['id']),
+                                );
+                              },
+                            },
                             child: Container(
                               decoration: BoxDecoration(
                                 color: isDarkMode ? const Color(0xFF232B2B) : Colors.grey[200],
@@ -451,16 +465,17 @@ class _BlogScreenState extends State<BlogScreen> {
                               ),
                               child: Material(
                                 color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () {
-                                    showModalBottomSheet(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      builder: (_) => BlogCommentsBottomSheet(postId: post['id']),
-                                    );
-                                  },
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: ExcludeSemantics(
+                                child: ExcludeSemantics(
+                                  child: InkWell(
+                                    onTap: () {
+                                      showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        useSafeArea: true,
+                                        builder: (_) => BlogCommentsBottomSheet(postId: post['id']),
+                                      );
+                                    },
+                                    borderRadius: BorderRadius.circular(20),
                                     child: Padding(
                                       padding: const EdgeInsets.all(16),
                                       child: Column(
@@ -554,6 +569,7 @@ class _BlogScreenState extends State<BlogScreen> {
                                                   showModalBottomSheet(
                                                     context: context,
                                                     isScrollControlled: true,
+                                                    useSafeArea: true,
                                                     builder: (_) => BlogCommentsBottomSheet(postId: post['id']),
                                                   );
                                                 },

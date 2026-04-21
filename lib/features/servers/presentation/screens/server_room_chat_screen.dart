@@ -8,6 +8,11 @@ import 'package:blind_social/core/widgets/expandable_text.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 
+import 'package:blind_social/core/widgets/chat_input_field.dart';
+
+import 'package:blind_social/core/widgets/voice_message_widget.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
+
 class ServerRoomChatScreen extends StatefulWidget {
   final ChatServerRoom room;
   const ServerRoomChatScreen({super.key, required this.room});
@@ -17,7 +22,6 @@ class ServerRoomChatScreen extends StatefulWidget {
 }
 
 class _ServerRoomChatScreenState extends State<ServerRoomChatScreen> {
-  final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<ServerMessage> _messages = [];
   bool _isLoading = true;
@@ -33,7 +37,6 @@ class _ServerRoomChatScreenState extends State<ServerRoomChatScreen> {
   @override
   void dispose() {
     _unsub?.call();
-    _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -88,24 +91,6 @@ class _ServerRoomChatScreenState extends State<ServerRoomChatScreen> {
     }
   }
 
-  Future<void> _sendMessage() async {
-    final content = _messageController.text.trim();
-    if (content.isEmpty) return;
-
-    _messageController.clear();
-    try {
-      await ChatServerService().sendRoomMessage(
-        roomId: widget.room.id,
-        content: content,
-      );
-      _fetchMessages();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -123,89 +108,102 @@ class _ServerRoomChatScreenState extends State<ServerRoomChatScreen> {
                         final message = _messages[index];
                         final isMe = message.senderId == ChatServerService().currentUserId;
                         final senderName = message.expand?['sender_id']?['name'] ?? 'Bilinmeyen';
+                        final isVoice = message.content.startsWith('[VOICE]');
+                        
+                        String? voiceUrl;
+                        if (isVoice && message.file != null && message.file!.isNotEmpty) {
+                          const collectionId = 'col_server_messages';
+                          voiceUrl = '${PocketBaseService.client.baseUrl}/api/files/$collectionId/${message.id}/${message.file}';
+                        }
+
+                        final timeStr = DateFormat('HH:mm').format(message.created.toLocal());
 
                         return Align(
                           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: isMe
-                                  ? Theme.of(context).colorScheme.primary.withOpacity(0.8)
-                                  : Colors.grey[800],
-                              borderRadius: BorderRadius.circular(16).copyWith(
-                                bottomRight: isMe ? const Radius.circular(0) : null,
-                                bottomLeft: !isMe ? const Radius.circular(0) : null,
+                          child: Semantics(
+                            label: "${isMe ? 'Siz' : senderName}: ${isVoice ? 'Sesli mesaj' : message.content}. $timeStr",
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isMe
+                                    ? Theme.of(context).colorScheme.primary.withOpacity(0.8)
+                                    : Colors.grey[800],
+                                borderRadius: BorderRadius.circular(16).copyWith(
+                                  bottomRight: isMe ? const Radius.circular(0) : null,
+                                  bottomLeft: !isMe ? const Radius.circular(0) : null,
+                                ),
                               ),
-                            ),
-                            constraints: BoxConstraints(
-                              maxWidth: MediaQuery.of(context).size.width * 0.75,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (!isMe)
-                                  Text(
-                                    senderName,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                      color: Theme.of(context).colorScheme.secondary,
+                              constraints: BoxConstraints(
+                                maxWidth: MediaQuery.of(context).size.width * 0.75,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (!isMe)
+                                    Text(
+                                      senderName,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Theme.of(context).colorScheme.secondary,
+                                      ),
                                     ),
+                                  if (isVoice && voiceUrl != null)
+                                    VoiceMessageWidget(url: voiceUrl, isMyMessage: isMe)
+                                  else
+                                    ExpandableText(
+                                      text: ProfanityFilter.filter(message.content),
+                                      maxLines: 10,
+                                      style: const TextStyle(color: Colors.white),
+                                    ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    timeStr,
+                                    style: const TextStyle(fontSize: 10, color: Colors.white60),
                                   ),
-                                ExpandableText(
-                                  text: ProfanityFilter.filter(message.content),
-                                  maxLines: 10,
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  DateFormat('HH:mm').format(message.created.toLocal()),
-                                  style: const TextStyle(fontSize: 10, color: Colors.white60),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         );
                       },
                     ),
         ),
-        _buildInputArea(),
+        ChatInputField(
+          onSendText: (text) => _sendTextMessage(text),
+          onSendAudio: (path) => _sendAudioMessage(path),
+          hintText: 'Mesaj yazın...',
+        ),
       ],
     );
   }
 
-  Widget _buildInputArea() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      color: Colors.black26,
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _messageController,
-                maxLength: 4000,
-                style: const TextStyle(fontSize: 14),
-                decoration: const InputDecoration(
-                  hintText: 'Mesaj yazın...',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  counterText: "",
-                ),
-                maxLines: null,
-                keyboardType: TextInputType.multiline,
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.send),
-              onPressed: _sendMessage,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ],
-        ),
-      ),
-    );
+  Future<void> _sendTextMessage(String content) async {
+    try {
+      await ChatServerService().sendRoomMessage(
+        roomId: widget.room.id,
+        content: content,
+      );
+      _fetchMessages();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      }
+    }
+  }
+
+  Future<void> _sendAudioMessage(String path) async {
+    try {
+      await ChatServerService().sendRoomAudio(
+        roomId: widget.room.id,
+        audioPath: path,
+      );
+      _fetchMessages();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ses gönderme hatası: $e')));
+      }
+    }
   }
 }

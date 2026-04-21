@@ -17,6 +17,9 @@ import 'package:blind_social/core/services/settings_service.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
 import 'package:blind_social/core/widgets/expandable_text.dart';
 
+import 'package:blind_social/core/widgets/chat_input_field.dart';
+import 'package:blind_social/core/widgets/voice_message_widget.dart';
+
 class ChatDetailScreen extends StatefulWidget {
   final Map<String, dynamic> chat;
 
@@ -37,7 +40,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     _messageCache.remove(chatId);
   }
 
-  final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   
   late Map<String, dynamic> _chat;
@@ -46,34 +48,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   UnsubscribeFunc? _unsub;
   late final String _myUserId;
   Map<String, dynamic>? _replyingTo;
-
-  // Ses kaydı için değişkenler
-  final AudioRecorder _audioRecorder = AudioRecorder();
-  bool _isRecording = false;
-  String? _recordingPath;
-  
-  Timer? _recordTimer;
-  int _recordDuration = 0;
-
-  void _startTimer() {
-    _recordTimer?.cancel();
-    _recordDuration = 0;
-    _recordTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      if (mounted) {
-        setState(() => _recordDuration++);
-      }
-    });
-  }
-
-  void _stopTimer() {
-    _recordTimer?.cancel();
-  }
-
-  String _formatRecordDuration(int seconds) {
-    final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
-    final secs = (seconds % 60).toString().padLeft(2, '0');
-    return '$minutes:$secs';
-  }
 
   bool _isInitialLoad = true;
 
@@ -126,9 +100,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   @override
   void dispose() {
     _unsub?.call();
-    _recordTimer?.cancel();
-    _audioRecorder.dispose();
-    _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -310,67 +281,27 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     }
   }
 
-  Future<void> _startRecording() async {
+  Future<void> _sendAudioMessage(String path) async {
     try {
-      if (await _audioRecorder.hasPermission()) {
-        final dir = await getApplicationDocumentsDirectory();
-        final path = '${dir.path}/ses_mesaji_${DateTime.now().millisecondsSinceEpoch}.m4a';
-        
-        await _audioRecorder.start(
-          const RecordConfig(encoder: AudioEncoder.aacLc),
-          path: path,
-        );
-        
-        _startTimer();
-        AppLogger.instance.info('Kayıt başlatıldı: $path');
-        setState(() {
-          _isRecording = true;
-          _recordingPath = path;
-        });
-      } else {
-        AppLogger.instance.warning('Kayıt için izin reddedildi.');
-      }
-    } catch (e) {
-      AppLogger.instance.error('Kayıt başlatılamadı: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Kayıt başlatılamadı: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses mesajı gönderiliyor...')));
       }
-    }
-  }
-
-  Future<void> _stopRecordingAndSend() async {
-    try {
-      final path = await _audioRecorder.stop();
-      _stopTimer();
-      setState(() {
-        _isRecording = false;
-      });
-
-      if (path != null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses mesajı gönderiliyor...')));
-        }
-        
-        final fileBytes = File(path).readAsBytesSync();
-        
-        // PocketBase messages tablosunda 'file' isminde bir File alanı olması gerekiyor.
-        await PocketBaseService.client.collection('messages').create(
-          body: {
-            'chat_id': widget.chat['id'],
-            'sender_id': _myUserId,
-            'content': '[VOICE]',
-          },
-          files: [
-            http.MultipartFile.fromBytes('file', fileBytes, filename: 'ses.m4a')
-          ],
-        );
-      }
+      
+      final fileBytes = File(path).readAsBytesSync();
+      
+      await PocketBaseService.client.collection('messages').create(
+        body: {
+          'chat_id': widget.chat['id'],
+          'sender_id': _myUserId,
+          'content': '[VOICE]',
+        },
+        files: [
+          http.MultipartFile.fromBytes('file', fileBytes, filename: 'ses.m4a')
+        ],
+      );
+      _fetchMessages();
     } catch (e) {
-      AppLogger.instance.error('Ses kaydı durdurulamadı: $e');
-      _stopTimer();
-      setState(() {
-        _isRecording = false;
-      });
+      AppLogger.instance.error('Ses gönderilemedi: $e');
     }
   }
 
@@ -1004,307 +935,47 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   Widget _buildMessageInput() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        color: Colors.grey[900],
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    return ChatInputField(
+      onSendText: _sendMessage,
+      onSendAudio: _sendAudioMessage,
+      hintText: 'Mesaj yaz...',
+      replyWidget: _replyingTo == null ? null : Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey[850],
+          border: Border(left: BorderSide(color: Colors.blueAccent, width: 4)),
+        ),
+        child: Row(
           children: [
-            if (_replyingTo != null)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.grey[850],
-                  border: Border(left: BorderSide(color: Colors.blueAccent, width: 4)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Yanıtlama:',
-                            style: TextStyle(
-                              color: Colors.blueAccent,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                          Text(
-                            ProfanityFilter.filter(_replyingTo!['content']?.toString() ?? ''),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Colors.white70, fontSize: 13),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 20, color: Colors.white70),
-                      onPressed: () => setState(() => _replyingTo = null),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-              child: Row(
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      maxLength: 4000,
-                      decoration: InputDecoration(
-                        hintText: _isRecording ? 'Kayıt: ${_formatRecordDuration(_recordDuration)}' : 'Mesaj yaz...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: _isRecording ? Colors.red.withOpacity(0.2) : Colors.grey[800],
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        counterText: "",
-                      ),
-                      enabled: !_isRecording,
-                      onSubmitted: (val) {
-                        final text = val.trim();
-                        if (text.isNotEmpty) _sendMessage(text);
-                      },
+                  const Text(
+                    'Yanıtlama:',
+                    style: TextStyle(
+                      color: Colors.blueAccent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  
-                  if (_isRecording)
-                    Semantics(
-                      label: "Ses kaydını durdur ve gönder",
-                      button: true,
-                      child: GestureDetector(
-                        onTap: _stopRecordingAndSend,
-                        child: const CircleAvatar(
-                          radius: 22,
-                          backgroundColor: Colors.red,
-                          child: Icon(Icons.stop, color: Colors.white, size: 28),
-                        ),
-                      ),
-                    )
-                  else ...[
-                    Semantics(
-                      label: "Sesli mesaj kaydet",
-                      button: true,
-                      child: GestureDetector(
-                        onTap: _startRecording,
-                        child: const CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Colors.blueAccent,
-                          child: Icon(Icons.mic, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Semantics(
-                      label: "Mesajı gönder",
-                      button: true,
-                      child: GestureDetector(
-                        onTap: () {
-                          final text = _messageController.text.trim();
-                          if (text.isNotEmpty) _sendMessage(text);
-                        },
-                        child: const CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Colors.green,
-                          child: Icon(Icons.send, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
+                  Text(
+                    ProfanityFilter.filter(_replyingTo!['content']?.toString() ?? ''),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
                 ],
               ),
             ),
+            IconButton(
+              icon: const Icon(Icons.close, size: 20, color: Colors.white70),
+              onPressed: () => setState(() => _replyingTo = null),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class VoiceMessageWidget extends StatefulWidget {
-  final String url;
-  final bool isMyMessage;
-
-  const VoiceMessageWidget({super.key, required this.url, required this.isMyMessage});
-
-  @override
-  State<VoiceMessageWidget> createState() => _VoiceMessageWidgetState();
-}
-
-class _VoiceMessageWidgetState extends State<VoiceMessageWidget> {
-  late AudioPlayer _audioPlayer;
-  bool _isPlaying = false;
-  Duration _duration = Duration.zero;
-  Duration _position = Duration.zero;
-
-  @override
-  void initState() {
-    super.initState();
-    _audioPlayer = AudioPlayer();
-
-    _audioPlayer.onPlayerStateChanged.listen((state) {
-      if (mounted) {
-        setState(() {
-          _isPlaying = state == PlayerState.playing;
-        });
-      }
-    });
-
-    _audioPlayer.onDurationChanged.listen((newDuration) {
-      if (mounted) {
-        setState(() {
-          _duration = newDuration;
-        });
-      }
-    });
-
-    _audioPlayer.onPositionChanged.listen((newPosition) {
-      if (mounted) {
-        setState(() {
-          _position = newPosition;
-        });
-      }
-    });
-    
-    _audioPlayer.onPlayerComplete.listen((event) {
-      if (mounted) {
-        setState(() {
-          _isPlaying = false;
-          _position = Duration.zero;
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _audioPlayer.dispose();
-    super.dispose();
-  }
-
-  String _formatDuration(Duration d) {
-    final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
-  }
-
-  void _seekRelative(int seconds) {
-    final newPosition = _position + Duration(seconds: seconds);
-    if (newPosition < Duration.zero) {
-      _audioPlayer.seek(Duration.zero);
-    } else if (newPosition > _duration && _duration != Duration.zero) {
-      _audioPlayer.seek(_duration);
-    } else {
-      _audioPlayer.seek(newPosition);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final playPauseLabel = _isPlaying ? "Sesi duraklat" : "Sesli mesajı oynat";
-    
-    return Container(
-      width: 260, 
-      decoration: BoxDecoration(
-        color: widget.isMyMessage ? Colors.green[800] : Colors.grey[700],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Play/Pause Button
-          Semantics(
-            label: playPauseLabel,
-            button: true,
-            excludeSemantics: true,
-            child: IconButton(
-              constraints: const BoxConstraints(),
-              padding: const EdgeInsets.all(4),
-              icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 32),
-              onPressed: () async {
-                if (_isPlaying) {
-                  await _audioPlayer.pause();
-                } else {
-                  await _audioPlayer.play(UrlSource(widget.url));
-                }
-              },
-            ),
-          ),
-          
-          // Rewind 5s
-          Semantics(
-            label: "5 saniye geri sar",
-            button: true,
-            excludeSemantics: true,
-            child: IconButton(
-              constraints: const BoxConstraints(),
-              padding: const EdgeInsets.all(4),
-              icon: const Icon(Icons.replay_5, color: Colors.white, size: 24),
-              onPressed: () => _seekRelative(-5),
-            ),
-          ),
-
-          // Forward 5s
-          Semantics(
-            label: "5 saniye ileri sar",
-            button: true,
-            excludeSemantics: true,
-            child: IconButton(
-              constraints: const BoxConstraints(),
-              padding: const EdgeInsets.all(4),
-              icon: const Icon(Icons.forward_5, color: Colors.white, size: 24),
-              onPressed: () => _seekRelative(5),
-            ),
-          ),
-
-          const SizedBox(width: 4),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Semantics(
-                  label: "Ses ilerlemesi: ${_formatDuration(_position)} / ${_formatDuration(_duration)}",
-                  child: SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-                      trackHeight: 2,
-                    ),
-                    child: Slider(
-                      min: 0,
-                      max: _duration.inSeconds > 0 ? _duration.inSeconds.toDouble() : 1.0,
-                      value: _position.inSeconds.toDouble().clamp(0.0, _duration.inSeconds > 0 ? _duration.inSeconds.toDouble() : 1.0),
-                      onChanged: (val) {
-                        _audioPlayer.seek(Duration(seconds: val.toInt()));
-                      },
-                      activeColor: Colors.white,
-                      inactiveColor: Colors.white30,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  child: Text(
-                    '${_formatDuration(_position)} / ${_formatDuration(_duration)}',
-                    style: const TextStyle(fontSize: 10, color: Colors.white70),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

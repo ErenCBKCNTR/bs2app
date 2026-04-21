@@ -1,5 +1,8 @@
 # Project Guidelines
 
+> [!IMPORTANT]
+> **MANDATORY TASK START CHECK:** You MUST read this file at the beginning of EVERY task. This is non-negotiable. This file is the source of truth for existing components, services, and architectural standards. Before creating anything new, check if a suitable component or service already exists here.
+
 ## UI & Layout Rules
 - **SafeArea First:** Every page (Screen) and global component MUST be wrapped in a `SafeArea` widget to prevent content from being obscured by system bars (status bar, navigation bar, notches).
 - **Overflow Prevention:** All layouts containing lists or dynamic content MUST use scrollable views (`ListView`, `SingleChildScrollView`) to prevent `RenderFlex` overflow errors on different screen sizes.
@@ -14,3 +17,42 @@
 - **Sync Priority:** In audio recording features, use aggressive FFmpeg flags (low buffer, fast probe) to ensure start/stop synchronization matches user interaction as closely as possible.
 - **Database Integrity:** You MUST always keep `pb_schema.json` updated with any changes made to the database logic. **CRITICAL:** Every time you add a new field or modify the database logic, you MUST immediately update `pb_schema.json` to reflect these changes. Before performing any database-related operations, you MUST read `pb_schema.json` once to ensure full consistency and prevent memory drift regarding the schema structure.
 - **Feature Isolation:** When a new independent feature is to be implemented, it MUST be created in its own directory (e.g., `lib/features/new_feature/`) to maintain a modular and maintainable codebase.
+
+---
+
+## System Component & Service Catalog
+
+### 🏗️ Core UI Components (`lib/core/widgets/`)
+These are reusable widgets that MUST be used across the app to ensure consistency.
+
+| Component | Directory | Description |
+| :--- | :--- | :--- |
+| `ChatInputField` | `lib/core/widgets/chat_input_field.dart` | The standard input field for all chats (Private/Server). Handles text sending, audio recording (with timer), and reply UI. |
+| `VoiceMessageWidget` | `lib/core/widgets/voice_message_widget.dart` | Standard player for voice messages. Handles play/pause, seek (5s), and progress tracking with screen reader support. |
+| `ExpandableText` | `lib/core/widgets/expandable_text.dart` | Handles long text content with "read more/less" functionality for better layout management. |
+
+### ⚙️ Core Services (`lib/core/services/`)
+Primary singleton services for backend and system-level operations.
+
+| Service | Directory | Description |
+| :--- | :--- | :--- |
+| `PocketBaseService` | `lib/core/services/pocketbase_service.dart` | Main database client configuration and auth state management. |
+| `SettingsService` | `lib/core/services/settings_service.dart` | Manages user preferences (vibration, sound, text settings), persists locally. |
+| `NotificationService` | `lib/core/services/notification_service.dart` | Handles push notifications and local alert management. |
+
+### 🛠️ Utilities (`lib/core/utils/`)
+| Util | Directory | Description |
+| :--- | :--- | :--- |
+| `AppLogger` | `lib/core/utils/logger.dart` | Centralized logging system (Info, Warning, Error). |
+| `ProfanityFilter` | `lib/core/utils/profanity_filter.dart` | Filters contents against blacklisted words before rendering in UI. |
+
+### 🚀 Feature Modules (`lib/features/`)
+| Module | Directory | Description |
+| :--- | :--- | :--- |
+| `Auth` | `lib/features/auth/` | Login, Register, and Account Recovery flows. |
+| `Chat` | `lib/features/chat/` | Private messaging (1:1), active chats list, and call (VoIP) features. |
+| `Servers` | `lib/features/servers/` | Community server management, room lists, and room chat interfaces. |
+| `Profile` | `lib/features/profile/` | User settings, profile viewing, and social connections. |
+| `Radio` | `lib/features/radio/` | Live radio streaming and recording features. |
+| `Admin` | `lib/features/admin/` | Management tools for moderators and system admins. |
+| `Developer` | `lib/features/developer/` | Debugging tools and logs for development use. |

@@ -44,6 +44,7 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
   Future<void> _showCreateRoomDialog() async {
     final nameController = TextEditingController();
     final descController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
     RoomType roomType = RoomType.hybrid;
     bool isSaving = false;
 
@@ -54,52 +55,64 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
           builder: (context, setStateDialog) {
             return AlertDialog(
               title: const Text('Yeni Oda Oluştur'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: nameController,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Oda Adı',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: descController,
-                      decoration: const InputDecoration(
-                        labelText: 'Açıklama',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<RoomType>(
-                      value: roomType,
-                      decoration: const InputDecoration(
-                        labelText: 'Oda Türü',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: [
-                        const DropdownMenuItem(
-                          value: RoomType.text,
-                          child: Text('Sadece Mesaj'),
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        controller: nameController,
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Oda Adı',
+                          border: OutlineInputBorder(),
                         ),
-                        const DropdownMenuItem(
-                          value: RoomType.voice,
-                          child: Text('Sadece Ses'),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Oda adı boş olamaz';
+                          }
+                          if (value.trim().length < 2) {
+                            return 'Oda adı en az 2 karakter olmalıdır';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: descController,
+                        decoration: const InputDecoration(
+                          labelText: 'Açıklama',
+                          border: OutlineInputBorder(),
                         ),
-                        const DropdownMenuItem(
-                          value: RoomType.hybrid,
-                          child: Text('Karışık (Mesaj + Ses)'),
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<RoomType>(
+                        value: roomType,
+                        decoration: const InputDecoration(
+                          labelText: 'Oda Türü',
+                          border: OutlineInputBorder(),
                         ),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setStateDialog(() => roomType = val);
-                      },
-                    ),
-                  ],
+                        items: [
+                          const DropdownMenuItem(
+                            value: RoomType.text,
+                            child: Text('Sadece Mesaj'),
+                          ),
+                          const DropdownMenuItem(
+                            value: RoomType.voice,
+                            child: Text('Sadece Ses'),
+                          ),
+                          const DropdownMenuItem(
+                            value: RoomType.hybrid,
+                            child: Text('Karışık (Mesaj + Ses)'),
+                          ),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) setStateDialog(() => roomType = val);
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -109,8 +122,9 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
                 ),
                 ElevatedButton(
                   onPressed: isSaving ? null : () async {
+                    if (!formKey.currentState!.validate()) return;
+                    
                     final name = nameController.text.trim();
-                    if (name.isEmpty) return;
                     setStateDialog(() => isSaving = true);
                     try {
                       await ChatServerService().createRoom(
@@ -130,7 +144,9 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
                       }
                     }
                   },
-                  child: isSaving ? const CircularProgressIndicator() : const Text('Oluştur'),
+                  child: isSaving 
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                      : const Text('Oluştur'),
                 ),
               ],
             );
@@ -211,7 +227,8 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
                 ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreateRoomDialog,
-        child: const Icon(Icons.add),
+        tooltip: 'Yeni oda oluştur',
+        child: const Icon(Icons.add, color: Colors.black),
       ),
     );
   }

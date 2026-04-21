@@ -92,19 +92,23 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
-      ),
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 16,
-        right: 16,
-        top: 16,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    return SafeArea(
+      top: false, // Sheet already handles top
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        padding: EdgeInsets.fromLTRB(
+          16, 
+          16, 
+          16, 
+          MediaQuery.of(context).viewInsets.bottom > 0 ? 8 : 16
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -177,6 +181,8 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
           const SizedBox(height: 16),
         ],
       ),
+    ),
+    ),
     );
   }
 }

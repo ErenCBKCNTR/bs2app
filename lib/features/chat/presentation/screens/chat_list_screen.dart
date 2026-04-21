@@ -524,6 +524,7 @@ Widget? _buildFAB() {
   Future<void> _showCreateChatServerDialog() async {
     final titleController = TextEditingController();
     final descController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
     int capacity = 24;
     bool isSaving = false;
     
@@ -534,50 +535,62 @@ Widget? _buildFAB() {
           builder: (context, setStateDialog) {
             return AlertDialog(
               title: const Text('Yeni Sohbet Sunucusu'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: titleController,
-                      autofocus: true,
-                      maxLength: 32,
-                      decoration: const InputDecoration(
-                        labelText: 'Sunucu Adı',
-                        hintText: 'Örn: Blind Social Dostlar',
-                        border: OutlineInputBorder(),
-                        counterText: "",
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        controller: titleController,
+                        autofocus: true,
+                        maxLength: 32,
+                        decoration: const InputDecoration(
+                          labelText: 'Sunucu Adı',
+                          hintText: 'Örn: Blind Social Dostlar',
+                          border: OutlineInputBorder(),
+                          counterText: "",
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Sunucu adı boş olamaz';
+                          }
+                          if (value.trim().length < 3) {
+                            return 'Sunucu adı 3 karakterden kısa olamaz';
+                          }
+                          return null;
+                        },
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: descController,
-                      maxLength: 255,
-                      decoration: const InputDecoration(
-                        labelText: 'Açıklama',
-                        hintText: 'Sunucu hakkında kısa bilgi',
-                        border: OutlineInputBorder(),
-                        counterText: "",
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: descController,
+                        maxLength: 255,
+                        decoration: const InputDecoration(
+                          labelText: 'Açıklama',
+                          hintText: 'Sunucu hakkında kısa bilgi',
+                          border: OutlineInputBorder(),
+                          counterText: "",
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<int>(
-                      value: capacity,
-                      decoration: const InputDecoration(
-                        labelText: 'Kişi Kapasitesi',
-                        border: OutlineInputBorder(),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<int>(
+                        value: capacity,
+                        decoration: const InputDecoration(
+                          labelText: 'Kişi Kapasitesi',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [12, 24, 32, 48, 64, 128].map((int value) {
+                          return DropdownMenuItem<int>(
+                            value: value,
+                            child: Text('$value Kişilik'),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) setStateDialog(() => capacity = val);
+                        },
                       ),
-                      items: [12, 24, 32, 48, 64, 128].map((int value) {
-                        return DropdownMenuItem<int>(
-                          value: value,
-                          child: Text('$value Kişilik'),
-                        );
-                      }).toList(),
-                      onChanged: (val) {
-                        if (val != null) setStateDialog(() => capacity = val);
-                      },
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -587,9 +600,10 @@ Widget? _buildFAB() {
                 ),
                 ElevatedButton(
                   onPressed: isSaving ? null : () async {
+                    if (!formKey.currentState!.validate()) return;
+                    
                     final name = titleController.text.trim();
                     final desc = descController.text.trim();
-                    if (name.isEmpty) return;
                     
                     setStateDialog(() => isSaving = true);
                     
@@ -610,9 +624,17 @@ Widget? _buildFAB() {
                     } catch (e) {
                       AppLogger.instance.error('Sunucu oluşturulurken hata: $e');
                       setStateDialog(() => isSaving = false);
+                      
+                      String errorMsg = e.toString();
+                      if (errorMsg.contains('validation_min_text_constraint')) {
+                        errorMsg = 'Sunucu adı en az 3 karakter olmalıdır.';
+                      } else if (errorMsg.contains('ClientException')) {
+                        errorMsg = 'Sunucu oluşturulamadı. Lütfen tekrar deneyin.';
+                      }
+
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Hata: $e')),
+                          SnackBar(content: Text(errorMsg)),
                         );
                       }
                     }

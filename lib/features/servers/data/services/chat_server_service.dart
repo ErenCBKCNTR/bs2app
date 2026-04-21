@@ -3,6 +3,7 @@ import 'package:blind_social/features/servers/data/models/chat_server_room.dart'
 import 'package:blind_social/features/servers/data/models/server_message.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:http/http.dart' as http;
 
 class ChatServerService {
   static final ChatServerService _instance = ChatServerService._internal();
@@ -108,6 +109,26 @@ class ChatServerService {
     };
     final record = await _pb.collection('server_messages').create(
       body: body,
+      expand: 'sender_id',
+    );
+    return ServerMessage.fromRecord(record);
+  }
+
+  Future<ServerMessage> sendRoomAudio({
+    required String roomId,
+    required String audioPath,
+  }) async {
+    final body = {
+      'room_id': roomId,
+      'sender_id': _pb.authStore.model.id,
+      'content': '[VOICE]',
+    };
+
+    final file = await http.MultipartFile.fromPath('file', audioPath);
+
+    final record = await _pb.collection('server_messages').create(
+      body: body,
+      files: [file],
       expand: 'sender_id',
     );
     return ServerMessage.fromRecord(record);
