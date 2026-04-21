@@ -57,7 +57,7 @@ class RadioRecordingService {
     
     _isRecording = false;
 
-    await _timer?.cancel();
+    _timer?.cancel();
     await _sink?.flush();
     await _sink?.close();
 

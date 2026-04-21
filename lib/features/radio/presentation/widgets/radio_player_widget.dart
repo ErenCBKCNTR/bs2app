@@ -9,6 +9,8 @@ import '../../services/favorite_stations_service.dart';
 import '../../models/radio_recording.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'dart:ui' show TextDirection;
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 class RadioPlayerWidget extends StatefulWidget {
   final RadioStation station;
@@ -292,7 +294,11 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
         // Announce to screen reader
         SemanticsService.announce("Canlı yayın kaydı başlatıldı", TextDirection.ltr);
         
-        await _recordingService.startRecording(widget.station.url, widget.station.name);
+        final directory = await getApplicationDocumentsDirectory();
+        final fileName = 'blindsocial_${widget.station.name.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.aac';
+        final path = p.join(directory.path, fileName);
+        
+        await _recordingService.startRecording(widget.station.url, widget.station.name, path);
       }
     } catch (e) {
       setState(() => _isRecording = false);
