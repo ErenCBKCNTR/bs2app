@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart' hide SettingsService;
 import 'package:blind_social/features/chat/presentation/widgets/chat_list_item.dart';
-import 'package:blind_social/features/chat/presentation/screens/voice_rooms_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/my_profile_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/user_profile_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/app_settings_screen.dart';
@@ -16,6 +15,8 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:vibration/vibration.dart';
 import 'package:blind_social/core/services/settings_service.dart';
+import 'package:blind_social/features/servers/data/services/chat_server_service.dart';
+import 'package:blind_social/features/servers/presentation/screens/chat_servers_screen.dart';
 import 'chat_detail_screen.dart';
 import 'call_screen.dart';
 import 'favorite_messages_screen.dart';
@@ -315,6 +316,28 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
             ),
           ),
           actions: [
+            if (_tabController.index == 2) ...[
+              IconButton(
+                icon: const Icon(Icons.star_outline, size: 18),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const FavoriteMessagesScreen()),
+                  );
+                },
+                tooltip: "Favori Mesajlar",
+              ),
+              IconButton(
+                icon: const Icon(Icons.archive_outlined, size: 18),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ArchivedMessagesScreen()),
+                  );
+                },
+                tooltip: "Arşivli Sunucular",
+              ),
+            ],
             Semantics(
               label: "Kullanıcı Ara",
               child: IconButton(
@@ -337,7 +360,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
             tabs: [
               Tab(child: Semantics(label: "Sohbetler", excludeSemantics: true, child: const Text("Sohbetler"))),
               Tab(child: Semantics(label: "Blog", excludeSemantics: true, child: const Text("Blog"))),
-              Tab(child: Semantics(label: "Odalar", excludeSemantics: true, child: const Text("Odalar"))),
+              Tab(child: Semantics(label: "Sunucular", excludeSemantics: true, child: const Text("Sunucular"))),
             ],
           ),
         ),
@@ -347,7 +370,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
           children: [
             _buildChatList(),
             const BlogScreen(),
-            VoiceRoomsScreen(key: ValueKey(_refreshKey)),
+            ChatServersScreen(key: ValueKey(_refreshKey)),
           ],
         ),
         floatingActionButton: _buildFAB(),
@@ -394,10 +417,10 @@ Widget? _buildFAB() {
       );
     } else if (_tabController.index == 2) {
       return FloatingActionButton(
-        onPressed: _showCreateVoiceRoomDialog,
+        onPressed: _showCreateChatServerDialog,
         backgroundColor: Theme.of(context).colorScheme.primary,
-        tooltip: "Yeni Sesli Oda Oluştur",
-        child: const Icon(Icons.add_call, color: Colors.black),
+        tooltip: "Yeni Sohbet Sunucusu Oluştur",
+        child: const Icon(Icons.dns, color: Colors.black),
       );
     }
     return null;
@@ -485,8 +508,10 @@ Widget? _buildFAB() {
     );
   }
 
-  Future<void> _showCreateVoiceRoomDialog() async {
+  Future<void> _showCreateChatServerDialog() async {
     final titleController = TextEditingController();
+    final descController = TextEditingController();
+    int capacity = 24;
     bool isSaving = false;
     
     await showDialog(
@@ -495,14 +520,47 @@ Widget? _buildFAB() {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: const Text('Yeni Sesli Oda'),
-              content: TextField(
-                controller: titleController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Oda Adı',
-                  hintText: 'Örn: Teknoloji Sohbetleri',
-                  border: OutlineInputBorder(),
+              title: const Text('Yeni Sohbet Sunucusu'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: titleController,
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Sunucu Adı',
+                        hintText: 'Örn: Blind Social Dostlar',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: descController,
+                      decoration: const InputDecoration(
+                        labelText: 'Açıklama',
+                        hintText: 'Sunucu hakkında kısa bilgi',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<int>(
+                      value: capacity,
+                      decoration: const InputDecoration(
+                        labelText: 'Kişi Kapasitesi',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: [12, 24, 32, 48, 64, 128].map((int value) {
+                        return DropdownMenuItem<int>(
+                          value: value,
+                          child: Text('$value Kişilik'),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) setStateDialog(() => capacity = val);
+                      },
+                    ),
+                  ],
                 ),
               ),
               actions: [
@@ -513,27 +571,27 @@ Widget? _buildFAB() {
                 ElevatedButton(
                   onPressed: isSaving ? null : () async {
                     final name = titleController.text.trim();
+                    final desc = descController.text.trim();
                     if (name.isEmpty) return;
                     
                     setStateDialog(() => isSaving = true);
                     
                     try {
-                      final userId = PocketBaseService.client.authStore.model!.id;
-                      await PocketBaseService.client.collection('voice_rooms').create(body: {
-                        'name': name,
-                        'created_by': userId,
-                        'is_active': true,
-                      });
+                      await ChatServerService().createServer(
+                        name: name,
+                        description: desc,
+                        capacity: capacity,
+                      );
                       
                       if (context.mounted) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Oda başarıyla oluşturuldu!')),
+                          const SnackBar(content: Text('Sunucu başarıyla oluşturuldu!')),
                         );
                       }
-                      _refresh(); // Odalar listesini yenile
+                      _refresh(); 
                     } catch (e) {
-                      AppLogger.instance.error('Oda oluşturulurken hata: $e');
+                      AppLogger.instance.error('Sunucu oluşturulurken hata: $e');
                       setStateDialog(() => isSaving = false);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(

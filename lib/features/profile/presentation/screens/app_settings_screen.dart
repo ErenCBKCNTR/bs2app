@@ -1,9 +1,24 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/settings_service.dart';
 import 'theme_settings_screen.dart';
 import 'notification_settings_screen.dart';
 
-class AppSettingsScreen extends StatelessWidget {
+class AppSettingsScreen extends StatefulWidget {
   const AppSettingsScreen({super.key});
+
+  @override
+  State<AppSettingsScreen> createState() => _AppSettingsScreenState();
+}
+
+class _AppSettingsScreenState extends State<AppSettingsScreen> {
+  final SettingsService _settingsService = SettingsService();
+  bool _showOnLockScreen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _showOnLockScreen = _settingsService.showOnLockScreenEnabled;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +51,19 @@ class AppSettingsScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
               );
+            },
+          ),
+          const Divider(),
+          SwitchListTile(
+            secondary: const Icon(Icons.screen_lock_portrait),
+            title: const Text('Kilit Ekranında Göster'),
+            subtitle: const Text('Ekran kilitliyken bile uygulama görünür kalır'),
+            value: _showOnLockScreen,
+            onChanged: (bool value) async {
+              await _settingsService.setShowOnLockScreenEnabled(value);
+              setState(() {
+                _showOnLockScreen = value;
+              });
             },
           ),
         ],
