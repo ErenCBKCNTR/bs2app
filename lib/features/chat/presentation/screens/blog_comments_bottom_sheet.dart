@@ -90,7 +90,12 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
         left: 16,
@@ -104,34 +109,47 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Yorumlar', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+              IconButton(
+                onPressed: () => Navigator.pop(context), 
+                icon: const Icon(Icons.close),
+                tooltip: "Kapat",
+              ),
             ],
           ),
           const Divider(),
-          Expanded(
+          Flexible(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _comments.isEmpty
                     ? const Center(child: Text("Henüz yorum yapılmamış."))
                     : ListView.builder(
+                        shrinkWrap: true,
                         itemCount: _comments.length,
                         itemBuilder: (context, index) {
                           final c = _comments[index];
                           final user = c['expand']?['user_id'];
-                          final username = ProfanityFilter.filter(user != null ? (user['name'] ?? user['full_name'] ?? 'Bilinmeyen') : 'Bilinmeyen');
+                          final username = ProfanityFilter.filter(user != null ? (user['username'] ?? user['full_name'] ?? 'Bilinmeyen') : 'Bilinmeyen');
                           final content = ProfanityFilter.filter(c['content'] ?? '');
                           final timeStr = _formatTime(c['created'] ?? '');
                           
                           return ListTile(
-                            leading: const Icon(Icons.person),
-                            title: Text(username),
-                            subtitle: Text(content),
-                            trailing: Text(timeStr, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                              radius: 16,
+                              backgroundColor: Colors.green.shade700,
+                              child: Text(
+                                username.isNotEmpty ? username[0].toUpperCase() : '?',
+                                style: const TextStyle(color: Colors.white, fontSize: 12),
+                              ),
+                            ),
+                            title: Text(username, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                            subtitle: Text(content, style: TextStyle(color: isDarkMode ? Colors.grey[300] : Colors.black87)),
+                            trailing: Text(timeStr, style: const TextStyle(fontSize: 10, color: Colors.grey)),
                           );
                         },
                       ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -140,12 +158,13 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
                   decoration: const InputDecoration(
                     hintText: 'Yorum yazın...',
                     border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               if (_isPosting)
-                const CircularProgressIndicator()
+                const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
               else
                 IconButton(
                   onPressed: _postComment,

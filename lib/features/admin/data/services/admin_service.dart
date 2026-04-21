@@ -34,14 +34,21 @@ class AdminService {
       final fifteenMinsAgoStr = fifteenMinsAgo.toIso8601String().replaceFirst('T', ' ');
 
       // 1. Active Users (last 15 mins)
-      final usersResponse = await PocketBaseService.client.collection('users').getList(
+      final activeUsersResponse = await PocketBaseService.client.collection('users').getList(
         page: 1,
         perPage: 1,
         filter: 'last_seen >= "$fifteenMinsAgoStr"',
       );
-      final activeUsersCount = usersResponse.totalItems;
+      final activeUsersCount = activeUsersResponse.totalItems;
 
-      // 2. Recent Blog Posts (last 15 mins)
+      // 2. Total Users
+      final totalUsersResponse = await PocketBaseService.client.collection('users').getList(
+        page: 1,
+        perPage: 1,
+      );
+      final totalUsersCount = totalUsersResponse.totalItems;
+
+      // 3. Recent Blog Posts (last 15 mins)
       final postsResponse = await PocketBaseService.client.collection('posts').getList(
         page: 1,
         perPage: 1,
@@ -49,7 +56,7 @@ class AdminService {
       );
       final recentPostsCount = postsResponse.totalItems;
 
-      // 3. Total Servers
+      // 4. Total Servers
       final serversResponse = await PocketBaseService.client.collection('chat_servers').getList(
         page: 1,
         perPage: 1,
@@ -58,6 +65,7 @@ class AdminService {
 
       return {
         'activeUsers': activeUsersCount,
+        'totalUsers': totalUsersCount,
         'recentPosts': recentPostsCount,
         'totalServers': totalServersCount,
       };
@@ -65,9 +73,32 @@ class AdminService {
       AppLogger.instance.error('Admin istatistikleri alınamadı: $e');
       return {
         'activeUsers': 0,
+        'totalUsers': 0,
         'recentPosts': 0,
         'totalServers': 0,
       };
+    }
+  }
+
+  Future<List<RecordModel>> getAllUsers() async {
+    try {
+      return await PocketBaseService.client.collection('users').getFullList(
+        sort: '-created',
+      );
+    } catch (e) {
+      AppLogger.instance.error('Kullanıcı listesi alınamadı: $e');
+      return [];
+    }
+  }
+
+  Future<List<RecordModel>> getAllServers() async {
+    try {
+      return await PocketBaseService.client.collection('chat_servers').getFullList(
+        sort: '-created',
+      );
+    } catch (e) {
+      AppLogger.instance.error('Sunucu listesi alınamadı: $e');
+      return [];
     }
   }
 

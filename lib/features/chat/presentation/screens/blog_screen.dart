@@ -326,68 +326,66 @@ class _BlogScreenState extends State<BlogScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-              child: Text(
-                'Blog',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isDarkMode ? Colors.white : Colors.black,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: OutlinedButton.icon(
-                onPressed: _showCreatePostDialog,
-                icon: const Icon(Icons.edit, size: 20),
-                label: const Text(
-                  "Yeni Gönderi Paylaş",
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 52),
-                  foregroundColor: Colors.green,
-                  side: const BorderSide(color: Colors.green, width: 2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(26),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Semantics(
+                button: true,
+                label: "Gönderilerim sayfası",
+                onTapHint: "Paylaştığınız tüm gönderileri görmek için çift dokunun",
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const MyBlogPostsScreen()),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.history, color: Colors.green, size: 22),
+                        const SizedBox(width: 12),
+                        const Text(
+                          "Blog Gönderilerim",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(Icons.chevron_right, color: Colors.green.withOpacity(0.5)),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const MyBlogPostsScreen()),
-                  );
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.history, color: Colors.green, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        "Blog Gönderilerim",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(Icons.chevron_right, color: isDarkMode ? Colors.grey[600] : Colors.grey[400]),
-                    ],
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Semantics(
+                button: true,
+                label: "Yeni gönderi paylaş butonu",
+                onTapHint: "Yeni bir blog içeriği oluşturmak için çift dokunun",
+                child: OutlinedButton.icon(
+                  onPressed: _showCreatePostDialog,
+                  icon: const Icon(Icons.edit, size: 20),
+                  label: const Text(
+                    "Yeni Gönderi Paylaş",
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 54),
+                    foregroundColor: Colors.green,
+                    side: const BorderSide(color: Colors.green, width: 2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(26),
+                    ),
                   ),
                 ),
               ),
