@@ -11,9 +11,47 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:blind_social/core/services/notification_service.dart';
 
 void main() async {
+  // Global hata yakalayıcı
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrint("Flutter Error: ${details.exception}");
+  };
+
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Firebase'i başlat (Web config'i kullanarak manuel initialization)
+  // Settings servislerini başlat
+  try {
+    await SettingsService().init();
+  } catch (e) {
+    debugPrint("Settings başlatılamadı: $e");
+  }
+
+  // Çevre değişkenlerini yükle
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint(".env dosyası yüklenemedi: $e");
+  }
+
+  // PocketBase'i başlat
+  try {
+    await PocketBaseService.init();
+  } catch (e) {
+    debugPrint("PocketBase başlatılamadı: $e");
+  }
+
+  // App'i hemen başlat
+  runApp(
+    const ProviderScope(
+      child: BlindSocialApp(),
+    ),
+  );
+
+  // Arka planda Firebase ve bildirimleri başlat (UI'yı engellemeden)
+  _initializeFirebase();
+}
+
+Future<void> _initializeFirebase() async {
   try {
     await Firebase.initializeApp(
       options: const FirebaseOptions(
@@ -28,25 +66,6 @@ void main() async {
   } catch (e) {
     debugPrint("Firebase başlatılamadı: $e");
   }
-  
-  // Settings servislerini başlat
-  await SettingsService().init();
-
-  // Çevre değişkenlerini yükle
-  await dotenv.load(fileName: ".env");
-
-  // PocketBase'i başlat
-  try {
-    await PocketBaseService.init();
-  } catch (e) {
-    debugPrint("PocketBase başlatılamadı: $e");
-  }
-
-  runApp(
-    const ProviderScope(
-      child: BlindSocialApp(),
-    ),
-  );
 }
 
 class BlindSocialApp extends ConsumerWidget {

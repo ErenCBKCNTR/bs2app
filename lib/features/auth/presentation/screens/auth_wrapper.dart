@@ -25,55 +25,76 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   void _checkInitialSession() {
-    if (PocketBaseService.client.authStore.isValid) {
-      _checkProfile(PocketBaseService.client.authStore.model.id);
-    } else {
-      _isLoading = false;
+    try {
+      if (PocketBaseService.client.authStore.isValid) {
+        final model = PocketBaseService.client.authStore.model;
+        if (model != null) {
+          _checkProfile(model.id);
+        } else {
+          if (mounted) setState(() => _isLoading = false);
+        }
+      } else {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      debugPrint("AuthWrapper initial session check error: $e");
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _setupAuthListener() {
-    PocketBaseService.client.authStore.onChange.listen((e) {
-      if (e.model != null && e.token.isNotEmpty) {
-        _checkProfile(e.model.id);
-      } else {
-        if (mounted) {
-          setState(() {
-            _isAuthenticated = false;
-            _isLoading = false;
-          });
+    try {
+      PocketBaseService.client.authStore.onChange.listen((e) {
+        if (e.model != null && e.token.isNotEmpty) {
+          _checkProfile(e.model.id);
+        } else {
+          if (mounted) {
+            setState(() {
+              _isAuthenticated = false;
+              _isLoading = false;
+            });
+          }
         }
-      }
-    });
+      }, onError: (err) {
+        debugPrint("Auth listener error: $err");
+      });
+    } catch (e) {
+      debugPrint("Auth listener setup error: $e");
+    }
   }
 
   Future<void> _checkProfile(String userId) async {
     try {
-      final record = await PocketBaseService.client.collection('users').getOne(userId);
+      // 10 saniye içinde cevap gelmezse timeout olur ve catch'e düşer
+      final record = await PocketBaseService.client.collection('users').getOne(userId).timeout(const Duration(seconds: 10));
 
       if (mounted) {
         setState(() {
           _isAuthenticated = true;
           // Eğer kullanıcı veritabanında varsa ve dob alanı doluysa profil tamamlanmıştır
           final dob = record.getStringValue('dob');
-          final username = record.getStringValue('username');
           
-          // Profil tamamlama şartı: 
-          // 1. Doğum tarihi dolu olmalı
-          // 2. Kullanıcı adı PocketBase'in varsayılan "users_..." formatında olmamalı (opsiyonel ama sağlıklı)
-          bool isDobFilled = dob.isNotEmpty && dob != '0001-01-01 00:00:00Z';
-          bool isUsernameCustom = username.isNotEmpty && !username.startsWith('users_');
+          // Profil tamamlama şartı: Doğum tarihi dolu olmalı
+          // PocketBase bazen boş tarih için default stringler döndürebilir
+          bool isDobFilled = dob.isNotEmpty && 
+                             dob != '0001-01-01 00:00:00Z' && 
+                             dob != '0001-01-01 00:00:00';
           
-          _isProfileComplete = isDobFilled; // Kullanıcı özellikle doğum tarihi dediği için ona odaklanıyoruz
+          _isProfileComplete = isDobFilled;
           _isLoading = false;
         });
       }
     } catch (e) {
-      // Offline fallback or new account with no profile
+      debugPrint("Profile check error or timeout: $e");
+      // Hata durumunda veya zaman aşımında oturum geçerli sayılsa bile 
+      // profil setup sayfasına yönlendirilebilir veya oturum geçersiz sayılabilir.
+      // Burada kullanıcıyı bekletmemek için isLoading'i kapatıyoruz.
       if (mounted) {
         setState(() {
-          _isAuthenticated = true;
-          _isProfileComplete = false;
+          // Eğer token geçerliyse ama profil çekilemiyorsa (internet vs), 
+          // yine de listeye girmeyi deneyelim (fallback)
+          _isAuthenticated = true; 
+          _isProfileComplete = true; // Fallback: Hata varsa listeye girmeyi dene, orada hata verirse yenileriz
           _isLoading = false;
         });
       }
