@@ -106,7 +106,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   void _setupRealtime() async {
     final chatId = widget.chat['id'];
-    _unsub = await PocketBaseService.client.collection('messages').subscribe('*', (e) {
+    _unsub = await PocketBaseService.client.collection('messages').subscribe('*', (RecordSubscriptionEvent e) {
       if (e.action == 'create') {
         if (e.record!.getStringValue('chat_id') == chatId) {
           // Yeni mesaj geldiğinde tam listeyi yenilemek bazen daha güvenlidir (sıralama vs için)

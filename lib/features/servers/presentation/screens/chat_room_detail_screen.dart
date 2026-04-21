@@ -15,11 +15,45 @@ class ChatRoomDetailScreen extends StatefulWidget {
 
 class _ChatRoomDetailScreenState extends State<ChatRoomDetailScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late final List<({Tab tab, Widget view})> _tabs;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _setupTabs();
+    _tabController = TabController(length: _tabs.length, vsync: this);
+  }
+
+  void _setupTabs() {
+    final roomName = ProfanityFilter.filter(widget.room.name);
+    _tabs = [];
+
+    // Add Text Tab if hybrid or text
+    if (widget.room.type == RoomType.text || widget.room.type == RoomType.hybrid) {
+      _tabs.add((
+        tab: const Tab(icon: Icon(Icons.chat), text: 'Mesajlar'),
+        view: ServerRoomChatScreen(room: widget.room),
+      ));
+    }
+
+    // Add Voice Tab if hybrid or voice
+    if (widget.room.type == RoomType.voice || widget.room.type == RoomType.hybrid) {
+      _tabs.add((
+        tab: const Tab(icon: Icon(Icons.mic), text: 'Sesli Sohbet'),
+        view: ActiveVoiceRoomScreen(
+          roomId: widget.room.id,
+          roomName: roomName,
+        ),
+      ));
+    }
+
+    // Fallback in case something is wrong (should not happen with logic above)
+    if (_tabs.isEmpty) {
+      _tabs.add((
+        tab: const Tab(icon: Icon(Icons.error), text: 'Hata'),
+        view: const Center(child: Text('Oda türü geçersiz')),
+      ));
+    }
   }
 
   @override
@@ -35,27 +69,19 @@ class _ChatRoomDetailScreenState extends State<ChatRoomDetailScreen> with Single
     return Scaffold(
       appBar: AppBar(
         title: Text(roomName),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.chat), text: 'Mesajlar'),
-            Tab(icon: Icon(Icons.mic), text: 'Sesli Sohbet'),
-          ],
-        ),
+        bottom: _tabs.length > 1 
+          ? TabBar(
+              controller: _tabController,
+              tabs: _tabs.map((t) => t.tab).toList(),
+            )
+          : null,
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // Messaging Tab
-          ServerRoomChatScreen(room: widget.room),
-
-          // Voice Tab
-          ActiveVoiceRoomScreen(
-            roomId: widget.room.id,
-            roomName: roomName,
-          ),
-        ],
-      ),
+      body: _tabs.length > 1
+        ? TabBarView(
+            controller: _tabController,
+            children: _tabs.map((t) => t.view).toList(),
+          )
+        : _tabs.first.view,
     );
   }
 }

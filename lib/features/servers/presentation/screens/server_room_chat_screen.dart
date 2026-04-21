@@ -37,7 +37,7 @@ class _ServerRoomChatScreenState extends State<ServerRoomChatScreen> {
   }
 
   void _setupSubscription() async {
-    _unsub = await ChatServerService().subscribeToRoomMessages(widget.room.id, (e) {
+    _unsub = await ChatServerService().subscribeToRoomMessages(widget.room.id, (RecordSubscriptionEvent e) {
       if (e.action == 'create') {
         final newMessage = ServerMessage.fromRecord(e.record!);
         if (mounted) {
@@ -96,7 +96,7 @@ class _ServerRoomChatScreenState extends State<ServerRoomChatScreen> {
         roomId: widget.room.id,
         content: content,
       );
-      _fetchMessages(isBackground: true);
+      _fetchMessages();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));

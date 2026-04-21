@@ -81,12 +81,20 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
                         labelText: 'Oda Türü',
                         border: OutlineInputBorder(),
                       ),
-                      items: RoomType.values.map((type) {
-                        return DropdownMenuItem(
-                          value: type,
-                          child: Text(type.name.toUpperCase()),
-                        );
-                      }).toList(),
+                      items: [
+                        const DropdownMenuItem(
+                          value: RoomType.text,
+                          child: Text('Sadece Mesaj'),
+                        ),
+                        const DropdownMenuItem(
+                          value: RoomType.voice,
+                          child: Text('Sadece Ses'),
+                        ),
+                        const DropdownMenuItem(
+                          value: RoomType.hybrid,
+                          child: Text('Karışık (Mesaj + Ses)'),
+                        ),
+                      ],
                       onChanged: (val) {
                         if (val != null) setStateDialog(() => roomType = val);
                       },

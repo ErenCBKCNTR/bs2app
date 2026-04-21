@@ -36,7 +36,7 @@ class ChatServerService {
     return ChatServer.fromRecord(record);
   }
 
-  Future<UnsubscribeFunc> subscribeToServers(void Function(RecordSubscriptionsEvent) onEvent) {
+  Future<UnsubscribeFunc> subscribeToServers(void Function(RecordSubscriptionEvent) onEvent) {
     return _pb.collection('chat_servers').subscribe('*', onEvent);
   }
 
@@ -113,7 +113,7 @@ class ChatServerService {
     return ServerMessage.fromRecord(record);
   }
 
-  Future<UnsubscribeFunc> subscribeToRoomMessages(String roomId, void Function(RecordSubscriptionsEvent) onEvent) {
+  Future<UnsubscribeFunc> subscribeToRoomMessages(String roomId, void Function(RecordSubscriptionEvent) onEvent) {
     return _pb.collection('server_messages').subscribe('*', onEvent, filter: 'room_id = "$roomId"');
   }
 

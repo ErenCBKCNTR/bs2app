@@ -34,7 +34,7 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
   }
 
   void _setupSubscription() async {
-    _unsub = await ChatServerService().subscribeToServers((e) {
+    _unsub = await ChatServerService().subscribeToServers((RecordSubscriptionEvent e) {
       if (e.action == 'create') {
         final newServer = ChatServer.fromRecord(e.record!);
         if (mounted) {
