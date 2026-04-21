@@ -17,6 +17,8 @@ import 'package:vibration/vibration.dart';
 import 'package:blind_social/core/services/settings_service.dart';
 import 'package:blind_social/features/servers/data/services/chat_server_service.dart';
 import 'package:blind_social/features/servers/presentation/screens/chat_servers_screen.dart';
+import 'package:blind_social/features/admin/presentation/screens/admin_panel_screen.dart';
+import 'package:blind_social/features/admin/data/services/admin_service.dart';
 import 'chat_detail_screen.dart';
 import 'call_screen.dart';
 import 'favorite_messages_screen.dart';
@@ -444,11 +446,13 @@ Widget? _buildFAB() {
                   TextField(
                     controller: searchController,
                     autofocus: true,
+                    maxLength: 32,
                     decoration: InputDecoration(
                       labelText: 'Kullanıcı Adı',
                       hintText: 'Örn: ahmet123',
                       border: const OutlineInputBorder(),
                       errorText: errorMessage,
+                      counterText: "",
                     ),
                     onSubmitted: (val) {
                       // Trigger search programmatically ? No simple handle for dialog.
@@ -528,19 +532,23 @@ Widget? _buildFAB() {
                     TextField(
                       controller: titleController,
                       autofocus: true,
+                      maxLength: 32,
                       decoration: const InputDecoration(
                         labelText: 'Sunucu Adı',
                         hintText: 'Örn: Blind Social Dostlar',
                         border: OutlineInputBorder(),
+                        counterText: "",
                       ),
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: descController,
+                      maxLength: 255,
                       decoration: const InputDecoration(
                         labelText: 'Açıklama',
                         hintText: 'Sunucu hakkında kısa bilgi',
                         border: OutlineInputBorder(),
+                        counterText: "",
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -1027,6 +1035,15 @@ Widget? _buildFAB() {
             },
           ),
           const Divider(),
+          if (AdminService().isAdmin())
+            ListTile(
+              leading: const Icon(Icons.admin_panel_settings_outlined, color: Colors.blueAccent),
+              title: const Text('Yönetici Paneli'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminPanelScreen()));
+              },
+            ),
           ListTile(
             leading: const Icon(Icons.bug_report_outlined),
             title: const Text('Geliştirici Modu / Loglar'),

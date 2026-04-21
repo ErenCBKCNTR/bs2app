@@ -7,4 +7,5 @@
 
 ## Development Standards
 - **Sync Priority:** In audio recording features, use aggressive FFmpeg flags (low buffer, fast probe) to ensure start/stop synchronization matches user interaction as closely as possible.
-- **Database Integrity:** You MUST always keep `pb_schema.json` updated with any changes made to the database logic. Before performing any database-related operations, you MUST read `pb_schema.json` once to ensure full consistency and prevent memory drift regarding the schema structure.
+- **Database Integrity:** You MUST always keep `pb_schema.json` updated with any changes made to the database logic. **CRITICAL:** Every time you add a new field or modify the database logic, you MUST immediately update `pb_schema.json` to reflect these changes. Before performing any database-related operations, you MUST read `pb_schema.json` once to ensure full consistency and prevent memory drift regarding the schema structure.
+- **Feature Isolation:** When a new independent feature is to be implemented, it MUST be created in its own directory (e.g., `lib/features/new_feature/`) to maintain a modular and maintainable codebase.

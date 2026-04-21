@@ -15,6 +15,7 @@ import 'package:http/http.dart' as http;
 import 'package:vibration/vibration.dart';
 import 'package:blind_social/core/services/settings_service.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
+import 'package:blind_social/core/widgets/expandable_text.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final Map<String, dynamic> chat;
@@ -884,9 +885,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                                 ],
                                               )
                                             else
-                                              Text(
-                                                textContent,
-                                                style: const TextStyle(fontSize: 16),
+                                              ExpandableText(
+                                                text: textContent,
+                                                maxLines: 10,
+                                                style: const TextStyle(fontSize: 16, color: Colors.white),
                                               ),
                                             const SizedBox(height: 4),
                                             Row(
@@ -1055,6 +1057,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   Expanded(
                     child: TextField(
                       controller: _messageController,
+                      maxLength: 4000,
                       decoration: InputDecoration(
                         hintText: _isRecording ? 'Kayıt: ${_formatRecordDuration(_recordDuration)}' : 'Mesaj yaz...',
                         border: OutlineInputBorder(
@@ -1064,6 +1067,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                         filled: true,
                         fillColor: _isRecording ? Colors.red.withOpacity(0.2) : Colors.grey[800],
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        counterText: "",
                       ),
                       enabled: !_isRecording,
                       onSubmitted: (val) {

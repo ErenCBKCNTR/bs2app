@@ -4,6 +4,7 @@ import 'package:blind_social/features/servers/data/models/chat_server_room.dart'
 import 'package:blind_social/features/servers/data/models/server_message.dart';
 import 'package:blind_social/features/servers/data/services/chat_server_service.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
+import 'package:blind_social/core/widgets/expandable_text.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 
@@ -152,8 +153,9 @@ class _ServerRoomChatScreenState extends State<ServerRoomChatScreen> {
                                       color: Theme.of(context).colorScheme.secondary,
                                     ),
                                   ),
-                                Text(
-                                  ProfanityFilter.filter(message.content),
+                                ExpandableText(
+                                  text: ProfanityFilter.filter(message.content),
+                                  maxLines: 10,
                                   style: const TextStyle(color: Colors.white),
                                 ),
                                 const SizedBox(height: 4),
@@ -184,11 +186,13 @@ class _ServerRoomChatScreenState extends State<ServerRoomChatScreen> {
             Expanded(
               child: TextField(
                 controller: _messageController,
+                maxLength: 4000,
                 style: const TextStyle(fontSize: 14),
                 decoration: const InputDecoration(
                   hintText: 'Mesaj yazın...',
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  counterText: "",
                 ),
                 maxLines: null,
                 keyboardType: TextInputType.multiline,
