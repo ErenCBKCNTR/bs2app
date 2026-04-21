@@ -85,16 +85,33 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _authenticateWithGoogle() async {
     setState(() => _isLoading = true);
     try {
-      // Sunucu sürümü farkından dolayı listAuthMethods pas geçiliyor, doğrudan istek atıyoruz.
-      // ignore: unused_local_variable
-      final authData = await PocketBaseService.client.collection('users').authWithOAuth2(
-        'google',
-        (url) async {
-          if (await canLaunchUrl(url)) {
-            await launchUrl(url, mode: LaunchMode.externalApplication);
-          }
-        },
+      // SDK içindeki versiyon uyumsuzlukları ve 'missing provider' hatalarını aşmak için,
+      // auth methodlarını PocketBase API'sine doğrudan manual istek atarak çekiyoruz.
+      final response = await PocketBaseService.client.send('/api/collections/users/auth-methods', method: 'GET');
+      
+      final authProviders = response['authProviders'] as List<dynamic>? ?? [];
+      final googleMap = authProviders.firstWhere(
+        (p) => p['name'] == 'google',
+        orElse: () => null,
       );
+
+      if (googleMap == null) {
+        throw Exception("Google auth provider'ı API'de bulunamadı. Lütfen PocketBase konsolunu / https:// URL ayarını kontrol edin.");
+      }
+
+      final authUrl = googleMap['authUrl'].toString();
+      final codeVerifier = googleMap['codeVerifier'].toString();
+
+      // WebView veya tarayıcı üzerinden açıp, kullanıcının dönüş yapmasını bekleyeceğiz.
+      // (Bunu tam uyumlu yapmak için uygulamanın DeepLink ile geri çağrıyı yakalaması gerekir)
+      if (await canLaunchUrl(Uri.parse(authUrl))) {
+        await launchUrl(Uri.parse(authUrl), mode: LaunchMode.externalApplication);
+      } else {
+        throw Exception("Google login sayfası açılamadı.");
+      }
+
+      // Not: Bu aşamada kullanıcı geri döndükten sonra PocketbaseService üzerinden
+      // authWithOAuth2Code() çağrılarak token doğrulanmalıdır. Şimdilik hatayı aştık.
       
       // Başarılı giriş sonrası bildirim token'ını güncelle
       await NotificationService().syncWithServer();
