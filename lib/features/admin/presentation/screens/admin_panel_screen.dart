@@ -50,7 +50,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
             icon: const Icon(Icons.refresh),
             onPressed: _loadStats,
             tooltip: 'İstatistikleri Yenile',
-            semanticsLabel: 'İstatistikleri yenile',
           ),
         ],
       ),
