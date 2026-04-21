@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blind_social/features/auth/presentation/screens/auth_wrapper.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +8,7 @@ import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/providers/theme_provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:blind_social/core/services/settings_service.dart';
+import 'package:blind_social/core/utils/logger.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:blind_social/core/services/notification_service.dart';
 
