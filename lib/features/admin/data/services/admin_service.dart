@@ -1,5 +1,5 @@
 import 'package:blind_social/core/services/pocketbase_service.dart';
-import '../../../../core/utils/logger.dart';
+import 'package:blind_social/core/utils/logger.dart';
 
 class AdminService {
   static final AdminService _instance = AdminService._internal();

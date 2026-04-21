@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../data/services/admin_service.dart';
+import 'package:blind_social/features/admin/data/services/admin_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
 
 class AdminPanelScreen extends StatefulWidget {
