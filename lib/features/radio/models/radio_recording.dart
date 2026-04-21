@@ -33,4 +33,20 @@ class RadioRecording {
       duration: Duration(milliseconds: map['durationMs']),
     );
   }
+
+  RadioRecording copyWith({
+    int? id,
+    String? stationName,
+    String? filePath,
+    DateTime? date,
+    Duration? duration,
+  }) {
+    return RadioRecording(
+      id: id ?? this.id,
+      stationName: stationName ?? this.stationName,
+      filePath: filePath ?? this.filePath,
+      date: date ?? this.date,
+      duration: duration ?? this.duration,
+    );
+  }
 }
