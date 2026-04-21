@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/features/servers/data/models/chat_server_room.dart';
 import 'package:blind_social/features/servers/data/models/server_message.dart';
 import 'package:blind_social/features/servers/data/services/chat_server_service.dart';
