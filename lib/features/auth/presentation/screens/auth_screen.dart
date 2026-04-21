@@ -87,9 +87,9 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       // Önce mevcut auth metodlarını kontrol edelim (hata ayıklama için)
       final authMethods = await PocketBaseService.client.collection('users').listAuthMethods();
-      debugPrint("Available auth methods: ${authMethods.providers.map((e) => e.name).toList()}");
+      debugPrint("Available auth methods: ${authMethods.oauth2.providers.map((e) => e.name).toList()}");
       
-      final googleProvider = authMethods.providers.firstWhere(
+      final googleProvider = authMethods.oauth2.providers.firstWhere(
         (p) => p.name == 'google',
         orElse: () => throw Exception('PocketBase ayarlarında Google sağlayıcısı (provider) etkinleştirilmemiş veya yanlış yapılandırılmış.'),
       );
