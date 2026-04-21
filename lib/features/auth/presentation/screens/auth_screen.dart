@@ -85,18 +85,10 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _authenticateWithGoogle() async {
     setState(() => _isLoading = true);
     try {
-      // Önce mevcut auth metodlarını kontrol edelim (hata ayıklama için)
-      final authMethods = await PocketBaseService.client.collection('users').listAuthMethods();
-      debugPrint("Available auth methods: ${authMethods.oauth2.providers.map((e) => e.name).toList()}");
-      
-      final googleProvider = authMethods.oauth2.providers.firstWhere(
-        (p) => p.name == 'google',
-        orElse: () => throw Exception('PocketBase ayarlarında Google sağlayıcısı (provider) etkinleştirilmemiş veya yanlış yapılandırılmış.'),
-      );
-
+      // Sunucu eski sürüm/yeni sürüm farkından dolayı listAuthMethods pas geçiliyor.
       // ignore: unused_local_variable
       final authData = await PocketBaseService.client.collection('users').authWithOAuth2(
-        googleProvider.name,
+        'google',
         (url) async {
           if (await canLaunchUrl(url)) {
             await launchUrl(url, mode: LaunchMode.externalApplication);
