@@ -1,65 +1,64 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+import 'package:ffmpeg_kit_flutter_new_https/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_new_https/ffmpeg_session.dart';
 import '../models/radio_recording.dart';
 import '../data/recording_database.dart';
-import 'package:intl/intl.dart';
 
 class RadioRecordingService {
-  bool _isRecording = false;
-  bool get isRecording => _isRecording;
-
-  IOSink? _sink;
-  Timer? _timer;
+  FFmpegSession? _ffmpegSession;
+  DateTime? _startTime;
   String? _currentFilePath;
   String? _currentStationName;
-  DateTime? _startTime;
 
-  final Set<String> _downloadedSegments = {};
+  bool get isRecording => _ffmpegSession != null;
 
-  Future<void> startRecording(String m3u8Url, String stationName, String filePath) async {
-    if (_isRecording) return;
+  Future<void> startRecording(String url, String stationName) async {
+    if (isRecording) return;
 
-    _isRecording = true;
-    _currentStationName = stationName;
-    _currentFilePath = filePath;
     _startTime = DateTime.now();
+    _currentStationName = stationName;
 
-    final file = File(filePath);
-    _sink = file.openWrite(mode: FileMode.write);
+    // Uzantıyı .aac yapıyoruz, FFmpeg bu yayını standart aac'ye çevirecek.
+    final formattedDate = DateFormat('ddMMyyyy_HHmmss').format(_startTime!);
+    final sanitizedStation = stationName.replaceAll(RegExp(r'[^\w\s]'), '').replaceAll(' ', '_').toLowerCase();
+    final fileName = 'blindsocial_${sanitizedStation}_$formattedDate.aac';
+    
+    final directory = await getApplicationDocumentsDirectory();
+    _currentFilePath = p.join(directory.path, fileName);
 
-    // M3U8'i her 2 saniyede bir kontrol et
-    _timer = Timer.periodic(const Duration(seconds: 2), (_) async {
-      if (!_isRecording) return;
+    // KATI KURALLI FFMPEG KOMUTU:
+    // HLS, Shoutcast ve Icecast yayınlarını kesintisiz bağlar ve AAC kodeği ile -b:a 128k kaydederek 0 byte hatasını (veya format tutarsızlığını) tamamen engeller.
+    final command = "-y -loglevel error -fflags +discardcorrupt -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -map 0:a:0 -vn -sn -dn -c:a aac -b:a 128k \"$_currentFilePath\"";
 
-      try {
-        final playlist = await _fetchText(m3u8Url);
-        final segments = _parseSegments(playlist, m3u8Url);
-
-        for (final segmentUrl in segments) {
-          if (!_isRecording) break;
-          if (_downloadedSegments.contains(segmentUrl)) continue;
-
-          _downloadedSegments.add(segmentUrl);
-
-          final bytes = await _downloadSegment(segmentUrl);
-          _sink?.add(bytes);
-        }
-      } catch (e) {
-        print("Recorder error: $e");
-      }
+    _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
+      final state = await session.getState();
+      print("FFmpeg session completed with state: $state");
     });
   }
 
   Future<RadioRecording?> stopRecording() async {
-    if (!_isRecording) return null;
-    
-    _isRecording = false;
+    if (!isRecording) return null;
 
-    _timer?.cancel();
-    await _sink?.flush();
-    await _sink?.close();
+    final session = _ffmpegSession;
+    _ffmpegSession = null;
+
+    if (session != null) {
+      await FFmpegKit.cancel(); // FFmpeg işlemini sonlandır 
+    }
+
+    // FFmpeg'in dosyayı kapatıp yazmayı bitirmesi için küçük bir güvenlik beklemesi.
+    await Future.delayed(const Duration(milliseconds: 200));
+
+    final file = File(_currentFilePath!);
+
+    if (!await file.exists() || await file.length() == 0) {
+      if (await file.exists()) await file.delete();
+      throw Exception("Kayıt başarısız oldu veya 0 bayt dosya oluşturuldu.");
+    }
 
     final duration = DateTime.now().difference(_startTime!);
 
@@ -71,39 +70,7 @@ class RadioRecordingService {
     );
 
     final id = await RecordingDatabase.instance.insert(recording);
-    
-    _downloadedSegments.clear();
-    
+
     return recording.copyWith(id: id);
-  }
-
-  // ---------------- HELPERS ----------------
-
-  Future<String> _fetchText(String url) async {
-    final client = HttpClient();
-    final request = await client.getUrl(Uri.parse(url));
-    final response = await request.close();
-
-    return await response.transform(utf8.decoder).join();
-  }
-
-  List<String> _parseSegments(String playlist, String baseUrl) {
-    final lines = playlist.split('\n');
-    final uri = Uri.parse(baseUrl);
-
-    return lines
-        .where((line) => line.isNotEmpty && !line.startsWith('#'))
-        .map((line) => Uri.parse(line).isAbsolute
-            ? line
-            : uri.resolve(line).toString())
-        .toList();
-  }
-
-  Future<List<int>> _downloadSegment(String url) async {
-    final client = HttpClient();
-    final request = await client.getUrl(Uri.parse(url));
-    final response = await request.close();
-
-    return await consolidateHttpClientResponseBytes(response);
   }
 }
