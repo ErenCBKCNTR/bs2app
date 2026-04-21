@@ -73,6 +73,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       // İşlem başarılı olunca AuthWrapper'a geri dönüyoruz.
       // AuthWrapper yeni durumu algılayıp ChatListScreen'e yönlendirecek.
       if (mounted) {
+        // Redundant navigation can cause loops, but here we want to reset the home screen
+        // Instead of pushAndRemoveUntil, we can try to just pop if we came from somewhere,
+        // but AuthWrapper uses state, so just updating PB model might be enough.
+        // However, pushAndRemoveUntil ensures a clean slate.
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const AuthWrapper()),
           (route) => false,

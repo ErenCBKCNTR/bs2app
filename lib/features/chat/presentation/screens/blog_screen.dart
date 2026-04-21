@@ -51,15 +51,13 @@ class _BlogScreenState extends State<BlogScreen> {
       final response = await PocketBaseService.client.collection('posts').getFullList(
           sort: '-created',
           expand: 'user_id,post_likes_via_post_id'
-      );
+      ).timeout(const Duration(seconds: 15));
           
       if (mounted) {
         setState(() {
+          final newPosts = response.map((e) => e.toJson()).toList();
           // If we have processing likes, we don't want to override those posts with stale data from server
-          if (_processingLikes.isEmpty) {
-            _posts = response.map((e) => e.toJson()).toList();
-          } else {
-            final newPosts = response.map((e) => e.toJson()).toList();
+          if (_processingLikes.isNotEmpty) {
             for (var i = 0; i < newPosts.length; i++) {
               if (_processingLikes.contains(newPosts[i]['id'])) {
                 // Keep the local optimistic state
@@ -69,8 +67,8 @@ class _BlogScreenState extends State<BlogScreen> {
                 }
               }
             }
-            _posts = newPosts;
           }
+          _posts = newPosts;
           _cachedPosts = _posts;
           _isLoading = false;
         });
@@ -78,6 +76,9 @@ class _BlogScreenState extends State<BlogScreen> {
     } catch (e) {
       if (!isBackground) {
         AppLogger.instance.error('Gönderiler yüklenemedi: $e');
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     }
   }

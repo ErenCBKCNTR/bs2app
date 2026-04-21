@@ -65,7 +65,7 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
 
   Future<void> _fetchServers() async {
     try {
-      final servers = await ChatServerService().getServers();
+      final servers = await ChatServerService().getServers().timeout(const Duration(seconds: 15));
       
       if (mounted) {
         setState(() {
@@ -77,6 +77,7 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
     } catch (e) {
       if (mounted) {
         AppLogger.instance.error('Sunucular yüklenirken hata: $e');
+        setState(() => _isLoading = false);
       }
     }
   }

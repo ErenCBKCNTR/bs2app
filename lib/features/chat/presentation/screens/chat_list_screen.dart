@@ -152,18 +152,21 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     
     try {
       final userId = PocketBaseService.client.authStore.model?.id;
-      if (userId == null) return;
+      if (userId == null) {
+        if (mounted && !isBackground) setState(() => _isLoadingChats = false);
+        return;
+      }
       
       // PocketBase'de önce kullanıcının katılımcı olduğu chat ID'lerini bulalım.
       final myParticipants = await PocketBaseService.client.collection('chat_participants').getFullList(
          filter: 'user_id = "$userId"',
          expand: 'chat_id,chat_id.chat_participants_via_chat_id,chat_id.chat_participants_via_chat_id.user_id,chat_id.messages_via_chat_id'
-      );
+      ).timeout(const Duration(seconds: 15));
       
       List<RecordModel> chatRecords = [];
       for(var p in myParticipants) {
          if (p.getBoolValue('is_hidden')) continue;
-         if (p.expand['chat_id'] != null) {
+         if (p.expand['chat_id'] != null && p.expand['chat_id']!.isNotEmpty) {
             final chatData = p.expand['chat_id']!.first as RecordModel;
             // Kendi katılımcı kaydımızı (arşiv ve last read) chat nesnesine ekle (kolay işlem için)
             chatData.data['my_participant'] = p;
@@ -173,10 +176,13 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       
       // Chatleri sabitlemeye ve güncellenme tarihine göre sırala
       chatRecords.sort((a, b) {
-         final aPart = a.data['my_participant'] as RecordModel;
-         final bPart = b.data['my_participant'] as RecordModel;
-         final aPinned = aPart.getBoolValue('is_pinned');
-         final bPinned = bPart.getBoolValue('is_pinned');
+         final dynamic aPartRaw = a.data['my_participant'];
+         final dynamic bPartRaw = b.data['my_participant'];
+         
+         if (aPartRaw is! RecordModel || bPartRaw is! RecordModel) return 0;
+         
+         final aPinned = aPartRaw.getBoolValue('is_pinned');
+         final bPinned = bPartRaw.getBoolValue('is_pinned');
 
          if (aPinned != bPinned) {
            return aPinned ? -1 : 1;
@@ -193,6 +199,9 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     } catch (e) {
       if (!isBackground) {
         AppLogger.instance.error('Sohbetler yüklenirken hata: $e');
+        if (mounted) {
+          setState(() => _isLoadingChats = false);
+        }
       }
     }
   }

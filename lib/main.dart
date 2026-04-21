@@ -11,10 +11,54 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:blind_social/core/services/notification_service.dart';
 
 void main() async {
-  // Global hata yakalayıcı
+  // Global hata yakalayıcı (Framework hataları)
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
     debugPrint("Flutter Error: ${details.exception}");
+    AppLogger.instance.error("Flutter Error: ${details.exception}");
+  };
+
+  // UI Hata yakalayıcı (Kırmızı ekran yerine)
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Uygulamada bir hata oluştu.",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    details.exception.toString(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Uygulamayı yeniden başlatmayı dene
+                      PocketBaseService.client.authStore.clear();
+                      SystemNavigator.pop();
+                    },
+                    child: const Text("ÇIKIŞ YAP VE KAPAT"),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   };
 
   WidgetsFlutterBinding.ensureInitialized();
