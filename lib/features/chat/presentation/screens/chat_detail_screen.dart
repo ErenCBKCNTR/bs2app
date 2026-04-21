@@ -234,8 +234,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   Future<void> _sendMessage(String text) async {
     if (text.isEmpty) return;
 
-    _messageController.clear();
-
     try {
       final body = {
         'chat_id': _chat['id'],
