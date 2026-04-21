@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:ffmpeg_kit_flutter_new_https/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new_https/ffmpeg_session.dart';
+import 'package:just_audio/just_audio.dart'; // Gerçek süreyi okumak için
 import '../models/radio_recording.dart';
 import '../data/recording_database.dart';
 
@@ -30,9 +31,10 @@ class RadioRecordingService {
     final directory = await getApplicationDocumentsDirectory();
     _currentFilePath = p.join(directory.path, fileName);
 
-    // KATI KURALLI FFMPEG KOMUTU:
-    // HLS, Shoutcast ve Icecast yayınlarını kesintisiz bağlar ve AAC kodeği ile -b:a 128k kaydederek 0 byte hatasını (veya format tutarsızlığını) tamamen engeller.
-    final command = "-y -loglevel error -fflags +discardcorrupt -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -map 0:a:0 -vn -sn -dn -c:a aac -b:a 128k \"$_currentFilePath\"";
+    // KATI KURALLI VE AGRESİF SENKRON FFMPEG KOMUTU:
+    // fflags nobuffer, düşük prob boyutu ve low_delay ile 5 saniyelik başlama itmesini ortadan kaldırır. 
+    // Tam başlatıldığı anda capture eder ve flush_packets ile durdurulduğu an yazmayı anında keser (ekstra 15 sn eklemeyi önler).
+    final command = "-y -loglevel error -fflags nobuffer+flush_packets+discardcorrupt -flags low_delay -analyzeduration 500000 -probesize 500000 -user_agent \"Mozilla/5.0\" -protocol_whitelist file,http,https,tcp,tls,crypto -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -i \"$url\" -map 0:a:0 -vn -sn -dn -c:a aac -b:a 128k \"$_currentFilePath\"";
 
     _ffmpegSession = await FFmpegKit.executeAsync(command, (session) async {
       final state = await session.getState();
@@ -51,7 +53,7 @@ class RadioRecordingService {
     }
 
     // FFmpeg'in dosyayı kapatıp yazmayı bitirmesi için küçük bir güvenlik beklemesi.
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future.delayed(const Duration(milliseconds: 300));
 
     final file = File(_currentFilePath!);
 
@@ -60,13 +62,24 @@ class RadioRecordingService {
       throw Exception("Kayıt başarısız oldu veya 0 bayt dosya oluşturuldu.");
     }
 
-    final duration = DateTime.now().difference(_startTime!);
+    // Kronometre süresi yerine kaydedilen dosyanın GERÇEK süresini _player aracılığıyla buluyoruz.
+    Duration finalDuration = DateTime.now().difference(_startTime!);
+    try {
+      final tempPlayer = AudioPlayer();
+      final duration = await tempPlayer.setFilePath(_currentFilePath!);
+      if (duration != null && duration.inSeconds > 0) {
+        finalDuration = duration;
+      }
+      await tempPlayer.dispose();
+    } catch (e) {
+      print("Gerçek dosya süresi okunamadı, kronometre baz alınıyor: $e");
+    }
 
     final recording = RadioRecording(
       stationName: _currentStationName!,
       filePath: _currentFilePath!,
       date: _startTime!,
-      duration: duration,
+      duration: finalDuration,
     );
 
     final id = await RecordingDatabase.instance.insert(recording);
