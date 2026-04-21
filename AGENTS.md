@@ -7,3 +7,4 @@
 
 ## Development Standards
 - **Sync Priority:** In audio recording features, use aggressive FFmpeg flags (low buffer, fast probe) to ensure start/stop synchronization matches user interaction as closely as possible.
+- **Database Integrity:** You MUST always keep `pb_schema.json` updated with any changes made to the database logic. Before performing any database-related operations, you MUST read `pb_schema.json` once to ensure full consistency and prevent memory drift regarding the schema structure.

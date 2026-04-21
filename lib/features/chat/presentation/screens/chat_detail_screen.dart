@@ -42,7 +42,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   late Map<String, dynamic> _chat;
   List<Map<String, dynamic>> _messages = [];
   bool _isLoading = true;
-  Timer? _pollingTimer;
+  UnsubscribeFunc? _unsub;
   late final String _myUserId;
   Map<String, dynamic>? _replyingTo;
 
@@ -100,16 +100,31 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         setState(() => _isInitialLoad = false);
       }
     });
-    
-    // 2 saniyede bir gizlice yenileme (Polling / WebSockets alternatifi)
-    _pollingTimer = Timer.periodic(const Duration(seconds: 2), (_) {
-      _fetchMessages(isBackground: true);
+
+    _setupRealtime();
+  }
+
+  void _setupRealtime() async {
+    final chatId = widget.chat['id'];
+    _unsub = await PocketBaseService.client.collection('messages').subscribe('*', (e) {
+      if (e.action == 'create') {
+        if (e.record!.getStringValue('chat_id') == chatId) {
+          // Yeni mesaj geldiğinde tam listeyi yenilemek bazen daha güvenlidir (sıralama vs için)
+          // Ama performans için sadece listeye ekleyebiliriz.
+          // Mevcut handleMessagesResponse fonksiyonunu kullanarak tutarlılığı koruyalım.
+          _fetchMessages(isBackground: true);
+        }
+      } else if (e.action == 'update' || e.action == 'delete') {
+        if (e.record!.getStringValue('chat_id') == chatId) {
+          _fetchMessages(isBackground: true);
+        }
+      }
     });
   }
 
   @override
   void dispose() {
-    _pollingTimer?.cancel();
+    _unsub?.call();
     _recordTimer?.cancel();
     _audioRecorder.dispose();
     _messageController.dispose();

@@ -21,6 +21,25 @@ class ChatServerService {
     return records.map((r) => ChatServer.fromRecord(r)).toList();
   }
 
+  Future<ChatServer> updateServer({
+    required String serverId,
+    String? name,
+    String? description,
+    int? capacity,
+  }) async {
+    final body = <String, dynamic>{};
+    if (name != null) body['name'] = name;
+    if (description != null) body['description'] = description;
+    if (capacity != null) body['capacity'] = capacity;
+
+    final record = await _pb.collection('chat_servers').update(serverId, body: body);
+    return ChatServer.fromRecord(record);
+  }
+
+  Future<UnsubscribeFunc> subscribeToServers(void Function(RecordSubscriptionsEvent) onEvent) {
+    return _pb.collection('chat_servers').subscribe('*', onEvent);
+  }
+
   Future<ChatServer> createServer({
     required String name,
     required String description,
@@ -94,7 +113,26 @@ class ChatServerService {
     return ServerMessage.fromRecord(record);
   }
 
+  Future<UnsubscribeFunc> subscribeToRoomMessages(String roomId, void Function(RecordSubscriptionsEvent) onEvent) {
+    return _pb.collection('server_messages').subscribe('*', onEvent, filter: 'room_id = "$roomId"');
+  }
+
   // Memberships
+  Future<List<RecordModel>> getServerMembers(String serverId) async {
+    final records = await _pb.collection('server_memberships').getFullList(
+      filter: 'server_id = "$serverId"',
+      expand: 'user_id',
+    );
+    return records;
+  }
+
+  Future<void> removeMember(String serverId, String userId) async {
+    final record = await _pb.collection('server_memberships').getFirstListItem(
+      'server_id = "$serverId" && user_id = "$userId"',
+    );
+    await _pb.collection('server_memberships').delete(record.id);
+  }
+
   Future<void> joinServer(String serverId) async {
     final body = {
       'server_id': serverId,

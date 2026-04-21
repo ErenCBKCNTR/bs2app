@@ -19,24 +19,47 @@ class _ServerRoomChatScreenState extends State<ServerRoomChatScreen> {
   final ScrollController _scrollController = ScrollController();
   List<ServerMessage> _messages = [];
   bool _isLoading = true;
-  Timer? _pollingTimer;
+  UnsubscribeFunc? _unsub;
 
   @override
   void initState() {
     super.initState();
     _fetchMessages();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) => _fetchMessages(isBackground: true));
+    _setupSubscription();
   }
 
   @override
   void dispose() {
-    _pollingTimer?.cancel();
+    _unsub?.call();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _fetchMessages({bool isBackground = false}) async {
+  void _setupSubscription() async {
+    _unsub = await ChatServerService().subscribeToRoomMessages(widget.room.id, (e) {
+      if (e.action == 'create') {
+        final newMessage = ServerMessage.fromRecord(e.record!);
+        if (mounted) {
+          setState(() {
+            // Check if already exists to avoid duplicates (though create shouldn't duplicate)
+            if (!_messages.any((m) => m.id == newMessage.id)) {
+              _messages.add(newMessage);
+            }
+          });
+          _scrollToBottom();
+        }
+      } else if (e.action == 'delete') {
+        if (mounted) {
+          setState(() {
+            _messages.removeWhere((m) => m.id == e.record!.id);
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> _fetchMessages() async {
     try {
       final messages = await ChatServerService().getRoomMessages(widget.room.id);
       if (mounted) {
@@ -44,12 +67,10 @@ class _ServerRoomChatScreenState extends State<ServerRoomChatScreen> {
           _messages = messages;
           _isLoading = false;
         });
-        if (!isBackground) {
-          _scrollToBottom();
-        }
+        _scrollToBottom();
       }
     } catch (e) {
-      if (!isBackground) {
+      if (mounted) {
         setState(() => _isLoading = false);
       }
     }

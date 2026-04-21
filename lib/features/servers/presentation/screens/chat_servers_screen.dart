@@ -18,27 +18,54 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
   
   List<ChatServer> _servers = _cachedServers ?? [];
   bool _isLoading = _cachedServers == null;
-  Timer? _pollingTimer;
+  UnsubscribeFunc? _unsub;
 
   @override
   void initState() {
     super.initState();
     _fetchServers();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-      _fetchServers(isBackground: true);
-    });
+    _setupSubscription();
   }
 
   @override
   void dispose() {
-    _pollingTimer?.cancel();
+    _unsub?.call();
     super.dispose();
   }
 
-  Future<void> _fetchServers({bool isBackground = false}) async {
+  void _setupSubscription() async {
+    _unsub = await ChatServerService().subscribeToServers((e) {
+      if (e.action == 'create') {
+        final newServer = ChatServer.fromRecord(e.record!);
+        if (mounted) {
+          setState(() {
+            _servers.insert(0, newServer);
+          });
+        }
+      } else if (e.action == 'delete') {
+        if (mounted) {
+          setState(() {
+            _servers.removeWhere((s) => s.id == e.record!.id);
+          });
+        }
+      } else if (e.action == 'update') {
+        final updatedServer = ChatServer.fromRecord(e.record!);
+        if (mounted) {
+          setState(() {
+            final index = _servers.indexWhere((s) => s.id == updatedServer.id);
+            if (index != -1) {
+              _servers[index] = updatedServer;
+            }
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> _fetchServers() async {
     try {
       final servers = await ChatServerService().getServers();
-          
+      
       if (mounted) {
         setState(() {
           _servers = servers;
@@ -47,7 +74,7 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
         });
       }
     } catch (e) {
-      if (!isBackground) {
+      if (mounted) {
         AppLogger.instance.error('Sunucular yüklenirken hata: $e');
       }
     }

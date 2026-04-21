@@ -4,6 +4,7 @@ import 'package:blind_social/features/servers/data/models/chat_server_room.dart'
 import 'package:blind_social/features/servers/data/services/chat_server_service.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
 import 'package:blind_social/features/servers/presentation/screens/chat_room_detail_screen.dart';
+import 'package:blind_social/features/servers/presentation/screens/server_settings_screen.dart';
 
 class ChatServerRoomsScreen extends StatefulWidget {
   final ChatServer server;
@@ -141,11 +142,18 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
               widget.server.admins.contains(ChatServerService().currentUserId))
             IconButton(
               icon: const Icon(Icons.settings),
-              onPressed: () {
-                // TODO: Implement server settings / admin management
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Sunucu ayarları yakında eklenecek.')),
+              onPressed: () async {
+                final updated = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ServerSettingsScreen(server: widget.server),
+                  ),
                 );
+                if (updated == true && mounted) {
+                  // If we wanted to refresh server object, we'd fetch it again. 
+                  // For now simple UI feedback.
+                  _fetchRooms(); 
+                }
               },
               tooltip: 'Sunucu Ayarları',
             ),
