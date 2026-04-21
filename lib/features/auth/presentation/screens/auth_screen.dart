@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/services/notification_service.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -81,6 +82,34 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  Future<void> _authenticateWithGoogle() async {
+    setState(() => _isLoading = true);
+    try {
+      // ignore: unused_local_variable
+      final authData = await PocketBaseService.client.collection('users').authWithOAuth2(
+        'google',
+        (url) async {
+          if (await canLaunchUrl(url)) {
+            await launchUrl(url, mode: LaunchMode.externalApplication);
+          }
+        },
+      );
+      
+      // Başarılı giriş sonrası bildirim token'ını güncelle
+      await NotificationService().syncWithServer();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google ile giriş hatası: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -139,6 +168,36 @@ class _AuthScreenState extends State<AuthScreen> {
               'Hesabınız yoksa otomatik olarak oluşturulacaktır.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text('veya', style: TextStyle(color: Colors.grey[600])),
+                ),
+                const Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: 24),
+            OutlinedButton.icon(
+              onPressed: _isLoading ? null : _authenticateWithGoogle,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                side: const BorderSide(color: Colors.grey),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              icon: Image.network(
+                'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                height: 24,
+                width: 24,
+                errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, size: 24),
+              ),
+              label: const Text(
+                'Google ile Devam Et',
+                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         ),
