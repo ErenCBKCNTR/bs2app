@@ -1,3 +1,4 @@
+import 'dart:io' as io;
 import 'package:flutter/material.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/services/notification_service.dart';
@@ -96,22 +97,49 @@ class _AuthScreenState extends State<AuthScreen> {
       );
 
       if (googleMap == null) {
-        throw Exception("Google auth provider'ı API'de bulunamadı. Lütfen PocketBase konsolunu / https:// URL ayarını kontrol edin.");
+        throw Exception("Google auth provider'ı API'de bulunamadı. Lütfen PocketBase konsolunu kontrol edin.");
       }
 
-      final authUrl = googleMap['authUrl'].toString();
+      // Kendi yerel sunucumuzu başlatıyoruz (Yönlendirmeyi yakalamak için)
+      final server = await io.HttpServer.bind(io.InternetAddress.loopbackIPv4, 0);
+      final redirectUri = 'http://\${server.address.host}:\${server.port}/';
+
+      var rawAuthUrl = Uri.parse(googleMap['authUrl'].toString());
+      final authUrl = rawAuthUrl.replace(queryParameters: {
+        ...rawAuthUrl.queryParameters,
+        'redirect_uri': redirectUri,
+      });
+
       final codeVerifier = googleMap['codeVerifier'].toString();
 
-      // canLaunchUrl bazen Android 11+ cihazlarda <queries> tagi eksikse false dönebilir.
-      // Bu yüzden kontrolü kaldırıp direkt launch ediyoruz.
+      // WebView veya inAppBrowserView ile küçük bir pencere olarak açıyoruz
       try {
-        await launchUrl(Uri.parse(authUrl), mode: LaunchMode.externalApplication);
+        await launchUrl(authUrl, mode: LaunchMode.inAppBrowserView);
       } catch (e) {
-        throw Exception("Google login sayfası tarayıcıda açılamadı. URL: \$authUrl, Hata: \$e");
+        server.close();
+        throw Exception("Google login sayfası tarayıcıda açılamadı. Hata: \$e");
       }
 
-      // Not: Bu aşamada kullanıcı geri döndükten sonra PocketbaseService üzerinden
-      // authWithOAuth2Code() çağrılarak token doğrulanmalıdır. Şimdilik hatayı aştık.
+      // Sunucuya gelen yönlendirmeyi bekle
+      final request = await server.first;
+      final code = request.uri.queryParameters['code'];
+      
+      try {
+        request.response
+          ..statusCode = 200
+          ..headers.contentType = io.ContentType.html
+          ..write("<html><body>Yetkilendirme basarili, bu sayfayi kapatabilirsiniz.</body><script>window.close();</script></html>");
+        await request.response.close();
+      } catch (_) {}
+      
+      await server.close(force: true);
+
+      if (code == null) {
+         throw Exception("Oturum acma iptal edildi veya basarisiz oldu.");
+      }
+
+      // Gelen code ile auth işlemini tamamla
+      await PocketBaseService.client.collection('users').authWithOAuth2Code('google', code, codeVerifier, redirectUri);
       
       // Başarılı giriş sonrası bildirim token'ını güncelle
       await NotificationService().syncWithServer();
