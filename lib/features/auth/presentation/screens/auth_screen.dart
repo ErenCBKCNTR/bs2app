@@ -154,14 +154,19 @@ class _AuthScreenState extends State<AuthScreen> {
     </div>
     <script>
         function gizleVeKapat() {
-            window.close();
+            window.close(); // Klasik kapatma komutu (genelde Android tarafindan bloklanir)
             var btn = document.querySelector('.btn');
             btn.innerText = "Kapatılıyor...";
+            
+            // ASIL COZUM: 
+            // Cihazdaki Android Isletim Sistemine, "Custom Tab"in onunden kendi
+            // uygulamamiza (blindsocial://auth) ziplamasi ve browser'i arkada ezmesi komutu:
+            setTimeout(function() {
+                 window.location.replace("blindsocial://auth");
+            }, 50);
         }
         // 1 saniye sonra otomatik kapatmayi dene
-        setTimeout(function() {
-            window.close();
-        }, 1000);
+        setTimeout(gizleVeKapat, 500);
     </script>
 </body>
 </html>
