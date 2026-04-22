@@ -20,6 +20,7 @@
 - **OAuth Custom Tab Fallback (Android):** `window.close()` and `closeInAppWebView()` are fundamentally blocked by Android 13/14+ security policies inside Custom Tabs. To properly close the OAuth custom web view after a successful login (e.g., Google OAuth loopback), we utilize **Deep Linking (Intent Redirect)**. 
     - The `AndroidManifest.xml` MUST contain the `<data android:scheme="blindsocial" android:host="auth" />` intent.
     - The HTML served by our internal loopback server must use `window.location.replace("blindsocial://auth");` to force the Android OS to bring our app to the foreground, which natively kills the blocking Custom Tab. Never rely solely on timer-based `close()` calls for Android.
+- **Admin Route Security:** The AdminService historically possessed a fallback hook authorizing the owner by email address. This is now STRICTLY RESTRICTED. `AdminService().isAdmin()` must only evaluate `user.data['role'] == '0'`. Furthermore, ALL screens and routes belonging to the administrator panel MUST wrap their `build` context with `if (!AdminService().isAdmin()) return AccessDeniedWidget();` to ensure no data is fetched or UI rendered if a standard user illegitimately forces navigation into the module.
 
 ---
 

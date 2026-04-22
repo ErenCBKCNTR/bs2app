@@ -13,14 +13,10 @@ class AdminService {
       final user = PocketBaseService.client.authStore.model;
       if (user == null) return false;
       
-      final email = user.getStringValue('email');
       final dynamic roleValue = user.data['role'];
       
-      // Role 0 is Admin as per user request
+      // Role 0 is Admin as per user request. STRICT role checking. No fallback.
       if (roleValue != null && roleValue.toString() == '0') return true;
-      
-      // Fallback for the creator/owner
-      if (email == 'erencs87@gmail.com') return true;
     } catch (e) {
       AppLogger.instance.error('isAdmin check error: $e');
     }

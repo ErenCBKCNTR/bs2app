@@ -34,6 +34,13 @@ class _ServerListScreenState extends State<ServerListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_adminService.isAdmin()) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Erişim Engellendi')),
+        body: const Center(child: Text('Bu sayfayı görüntülemek için yetkiniz yok.')),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kayıtlı Sunucular'),
