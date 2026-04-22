@@ -23,7 +23,7 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   bool _isMuted = false;
   bool _isConnected = false;
   Room? _room;
-  late final EventsEmitter<RoomEvent> _listener;
+  late final EventsListener<RoomEvent> _listener;
   List<Participant> _participants = [];
 
   @override
@@ -295,7 +295,7 @@ class _ParticipantTile extends StatelessWidget {
                   ),
                   if (isSpeaking)
                    const Padding(
-                     padding: EdgeInsets.top(4.0),
+                     padding: EdgeInsets.only(top: 4.0),
                      child: Text(
                        "Şu anda konuşuyor",
                        style: TextStyle(color: Colors.green, fontSize: 12),
