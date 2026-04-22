@@ -125,15 +125,49 @@ class _AuthScreenState extends State<AuthScreen> {
       final code = request.uri.queryParameters['code'];
       
       try {
+        final html = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Giriş Başarılı</title>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { text-align: center; padding: 32px; background: #1e293b; border-radius: 16px; border: 1px solid #334155; max-width: 80%; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .icon { width: 64px; height: 64px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; }
+        .icon svg { width: 32px; height: 32px; color: white; }
+        h2 { margin: 0 0 8px 0; font-size: 20px; font-weight: 600; }
+        p { margin: 0; color: #94a3b8; font-size: 14px; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+        </div>
+        <h2>Giriş Başarılı!</h2>
+        <p>Uygulamaya başarıyla bağlandınız.<br>Lütfen bekleyin...</p>
+    </div>
+    <script>
+        setTimeout(function() {
+            window.close();
+        }, 1500);
+    </script>
+</body>
+</html>
+''';
         request.response
           ..statusCode = 200
           ..headers.contentType = io.ContentType.html
-          ..write("<html><body>Yetkilendirme basarili, bu sayfayi kapatabilir ve uygulamaya donebilirsiniz.</body><script>window.close();</script></html>");
+          ..write(html);
         await request.response.close();
       } catch (_) {}
       
       await server.close(force: true);
-      closeInAppWebView(); // Tarayıcı penceresini otomatik kapat
+      
+      // Biraz bekle (sayfa iyice render edilsin) ardından kapat komutunu ver
+      await Future.delayed(const Duration(milliseconds: 800));
+      closeInAppWebView();
 
       if (code == null) {
          throw Exception("Oturum acma iptal edildi veya basarisiz oldu.");
