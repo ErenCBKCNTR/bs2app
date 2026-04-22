@@ -86,21 +86,60 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _authenticateWithGoogle() async {
     setState(() => _isLoading = true);
     try {
-      // SDK'nın dahili (loopback destekli) OAuth akışını kullanıyoruz.
-      // NOT: Bu yöntemin çalışabilmesi için Google Cloud Konsolundan OAuth ayarlarında
-      // uygulamanın "Web Uygulaması" değil "Masaüstü Uygulaması (Desktop App)" veya "iOS"
-      // olarak seçilmiş olması GEREKİR. Aksi takdirde 127.0.0.1 portları reddedilir.
-      final authData = await PocketBaseService.client.collection('users').authWithOAuth2(
-        'google',
-        (url) async {
-          // Tarayıcı sekmesinde açılmaya zorluyoruz
-          if (await canLaunchUrl(url)) {
-            await launchUrl(url, mode: LaunchMode.externalApplication);
-          } else {
-            throw Exception("Google login sayfası tarayıcıda açılamadı.");
-          }
-        },
+      // SDK içindeki versiyon uyumsuzlukları ve 'missing provider' hatalarını aşmak için,
+      // auth methodlarını PocketBase API'sine doğrudan manual istek atarak çekiyoruz.
+      final response = await PocketBaseService.client.send('/api/collections/users/auth-methods', method: 'GET');
+      
+      final authProviders = response['authProviders'] as List<dynamic>? ?? [];
+      final googleMap = authProviders.firstWhere(
+        (p) => p['name'] == 'google',
+        orElse: () => null,
       );
+
+      if (googleMap == null) {
+        throw Exception("Google auth provider'ı API'de bulunamadı. Lütfen PocketBase konsolunu kontrol edin.");
+      }
+
+      // Kendi yerel sunucumuzu başlatıyoruz (Yönlendirmeyi yakalamak için)
+      final server = await io.HttpServer.bind(io.InternetAddress.loopbackIPv4, 0);
+      final redirectUri = 'http://${server.address.host}:${server.port}/';
+
+      var rawAuthUrl = Uri.parse(googleMap['authUrl'].toString());
+      final authUrl = rawAuthUrl.replace(queryParameters: {
+        ...rawAuthUrl.queryParameters,
+        'redirect_uri': redirectUri,
+      });
+
+      final codeVerifier = googleMap['codeVerifier'].toString();
+
+      // WebView veya inAppBrowserView ile uygulama içi küçük pencere olarak açıyoruz
+      try {
+        await launchUrl(authUrl, mode: LaunchMode.inAppBrowserView);
+      } catch (e) {
+        server.close();
+        throw Exception("Google login sayfası tarayıcıda açılamadı. Hata: $e");
+      }
+
+      // Sunucuya gelen yönlendirmeyi bekle
+      final request = await server.first;
+      final code = request.uri.queryParameters['code'];
+      
+      try {
+        request.response
+          ..statusCode = 200
+          ..headers.contentType = io.ContentType.html
+          ..write("<html><body>Yetkilendirme basarili, bu sayfayi kapatabilir ve uygulamaya donebilirsiniz.</body><script>window.close();</script></html>");
+        await request.response.close();
+      } catch (_) {}
+      
+      await server.close(force: true);
+
+      if (code == null) {
+         throw Exception("Oturum acma iptal edildi veya basarisiz oldu.");
+      }
+
+      // Gelen code ile auth işlemini tamamla
+      await PocketBaseService.client.collection('users').authWithOAuth2Code('google', code, codeVerifier, redirectUri);
       
       // Başarılı giriş sonrası bildirim token'ını güncelle
       await NotificationService().syncWithServer();
