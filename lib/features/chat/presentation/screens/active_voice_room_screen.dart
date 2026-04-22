@@ -228,59 +228,50 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             // Ayarlar butonu
-            Semantics(
+            _ControlButton(
+              icon: Icons.settings_outlined,
               label: "Mikrofon Ayarları",
-              button: true,
               hint: "Mikrofon giriş ve çıkış ayarlarını düzenle",
-              child: _ControlButton(
-                icon: Icons.settings_outlined,
-                onPressed: () {
-                  // Gelecekte eklenecek
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Ayarlar yakında eklenecek')),
-                  );
-                },
-                backgroundColor: Colors.grey.withOpacity(0.2),
-              ),
+              onPressed: () {
+                // Gelecekte eklenecek
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Ayarlar yakında eklenecek')),
+                );
+              },
+              backgroundColor: Colors.grey.withOpacity(0.2),
             ),
             // Odadan Ayrıl (Kırmızı)
-            Semantics(
+            _ControlButton(
+              icon: Icons.call_end,
               label: "Görüşmeyi Kapat",
-              button: true,
               hint: "Sesli sohbetten ayrıl",
-              child: _ControlButton(
-                icon: Icons.call_end,
-                onPressed: () {
-                  AppLogger.instance.info('Odadan ayrılındı: ${widget.roomName}');
-                  Navigator.of(context).pop();
-                },
-                backgroundColor: Colors.red,
-                size: 70,
-                iconSize: 32,
-              ),
+              onPressed: () {
+                AppLogger.instance.info('Odadan ayrılındı: ${widget.roomName}');
+                Navigator.of(context).pop();
+              },
+              backgroundColor: Colors.red,
+              size: 70,
+              iconSize: 32,
             ),
             // Mikrofon Aç/Kapat (Yeşil/Kırmızı)
-            Semantics(
+            _ControlButton(
+              icon: _isMuted ? Icons.mic_off : Icons.mic,
               label: _isMuted ? "Mikrofonu Aç" : "Mikrofonu Kapat",
-              button: true,
               hint: _isMuted ? "Sesini sohbete gönder" : "Sesini sessize al",
-              child: _ControlButton(
-                icon: _isMuted ? Icons.mic_off : Icons.mic,
-                onPressed: () async {
-                  try {
-                    final targetState = !_isMuted;
-                    if (_room != null) {
-                      await _room!.localParticipant?.setMicrophoneEnabled(!targetState);
-                    }
-                    setState(() {
-                      _isMuted = targetState;
-                    });
-                  } catch (e) {
-                    AppLogger.instance.error('Mikrofon kontrol hatası: $e');
+              onPressed: () async {
+                try {
+                  final targetState = !_isMuted;
+                  if (_room != null) {
+                    await _room!.localParticipant?.setMicrophoneEnabled(!targetState);
                   }
-                },
-                backgroundColor: _isMuted ? Colors.red.withOpacity(0.5) : Colors.green[700],
-              ),
+                  setState(() {
+                    _isMuted = targetState;
+                  });
+                } catch (e) {
+                  AppLogger.instance.error('Mikrofon kontrol hatası: $e');
+                }
+              },
+              backgroundColor: _isMuted ? Colors.red.withOpacity(0.5) : Colors.green[700],
             ),
           ],
         ),
@@ -399,10 +390,14 @@ class _ControlButton extends StatelessWidget {
   final Color? backgroundColor;
   final double size;
   final double iconSize;
+  final String label;
+  final String hint;
 
   const _ControlButton({
     required this.icon,
     required this.onPressed,
+    required this.label,
+    required this.hint,
     this.backgroundColor,
     this.size = 56,
     this.iconSize = 24,
@@ -410,16 +405,25 @@ class _ControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: FloatingActionButton(
-        onPressed: onPressed,
-        backgroundColor: backgroundColor,
-        elevation: 0,
-        highlightElevation: 0,
-        shape: const CircleBorder(),
-        child: Icon(icon, color: Colors.white, size: iconSize),
+    return Semantics(
+      label: label,
+      hint: hint,
+      button: true,
+      container: true,
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: FloatingActionButton(
+          onPressed: onPressed,
+          backgroundColor: backgroundColor,
+          tooltip: label, // Flutter'ın varsayılan erişilebilirlik ve tooltip mekanizmasını kullan
+          elevation: 0,
+          highlightElevation: 0,
+          shape: const CircleBorder(),
+          child: ExcludeSemantics(
+            child: Icon(icon, color: Colors.white, size: iconSize),
+          ),
+        ),
       ),
     );
   }

@@ -527,6 +527,9 @@ Widget? _buildFAB() {
     final formKey = GlobalKey<FormState>();
     int capacity = 24;
     bool isSaving = false;
+    bool canMembersCreateRooms = false;
+    final passwordController = TextEditingController();
+    bool showAdvancedSettings = false;
     
     await showDialog(
       context: context,
@@ -589,6 +592,34 @@ Widget? _buildFAB() {
                           if (val != null) setStateDialog(() => capacity = val);
                         },
                       ),
+                      const SizedBox(height: 8),
+                      Theme(
+                        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                        child: ExpansionTile(
+                          title: const Text('Gelişmiş Ayarlar'),
+                          leading: const Icon(Icons.settings_suggest, size: 20),
+                          children: [
+                            SwitchListTile(
+                              title: const Text('Üyeler Oda Açabilsin'),
+                              value: canMembersCreateRooms,
+                              onChanged: (val) => setStateDialog(() => canMembersCreateRooms = val),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              child: TextField(
+                                controller: passwordController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: 'Sunucu Şifresi (Numara)',
+                                  hintText: 'Şifresiz için boş bırakın',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.lock_outline),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -604,6 +635,7 @@ Widget? _buildFAB() {
                     
                     final name = titleController.text.trim();
                     final desc = descController.text.trim();
+                    final password = passwordController.text.trim();
                     
                     setStateDialog(() => isSaving = true);
                     
@@ -612,6 +644,8 @@ Widget? _buildFAB() {
                         name: name,
                         description: desc,
                         capacity: capacity,
+                        canMembersCreateRooms: canMembersCreateRooms,
+                        password: password,
                       );
                       
                       if (context.mounted) {

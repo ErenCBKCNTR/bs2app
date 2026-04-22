@@ -158,12 +158,14 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isCreator = widget.server.creatorId == ChatServerService().currentUserId;
+    final canCreateRoom = isCreator || widget.server.canMembersCreateRooms;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(ProfanityFilter.filter(widget.server.name)),
         actions: [
-          if (widget.server.creatorId == ChatServerService().currentUserId ||
-              widget.server.admins.contains(ChatServerService().currentUserId))
+          if (isCreator || widget.server.admins.contains(ChatServerService().currentUserId))
             IconButton(
               icon: const Icon(Icons.settings),
               onPressed: () async {
@@ -174,8 +176,8 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
                   ),
                 );
                 if (updated == true && mounted) {
-                  // If we wanted to refresh server object, we'd fetch it again. 
-                  // For now simple UI feedback.
+                  // Re-fetch rooms or handle server object refresh if needed.
+                  // For full consistency, we should ideally fetch the server object again here.
                   _fetchRooms(); 
                 }
               },
@@ -191,12 +193,14 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text('Bu sunucuda henüz oda yok.'),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: _showCreateRoomDialog,
-                        icon: const Icon(Icons.add),
-                        label: const Text('İlk Odayı Oluştur'),
-                      ),
+                      if (canCreateRoom) ...[
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: _showCreateRoomDialog,
+                          icon: const Icon(Icons.add),
+                          label: const Text('İlk Odayı Oluştur'),
+                        ),
+                      ],
                     ],
                   ),
                 )
@@ -225,11 +229,13 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
                     );
                   },
                 ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showCreateRoomDialog,
-        tooltip: 'Yeni oda oluştur',
-        child: const Icon(Icons.add, color: Colors.black),
-      ),
+      floatingActionButton: canCreateRoom 
+          ? FloatingActionButton(
+              onPressed: _showCreateRoomDialog,
+              tooltip: 'Yeni oda oluştur',
+              child: const Icon(Icons.add, color: Colors.black),
+            )
+          : null,
     );
   }
 }

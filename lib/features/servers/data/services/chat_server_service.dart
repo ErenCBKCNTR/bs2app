@@ -27,11 +27,15 @@ class ChatServerService {
     String? name,
     String? description,
     int? capacity,
+    bool? canMembersCreateRooms,
+    String? password,
   }) async {
     final body = <String, dynamic>{};
     if (name != null) body['name'] = name;
     if (description != null) body['description'] = description;
     if (capacity != null) body['capacity'] = capacity;
+    if (canMembersCreateRooms != null) body['can_members_create_rooms'] = canMembersCreateRooms;
+    if (password != null) body['password'] = password;
 
     final record = await _pb.collection('chat_servers').update(serverId, body: body);
     return ChatServer.fromRecord(record);
@@ -45,11 +49,15 @@ class ChatServerService {
     required String name,
     required String description,
     required int capacity,
+    bool canMembersCreateRooms = false,
+    String? password,
   }) async {
     final body = {
       'name': name,
       'description': description,
       'capacity': capacity,
+      'can_members_create_rooms': canMembersCreateRooms,
+      'password': password ?? '',
       'creator': _pb.authStore.model.id,
       'admins': [_pb.authStore.model.id],
     };

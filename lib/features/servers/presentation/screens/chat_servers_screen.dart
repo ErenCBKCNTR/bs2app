@@ -126,6 +126,12 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
               // Join if not a member, then navigate
               final isMember = await ChatServerService().isMember(server.id);
               if (!isMember) {
+                // Şifre kontrolü
+                if (server.password != null && server.password!.isNotEmpty) {
+                  final passwordConfirmed = await _showPasswordDialog(server.password!);
+                  if (!passwordConfirmed) return;
+                }
+
                 try {
                   await ChatServerService().joinServer(server.id);
                 } catch (e) {
@@ -149,5 +155,45 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
         },
       ),
     );
+  }
+
+  Future<bool> _showPasswordDialog(String correctPassword) async {
+    final passwordController = TextEditingController();
+    bool? result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sunucu Şifreli'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Bu sunucuya girmek için şifre gereklidir.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: passwordController,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Şifre',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+          TextButton(
+            onPressed: () {
+              if (passwordController.text.trim() == correctPassword) {
+                Navigator.pop(context, true);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hatalı şifre!')));
+              }
+            },
+            child: const Text('Giriş Yap'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 }

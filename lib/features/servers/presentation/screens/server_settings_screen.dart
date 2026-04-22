@@ -17,10 +17,12 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
   late TextEditingController _nameController;
   late TextEditingController _descController;
   late TextEditingController _capacityController;
+  late TextEditingController _passwordController;
   
   bool _isSaving = false;
   List<RecordModel> _members = [];
   bool _isLoadingMembers = true;
+  bool _canMembersCreateRooms = false;
 
   @override
   void initState() {
@@ -29,6 +31,8 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
     _nameController = TextEditingController(text: widget.server.name);
     _descController = TextEditingController(text: widget.server.description);
     _capacityController = TextEditingController(text: widget.server.capacity.toString());
+    _passwordController = TextEditingController(text: widget.server.password ?? '');
+    _canMembersCreateRooms = widget.server.canMembersCreateRooms;
     _fetchMembers();
   }
 
@@ -38,6 +42,7 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
     _nameController.dispose();
     _descController.dispose();
     _capacityController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -65,6 +70,8 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
         name: _nameController.text.trim(),
         description: _descController.text.trim(),
         capacity: int.tryParse(_capacityController.text.trim()),
+        canMembersCreateRooms: _canMembersCreateRooms,
+        password: _passwordController.text.trim(),
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sunucu güncellendi.')));
@@ -155,6 +162,32 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
             controller: _capacityController,
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(labelText: 'Kişi Kapasitesi', border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 16),
+          ExpansionTile(
+            leading: const Icon(Icons.settings_suggest),
+            title: const Text('Gelişmiş Ayarlar'),
+            children: [
+              SwitchListTile(
+                title: const Text('Üyeler Oda Açabilsin'),
+                subtitle: const Text('Bu özellik kapalıyken sadece kurucu oda ekleyebilir.'),
+                value: _canMembersCreateRooms,
+                onChanged: (val) => setState(() => _canMembersCreateRooms = val),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: TextField(
+                  controller: _passwordController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Sunucu Şifresi (Sadece Rakam)',
+                    hintText: 'Boş bırakılırsa şifresiz olur',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.lock_outline),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
           ElevatedButton(

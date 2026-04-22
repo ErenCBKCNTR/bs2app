@@ -8,6 +8,8 @@ class ChatServer {
   final List<String> admins;
   final int capacity;
   final String? avatar;
+  final bool canMembersCreateRooms;
+  final String? password;
   final DateTime created;
   final DateTime updated;
 
@@ -19,6 +21,8 @@ class ChatServer {
     required this.admins,
     required this.capacity,
     this.avatar,
+    this.canMembersCreateRooms = false,
+    this.password,
     required this.created,
     required this.updated,
   });
@@ -32,6 +36,8 @@ class ChatServer {
       admins: record.getListValue<String>('admins'),
       capacity: record.getIntValue('capacity'),
       avatar: record.getStringValue('avatar'),
+      canMembersCreateRooms: record.getBoolValue('can_members_create_rooms'),
+      password: record.getStringValue('password'),
       created: DateTime.parse(record.created),
       updated: DateTime.parse(record.updated),
     );
