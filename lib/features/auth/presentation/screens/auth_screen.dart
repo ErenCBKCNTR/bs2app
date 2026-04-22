@@ -157,11 +157,6 @@ class _AuthScreenState extends State<AuthScreen> {
             window.close();
             var btn = document.querySelector('.btn');
             btn.innerText = "Kapatılıyor...";
-            // Eger window.close Android kaynakli calismazsa:
-            setTimeout(function() {
-                 btn.innerText = "Lütfen Ekranın Sol Üstündeki Çarpıya (X) Basın";
-                 btn.style.background = "#ef4444";
-            }, 1500);
         }
         // 1 saniye sonra otomatik kapatmayi dene
         setTimeout(function() {
@@ -180,11 +175,18 @@ class _AuthScreenState extends State<AuthScreen> {
       
       await server.close(force: true);
       
-      // Biraz bekle (sayfa iyice render edilsin) ardından kapat komutunu ver. try-catch icine alinmistir hata firlatmamasi icin.
-      await Future.delayed(const Duration(milliseconds: 1000));
+      // url_launcher closeInAppWebView on Android custom tabs is notoriously broken
+      // when no native app link or deep link catches it natively.
+      // Eger custom tab kapanmazsa asagidaki islem yine de arka planda bitmis olacak
       try {
         closeInAppWebView();
       } catch (_) {}
+
+      // Birkaç kez arka arkaya force kapatma gönder (Custom Tab workaround)
+      for (var i = 0; i < 3; i++) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        try { closeInAppWebView(); } catch (_) {}
+      }
 
       if (code == null) {
          throw Exception("Oturum acma iptal edildi veya basarisiz oldu.");
