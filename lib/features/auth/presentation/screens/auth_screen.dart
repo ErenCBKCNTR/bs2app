@@ -127,7 +127,7 @@ class _AuthScreenState extends State<AuthScreen> {
       try {
         final html = '''
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Giriş Başarılı</title>
@@ -137,21 +137,36 @@ class _AuthScreenState extends State<AuthScreen> {
         .icon { width: 64px; height: 64px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; }
         .icon svg { width: 32px; height: 32px; color: white; }
         h2 { margin: 0 0 8px 0; font-size: 20px; font-weight: 600; }
-        p { margin: 0; color: #94a3b8; font-size: 14px; line-height: 1.5; }
+        p { margin: 0 0 24px 0; color: #94a3b8; font-size: 14px; line-height: 1.5; }
+        .btn { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; transition: background 0.2s; }
+        .btn:active { background: #2563eb; }
+        .btn:focus { outline: 3px solid #60a5fa; outline-offset: 2px; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="icon">
+<body aria-label="Giriş başarılı">
+    <div class="container" role="main">
+        <div class="icon" aria-hidden="true">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
         </div>
         <h2>Giriş Başarılı!</h2>
-        <p>Uygulamaya başarıyla bağlandınız.<br>Lütfen bekleyin...</p>
+        <p>Uygulamaya başarıyla bağlandınız.<br>Bu pencere otomatik kapanmazsa lütfen aşağıdaki butona tıklayın.</p>
+        <button class="btn" aria-label="Pencereyi kapat ve devam et" onclick="gizleVeKapat()">Kapat ve Devam Et</button>
     </div>
     <script>
+        function gizleVeKapat() {
+            window.close();
+            var btn = document.querySelector('.btn');
+            btn.innerText = "Kapatılıyor...";
+            // Eger window.close Android kaynakli calismazsa:
+            setTimeout(function() {
+                 btn.innerText = "Lütfen Ekranın Sol Üstündeki Çarpıya (X) Basın";
+                 btn.style.background = "#ef4444";
+            }, 1500);
+        }
+        // 1 saniye sonra otomatik kapatmayi dene
         setTimeout(function() {
             window.close();
-        }, 1500);
+        }, 1000);
     </script>
 </body>
 </html>
@@ -165,9 +180,11 @@ class _AuthScreenState extends State<AuthScreen> {
       
       await server.close(force: true);
       
-      // Biraz bekle (sayfa iyice render edilsin) ardından kapat komutunu ver
-      await Future.delayed(const Duration(milliseconds: 800));
-      closeInAppWebView();
+      // Biraz bekle (sayfa iyice render edilsin) ardından kapat komutunu ver. try-catch icine alinmistir hata firlatmamasi icin.
+      await Future.delayed(const Duration(milliseconds: 1000));
+      try {
+        closeInAppWebView();
+      } catch (_) {}
 
       if (code == null) {
          throw Exception("Oturum acma iptal edildi veya basarisiz oldu.");
