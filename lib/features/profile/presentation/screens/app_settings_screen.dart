@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/services/settings_service.dart';
 import 'theme_settings_screen.dart';
 import 'notification_settings_screen.dart';
+import 'accessibility_settings_screen.dart';
 
 class AppSettingsScreen extends StatefulWidget {
   const AppSettingsScreen({super.key});
@@ -50,6 +51,19 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.accessibility),
+            title: const Text('Erişilebilirlik Ayarları'),
+            subtitle: const Text('Ekran okuyucu ve yardım özellikleri'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AccessibilitySettingsScreen()),
               );
             },
           ),

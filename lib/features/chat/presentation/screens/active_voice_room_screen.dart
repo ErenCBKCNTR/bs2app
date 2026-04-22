@@ -5,6 +5,8 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
 
+import '../../../../core/services/settings_service.dart';
+
 class ActiveVoiceRoomScreen extends StatefulWidget {
   final String roomId;
   final String roomName;
@@ -25,6 +27,7 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   Room? _room;
   late final EventsListener<RoomEvent> _listener;
   List<Participant> _participants = [];
+  final SettingsService _settingsService = SettingsService();
 
   @override
   void initState() {
@@ -42,11 +45,12 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
     });
   }
 
-  String _generateToken(String apiKey, String apiSecret, String roomName, String participantIdentity) {
+  String _generateToken(String apiKey, String apiSecret, String roomName, String participantIdentity, String participantName) {
     final jwt = JWT({
       'exp': (DateTime.now().millisecondsSinceEpoch / 1000).round() + (60 * 60 * 24), // 24 hours valid
       'iss': apiKey,
       'sub': participantIdentity,
+      'name': participantName,
       'nbf': 0,
       'video': {
         'room': roomName,
@@ -83,8 +87,11 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
     try {
       final user = PocketBaseService.client.authStore.model;
       final userId = user?.id ?? 'anonymous_${DateTime.now().millisecondsSinceEpoch}';
+      final userName = user?.getStringValue('username').isNotEmpty == true 
+          ? '@${user!.getStringValue('username')}' 
+          : 'Misafir';
       
-      final String livekitToken = _generateToken(apiKey, apiSecret, widget.roomName, userId);
+      final String livekitToken = _generateToken(apiKey, apiSecret, widget.roomName, userId, userName);
 
       _room = Room();
       _listener = _room!.createListener();
@@ -97,8 +104,14 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
       await _room!.connect(livekitUrl, livekitToken, roomOptions: roomOptions);
       
       _listener
-        ..on<ParticipantConnectedEvent>((_) => _onRoomDidUpdate())
-        ..on<ParticipantDisconnectedEvent>((_) => _onRoomDidUpdate())
+        ..on<ParticipantConnectedEvent>((event) {
+          _onRoomDidUpdate();
+          _notifyParticipantStatus(event.participant, true);
+        })
+        ..on<ParticipantDisconnectedEvent>((event) {
+          _onRoomDidUpdate();
+          _notifyParticipantStatus(event.participant, false);
+        })
         ..on<RoomDisconnectedEvent>((_) {
            if (mounted) Navigator.of(context).pop();
         })
@@ -127,6 +140,23 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
     }
   }
 
+  void _notifyParticipantStatus(Participant? participant, bool isJoined) {
+    if (participant == null || !_settingsService.voiceRoomNotificationsEnabled) return;
+    
+    final name = participant.name.isNotEmpty ? participant.name : 'Bir kullanıcı';
+    final message = isJoined ? "$name odaya girdi" : "$name odadan ayrıldı";
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _room?.disconnect();
@@ -138,7 +168,11 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF101820), // Koyu arka plan
       appBar: AppBar(
-        title: Text(widget.roomName),
+        title: Semantics(
+          label: "${widget.roomName} isimli sesli odadasınız",
+          header: true,
+          child: ExcludeSemantics(child: Text(widget.roomName)),
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -197,6 +231,7 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
             Semantics(
               label: "Mikrofon Ayarları",
               button: true,
+              hint: "Mikrofon giriş ve çıkış ayarlarını düzenle",
               child: _ControlButton(
                 icon: Icons.settings_outlined,
                 onPressed: () {
@@ -210,8 +245,9 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
             ),
             // Odadan Ayrıl (Kırmızı)
             Semantics(
-              label: "Odadan Ayrıl",
+              label: "Görüşmeyi Kapat",
               button: true,
+              hint: "Sesli sohbetten ayrıl",
               child: _ControlButton(
                 icon: Icons.call_end,
                 onPressed: () {
@@ -227,6 +263,7 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
             Semantics(
               label: _isMuted ? "Mikrofonu Aç" : "Mikrofonu Kapat",
               button: true,
+              hint: _isMuted ? "Sesini sohbete gönder" : "Sesini sessize al",
               child: _ControlButton(
                 icon: _isMuted ? Icons.mic_off : Icons.mic,
                 onPressed: () async {
@@ -260,8 +297,9 @@ class _ParticipantTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final identity = participant.identity;
-    // PocketBase modelinden isim çekmek daha iyi olur ama LiveKit contextinde identity genelde username olur.
-    final name = identity.startsWith('anonymous_') ? 'Misafir' : identity;
+    // LiveKit name alanını kontrol et, boşsa identity (ID) kullan.
+    final displayName = participant.name.isNotEmpty ? participant.name : identity;
+    final name = displayName.startsWith('anonymous_') ? 'Misafir' : displayName;
     final isMuted = !participant.isMicrophoneEnabled();
     final isSpeaking = participant.isSpeaking;
 

@@ -7,6 +7,7 @@ class SettingsService {
   static const String _keyCallSound = 'call_sound_enabled';
   static const String _keyCallVibration = 'call_vibration_enabled';
   static const String _keyShowOnLockScreen = 'show_on_lock_screen_enabled';
+  static const String _keyVoiceRoomNotifications = 'voice_room_notifications_enabled';
 
   static final SettingsService _instance = SettingsService._internal();
   factory SettingsService() => _instance;
@@ -27,6 +28,7 @@ class SettingsService {
   bool get callSoundEnabled => _prefs.getBool(_keyCallSound) ?? true;
   bool get callVibrationEnabled => _prefs.getBool(_keyCallVibration) ?? true;
   bool get showOnLockScreenEnabled => _prefs.getBool(_keyShowOnLockScreen) ?? false; // Varsayılan olarak kapalı
+  bool get voiceRoomNotificationsEnabled => _prefs.getBool(_keyVoiceRoomNotifications) ?? true; // Varsayılan olarak açık
 
   // Setters
   Future<void> setMessageSoundEnabled(bool value) async => await _prefs.setBool(_keyMessageSound, value);
@@ -37,6 +39,7 @@ class SettingsService {
     await _prefs.setBool(_keyShowOnLockScreen, value);
     _applyLockScreenSetting(value);
   }
+  Future<void> setVoiceRoomNotificationsEnabled(bool value) async => await _prefs.setBool(_keyVoiceRoomNotifications, value);
 
   Future<void> _applyLockScreenSetting(bool isVisible) async {
     try {
