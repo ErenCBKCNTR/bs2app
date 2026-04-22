@@ -17,6 +17,9 @@
 - **Sync Priority:** In audio recording features, use aggressive FFmpeg flags (low buffer, fast probe) to ensure start/stop synchronization matches user interaction as closely as possible.
 - **Database Integrity:** You MUST always keep `pb_schema.json` updated with any changes made to the database logic. **CRITICAL:** Every time you add a new field or modify the database logic, you MUST immediately update `pb_schema.json` to reflect these changes. Before performing any database-related operations, you MUST read `pb_schema.json` once to ensure full consistency and prevent memory drift regarding the schema structure.
 - **Feature Isolation:** When a new independent feature is to be implemented, it MUST be created in its own directory (e.g., `lib/features/new_feature/`) to maintain a modular and maintainable codebase.
+- **OAuth Custom Tab Fallback (Android):** `window.close()` and `closeInAppWebView()` are fundamentally blocked by Android 13/14+ security policies inside Custom Tabs. To properly close the OAuth custom web view after a successful login (e.g., Google OAuth loopback), we utilize **Deep Linking (Intent Redirect)**. 
+    - The `AndroidManifest.xml` MUST contain the `<data android:scheme="blindsocial" android:host="auth" />` intent.
+    - The HTML served by our internal loopback server must use `window.location.replace("blindsocial://auth");` to force the Android OS to bring our app to the foreground, which natively kills the blocking Custom Tab. Never rely solely on timer-based `close()` calls for Android.
 
 ---
 

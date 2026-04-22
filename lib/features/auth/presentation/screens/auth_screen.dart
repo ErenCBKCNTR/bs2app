@@ -45,6 +45,7 @@ class _AuthScreenState extends State<AuthScreen> {
             'email': email,
             'password': password,
             'passwordConfirm': password,
+            'role': 1, // SIFIR YETKISI (YONETICI) YERINE STANDART KULLANICI YETKISI
           });
           
           // Kayıt başarılıysa hemen giriş yap
@@ -198,8 +199,18 @@ class _AuthScreenState extends State<AuthScreen> {
       }
 
       // Gelen code ile auth işlemini tamamla
-      await PocketBaseService.client.collection('users').authWithOAuth2Code('google', code, codeVerifier, redirectUri);
+      final authData = await PocketBaseService.client.collection('users').authWithOAuth2Code('google', code, codeVerifier, redirectUri);
       
+      // Eger kullanici yeni kayit olduysa standart uye yetkisi (1) ve isim cek.
+      if (authData.meta['isNew'] == true && authData.record != null) {
+        final googleName = authData.meta['name'] ?? '';
+        await PocketBaseService.client.collection('users').update(authData.record!.id, body: {
+          'role': 1,
+          'full_name': googleName,
+        });
+        await PocketBaseService.client.collection('users').authRefresh();
+      }
+
       // Başarılı giriş sonrası bildirim token'ını güncelle
       await NotificationService().syncWithServer();
     } catch (e, stackTrace) {
@@ -248,9 +259,57 @@ class _AuthScreenState extends State<AuthScreen> {
               'Hoş Geldiniz',
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
-              semanticsLabel: 'Kör Sosyal Ağına Hoş Geldiniz. Lütfen e-posta ve şifrenizi girin.',
+              semanticsLabel: 'Kör Sosyal Ağına Hoş Geldiniz. Lütfen giriş yöntemi seçin.',
             ),
             const SizedBox(height: 32),
+            OutlinedButton.icon(
+              onPressed: _isLoading ? null : _authenticateWithGoogle,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.white.withOpacity(0.05) 
+                    : Colors.white,
+                side: BorderSide(
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.white24 
+                      : Colors.grey,
+                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              icon: Image.network(
+                'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                height: 24,
+                width: 24,
+                errorBuilder: (context, error, stackTrace) => Icon(
+                  Icons.g_mobiledata, 
+                  size: 24,
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.white 
+                      : Colors.black87,
+                ),
+              ),
+              label: Text(
+                'Google ile Devam Et',
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.white 
+                      : Colors.black87, 
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text('veya e-posta ile', style: TextStyle(color: Colors.grey[600])),
+                ),
+                const Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: 24),
             TextFormField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
@@ -289,54 +348,6 @@ class _AuthScreenState extends State<AuthScreen> {
               'Hesabınız yoksa otomatik olarak oluşturulacaktır.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                const Expanded(child: Divider()),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text('veya', style: TextStyle(color: Colors.grey[600])),
-                ),
-                const Expanded(child: Divider()),
-              ],
-            ),
-            const SizedBox(height: 24),
-            OutlinedButton.icon(
-              onPressed: _isLoading ? null : _authenticateWithGoogle,
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                backgroundColor: Theme.of(context).brightness == Brightness.dark 
-                    ? Colors.white.withOpacity(0.05) 
-                    : Colors.white,
-                side: BorderSide(
-                  color: Theme.of(context).brightness == Brightness.dark 
-                      ? Colors.white24 
-                      : Colors.grey,
-                ),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              icon: Image.network(
-                'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
-                height: 24,
-                width: 24,
-                errorBuilder: (context, error, stackTrace) => Icon(
-                  Icons.g_mobiledata, 
-                  size: 24,
-                  color: Theme.of(context).brightness == Brightness.dark 
-                      ? Colors.white 
-                      : Colors.black87,
-                ),
-              ),
-              label: Text(
-                'Google ile Devam Et',
-                style: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.dark 
-                      ? Colors.white 
-                      : Colors.black87, 
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ),
           ],
         ),

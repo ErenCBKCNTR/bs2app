@@ -10,6 +10,7 @@ class ProfileSetupScreen extends StatefulWidget {
 }
 
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
+  final _fullNameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _dobController = TextEditingController();
   bool _isLoading = false;
@@ -20,8 +21,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     // Mevcut kullanıcı adını otomatik doldur (PB tarafından rastgele oluşturulmuş olsa bile)
     final user = PocketBaseService.client.authStore.model;
     if (user != null) {
+      String currentFullName = user.getStringValue('full_name');
       String currentUsername = user.getStringValue('username');
       String email = user.getStringValue('email');
+      
+      if (currentFullName.isNotEmpty) {
+        _fullNameController.text = currentFullName;
+      }
       
       // Eğer username PocketBase'in atadığı otomatik "users..." şeklindeyse, 
       // ve elimizde e-posta adresi varsa, e-postanın ilk kısmını alıp username olarak gösterelim.
@@ -35,10 +41,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   Future<void> _saveProfile() async {
+    final fullName = _fullNameController.text.trim();
     final username = _usernameController.text.trim();
     String dob = _dobController.text.trim();
 
-    if (username.isEmpty || dob.isEmpty) {
+    if (fullName.isEmpty || username.isEmpty || dob.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lütfen tüm alanları doldurun.')),
       );
@@ -73,6 +80,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       final formattedDate = '${parts[2]}-${parts[1]}-${parts[0]} 12:00:00Z'; // Timezone eklendi PB Date nesnesi için
 
       await PocketBaseService.client.collection('users').update(user.id, body: {
+        'full_name': fullName,
         'username': username,
         'dob': formattedDate,
       });
@@ -124,6 +132,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
+            TextFormField(
+              controller: _fullNameController,
+              decoration: const InputDecoration(
+                labelText: 'İsim Soyisim',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.badge),
+              ),
+              textInputAction: TextInputAction.next,
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _usernameController,
               decoration: const InputDecoration(
