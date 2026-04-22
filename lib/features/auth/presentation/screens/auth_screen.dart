@@ -201,14 +201,28 @@ class _AuthScreenState extends State<AuthScreen> {
       // Gelen code ile auth işlemini tamamla
       final authData = await PocketBaseService.client.collection('users').authWithOAuth2Code('google', code, codeVerifier, redirectUri);
       
-      // Eger kullanici yeni kayit olduysa standart uye yetkisi (1) ve isim cek.
-      if (authData.meta['isNew'] == true && authData.record != null) {
-        final googleName = authData.meta['name'] ?? '';
-        await PocketBaseService.client.collection('users').update(authData.record!.id, body: {
-          'role': 1,
-          'full_name': googleName,
-        });
-        await PocketBaseService.client.collection('users').authRefresh();
+      // authData.meta holds OAuth2 response from the provider, sometimes inside an inner 'rawUser' object
+      if (authData.meta != null && authData.record != null) {
+        // Pocketbase structure: meta['name'] or meta['rawUser']['name']
+        final currentFullName = authData.record!.getStringValue('full_name');
+        if (currentFullName.isEmpty) {
+          
+          String googleName = '';
+          if (authData.meta!['name'] != null) {
+            googleName = authData.meta!['name'] as String;
+          } else if (authData.meta!['rawUser'] != null) {
+            final raw = authData.meta!['rawUser'] as Map<String, dynamic>;
+            googleName = raw['name'] ?? raw['given_name'] ?? '';
+          }
+
+          if (authData.meta!['isNew'] == true || currentFullName.isEmpty) {
+            await PocketBaseService.client.collection('users').update(authData.record!.id, body: {
+               'role': 1,
+               'full_name': googleName,
+            });
+            await PocketBaseService.client.collection('users').authRefresh();
+          }
+        }
       }
 
       // Başarılı giriş sonrası bildirim token'ını güncelle

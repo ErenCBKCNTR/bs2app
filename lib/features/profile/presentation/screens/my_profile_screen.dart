@@ -78,6 +78,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     }
 
     final username = _userData?.getStringValue('username') ?? 'Bilinmiyor';
+    final fullName = _userData?.getStringValue('full_name') ?? 'Belirtilmemiş';
     final dob = _userData?.getStringValue('dob');
     final createdAt = _userData?.created;
 
@@ -113,6 +114,12 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 40),
+            ListTile(
+              leading: const Icon(Icons.badge),
+              title: const Text('İsim Soyisim'),
+              subtitle: Text(fullName),
+            ),
+            const Divider(),
             ListTile(
               leading: const Icon(Icons.person),
               title: const Text('Kullanıcı Adı'),
