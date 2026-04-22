@@ -133,6 +133,7 @@ class _AuthScreenState extends State<AuthScreen> {
       } catch (_) {}
       
       await server.close(force: true);
+      closeInAppWebView(); // Tarayıcı penceresini otomatik kapat
 
       if (code == null) {
          throw Exception("Oturum acma iptal edildi veya basarisiz oldu.");

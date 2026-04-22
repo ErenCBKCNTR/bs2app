@@ -20,7 +20,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     // Mevcut kullanıcı adını otomatik doldur (PB tarafından rastgele oluşturulmuş olsa bile)
     final user = PocketBaseService.client.authStore.model;
     if (user != null) {
-      _usernameController.text = user.getStringValue('username');
+      String currentUsername = user.getStringValue('username');
+      String email = user.getStringValue('email');
+      
+      // Eğer username PocketBase'in atadığı otomatik "users..." şeklindeyse, 
+      // ve elimizde e-posta adresi varsa, e-postanın ilk kısmını alıp username olarak gösterelim.
+      if (currentUsername.startsWith('users') && email.isNotEmpty) {
+        // erencs87@gmail.com -> erencs87
+        _usernameController.text = email.split('@').first;
+      } else {
+        _usernameController.text = currentUsername;
+      }
     }
   }
 
