@@ -33,41 +33,76 @@ def check_and_add_alias():
         print(f"Kısayol eklenirken hata oluştu: {e}")
 
 def update_bot():
-    """GitHub'dan güncel dosyaları çeker ve temiz kurulum yapar."""
-    print(f"\n[+] Sistem güncelleniyor (Dizin: {PROJECT_ROOT})...")
+    """Kullanıcının yöntemiyle (curl/tar) eski dosyaları silip temiz güncelleme yapar."""
+    print(f"\n[+] Sistem temizleniyor ve güncelleniyor (Konum: {PROJECT_ROOT})...")
+    
+    parent_dir = os.path.dirname(PROJECT_ROOT)
+    dir_name = os.path.basename(PROJECT_ROOT) # bs2app
+    archive_url = f"{REPO_URL}/archive/refs/heads/main.tar.gz"
+    
+    # Hafıza özelliğini korumak için config dosyasını yedekleyelim
+    config_rel_path = "bots/campaign_tracker_bot/secret_config.json"
+    config_full_path = os.path.join(PROJECT_ROOT, config_rel_path)
+    backup_data = None
+    
+    if os.path.exists(config_full_path):
+        try:
+            with open(config_full_path, 'r') as f:
+                backup_data = f.read()
+            print("[i] Giriş bilgileriniz yedeklendi.")
+        except:
+            pass
+
     try:
-        # Git komutlarını ana dizinde (PROJECT_ROOT) çalıştır
-        subprocess.run(["git", "fetch", "--all"], check=True, cwd=PROJECT_ROOT)
-        subprocess.run(["git", "reset", "--hard", "origin/main"], check=True, cwd=PROJECT_ROOT)
+        # Senin kullandığın komut mantığı: mkdir -p bs2app && curl ... | tar ...
+        # Mevcut klasörü sil ve sıfır klasöre tar et
+        print("[!] Eski sürüm siliniyor ve GitHub'dan en güncel sürüm indiriliyor...")
         
-        print("\n[✓] Güncelleme başarılı! Ekran temizleniyor...")
+        update_cmd = (
+            f"cd {parent_dir} && "
+            f"rm -rf {dir_name} && "
+            f"mkdir -p {dir_name} && "
+            f"curl -L {archive_url} | tar -xz -C {dir_name} --strip-components=1"
+        )
+        
+        subprocess.run(update_cmd, shell=True, check=True)
+        
+        # Yediği geri yükle
+        if backup_data:
+            new_config_path = os.path.join(PROJECT_ROOT, config_rel_path)
+            os.makedirs(os.path.dirname(new_config_path), exist_ok=True)
+            with open(new_config_path, 'w') as f:
+                f.write(backup_data)
+            print("[i] Giriş bilgileriniz otomatik olarak geri yüklendi.")
+
+        print("\n[✓] Temiz güncelleme başarılı! Ekran temizleniyor...")
         time.sleep(1)
         os.system('clear')
+        # Scripti yeniden başlat
         os.execv(sys.executable, ['python3'] + sys.argv)
     except Exception as e:
-        print(f"Güncelleme sırasında hata oluştu: {e}")
-
-def list_bots():
-    print("\n--- Blind Social Bot Yönetim Sistemi ---")
-    # Yollar PROJECT_ROOT'a göre göreceli
-    bots = [
-        {"id": 1, "name": "Kampanya Takip Botu (Genel)", "path": "bots/campaign_tracker_bot", "main": "campaign_tracker.py"},
-    ]
-    
-    for bot in bots:
-        print(f"{bot['id']}. {bot['name']}")
-    return bots
+        print(f"Güncelleme hatası: {e}")
+        print("İpucu: Sunucuda curl ve tar kurulu olduğundan emin olun.")
 
 def manage_bot(bot):
     while True:
         print(f"\n--- {bot['name']} Yönetimi ---")
         print("1. Botu Çalıştır (Anlık)")
         print("2. Bot Klasörüne Git (Bilgi)")
+        print("3. Bağımlılıkları Kur (pip install)")
         print("0. Geri Dön")
         
         choice = input("\nSeçiminiz: ")
         if choice == '1':
-            bot_path = os.path.join(PROJECT_ROOT, bot['path'], bot['main'])
+            bot_dir = os.path.join(PROJECT_ROOT, bot['path'])
+            req_file = os.path.join(bot_dir, "requirements.txt")
+            bot_path = os.path.join(bot_dir, bot['main'])
+            
+            # Botu çalıştırmadan önce bağımlılıkları kontrol et/kur
+            if os.path.exists(req_file):
+                print("[+] Bağımlılıklar kontrol ediliyor...")
+                subprocess.run([sys.executable, "-m", "pip", "install", "-r", req_file], check=True)
+            
             print(f"Bot başlatılıyor: {bot_path}")
             try:
                 subprocess.run([sys.executable, bot_path], check=True)
@@ -75,6 +110,13 @@ def manage_bot(bot):
                 print(f"Hata: {e}")
         elif choice == '2':
             print(f"Konum: {os.path.join(PROJECT_ROOT, bot['path'])}")
+        elif choice == '3':
+            req_file = os.path.join(PROJECT_ROOT, bot['path'], "requirements.txt")
+            if os.path.exists(req_file):
+                print("[+] Kuruluyor...")
+                subprocess.run([sys.executable, "-m", "pip", "install", "-r", req_file])
+            else:
+                print("requirements.txt bulunamadı.")
         elif choice == '0':
             break
 
