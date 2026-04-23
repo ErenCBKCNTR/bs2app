@@ -199,10 +199,14 @@ def liste_sayfasindan_linkleri_al(kategori_url):
     
     # Sunucuda arayüzsüz (headless) çalışması için tarayıcı ayarları
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
+    
+    # [SNAP ROOT ÇÖKME ENGELLERİ (CHROME INSTANCE EXITED)]
+    chrome_options.add_argument("--headless=new") # Daha güncel headless modu
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--remote-debugging-port=9222") # Port açmak çöküşü sönümler
+    chrome_options.add_argument("--user-data-dir=/tmp/safari_bot_profile") # Snap'in profil izolasyon dizesini geçer
     chrome_options.add_argument("--window-size=1920,1080")
     
     # [KRİTİK DÜZELTME] -> UBUNTU 24.04 SNAP DESTEĞİ

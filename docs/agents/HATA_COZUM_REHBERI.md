@@ -55,11 +55,17 @@ Bu dosya, projede karşılaşılan teknik hataların kök nedenlerini, çözüml
 
 ---
 
-## 🐍 Python ve Bot Geliştirme Notları
+## 🐍 Python ve Bot Geliştirme Notları (Ubuntu 24.04)
+- **Sunucu Mimari Notu:** Sistem Ubuntu 24.04 üzerinde Terminal/CLI (Headless) olarak çalışmaktadır.
+- **Python Pip Kısıtlamaları (PEP 668):** Ubuntu 24.04'te sistem paketlerini korumak için `pip install` komutları kilitlidir. Kurulum scriptlerinde ve bot yöneticisinde DAİMA `--break-system-packages` ve Debian "RECORD file not found" hatasını aşmak için `--ignore-installed` argümanları kullanılmalıdır.
+- **Selenium ve Snap Tarayıcıları:** Ubuntu 24.04'te Chromium doğrudan işletim sistemine kurulmaz, kilitli bir **Snap** konteynerine kurulur.
+  - Orijinal Tarayıcı Yolu: `/snap/bin/chromium`
+  - Sürücü (Driver) Yolu: `/snap/bin/chromium.chromedriver`
+  - *ÖNEMLİ KURAL:* Selenium başlatılırken `webdriver-manager` doğrudan default bırakılmamalıdır (Status 127 hatasına ve mimari çakışmasına sebep olur). Her zaman önce Snap konumları `chrome_options.binary_location` olarak koda dahil edilmeli ve sistem kütüphaneleri (apt-get install chromium-browser vb.) hazır olmalıdır.
 - **Bağımlılıklar:** Her bot klasörü (`bots/bot_name/`) kendi `requirements.txt` dosyasını içermelidir. Sunucuda kurulum yapmadan önce mutlaka versiyon kontrolü yapılmalıdır.
 - **Scraping Etiği:** Botlar taranacak siteyi yormamak için (Denial of Wallet/Service önlemek adına) istekler arasına `time.sleep()` koymalıdır.
-- **Dinamik İçerik:** JavaScript ile yüklenen siteler için `requests` yerine `Selenium` veya `Playwright` gerekebilir. Şimdilik `BeautifulSoup` standart olarak belirlendi.
-- **Database Bağlantısı:** Botlar PocketBase'e admin token ile veya gizli bir API user ile bağlanmalıdır. Şifreler çevre değişkenleri (environment variables) üzerinden geçilmelidir.
+- **Dinamik İçerik:** JavaScript ile yüklenen siteler için `BeautifulSoup` yetersiz kaldığında, yukarıdaki Snap kurallarına uyularak `Selenium` kullanılır.
+- **Database Bağlantısı:** Botlar PocketBase'e admin token ile veya gizli bir API user ile bağlanmalıdır. Şifreler çevre değişkenleri (environment variables) veya gitignore'lanmış dosyalardan geçilmelidir.
 
 ---
 
