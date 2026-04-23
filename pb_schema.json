@@ -129,15 +129,13 @@
     "deleteRule": "@request.auth.id != \"\" && @request.auth.role = 0"
   },
   {
-    "id": "col_real_brands",
-    "name": "brands",
+    "id": "col_campaign_sources",
+    "name": "campaign_sources",
     "type": "base",
     "system": false,
     "schema": [
-      { "system": false, "id": "rb_name", "name": "name", "type": "text", "required": true, "options": { "min": 1, "max": 100 } },
-      { "system": false, "id": "rb_logo", "name": "logo", "type": "file", "required": false, "options": { "maxSelect": 1, "maxSize": 5242880, "mimeTypes": ["image/jpeg", "image/png", "image/webp"] } },
-      { "system": false, "id": "rb_category", "name": "category", "type": "select", "required": false, "options": { "maxSelect": 1, "values": ["Food", "Transport", "Finance", "Clothing", "Cosmetics", "Other"] } },
-      { "system": false, "id": "rb_url", "name": "campaign_url", "type": "text", "required": false, "options": {} }
+      { "system": false, "id": "cs_name", "name": "name", "type": "text", "required": true, "options": { "min": 1, "max": 100 } },
+      { "system": false, "id": "cs_url", "name": "url", "type": "text", "required": true, "options": {} }
     ],
     "listRule": "@request.auth.id != \"\"",
     "viewRule": "@request.auth.id != \"\"",
@@ -146,19 +144,20 @@
     "deleteRule": "@request.auth.id != \"\" && @request.auth.role = 0"
   },
   {
-    "id": "col_campaigns",
+    "id": "col_new_campaigns",
     "name": "campaigns",
     "type": "base",
     "system": false,
     "schema": [
-      { "system": false, "id": "cp_brands", "name": "brand_id", "type": "relation", "required": true, "options": { "collectionId": "col_real_brands", "cascadeDelete": true, "maxSelect": 1 } },
-      { "system": false, "id": "cp_title", "name": "title", "type": "text", "required": true, "options": { "min": 5, "max": 200 } },
-      { "system": false, "id": "cp_desc", "name": "description", "type": "text", "required": true, "options": { "min": 10, "max": 2500 } },
-      { "system": false, "id": "cp_url", "name": "source_url", "type": "text", "required": false, "options": {} },
-      { "system": false, "id": "cp_image", "name": "image_url", "type": "text", "required": false, "options": {} },
-      { "system": false, "id": "cp_start", "name": "start_date", "type": "date", "required": false, "options": {} },
-      { "system": false, "id": "cp_end", "name": "end_date", "type": "date", "required": false, "options": {} },
-      { "system": false, "id": "cp_active", "name": "is_active", "type": "bool", "required": false, "options": {} }
+      { "system": false, "id": "nc_source", "name": "source_id", "type": "relation", "required": true, "options": { "collectionId": "col_campaign_sources", "cascadeDelete": true, "maxSelect": 1 } },
+      { "system": false, "id": "nc_title", "name": "title", "type": "text", "required": true, "options": {} },
+      { "system": false, "id": "nc_image", "name": "image_url", "type": "text", "required": false, "options": {} },
+      { "system": false, "id": "nc_katilim", "name": "duration_text", "type": "text", "required": false, "options": {} },
+      { "system": false, "id": "nc_usage", "name": "usage_text", "type": "text", "required": false, "options": {} },
+      { "system": false, "id": "nc_details", "name": "details_json", "type": "json", "required": false, "options": {} },
+      { "system": false, "id": "nc_brands", "name": "brands_json", "type": "json", "required": false, "options": {} },
+      { "system": false, "id": "nc_terms", "name": "conditions_json", "type": "json", "required": false, "options": {} },
+      { "system": false, "id": "nc_url", "name": "original_url", "type": "text", "required": true, "options": {} }
     ],
     "listRule": "@request.auth.id != \"\"",
     "viewRule": "@request.auth.id != \"\"",

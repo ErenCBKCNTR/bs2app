@@ -18,23 +18,18 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final campaign = widget.campaign;
-    final brand = campaign.expand['brand_id']?.first;
+    final sourceName = campaign.expand['source_id']?.first.getStringValue('name') ?? 'Genel';
     
     final title = campaign.getStringValue('title');
-    final description = campaign.getStringValue('description');
     final imageUrl = campaign.getStringValue('image_url');
-    final sourceUrl = campaign.getStringValue('source_url');
+    final durationText = campaign.getStringValue('duration_text');
+    final usageText = campaign.getStringValue('usage_text');
+    final originalUrl = campaign.getStringValue('original_url');
     
-    // Tarihler
-    final startDateStr = campaign.getStringValue('start_date');
-    final endDateStr = campaign.getStringValue('end_date');
-    
-    final displayStart = startDateStr.isNotEmpty 
-        ? startDateStr.split(' ')[0] 
-        : 'Belirtilmedi';
-    final displayEnd = endDateStr.isNotEmpty 
-        ? endDateStr.split(' ')[0] 
-        : 'Süresiz';
+    // JSON verilerini işle
+    final detailsMap = campaign.getDataValue<Map<String, dynamic>>('details_json');
+    final brandsList = campaign.getDataValue<List<dynamic>>('brands_json');
+    final conditionsList = campaign.getDataValue<List<dynamic>>('conditions_json');
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
@@ -66,7 +61,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Marka Etiketi
+                  // Kaynak Etiketi
                   Row(
                     children: [
                       Container(
@@ -76,7 +71,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          brand?.getStringValue('name') ?? 'Genel Marka',
+                          sourceName,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -104,44 +99,71 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Tarih Kutuları
-                  Row(
-                    children: [
-                      _buildDateBox('BAŞLANGIÇ', displayStart, Icons.calendar_today_outlined, Colors.blue),
-                      const SizedBox(width: 12),
-                      _buildDateBox('BİTİŞ', displayEnd, Icons.event_available, Colors.red),
-                    ],
-                  ),
+                  // Tarih/Süre Bilgisi
+                  if (durationText.isNotEmpty)
+                    _buildInfoBox('KAMPANYA KATILIMI', durationText, Icons.calendar_today_outlined, Colors.blue),
+                  
+                  if (usageText.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _buildInfoBox('KAZANCIN KULLANIMI', usageText, Icons.stars_rounded, Colors.orange),
+                  ],
+                  
                   const SizedBox(height: 24),
 
-                  const Divider(),
-                  const SizedBox(height: 16),
-
-                  // Açıklama
-                  const Text(
-                    'Kampanya Hakkında',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  ExpandableText(
-                    text: description,
-                    maxLines: 5,
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.6,
-                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
+                  // Markalar (Varsa)
+                  if (brandsList.isNotEmpty) ...[
+                    const Text('Dahil Markalar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: brandsList.map((b) => Chip(label: Text(b.toString(), style: const TextStyle(fontSize: 12)))).toList(),
                     ),
-                  ),
+                    const SizedBox(height: 24),
+                  ],
 
-                  const SizedBox(height: 32),
+                  // Detaylı Bölümler (Her biri için bir kart)
+                  if (detailsMap.isNotEmpty) ...[
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    ...detailsMap.entries.map((entry) => Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(entry.key, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          Text(entry.value.toString(), style: TextStyle(fontSize: 14, height: 1.5, color: Colors.grey[600])),
+                        ],
+                      ),
+                    )),
+                  ],
+
+                  // Koşullar (Maddeler halinde)
+                  if (conditionsList.isNotEmpty) ...[
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    const Text('Kampanya Koşulları', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    ...conditionsList.map((c) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.check_circle_outline, size: 16, color: Colors.green),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(c.toString(), style: const TextStyle(fontSize: 13, height: 1.4))),
+                        ],
+                      ),
+                    )),
+                    const SizedBox(height: 24),
+                  ],
 
                   // Buton
-                  if (sourceUrl.isNotEmpty)
+                  if (originalUrl.isNotEmpty)
                     ElevatedButton.icon(
                       icon: const Icon(Icons.open_in_new),
-                      label: const Text('Kampanya Detayına Git'),
-                      onPressed: () => _launchURL(sourceUrl),
+                      label: const Text('Kampanya Sayfasına Git'),
+                      onPressed: () => _launchURL(originalUrl),
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 56),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -158,40 +180,31 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
     );
   }
 
-  Widget _buildDateBox(String label, String date, IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.1)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 12, color: color),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              date,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
+  Widget _buildInfoBox(String label, String text, IconData icon, Color color) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold, letterSpacing: 1),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        ],
       ),
     );
   }

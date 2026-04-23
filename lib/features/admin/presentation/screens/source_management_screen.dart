@@ -22,8 +22,7 @@ class _SourceManagementScreenState extends State<SourceManagementScreen> {
 
   Future<void> _fetchSources() async {
     try {
-      // Kullanicinin panelinde gordugu asil tablo ismi 'brands'
-      final records = await PocketBaseService.client.collection('brands').getFullList(
+      final records = await PocketBaseService.client.collection('campaign_sources').getFullList(
         sort: '-created',
       );
       if (mounted) {
@@ -40,8 +39,7 @@ class _SourceManagementScreenState extends State<SourceManagementScreen> {
 
   void _showSourceDialog([RecordModel? source]) {
     final nameController = TextEditingController(text: source?.getStringValue('name'));
-    final urlController = TextEditingController(text: source?.getStringValue('campaign_url'));
-    String selectedCategory = source?.getStringValue('category') ?? 'Other';
+    final urlController = TextEditingController(text: source?.getStringValue('url'));
 
     showDialog(
       context: context,
@@ -57,23 +55,13 @@ class _SourceManagementScreenState extends State<SourceManagementScreen> {
                   labelText: 'Kaynak Adı',
                   hintText: 'Örn: GetKampania Market',
                 ),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: selectedCategory,
-                decoration: const InputDecoration(labelText: 'Kategori'),
-                items: ['Food', 'Transport', 'Finance', 'Clothing', 'Cosmetics', 'Other']
-                    .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
-                    .toList(),
-                onChanged: (val) {
-                  if (val != null) selectedCategory = val;
-                },
+                maxLength: 100,
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: urlController,
                 decoration: const InputDecoration(
-                  labelText: 'Kampanya URL (Bot için)',
+                  labelText: 'Tarama URL (Kategori Linki)',
                   hintText: 'https://...',
                 ),
               ),
@@ -86,19 +74,18 @@ class _SourceManagementScreenState extends State<SourceManagementScreen> {
             onPressed: () async {
               final name = nameController.text.trim();
               final url = urlController.text.trim();
-              if (name.isEmpty) return;
+              if (name.isEmpty || url.isEmpty) return;
 
               try {
                 final body = {
                   'name': name,
-                  'category': selectedCategory,
-                  'campaign_url': url,
+                  'url': url,
                 };
 
                 if (source == null) {
-                  await PocketBaseService.client.collection('brands').create(body: body);
+                  await PocketBaseService.client.collection('campaign_sources').create(body: body);
                 } else {
-                  await PocketBaseService.client.collection('brands').update(source.id, body: body);
+                  await PocketBaseService.client.collection('campaign_sources').update(source.id, body: body);
                 }
                 
                 if (mounted) {
@@ -111,18 +98,10 @@ class _SourceManagementScreenState extends State<SourceManagementScreen> {
               } catch (e) {
                 AppLogger.instance.error('Kaynak kaydedilemedi: $e');
                 if (mounted) {
-                  String errorMessage = 'Kayıt başarısız yetki hatası olabilir.';
-                  if (e.toString().contains('403')) {
-                    errorMessage = 'Erişim reddedildi: Bu işlemi yapmaya yetkiniz yok (403).';
-                  } else if (e.toString().contains('404')) {
-                    errorMessage = 'Veritabanı koleksiyonu bulunamadı (404).';
-                  }
-                  
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(errorMessage),
+                      content: Text('Hata: $e'),
                       backgroundColor: Colors.red,
-                      duration: const Duration(seconds: 5),
                     ),
                   );
                 }
@@ -148,7 +127,7 @@ class _SourceManagementScreenState extends State<SourceManagementScreen> {
                 return ListTile(
                   leading: const CircleAvatar(child: Icon(Icons.link)),
                   title: Text(source.getStringValue('name')),
-                  subtitle: Text('${source.getStringValue('category')} - ${source.getStringValue('campaign_url')}'),
+                  subtitle: Text(source.getStringValue('url')),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -173,7 +152,7 @@ class _SourceManagementScreenState extends State<SourceManagementScreen> {
                             ),
                           );
                           if (confirmed == true) {
-                            await PocketBaseService.client.collection('brands').delete(source.id);
+                            await PocketBaseService.client.collection('campaign_sources').delete(source.id);
                             _fetchSources();
                           }
                         },

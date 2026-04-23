@@ -99,8 +99,8 @@ class AdminService {
       );
       final feedbackCount = feedbackResponse.totalItems;
 
-      // 6. Total Sources (Brands)
-      final sourcesResponse = await PocketBaseService.client.collection('brands').getList(
+      // 6. Total Sources (Campaign Sources)
+      final sourcesResponse = await PocketBaseService.client.collection('campaign_sources').getList(
         page: 1,
         perPage: 1,
       );
