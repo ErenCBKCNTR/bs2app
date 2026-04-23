@@ -5,5 +5,9 @@
   "scripts": {
     "lint": "echo 'No TypeScript to lint'",
     "build": "echo 'No TypeScript to build'"
+  },
+  "dependencies": {
+    "selenium": "^2.20.0",
+    "webdriver-manager": "^12.1.9"
   }
 }

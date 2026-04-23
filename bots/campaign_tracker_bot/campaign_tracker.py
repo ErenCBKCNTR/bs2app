@@ -5,6 +5,10 @@ from urllib.parse import urljoin
 import os
 import time
 import re
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 
 # Pocketbase bağlantısı için gerekli bilgiler
 PB_URL = "https://api.cabukcan.com"
@@ -191,50 +195,59 @@ class CampaignBotAPI:
 # --- Senin Sağladığın Scraping Mantığı (Hassas Tarih Ayrıştırmalı) ---
 
 def liste_sayfasindan_linkleri_al(kategori_url):
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-    linkler = set()
+    print(f"[*] Kategori sayfası taranıyor (Selenium ile): {kategori_url}")
     
-    # 1. Aşama: Ana sayfa ve temel linkler
+    # Sunucuda arayüzsüz (headless) çalışması için tarayıcı ayarları
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    
     try:
-        print(f"  [BİLGİ] Kaynak taranıyor: {kategori_url}")
-        response = requests.get(kategori_url, headers=headers, timeout=15)
-        response.encoding = 'utf-8'
-        soup = BeautifulSoup(response.text, 'html.parser')
+        driver.get(kategori_url)
         
-        # Standart <a> etiketleri
-        for a in soup.find_all('a', href=True):
-            href = a['href']
+        # Sayfayı en aşağıya kadar kaydırma döngüsü (Tüm JS verileri yüklenene kadar)
+        last_height = driver.execute_script("return document.body.scrollHeight")
+        while True:
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(2) # JS'nin yeni kampanyaları yüklemesi için mola
+            
+            new_height = driver.execute_script("return document.body.scrollHeight")
+            if new_height == last_height:
+                # "Daha Fazla" butonu varsa tıklamayı dene
+                try:
+                    button = driver.find_element("xpath", "//button[contains(text(), 'Daha Fazla')]")
+                    driver.execute_script("arguments[0].click();", button)
+                    time.sleep(2)
+                    new_height = driver.execute_script("return document.body.scrollHeight")
+                    if new_height == last_height: break
+                except:
+                    break # Daha fazla kayacak yer kalmadıysa döngüyü kır
+            last_height = new_height
+            
+        # JS ile tam yüklenmiş son HTML kaynağını çekiyoruz
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        
+        linkler = []
+        for a_etiketi in soup.find_all('a', href=True):
+            href = a_etiketi['href']
             if '/kampanyalar/' in href and not href.endswith('/kampanyalar'):
                 full_url = urljoin("https://www.getkampania.com", href)
-                linkler.add(full_url.split('?')[0].rstrip('/'))
-
-        # 2. Next.js JSON Verisi (__NEXT_DATA__)
-        # Bu kısım genellikle sayfadaki TÜM (hatta görünmeyen) kampanyaları içerir
-        try:
-            next_data_script = soup.find('script', id='__NEXT_DATA__')
-            if next_data_script:
-                data = json.loads(next_data_script.string)
-                # JSON içinde kampanya veya slug geçen her şeyi tara
-                found_slugs = re.findall(r'"slug":"([^"]+)"', next_data_script.string)
-                for slug in found_slugs:
-                    if '-' in slug and len(slug) > 10:
-                        linkler.add(f"https://www.getkampania.com/kampanyalar/{slug}")
-        except Exception as je:
-            print(f"  [UYARI] JSON ayrıştırma hatası: {je}")
-
-        # 3. Agresif Regex Taraması
-        regex_links = re.findall(r'\"/kampanyalar/[a-zA-Z0-9_-]+\"', html_content)
-        for rl in regex_links:
-            clean_rel = rl.strip('"')
-            if not clean_rel.endswith('/kampanyalar'):
-                linkler.add(urljoin("https://www.getkampania.com", clean_rel))
-                
+                clean_url = full_url.split('?')[0].rstrip('/')
+                if clean_url not in linkler:
+                    linkler.append(clean_url)
+                    
+        print(f"  [BİLGİ] Selenium ile toplam {len(linkler)} adet kampanya linki toplandı.")
+        return linkler
+        
     except Exception as e:
-        print(f"  [HATA] Liste tarama hatası: {e}")
-
-    final_list = list(linkler)
-    print(f"  [BİLGİ] Toplam benzersiz kampanya linki sayısı: {len(final_list)}")
-    return final_list
+        print(f"[-] Liste çekilirken hata: {e}")
+        return []
+    finally:
+        driver.quit()
 
 def scraping_to_dict(url):
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
