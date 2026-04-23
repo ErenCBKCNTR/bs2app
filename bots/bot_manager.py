@@ -121,7 +121,8 @@ def install_dependencies(req_file):
 
         # Şimdi kütüphaneleri kur
         # --break-system-packages: Yeni nesil Ubuntu'lardaki kısıtlamayı aşmak için gerekli
-        subprocess.run([sys.executable, "-m", "pip", "install", "--break-system-packages", "-r", req_file], check=True)
+        # --ignore-installed: Debian'ın 'RECORD file not found' hatasını aşmak için veriyi zorla kurar
+        subprocess.run([sys.executable, "-m", "pip", "install", "--ignore-installed", "--break-system-packages", "-r", req_file], check=True)
         return True
     except Exception as e:
         print(f"\n[X] Bağımlılıklar kurulamadı: {e}")
