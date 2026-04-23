@@ -299,12 +299,16 @@ def run_bot():
             print("  [UYARI] Taranacak kaynak bulunamadı. Lütfen yönetim panelinden 'Kaynaklar' ekleyin.")
         
         for src in sources:
-            print(f"\nKaynak taranıyor ({src.get('category', 'Kategori Yok')}): {src['name']}")
+            cat = src.get('category')
+            if not cat: # PocketBase boş alanlar için "" dönebilir, bunu handle ediyoruz.
+                cat = 'Diğer'
+                
+            print(f"\nKaynak taranıyor ({cat}): {src['name']}")
             links = liste_sayfasindan_linkleri_al(src['url'])
             for link in links:
                 data = scraping_to_dict(link)
                 if data:
-                    bot_api.save_campaign(src['id'], src.get('category', 'Diğer'), data)
+                    bot_api.save_campaign(src['id'], cat, data)
                 time.sleep(1) # Siteyi yormamak için
         
         print(f"\n[{time.strftime('%H:%M:%S')}] --- Döngü bitti. 1 saat bekleniyor... ---")

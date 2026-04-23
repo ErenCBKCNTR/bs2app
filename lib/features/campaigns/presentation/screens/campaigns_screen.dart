@@ -16,6 +16,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   bool _isLoading = true;
   String _selectedCategory = 'Tümü';
   String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   final List<String> _categories = [
     'Tümü', 'Akaryakıt', 'Araç', 'E-Ticaret', 'Eğitim & Kırtasiye', 'Eğlence', 
@@ -27,6 +28,12 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   void initState() {
     super.initState();
     _fetchCampaigns();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchCampaigns() async {
@@ -75,6 +82,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: TextField(
+                controller: _searchController,
                 onChanged: (val) {
                   setState(() => _searchQuery = val);
                   _fetchCampaigns();
@@ -86,6 +94,16 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                   filled: true,
                   fillColor: Theme.of(context).cardColor,
                   contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  suffixIcon: _searchQuery.isNotEmpty 
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                          _fetchCampaigns();
+                        },
+                      ) 
+                    : null,
                 ),
               ),
             ),
@@ -148,13 +166,20 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: InkWell(
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => CampaignDetailScreen(campaign: campaign),
                 ),
               );
+
+              if (result != null && result is String) {
+                // Return from detail screen with a specific brand name to search
+                _searchController.text = result;
+                setState(() => _searchQuery = result);
+                _fetchCampaigns();
+              }
             },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

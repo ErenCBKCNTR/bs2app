@@ -122,7 +122,16 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                         children: (_expandedBrands || brandsList.length < 5 
                             ? brandsList 
                             : brandsList.take(4).toList())
-                          .map((b) => Chip(label: Text(b.toString(), style: const TextStyle(fontSize: 12))))
+                          .map((b) => Semantics(
+                              button: true,
+                              hint: 'Bu markaya ait diğer kampanyaları görüntülemek için tıklayın',
+                              child: ActionChip(
+                                label: Text(b.toString(), style: const TextStyle(fontSize: 12)),
+                                onPressed: () {
+                                  Navigator.pop(context, b.toString());
+                                },
+                              ),
+                            ))
                           .toList(),
                       ),
                       if (brandsList.length >= 5)
@@ -182,7 +191,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                     if (finalUrl.isNotEmpty)
                       ElevatedButton.icon(
                         icon: const Icon(Icons.open_in_new),
-                        label: const Text('Kampanya Sayfasına Git'),
+                        label: const Text('Kampanyaya Ait Siteyi Ziyaret Et'),
                         onPressed: () => _launchURL(finalUrl),
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 56),
@@ -232,14 +241,18 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
   Future<void> _launchURL(String urlString) async {
     final url = Uri.parse(urlString);
     try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      }
+      // Çoğu sistemde (Ajan güvenlik kilitleri, Iframe platformları, Android > 13 CustomTabs) 
+      // canLaunchUrl metodu false döner. Bu yüzden bypass ediyoruz.
+      await launchUrl(url, mode: LaunchMode.externalApplication).catchError((_) async {
+        // Eğer cihazda harici uygulama açılması tamamen kilitliyse (örnek Iframe preview), browser içi sekmeden açmayı dene
+        await launchUrl(url, mode: LaunchMode.platformDefault);
+        return true;
+      });
     } catch (e) {
       AppLogger.instance.error('URL açılamadı: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bağlantı açılamadı.')),
+          const SnackBar(content: Text('Bağlantı açılamadı. Güvenlik politikası nedeniyle engellenmiş olabilir.')),
         );
       }
     }

@@ -161,7 +161,7 @@ class _SourceManagementScreenState extends State<SourceManagementScreen> {
                 final source = _sources[index];
                 return ListTile(
                   leading: const CircleAvatar(child: Icon(Icons.link)),
-                  title: Text(source.getStringValue('name')),
+                  title: Text("${source.getStringValue('name')} [${source.getStringValue('category').isEmpty ? 'Kategori Seçilmemiş' : source.getStringValue('category')}]"),
                   subtitle: Text(source.getStringValue('url')),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
