@@ -26,3 +26,11 @@ Bu dosya, projede karşılaşılan teknik hataların kök nedenlerini, çözüml
 2. [ ] PocketBase Record objelerinden tarih okunurken `DateTime.parse` kullanıldı mı?
 3. [ ] `expand` edilen verilerde null kontrolü yapıldı mı?
 4. [ ] Yeni bağımlılık eklendiyse `BAGIMLILIK_ENVANTERI.md` güncellendi mi?
+
+---
+
+## 🐍 Python ve Bot Geliştirme Notları
+- **Bağımlılıklar:** Her bot klasörü (`bots/bot_name/`) kendi `requirements.txt` dosyasını içermelidir. Sunucuda kurulum yapmadan önce mutlaka versiyon kontrolü yapılmalıdır.
+- **Scraping Etiği:** Botlar taranacak siteyi yormamak için (Denial of Wallet/Service önlemek adına) istekler arasına `time.sleep()` koymalıdır.
+- **Dinamik İçerik:** JavaScript ile yüklenen siteler için `requests` yerine `Selenium` veya `Playwright` gerekebilir. Şimdilik `BeautifulSoup` standart olarak belirlendi.
+- **Database Bağlantısı:** Botlar PocketBase'e admin token ile veya gizli bir API user ile bağlanmalıdır. Şifreler çevre değişkenleri (environment variables) üzerinden geçilmelidir.

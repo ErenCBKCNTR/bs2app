@@ -23,6 +23,7 @@ import 'chat_detail_screen.dart';
 import 'call_screen.dart';
 import 'favorite_messages_screen.dart';
 import 'archived_messages_screen.dart';
+import 'package:blind_social/features/campaigns/presentation/screens/campaigns_screen.dart';
 import '../../../radio/presentation/screens/radio_list_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
@@ -1049,7 +1050,15 @@ Widget? _buildFAB() {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const AppSettingsScreen()));
             },
           ),
-           ListTile(
+          ListTile(
+            leading: const Icon(Icons.campaign_outlined),
+            title: const Text('Kampanyalar'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const CampaignsScreen()));
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.radio_outlined),
             title: const Text('Canlı Radyo'),
             onTap: () {

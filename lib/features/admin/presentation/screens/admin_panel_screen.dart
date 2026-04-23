@@ -4,6 +4,7 @@ import 'package:blind_social/core/utils/logger.dart';
 import 'package:blind_social/features/admin/presentation/screens/user_list_screen.dart';
 import 'package:blind_social/features/admin/presentation/screens/server_list_screen.dart';
 import 'package:blind_social/features/admin/presentation/screens/feedback_management_screen.dart';
+import 'package:blind_social/features/admin/presentation/screens/brand_management_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
   const AdminPanelScreen({super.key});
@@ -131,6 +132,18 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Blog sayfasındaki herhangi bir gönderiyi artık silebilirsiniz.')),
+                      );
+                    },
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.business_outlined, color: Colors.orange),
+                    title: const Text('Marka & Kampanya Kaynağı Yönetimi'),
+                    subtitle: const Text('Botun kampanya çekeceği markaları ve URL adreslerini yönetin'),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const BrandManagementScreen()),
                       );
                     },
                   ),
