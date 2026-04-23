@@ -40,76 +40,111 @@ class _SourceManagementScreenState extends State<SourceManagementScreen> {
   void _showSourceDialog([RecordModel? source]) {
     final nameController = TextEditingController(text: source?.getStringValue('name'));
     final urlController = TextEditingController(text: source?.getStringValue('url'));
+    
+    final categories = [
+      'Akaryakıt', 'Araç', 'E-Ticaret', 'Eğitim & Kırtasiye', 'Eğlence', 
+      'Elektronik', 'Dekorasyon', 'Moda & Kozmetik', 'Market', 'Sağlık', 
+      'Seyahat', 'Yeme-İçme', 'Yurt Dışı', 'Diğer'
+    ];
+    
+    // Select initial category or default to Market
+    String selectedCategory = categories.contains(source?.getStringValue('category')) 
+        ? source!.getStringValue('category') 
+        : categories[8]; // 'Market'
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(source == null ? 'Yeni Kaynak Ekle' : 'Kaynağı Düzenle'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Kaynak Adı',
-                  hintText: 'Örn: GetKampania Market',
-                ),
-                maxLength: 100,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text(source == null ? 'Yeni Kaynak Ekle' : 'Kaynağı Düzenle'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    value: selectedCategory,
+                    decoration: const InputDecoration(
+                      labelText: 'Kategori Seçimi',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: categories.map((cat) {
+                      return DropdownMenuItem(
+                        value: cat,
+                        child: Text(cat),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      setDialogState(() {
+                        if (val != null) selectedCategory = val;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Kaynak Adı',
+                      hintText: 'Örn: GetKampania Market',
+                    ),
+                    maxLength: 100,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: urlController,
+                    decoration: const InputDecoration(
+                      labelText: 'Tarama URL (Kategori Linki)',
+                      hintText: 'https://...',
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: urlController,
-                decoration: const InputDecoration(
-                  labelText: 'Tarama URL (Kategori Linki)',
-                  hintText: 'https://...',
-                ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
+              ElevatedButton(
+                onPressed: () async {
+                  final name = nameController.text.trim();
+                  final url = urlController.text.trim();
+                  if (name.isEmpty || url.isEmpty) return;
+
+                  try {
+                    final body = {
+                      'name': name,
+                      'url': url,
+                      'category': selectedCategory,
+                    };
+
+                    if (source == null) {
+                      await PocketBaseService.client.collection('campaign_sources').create(body: body);
+                    } else {
+                      await PocketBaseService.client.collection('campaign_sources').update(source.id, body: body);
+                    }
+                    
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Kaynak başarıyla kaydedildi.')),
+                      );
+                    }
+                    _fetchSources();
+                  } catch (e) {
+                    AppLogger.instance.error('Kaynak kaydedilemedi: $e');
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Hata: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Kaydet'),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
-          ElevatedButton(
-            onPressed: () async {
-              final name = nameController.text.trim();
-              final url = urlController.text.trim();
-              if (name.isEmpty || url.isEmpty) return;
-
-              try {
-                final body = {
-                  'name': name,
-                  'url': url,
-                };
-
-                if (source == null) {
-                  await PocketBaseService.client.collection('campaign_sources').create(body: body);
-                } else {
-                  await PocketBaseService.client.collection('campaign_sources').update(source.id, body: body);
-                }
-                
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Kaynak başarıyla kaydedildi.')),
-                  );
-                }
-                _fetchSources();
-              } catch (e) {
-                AppLogger.instance.error('Kaynak kaydedilemedi: $e');
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Hata: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Kaydet'),
-          ),
-        ],
+          );
+        }
       ),
     );
   }

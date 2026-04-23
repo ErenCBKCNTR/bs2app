@@ -88,7 +88,7 @@ class CampaignBotAPI:
             print(f"  [HATA] Kaynak çekme hatası: {e}")
         return []
 
-    def save_campaign(self, source_id, data):
+    def save_campaign(self, source_id, source_category, data):
         """Botun bulduğu kampanyayı PocketBase'e kaydeder veya günceller."""
         try:
             # Mükerrer kaydı önlemek için URL kontrolü
@@ -101,6 +101,7 @@ class CampaignBotAPI:
             
             payload = {
                 "source_id": source_id,
+                "category": source_category,
                 "title": data["Baslik"],
                 "image_url": data["Gorsel_URL"],
                 "camp_start": data.get("Kampanya_Baslangic", ""),
@@ -126,57 +127,6 @@ class CampaignBotAPI:
                 )
                 if r.status_code == 200:
                     print(f"  [GÜNCELLENDİ] {data['Baslik']}")
-            else:
-                # Yeni oluştur
-                r = requests.post(
-                    f"{self.pb_url}/api/collections/campaigns/records", 
-                    json=payload,
-                    headers=self.headers
-                )
-                if r.status_code == 200:
-                    print(f"  [YENİ KAYIT] {data['Baslik']}")
-        except Exception as e:
-            print(f"Kayıt sırasında hata: {e}")
-
-# --- Senin Sağladığın Scraping Mantığı ---
-        try:
-            # Mükerrer kaydı önlemek için URL kontrolü
-            check_resp = requests.get(
-                f"{self.pb_url}/api/collections/campaigns/records",
-                params={"filter": f'original_url="{data["Kampanya_URL"]}"'},
-                headers=self.headers
-            )
-            existing = check_resp.json().get('items', []) if check_resp.status_code == 200 else []
-            
-            payload = {
-                "source_id": source_id,
-                "title": data["Baslik"],
-                "image_url": data["Gorsel_URL"],
-                "camp_start": data.get("Kampanya_Baslangic", ""),
-                "camp_end": data.get("Kampanya_Bitis", ""),
-                "usage_start": data.get("Kazanc_Baslangic", ""),
-                "usage_end": data.get("Kazanc_Bitis", ""),
-                "duration_text": data.get("Kampanya_Katilimi", ""),
-                "usage_text": data.get("Kazancin_Kullanimi", ""),
-                "details_json": data["Detaylar"],
-                "brands_json": data["Markalar"],
-                "conditions_json": data["Kosullar"],
-                "actual_source_url": data.get("Kampanya_Detay_URL", ""),
-                "original_url": data["Kampanya_URL"]
-            }
-
-            if existing:
-                # Güncelle
-                record_id = existing[0]['id']
-                r = requests.patch(
-                    f"{self.pb_url}/api/collections/campaigns/records/{record_id}", 
-                    json=payload,
-                    headers=self.headers
-                )
-                if r.status_code == 200:
-                    print(f"  [GÜNCELLENDİ] {data['Baslik']}")
-                else:
-                    print(f"  [HATA] Güncelleme başarısız ({r.status_code}): {r.text}")
             else:
                 # Yeni oluştur
                 r = requests.post(
@@ -349,12 +299,12 @@ def run_bot():
             print("  [UYARI] Taranacak kaynak bulunamadı. Lütfen yönetim panelinden 'Kaynaklar' ekleyin.")
         
         for src in sources:
-            print(f"\nKaynak taranıyor: {src['name']}")
+            print(f"\nKaynak taranıyor ({src.get('category', 'Kategori Yok')}): {src['name']}")
             links = liste_sayfasindan_linkleri_al(src['url'])
             for link in links:
                 data = scraping_to_dict(link)
                 if data:
-                    bot_api.save_campaign(src['id'], data)
+                    bot_api.save_campaign(src['id'], src.get('category', 'Diğer'), data)
                 time.sleep(1) # Siteyi yormamak için
         
         print(f"\n[{time.strftime('%H:%M:%S')}] --- Döngü bitti. 1 saat bekleniyor... ---")

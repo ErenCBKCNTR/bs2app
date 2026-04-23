@@ -15,6 +15,8 @@ class CampaignDetailScreen extends StatefulWidget {
 }
 
 class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
+  bool _expandedBrands = false;
+
   @override
   Widget build(BuildContext context) {
     final campaign = widget.campaign;
@@ -43,138 +45,157 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
       appBar: AppBar(
         title: const Text('Kampanya Detayı'),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (imageUrl.isNotEmpty)
-              Container(
-                width: double.infinity,
-                height: 250,
-                color: Colors.white,
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (imageUrl.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  height: 250,
+                  color: Colors.white,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sourceName.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      title,
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Kampanya Tarihleri
+                    if (campStart.isNotEmpty) ...[
+                      const Text('KAMPANYA KATILIMI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _buildDateBadge('Başlangıç', campStart, Colors.blue),
+                          if (campEnd.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            _buildDateBadge('Bitiş', campEnd, Colors.red),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // Kazanç Kullanım Tarihleri
+                    if (usageStart.isNotEmpty) ...[
+                      const Text('KAZANCIN KULLANIMI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _buildDateBadge('Başlangıç', usageStart, Colors.orange),
+                          if (usageEnd.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            _buildDateBadge('Bitiş', usageEnd, Colors.deepOrange),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Markalar (Varsa)
+                    if (brandsList.isNotEmpty) ...[
+                      const Text('Kampanyaya Dahil Markalar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: (_expandedBrands || brandsList.length < 5 
+                            ? brandsList 
+                            : brandsList.take(4).toList())
+                          .map((b) => Chip(label: Text(b.toString(), style: const TextStyle(fontSize: 12))))
+                          .toList(),
+                      ),
+                      if (brandsList.length >= 5)
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _expandedBrands = !_expandedBrands;
+                            });
+                          },
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            alignment: Alignment.centerLeft,
+                          ),
+                          child: Text(_expandedBrands ? 'Daha Az Göster' : 'Tümünü Göster (${brandsList.length})'),
+                        ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Detaylı Bölümler (Her biri için bir kart)
+                    if (detailsMap.isNotEmpty) ...[
+                      const Divider(),
+                      const SizedBox(height: 16),
+                      ...detailsMap.entries.map((entry) => Padding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(entry.key, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            Text(entry.value.toString(), style: TextStyle(fontSize: 14, height: 1.5, color: Colors.grey[600])),
+                          ],
+                        ),
+                      )),
+                    ],
+
+                    // Koşullar (Maddeler halinde)
+                    if (conditionsList.isNotEmpty) ...[
+                      const Divider(),
+                      const SizedBox(height: 16),
+                      const Text('Kampanya Koşulları', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      ...conditionsList.map((c) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.check_circle_outline, size: 16, color: Colors.green),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(c.toString(), style: const TextStyle(fontSize: 13, height: 1.4))),
+                          ],
+                        ),
+                      )),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Buton
+                    if (finalUrl.isNotEmpty)
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.open_in_new),
+                        label: const Text('Kampanya Sayfasına Git'),
+                        onPressed: () => _launchURL(finalUrl),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 0,
+                        ),
+                      ),
+                    const SizedBox(height: 40),
+                  ],
                 ),
               ),
-
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    sourceName.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    title,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Kampanya Tarihleri
-                  if (campStart.isNotEmpty) ...[
-                    const Text('KAMPANYA KATILIMI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        _buildDateBadge('Başlangıç', campStart, Colors.blue),
-                        if (campEnd.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          _buildDateBadge('Bitiş', campEnd, Colors.red),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-
-                  // Kazanç Kullanım Tarihleri
-                  if (usageStart.isNotEmpty) ...[
-                    const Text('KAZANCIN KULLANIMI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        _buildDateBadge('Başlangıç', usageStart, Colors.orange),
-                        if (usageEnd.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          _buildDateBadge('Bitiş', usageEnd, Colors.deepOrange),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Markalar (Varsa)
-                  if (brandsList.isNotEmpty) ...[
-                    const Text('Dahil Markalar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: brandsList.map((b) => Chip(label: Text(b.toString(), style: const TextStyle(fontSize: 12)))).toList(),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Detaylı Bölümler (Her biri için bir kart)
-                  if (detailsMap.isNotEmpty) ...[
-                    const Divider(),
-                    const SizedBox(height: 16),
-                    ...detailsMap.entries.map((entry) => Padding(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(entry.key, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
-                          Text(entry.value.toString(), style: TextStyle(fontSize: 14, height: 1.5, color: Colors.grey[600])),
-                        ],
-                      ),
-                    )),
-                  ],
-
-                  // Koşullar (Maddeler halinde)
-                  if (conditionsList.isNotEmpty) ...[
-                    const Divider(),
-                    const SizedBox(height: 16),
-                    const Text('Kampanya Koşulları', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
-                    ...conditionsList.map((c) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.check_circle_outline, size: 16, color: Colors.green),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(c.toString(), style: const TextStyle(fontSize: 13, height: 1.4))),
-                        ],
-                      ),
-                    )),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Buton
-                  if (finalUrl.isNotEmpty)
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.open_in_new),
-                      label: const Text('Kampanya Sayfasına Git'),
-                      onPressed: () => _launchURL(finalUrl),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 56),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        elevation: 0,
-                      ),
-                    ),
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

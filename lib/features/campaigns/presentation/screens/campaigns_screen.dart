@@ -14,30 +14,14 @@ class CampaignsScreen extends StatefulWidget {
 class _CampaignsScreenState extends State<CampaignsScreen> {
   List<RecordModel> _campaigns = [];
   bool _isLoading = true;
-  String _selectedCategory = 'All';
+  String _selectedCategory = 'Tümü';
   String _searchQuery = '';
 
   final List<String> _categories = [
-    'All',
-    'Food',
-    'Transport',
-    'Finance',
-    'Clothing',
-    'Cosmetics',
-    'Other'
+    'Tümü', 'Akaryakıt', 'Araç', 'E-Ticaret', 'Eğitim & Kırtasiye', 'Eğlence', 
+    'Elektronik', 'Dekorasyon', 'Moda & Kozmetik', 'Market', 'Sağlık', 
+    'Seyahat', 'Yeme-İçme', 'Yurt Dışı', 'Diğer', 'Kredi Kartı', 'Rehber'
   ];
-
-  String _getCategoryTurkish(String cat) {
-    switch (cat) {
-      case 'All': return 'Tümü';
-      case 'Food': return 'Gıda';
-      case 'Transport': return 'Ulaşım';
-      case 'Finance': return 'Finans';
-      case 'Clothing': return 'Giyim';
-      case 'Cosmetics': return 'Kozmetik';
-      default: return 'Diğer';
-    }
-  }
 
   @override
   void initState() {
@@ -48,13 +32,21 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   Future<void> _fetchCampaigns() async {
     setState(() => _isLoading = true);
     try {
-      String filter = '';
+      List<String> filters = [];
+      
       if (_searchQuery.isNotEmpty) {
-        filter = 'title ~ "$_searchQuery" || duration_text ~ "$_searchQuery"';
+        // brands_json içindeki veriden, title'dan ve koşuldan arama yapılabilir
+        filters.add('(title ~ "$_searchQuery" || duration_text ~ "$_searchQuery" || brands_json ~ "$_searchQuery")');
+      }
+      
+      if (_selectedCategory != 'Tümü') {
+        filters.add('category = "$_selectedCategory"');
       }
 
+      String finalFilter = filters.join(' && ');
+
       final records = await PocketBaseService.client.collection('campaigns').getFullList(
-        filter: filter,
+        filter: finalFilter,
         expand: 'source_id',
         sort: '-created',
       );
@@ -77,33 +69,59 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       appBar: AppBar(
         title: const Text('Güncel Kampanyalar'),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: TextField(
-              onChanged: (val) {
-                setState(() => _searchQuery = val);
-                _fetchCampaigns();
-              },
-              decoration: InputDecoration(
-                hintText: 'Kampanya ara...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                filled: true,
-                fillColor: Theme.of(context).cardColor,
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: TextField(
+                onChanged: (val) {
+                  setState(() => _searchQuery = val);
+                  _fetchCampaigns();
+                },
+                decoration: InputDecoration(
+                  hintText: 'Kampanya, marka veya kategori ara...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  filled: true,
+                  fillColor: Theme.of(context).cardColor,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _campaigns.isEmpty
-                    ? const Center(child: Text('Henüz kampanya bulunamadı.'))
-                    : _buildCampaignGrid(),
-          ),
-        ],
+            SizedBox(
+              height: 48,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                itemCount: _categories.length,
+                itemBuilder: (context, index) {
+                  final cat = _categories[index];
+                  final isSelected = _selectedCategory == cat;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: FilterChip(
+                      label: Text(cat),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        setState(() => _selectedCategory = cat);
+                        _fetchCampaigns();
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _campaigns.isEmpty
+                      ? const Center(child: Text('Henüz kampanya bulunamadı.'))
+                      : _buildCampaignGrid(),
+            ),
+          ],
+        ),
       ),
     );
   }

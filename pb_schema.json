@@ -135,7 +135,8 @@
     "system": false,
     "schema": [
       { "system": false, "id": "cs_name", "name": "name", "type": "text", "required": true, "options": { "min": 1, "max": 100 } },
-      { "system": false, "id": "cs_url", "name": "url", "type": "text", "required": true, "options": {} }
+      { "system": false, "id": "cs_url", "name": "url", "type": "text", "required": true, "options": {} },
+      { "system": false, "id": "cs_category", "name": "category", "type": "text", "required": false, "options": {} }
     ],
     "listRule": "@request.auth.id != \"\"",
     "viewRule": "@request.auth.id != \"\"",
@@ -151,6 +152,7 @@
     "schema": [
       { "system": false, "id": "nc_source", "name": "source_id", "type": "relation", "required": true, "options": { "collectionId": "col_campaign_sources", "cascadeDelete": true, "maxSelect": 1 } },
       { "system": false, "id": "nc_title", "name": "title", "type": "text", "required": true, "options": {} },
+      { "system": false, "id": "nc_category", "name": "category", "type": "text", "required": false, "options": {} },
       { "system": false, "id": "nc_image", "name": "image_url", "type": "text", "required": false, "options": {} },
       { "system": false, "id": "nc_camp_start", "name": "camp_start", "type": "text", "required": false, "options": {} },
       { "system": false, "id": "nc_camp_end", "name": "camp_end", "type": "text", "required": false, "options": {} },
