@@ -13,15 +13,23 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            version: '1.3.0',
+            date: '23 Nisan 2026',
+            changes: [
+              'İyileştirme: Uygulama altyapısı ve sürüm yönetim sistemi güncellendi.',
+              'İyileştirme: Sistem kararlılığını artıracak yeni geliştirme standartları devreye alındı.',
+            ],
+            isLatest: true,
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
             version: '1.2.9',
             date: '23 Nisan 2026',
             changes: [
               'İyileştirme: Sürüm notları kullanıcı odaklı ve daha sade hale getirildi.',
               'İyileştirme: Teknik geliştirme detayları sürüm geçmişinden temizlendi.',
             ],
-            isLatest: true,
           ),
-          const SizedBox(height: 24),
           _buildVersionSection(
             version: '1.2.8',
             date: '23 Nisan 2026',

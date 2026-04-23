@@ -12,4 +12,5 @@
 ## Görev Başlatma
 - **ZORUNLU GÖREV BAŞLATMA KONTROLÜ:** Yapay zeka ajanları, HER görevin başında `docs/agents/` dizinindeki ilgili dosyaları okumalıdır. Bu kural tartışılamazdır.
 - Yeni bir şey oluşturmadan önce, `SISTEM_KATALOGU.md` dosyasında uygun bir bileşenin veya servisin zaten mevcut olup olmadığını kontrol edin.
+- Yeni bir bağımlılık eklemeden önce `BAGIMLILIK_ENVANTERI.md` dosyasını kontrol edin ve mutlaka web araması yapın.
 - Veritabanıyla ilgili herhangi bir işlem yapmadan önce, tam tutarlılığı sağlamak için `pb_schema.json` dosyasını bir kez okuyun.

@@ -22,3 +22,8 @@
     - **Kullanıcı Odaklılık:** Sürüm notları SADECE kullanıcıyı ilgilendiren yeni özellikleri, arayüz değişikliklerini ve hata düzeltmelerini içermelidir.
     - **Teknik Detay Yasağı:** "Ajan dosyaları güncellendi", "Hafıza protokolü eklendi", "Dosya yapısı değişti" gibi sadece geliştiriciyi ilgilendiren teknik detaylar kesinlikle sürüm notlarına eklenmemelidir.
     - **Sıralı Artış:** Her güncelleme sürüm numarasını sıralı bir şekilde artırmalıdır (örneğin 1.2.0 -> 1.2.1).
+
+## Bağımlılık Yönetimi
+- **Zorunlu Web Araması:** Uygulamaya yeni bir paket ekleneceği zaman, mevcut eğitim verilerine güvenilmemelidir. Mutlaka `google_search` kullanılarak paket sürümünün ve dökümantasyonunun en güncel hali (pub.dev üzerinden) kontrol edilmelidir.
+- **Envanter Kontrolü:** Paket eklenmeden önce `docs/agents/BAGIMLILIK_ENVANTERI.md` dosyası okunarak mevcut paketlerle bir sürüm uyuşmazlığı olup olmayacağı analiz edilmelidir.
+- **Minimum Sürüm İlkesi:** Uygulamanın SDK kısıtlamalarına (`sdk: ">=3.0.0 <4.0.0"`) uygun en stabil ve en güncel sürüm tercih edilmelidir.
