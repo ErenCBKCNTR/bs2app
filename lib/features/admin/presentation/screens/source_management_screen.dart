@@ -3,56 +3,59 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
 
-class BrandManagementScreen extends StatefulWidget {
-  const BrandManagementScreen({super.key});
+class SourceManagementScreen extends StatefulWidget {
+  const SourceManagementScreen({super.key});
 
   @override
-  State<BrandManagementScreen> createState() => _BrandManagementScreenState();
+  State<SourceManagementScreen> createState() => _SourceManagementScreenState();
 }
 
-class _BrandManagementScreenState extends State<BrandManagementScreen> {
-  List<RecordModel> _brands = [];
+class _SourceManagementScreenState extends State<SourceManagementScreen> {
+  List<RecordModel> _sources = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchBrands();
+    _fetchSources();
   }
 
-  Future<void> _fetchBrands() async {
+  Future<void> _fetchSources() async {
     try {
-      final records = await PocketBaseService.client.collection('brands').getFullList(
+      final records = await PocketBaseService.client.collection('sources').getFullList(
         sort: '-created',
       );
       if (mounted) {
         setState(() {
-          _brands = records;
+          _sources = records;
           _isLoading = false;
         });
       }
     } catch (e) {
-      AppLogger.instance.error('Markalar yüklenemedi: $e');
+      AppLogger.instance.error('Kaynaklar yüklenemedi: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _showBrandDialog([RecordModel? brand]) {
-    final nameController = TextEditingController(text: brand?.getStringValue('name'));
-    final urlController = TextEditingController(text: brand?.getStringValue('campaign_url'));
-    String selectedCategory = brand?.getStringValue('category') ?? 'Other';
+  void _showSourceDialog([RecordModel? source]) {
+    final nameController = TextEditingController(text: source?.getStringValue('name'));
+    final urlController = TextEditingController(text: source?.getStringValue('campaign_url'));
+    String selectedCategory = source?.getStringValue('category') ?? 'Other';
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(brand == null ? 'Yeni Marka Ekle' : 'Markayı Düzenle'),
+        title: Text(source == null ? 'Yeni Kaynak Ekle' : 'Kaynağı Düzenle'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'Marka Adı'),
+                decoration: const InputDecoration(
+                  labelText: 'Kaynak Adı',
+                  hintText: 'Örn: GetKampania Market',
+                ),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
@@ -69,7 +72,7 @@ class _BrandManagementScreenState extends State<BrandManagementScreen> {
               TextField(
                 controller: urlController,
                 decoration: const InputDecoration(
-                  labelText: 'Kampanya Kaynak URL (Bot için)',
+                  labelText: 'Kampanya URL (Bot için)',
                   hintText: 'https://...',
                 ),
               ),
@@ -91,16 +94,16 @@ class _BrandManagementScreenState extends State<BrandManagementScreen> {
                   'campaign_url': url,
                 };
 
-                if (brand == null) {
-                  await PocketBaseService.client.collection('brands').create(body: body);
+                if (source == null) {
+                  await PocketBaseService.client.collection('sources').create(body: body);
                 } else {
-                  await PocketBaseService.client.collection('brands').update(brand.id, body: body);
+                  await PocketBaseService.client.collection('sources').update(source.id, body: body);
                 }
                 
                 Navigator.pop(context);
-                _fetchBrands();
+                _fetchSources();
               } catch (e) {
-                AppLogger.instance.error('Marka kaydedilemedi: $e');
+                AppLogger.instance.error('Kaynak kaydedilemedi: $e');
               }
             },
             child: const Text('Kaydet'),
@@ -113,29 +116,34 @@ class _BrandManagementScreenState extends State<BrandManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Marka & Kaynak Yönetimi')),
+      appBar: AppBar(title: const Text('Kampanya Kaynakları')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
-              itemCount: _brands.length,
+              itemCount: _sources.length,
               itemBuilder: (context, index) {
-                final brand = _brands[index];
+                final source = _sources[index];
                 return ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.business)),
-                  title: Text(brand.getStringValue('name')),
-                  subtitle: Text('${brand.getStringValue('category')} - ${brand.getStringValue('campaign_url')}'),
+                  leading: const CircleAvatar(child: Icon(Icons.link)),
+                  title: Text(source.getStringValue('name')),
+                  subtitle: Text('${source.getStringValue('category')} - ${source.getStringValue('campaign_url')}'),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(icon: const Icon(Icons.edit), onPressed: () => _showBrandDialog(brand)),
+                      IconButton(
+                        icon: const Icon(Icons.edit), 
+                        onPressed: () => _showSourceDialog(source),
+                        tooltip: 'Düzenle',
+                      ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
+                        tooltip: 'Sil',
                         onPressed: () async {
                           final confirmed = await showDialog<bool>(
                             context: context,
                             builder: (context) => AlertDialog(
-                              title: const Text('Markayı Sil'),
-                              content: const Text('Bu markayı ve markaya ait tüm kampanyaları silmek istediğinize emin misiniz?'),
+                              title: const Text('Kaynağı Sil'),
+                              content: const Text('Bu kaynağı silmek istediğinize emin misiniz? (Bot artık bu adresi taramayacaktır)'),
                               actions: [
                                 TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
                                 TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sil')),
@@ -143,8 +151,8 @@ class _BrandManagementScreenState extends State<BrandManagementScreen> {
                             ),
                           );
                           if (confirmed == true) {
-                            await PocketBaseService.client.collection('brands').delete(brand.id);
-                            _fetchBrands();
+                            await PocketBaseService.client.collection('sources').delete(source.id);
+                            _fetchSources();
                           }
                         },
                       ),
@@ -154,7 +162,8 @@ class _BrandManagementScreenState extends State<BrandManagementScreen> {
               },
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showBrandDialog(),
+        onPressed: () => _showSourceDialog(),
+        tooltip: 'Yeni Kaynak Ekle',
         child: const Icon(Icons.add),
       ),
     );

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:blind_social/features/campaigns/presentation/screens/campaign_detail_screen.dart';
 
 class CampaignsScreen extends StatefulWidget {
   const CampaignsScreen({super.key});
@@ -50,15 +50,16 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     try {
       String filter = 'is_active = true';
       if (_selectedCategory != 'All') {
-        filter += ' && brand_id.category = "$_selectedCategory"';
+        filter += ' && source_id.category = "$_selectedCategory"';
       }
       if (_searchQuery.isNotEmpty) {
-        filter += ' && (title ~ "$_searchQuery" || brand_id.name ~ "$_searchQuery")';
+        // Hem başlıkta, hem kaynak adında hem de ilintili marka isimlerinde ara
+        filter += ' && (title ~ "$_searchQuery" || source_id.name ~ "$_searchQuery" || brand_ids.name ~ "$_searchQuery")';
       }
 
       final records = await PocketBaseService.client.collection('campaigns').getFullList(
         filter: filter,
-        expand: 'brand_id',
+        expand: 'source_id,brand_ids',
         sort: '-created',
       );
       
@@ -145,32 +146,35 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.85, // Karemsi kutu görünümü için
+        childAspectRatio: 0.82,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
       itemCount: _campaigns.length,
       itemBuilder: (context, index) {
         final campaign = _campaigns[index];
-        final brand = campaign.expand['brand_id']?.first;
-        final brandName = brand?.getStringValue('name') ?? 'Marka';
+        final source = campaign.expand['source_id']?.first;
+        final brands = campaign.expand['brand_ids'] ?? [];
+        
+        // Gösterilecek ana isim: Varsa ilk marka, yoksa kaynak adı
+        final displayName = (brands.isNotEmpty ? brands.first.getStringValue('name') : source?.getStringValue('name')) ?? 'Kampanya';
         final title = campaign.getStringValue('title');
-        final baseUrl = PocketBaseService.client.baseUrl;
         
-        // Kampanya görseli veya marka logosu
         final campaignImage = campaign.getStringValue('image_url');
-        final logo = brand?.getStringValue('logo');
-        final logoUrl = logo != null ? '$baseUrl/api/files/${brand!.collectionId}/${brand.id}/$logo' : null;
-        
-        // Öncelik kampanya görselinde, yoksa marka logosunda
-        final displayImageUrl = campaignImage.isNotEmpty ? campaignImage : logoUrl;
 
         return Card(
-          elevation: 4,
+          elevation: 3,
           clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: InkWell(
-            onTap: () => _showCampaignDetail(campaign, brandName, displayImageUrl),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CampaignDetailScreen(campaign: campaign),
+                ),
+              );
+            },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -178,14 +182,11 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                   flex: 3,
                   child: Container(
                     color: Colors.white,
-                    child: displayImageUrl != null 
-                      ? Padding(
-                          padding: EdgeInsets.all(displayImageUrl == campaignImage ? 0 : 12),
-                          child: Image.network(
-                            displayImageUrl, 
-                            fit: displayImageUrl == campaignImage ? BoxFit.cover : BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: Colors.grey),
-                          ),
+                    child: campaignImage.isNotEmpty 
+                      ? Image.network(
+                          campaignImage, 
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: Colors.grey),
                         )
                       : const Icon(Icons.campaign_outlined, size: 40, color: Colors.grey),
                   ),
@@ -193,22 +194,21 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                 Expanded(
                   flex: 2,
                   child: Container(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(10.0),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
-                      border: Border(top: BorderSide(color: Colors.grey.withOpacity(0.1))),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          brandName.toUpperCase(),
+                          displayName.toUpperCase(),
                           style: TextStyle(
                             fontSize: 10, 
                             fontWeight: FontWeight.bold, 
                             color: Theme.of(context).primaryColor,
-                            letterSpacing: 1,
+                            letterSpacing: 0.5,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -216,7 +216,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                         const SizedBox(height: 4),
                         Text(
                           title,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, height: 1.2),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -229,172 +229,6 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
           ),
         );
       },
-    );
-  }
-
-  void _showCampaignDetail(RecordModel campaign, String brandName, String? logoUrl) {
-    // Tarih formatlama
-    final startDateStr = campaign.getStringValue('start_date');
-    final endDateStr = campaign.getStringValue('end_date');
-    final createdAt = campaign.getStringValue('created');
-    
-    final displayStart = startDateStr.isNotEmpty ? startDateStr.split(' ')[0] : createdAt.split(' ')[0];
-    final displayEnd = endDateStr.isNotEmpty ? endDateStr.split(' ')[0] : 'Süresiz';
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true, // Kural gereği SafeArea kullanımı
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          expand: false,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: SingleChildScrollView(
-                controller: scrollController,
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        if (logoUrl != null)
-                          Container(
-                            width: 50,
-                            height: 50,
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                            ),
-                            child: Image.network(logoUrl, fit: BoxFit.contain),
-                          ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                brandName,
-                                style: TextStyle(
-                                  fontSize: 14, 
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              ),
-                              const Text('Güncel Kampanya', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      campaign.getStringValue('title'),
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Takvim/Tarih Kutuları
-                    Row(
-                      children: [
-                        _buildDateBox('Başlangıç', displayStart, Icons.calendar_today_outlined, Colors.blue),
-                        const SizedBox(width: 12),
-                        _buildDateBox('Bitiş', displayEnd, Icons.event_available, Colors.red),
-                      ],
-                    ),
-                    
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Divider(),
-                    ),
-                    
-                    const Text(
-                      'Kampanya Hakkında',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      campaign.getStringValue('description'),
-                      style: const TextStyle(fontSize: 16, height: 1.6, color: Colors.grey),
-                    ),
-                    
-                    const SizedBox(height: 32),
-                    if (campaign.getStringValue('source_url').isNotEmpty)
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.open_in_new),
-                        label: const Text('Kampanya Detayına Git'),
-                        onPressed: () async {
-                          final url = Uri.parse(campaign.getStringValue('source_url'));
-                          try {
-                            if (await canLaunchUrl(url)) {
-                              await launchUrl(url, mode: LaunchMode.externalApplication);
-                            }
-                          } catch (e) {
-                            AppLogger.instance.error('URL açılamadı: $e');
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 56),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 0,
-                        ),
-                      ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildDateBox(String label, String date, IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.1)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 14, color: color),
-                const SizedBox(width: 6),
-                Text(label, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(date, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
     );
   }
 }

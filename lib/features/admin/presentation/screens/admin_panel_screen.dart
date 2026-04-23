@@ -4,7 +4,7 @@ import 'package:blind_social/core/utils/logger.dart';
 import 'package:blind_social/features/admin/presentation/screens/user_list_screen.dart';
 import 'package:blind_social/features/admin/presentation/screens/server_list_screen.dart';
 import 'package:blind_social/features/admin/presentation/screens/feedback_management_screen.dart';
-import 'package:blind_social/features/admin/presentation/screens/brand_management_screen.dart';
+import 'package:blind_social/features/admin/presentation/screens/source_management_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
   const AdminPanelScreen({super.key});
@@ -117,15 +117,15 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                         },
                       ),
                       _buildStatCard(
-                        title: 'Kampanya Yönetimi',
+                        title: 'Kaynak Yönetimi',
                         value: 'BOT',
-                        subtitle: 'Marka ve Kaynaklar',
+                        subtitle: 'Tarama Kaynakları',
                         icon: Icons.campaign,
                         color: Colors.red,
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const BrandManagementScreen()),
+                            MaterialPageRoute(builder: (context) => const SourceManagementScreen()),
                           );
                         },
                       ),
