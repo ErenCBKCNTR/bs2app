@@ -471,11 +471,11 @@
       }
     ],
     "indexes": [],
-    "listRule": "@request.auth.id != \"\"",
-    "viewRule": "@request.auth.id != \"\"",
-    "createRule": "@request.auth.id = user_id",
-    "updateRule": "@request.auth.id = user_id",
-    "deleteRule": "@request.auth.id = user_id",
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.id != ''",
+    "updateRule": "@request.auth.id != ''",
+    "deleteRule": "@request.auth.id != ''",
     "options": {}
   },
   {
@@ -808,6 +808,6 @@
       { "system": false, "id": "vrp_room", "name": "room_id", "type": "relation", "required": true, "options": { "collectionId": "col_voice_rooms", "cascadeDelete": true, "maxSelect": 1 } },
       { "system": false, "id": "vrp_user", "name": "user_id", "type": "relation", "required": true, "options": { "collectionId": "_pb_users_auth_", "cascadeDelete": true, "maxSelect": 1 } }
     ],
-    "listRule": "", "viewRule": "", "createRule": "", "updateRule": "", "deleteRule": ""
+    "listRule": "@request.auth.id != ''", "viewRule": "@request.auth.id != ''", "createRule": "@request.auth.id != ''", "updateRule": "@request.auth.id != ''", "deleteRule": "@request.auth.id != ''"
   }
 ]

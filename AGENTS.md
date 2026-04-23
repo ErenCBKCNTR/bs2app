@@ -98,6 +98,8 @@ Uygulamanın SDK kısıtlamalarına (`sdk: ">=3.0.0 <4.0.0"`) uygun en stabil ve
 <h2 id="4-hata-cozum-ve-teknik-bilgi-rehberi">4. HATA ÇÖZÜM VE TEKNİK BİLGİ REHBERİ</h2>
 
 ### 📌 Kritik Teknik Notlar
+- **PocketBase 400 Bad Request (Katılımcı / Relation Sorunları):** Pocketbase `chat_participants` gibi ilişki (relation) odaklı tablolarda `{code: 400, message: Failed to create record., data: {}}` hatası (data boş ise) API Index / Validation kuralından değil, doğrudan `pb_schema.json` dosyanızdaki `updateRule`, `createRule` gibi alanlarda yazılmış olan mantık (logic) hatalarından patlar (Örn: `user_id` relation'unu doğrudan id ile kıyaslamak v.b.). Çözümü: Tüm bu kuralları `@request.auth.id != ''` şeklinde basitleştirip eşitlemektir.
+- **"Katılımcı bilgisi alınamadı" Hatası:** `chat_list_screen.dart` ve `chat_detail_screen.dart` içerisinde `targetId` null dönerse bu hata verilir. En büyük sebebi bir üst maddedeki 400 Bad Request nedeniyle sohbete "participants" kaydının eklenememiş olmasıdır. Veritabanı kurallarını düzeltince bu sorun da ortadan kalkar.
 - **PocketBase Veri Tipleri:** `RecordModel` üzerindeki `created` ve `updated` alanları **String** tipindedir. Bu alanlar üzerinde doğrudan `toLocal()` çağrılamaz. Her zaman `DateTime.parse()` ile dönüştürülmelidir.
 - **Null Safety:** PocketBase'den gelen `expand` verileri her zaman opsiyoneldir. Null kontrolü yapılmadan listelere veya fieldlara erişilmemelidir.
 - **PocketBase Değerleri:** `RecordModel` verilerine `.email` veya `.data['field']` yerine `getStringValue`, `getBoolValue`, `getDataValue` ile erişin.
