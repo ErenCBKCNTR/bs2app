@@ -138,12 +138,15 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
                           
                           return ListTile(
                             contentPadding: EdgeInsets.zero,
-                            leading: CircleAvatar(
-                              radius: 16,
-                              backgroundColor: Colors.green.shade700,
-                              child: Text(
-                                username.isNotEmpty ? username[0].toUpperCase() : '?',
-                                style: const TextStyle(color: Colors.white, fontSize: 12),
+                            leading: Semantics(
+                              excludeSemantics: true,
+                              child: CircleAvatar(
+                                radius: 16,
+                                backgroundColor: Colors.green.shade700,
+                                child: Text(
+                                  username.isNotEmpty ? username[0].toUpperCase() : '?',
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                ),
                               ),
                             ),
                             title: Text(username, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),

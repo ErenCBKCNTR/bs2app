@@ -13,6 +13,19 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            version: '1.6.3',
+            date: '23 Nisan 2026',
+            changes: [
+              'İyileştirme: Kampanya listelerinde ekran okuyucu (TalkBack) deneyimi kusursuzlaştırıldı. Gereksiz kaynak okumaları temizlendi, tarihler daha anlaşılır hale getirildi.',
+              'İyileştirme: Özel mesajlar menüsündeki "Arşivlenmiş" butonu "Arşivlenmiş Mesajlar" olarak düzeltildi.',
+              'Yeni: Kampanya detay ekranına sağa sola kaydırarak hızlı geçiş desteği eklendi.',
+              'Yeni: Kampanyaları sosyal medyada ve WhatsApp üzerinden paylaşabilmeniz için "Paylaş" butonu eklendi.',
+              'İyileştirme: Kampanyalar uygulamaya özel önbellekleme mimarisine geçirilerek yükleme süreleri anında açılacak şekilde (veriden tasarrufu edilerek) hızlandırıldı.',
+            ],
+            isLatest: true,
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
             version: '1.4.0',
             date: '23 Nisan 2026',
             changes: [
@@ -20,7 +33,6 @@ class ChangelogScreen extends StatelessWidget {
               'Yeni: Geri bildirimleriniz ile birlikte varsa sistemsel hatalar yöneticiye otomatik olarak iletilir.',
               'İyileştirme: Veri güvenliği ve veritabanı optimizasyonu için tüm mesaj alanlarına karakter sınırları getirildi.',
             ],
-            isLatest: true,
           ),
           const SizedBox(height: 24),
           _buildVersionSection(

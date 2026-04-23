@@ -127,6 +127,7 @@ class _ArchivedMessagesScreenState extends State<ArchivedMessagesScreen> {
                       
                       return Semantics(
                         label: "${chat.data['display_name'] ?? 'Sohbet'}. Arşivlenmiş.",
+                        excludeSemantics: true,
                         hint: "Sohbeti açmak için çift dokunun, seçenekler için uzun dokunun",
                         customSemanticsActions: {
                           CustomSemanticsAction(label: 'Arşivden çıkar'): () {

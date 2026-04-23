@@ -179,6 +179,7 @@ class _FavoriteMessagesScreenState extends State<FavoriteMessagesScreen> {
                       return Semantics(
                         label: isVoice ? '[Sesli Mesaj]' : (isCall ? '[Sistem Mesajı]' : content),
                         button: true,
+                        excludeSemantics: true,
                         customSemanticsActions: {
                           CustomSemanticsAction(label: 'Favorilerden Kaldır'): () => _removeFromFavorites(message),
                         },

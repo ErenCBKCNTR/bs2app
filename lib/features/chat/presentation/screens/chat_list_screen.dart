@@ -327,21 +327,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
             ),
           ),
-          actions: _tabController.index == 2 ? [] : [
-            Semantics(
-              label: "Kullanıcı Ara",
-              child: IconButton(
-                icon: const Icon(Icons.search, size: 18),
-                onPressed: _showUserSearchDialog,
-                tooltip: "Kullanıcı Ara",
-              ),
-            ),
-            IconButton(
-              onPressed: _refresh,
-              icon: const Icon(Icons.refresh, size: 18),
-              tooltip: "Sayfayı Yenile",
-            ),
-          ],
+          actions: const [],
           bottom: TabBar(
             controller: _tabController,
             indicatorColor: Theme.of(context).colorScheme.primary,
@@ -845,6 +831,7 @@ Widget? _buildFAB() {
         return Semantics(
           label: "$displayChatName. $semanticSubtitle $semanticUnreadSuffix",
           button: true,
+          excludeSemantics: true,
           onTapHint: "Sohbeti açmak için çift dokunun",
           customSemanticsActions: {
             CustomSemanticsAction(label: isArchived ? 'Arşivden Çıkar' : 'Arşivle'): () {
@@ -898,7 +885,7 @@ Widget? _buildFAB() {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const ArchivedMessagesScreen()));
               },
               icon: const Icon(Icons.archive, size: 18),
-              label: const Text("Arşivlenmiş"),
+              label: const Text("Arşivlenmiş Mesajlar"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,

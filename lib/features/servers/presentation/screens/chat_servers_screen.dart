@@ -101,28 +101,35 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
     }
 
     return SafeArea(
-      child: ListView.separated(
+      child: GridView.builder(
+        padding: const EdgeInsets.all(16),
         itemCount: _servers.length,
-        separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.white10),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 0.9,
+        ),
         itemBuilder: (context, index) {
           final server = _servers[index];
           final serverName = ProfanityFilter.filter(server.name);
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              child: const Icon(Icons.dns),
-            ),
-            title: Text(
-              serverName,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(
-              ProfanityFilter.filter(server.description.isEmpty ? 'Hoş geldiniz!' : server.description),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: Text('${server.capacity} Kişilik'),
-            onTap: () async {
+          final description = ProfanityFilter.filter(server.description.isEmpty ? 'Hoş geldiniz!' : server.description);
+          final hasPassword = server.password != null && server.password!.isNotEmpty;
+          final capacityStr = '${server.capacity}';
+          final encryptedText = hasPassword ? 'şifreli ' : '';
+
+          return Semantics(
+            label: 'Sunucu adı $serverName. Sunucu açıklaması $description. $capacityStr kişilik $encryptedText sunucu.',
+            onTapHint: 'Sunucuya katılmak için çift tıklayın',
+            excludeSemantics: true,
+            button: true,
+            child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              margin: EdgeInsets.zero,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () async {
               // Join if not a member, then navigate
               final isMember = await ChatServerService().isMember(server.id);
               if (!isMember) {
@@ -151,6 +158,62 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
                 );
               }
             },
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        child: const Icon(Icons.dns, size: 20),
+                      ),
+                      if (hasPassword)
+                        const Icon(Icons.lock, size: 18, color: Colors.orange),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    serverName,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Expanded(
+                    child: Text(
+                      description,
+                      style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$capacityStr Kişilik',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          ),
           );
         },
       ),

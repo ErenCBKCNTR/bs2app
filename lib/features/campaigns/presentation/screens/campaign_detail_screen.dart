@@ -153,15 +153,6 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    sourceName.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
                     title,
                     style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
@@ -206,7 +197,8 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                           : brandsList.take(4).toList())
                         .map((b) => Semantics(
                             button: true,
-                            hint: 'Bu markaya ait diğer kampanyaları görüntülemek için tıklayın',
+                            label: '$b markasına ait diğer kampanyaları görüntülemek için tıklayın',
+                            excludeSemantics: true,
                             child: ActionChip(
                               label: Text(b.toString(), style: const TextStyle(fontSize: 12)),
                               onPressed: () {
@@ -293,29 +285,33 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
 
   Widget _buildDateBadge(String label, String date, Color color) {
     String finalDateStr = (date.isEmpty || date == '-') ? 'Bilinmiyor' : date;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 9,
-              color: color,
-              fontWeight: FontWeight.bold,
+    return Semantics(
+      label: '$label tarihi $finalDateStr',
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 9,
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          Text(
-            finalDateStr,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-          ),
-        ],
+            Text(
+              finalDateStr,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -370,7 +370,8 @@ class _BlogScreenState extends State<BlogScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Semantics(
                 button: true,
-                label: "Yeni gönderi paylaş butonu",
+                label: "Yeni gönderi paylaş",
+                excludeSemantics: true,
                 onTapHint: "Yeni bir blog içeriği oluşturmak için çift dokunun",
                 child: OutlinedButton.icon(
                   onPressed: _showCreatePostDialog,
@@ -426,6 +427,7 @@ class _BlogScreenState extends State<BlogScreen> {
                           child: Semantics(
                             label: "$username. $timeStr. $content. $likes beğeni, $commentCount yorum.",
                             button: true,
+                            excludeSemantics: true,
                             onTap: () {
                               showModalBottomSheet(
                                 context: context,

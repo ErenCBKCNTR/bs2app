@@ -16,6 +16,7 @@ class VoiceRoomItem extends StatelessWidget {
     return Semantics(
       label: "$roomName adlı sesli oda. Katılmak için çift dokunun.",
       button: true,
+      excludeSemantics: true,
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),

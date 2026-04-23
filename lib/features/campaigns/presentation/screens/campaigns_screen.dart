@@ -107,6 +107,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       ),
       body: SafeArea(
         child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onHorizontalDragEnd: (details) {
             if (details.primaryVelocity! > 0) {
               // Swipe Right (Önceki kategori)
@@ -246,62 +247,56 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                 _fetchCampaigns();
               }
             },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Container(
-                    color: Colors.white,
-                    child: imageUrl.isNotEmpty 
-                      ? Image.network(
-                          imageUrl, 
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: Colors.grey),
-                        )
-                      : const Icon(Icons.campaign_outlined, size: 40, color: Colors.grey),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          sourceName.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 10, 
-                            fontWeight: FontWeight.bold, 
-                            color: Theme.of(context).primaryColor,
-                            letterSpacing: 0.8,
-                          ),
-                          maxLines: 1,
-                        ),
-                        const SizedBox(height: 4),
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, height: 1.2),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (duration.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            duration,
-                            style: const TextStyle(fontSize: 10, color: Colors.grey),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
+            child: Semantics(
+              button: true,
+              label: '$title. $duration',
+              excludeSemantics: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      color: Colors.white,
+                      child: imageUrl.isNotEmpty 
+                        ? Image.network(
+                            imageUrl, 
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: Colors.grey),
+                          )
+                        : const Icon(Icons.campaign_outlined, size: 40, color: Colors.grey),
                     ),
                   ),
-                ),
-              ],
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, height: 1.2),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (duration.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              duration,
+                              style: const TextStyle(fontSize: 10, color: Colors.grey),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );

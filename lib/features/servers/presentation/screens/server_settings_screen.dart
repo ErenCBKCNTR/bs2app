@@ -16,9 +16,10 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
   late TabController _tabController;
   late TextEditingController _nameController;
   late TextEditingController _descController;
-  late TextEditingController _capacityController;
   late TextEditingController _passwordController;
   
+  late int _capacity;
+
   bool _isSaving = false;
   List<RecordModel> _members = [];
   bool _isLoadingMembers = true;
@@ -30,8 +31,8 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
     _tabController = TabController(length: 2, vsync: this);
     _nameController = TextEditingController(text: widget.server.name);
     _descController = TextEditingController(text: widget.server.description);
-    _capacityController = TextEditingController(text: widget.server.capacity.toString());
     _passwordController = TextEditingController(text: widget.server.password ?? '');
+    _capacity = widget.server.capacity;
     _canMembersCreateRooms = widget.server.canMembersCreateRooms;
     _fetchMembers();
   }
@@ -41,7 +42,6 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
     _tabController.dispose();
     _nameController.dispose();
     _descController.dispose();
-    _capacityController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -64,23 +64,32 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
 
   Future<void> _updateServer() async {
     setState(() => _isSaving = true);
+    
+    // Doğrulama
+    final name = _nameController.text.trim();
+    if (name.isEmpty || name.length < 3) {
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sunucu adı en az 3 karakter olmalıdır.')));
+      return;
+    }
+
     try {
       await ChatServerService().updateServer(
         serverId: widget.server.id,
-        name: _nameController.text.trim(),
+        name: name,
         description: _descController.text.trim(),
-        capacity: int.tryParse(_capacityController.text.trim()),
+        capacity: _capacity, // Direkt integer değişkenini kullanıyoruz, dropdowndan besleniyor.
         canMembersCreateRooms: _canMembersCreateRooms,
         password: _passwordController.text.trim(),
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sunucu güncellendi.')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sunucu başarıyla güncellendi!')));
         Navigator.pop(context, true); // True means updated
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sunucu güncellenemedi: $e')));
       }
     }
   }
@@ -147,54 +156,124 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TextField(
-            controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Sunucu Adı', border: OutlineInputBorder()),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _descController,
-            decoration: const InputDecoration(labelText: 'Açıklama', border: OutlineInputBorder()),
-            maxLines: 3,
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _capacityController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Kişi Kapasitesi', border: OutlineInputBorder()),
-          ),
-          const SizedBox(height: 16),
-          ExpansionTile(
-            leading: const Icon(Icons.settings_suggest),
-            title: const Text('Gelişmiş Ayarlar'),
-            children: [
-              SwitchListTile(
-                title: const Text('Üyeler Oda Açabilsin'),
-                subtitle: const Text('Bu özellik kapalıyken sadece kurucu oda ekleyebilir.'),
-                value: _canMembersCreateRooms,
-                onChanged: (val) => setState(() => _canMembersCreateRooms = val),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: TextField(
-                  controller: _passwordController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Sunucu Şifresi (Sadece Rakam)',
-                    hintText: 'Boş bırakılırsa şifresiz olur',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock_outline),
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 2,
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Temel Bilgiler',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
-                ),
+                  const Divider(height: 24),
+                  TextField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Sunucu Adı',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.dns),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _descController,
+                    decoration: const InputDecoration(
+                      labelText: 'Açıklama',
+                      border: OutlineInputBorder(),
+                      alignLabelWithHint: true,
+                    ),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<int>(
+                    value: _capacity,
+                    decoration: const InputDecoration(
+                      labelText: 'Kişi Kapasitesi',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.groups),
+                    ),
+                    items: [12, 24, 32, 48, 64, 128].map((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text('$value Kişilik'),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) setState(() => _capacity = val);
+                    },
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 2,
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.security, color: Colors.orange),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Güvenlik ve Yetkiler',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 24),
+                  SwitchListTile(
+                    title: const Text('Üyeler Oda Açabilsin', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: const Text('Bu özellik kapalıyken sadece kurucu oda açabilir.'),
+                    contentPadding: EdgeInsets.zero,
+                    activeColor: Theme.of(context).colorScheme.primary,
+                    value: _canMembersCreateRooms,
+                    onChanged: (val) => setState(() => _canMembersCreateRooms = val),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _passwordController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Sunucu Şifresi (Sadece Rakam)',
+                      hintText: 'Şifresiz olması için boş bırakın',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.lock_outline),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
           ElevatedButton(
             onPressed: _isSaving ? null : _updateServer,
-            style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(16)),
-            child: _isSaving ? const CircularProgressIndicator() : const Text('Değişiklikleri Kaydet'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            ),
+            child: _isSaving 
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
+                : const Text('Değişiklikleri Kaydet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -217,8 +296,10 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
         final isMe = user.id == ChatServerService().currentUserId;
 
         return ListTile(
-          leading: CircleAvatar(
-            child: Text(userName.isEmpty ? '?' : userName[0].toUpperCase()),
+          leading: ExcludeSemantics(
+            child: CircleAvatar(
+              child: Text(userName.isEmpty ? '?' : userName[0].toUpperCase()),
+            ),
           ),
           title: Row(
             children: [

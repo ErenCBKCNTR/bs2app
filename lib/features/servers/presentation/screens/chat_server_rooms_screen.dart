@@ -204,28 +204,97 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
                     ],
                   ),
                 )
-              : ListView.builder(
+              : GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 0.9,
+                  ),
                   itemCount: _rooms.length,
                   itemBuilder: (context, index) {
                     final room = _rooms[index];
-                    return ListTile(
-                      leading: Icon(
-                        room.type == RoomType.voice
-                            ? Icons.volume_up
-                            : room.type == RoomType.text
-                                ? Icons.chat
-                                : Icons.forum,
-                      ),
-                      title: Text(ProfanityFilter.filter(room.name)),
-                      subtitle: Text(ProfanityFilter.filter(room.description)),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ChatRoomDetailScreen(room: room),
+                    final roomName = ProfanityFilter.filter(room.name);
+                    final description = ProfanityFilter.filter(room.description);
+                    
+                    IconData roomIcon;
+                    String semanticType;
+                    Color iconBgColor;
+                    Color iconColor;
+                    
+                    if (room.type == RoomType.voice) {
+                      roomIcon = Icons.headset_mic_rounded;
+                      semanticType = 'sesli oda';
+                      iconBgColor = Colors.orange.withOpacity(0.15);
+                      iconColor = Colors.orange.shade700;
+                    } else if (room.type == RoomType.text) {
+                      roomIcon = Icons.chat_bubble_rounded;
+                      semanticType = 'mesaj odası';
+                      iconBgColor = Colors.blue.withOpacity(0.15);
+                      iconColor = Colors.blue.shade700;
+                    } else {
+                      roomIcon = Icons.forum_rounded;
+                      semanticType = 'oda';
+                      iconBgColor = Colors.purple.withOpacity(0.15);
+                      iconColor = Colors.purple.shade700;
+                    }
+
+                    return Semantics(
+                      label: '$roomName isimli $semanticType',
+                      excludeSemantics: true,
+                      button: true,
+                      onTapHint: 'Odaya girmek için çift tıklayın',
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        margin: EdgeInsets.zero,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChatRoomDetailScreen(room: room),
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 20,
+                                      backgroundColor: iconBgColor,
+                                      child: Icon(roomIcon, color: iconColor, size: 20),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  roomName,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 6),
+                                Expanded(
+                                  child: Text(
+                                    description.isEmpty ? 'Sohbet odası...' : description,
+                                    style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        );
-                      },
+                        ),
+                      ),
                     );
                   },
                 ),

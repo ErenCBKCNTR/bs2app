@@ -53,12 +53,14 @@ class ChatListItem extends StatelessWidget {
         }
       },
       child: ListTile(
-        leading: CircleAvatar(
-          radius: 24,
-          backgroundColor: Colors.grey[800],
-          child: Text(
-            displayChatName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join(''),
-            style: const TextStyle(fontSize: 16, color: Colors.white),
+        leading: ExcludeSemantics(
+          child: CircleAvatar(
+            radius: 24,
+            backgroundColor: Colors.grey[800],
+            child: Text(
+              displayChatName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join(''),
+              style: const TextStyle(fontSize: 16, color: Colors.white),
+            ),
           ),
         ),
         title: Row(
