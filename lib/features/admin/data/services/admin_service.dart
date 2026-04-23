@@ -60,11 +60,19 @@ class AdminService {
       );
       final totalServersCount = serversResponse.totalItems;
 
+      // 5. Total Feedback
+      final feedbackResponse = await PocketBaseService.client.collection('feedback').getList(
+        page: 1,
+        perPage: 1,
+      );
+      final feedbackCount = feedbackResponse.totalItems;
+
       return {
         'activeUsers': activeUsersCount,
         'totalUsers': totalUsersCount,
         'recentPosts': recentPostsCount,
         'totalServers': totalServersCount,
+        'feedbackCount': feedbackCount,
       };
     } catch (e) {
       AppLogger.instance.error('Admin istatistikleri alınamadı: $e');
@@ -73,6 +81,7 @@ class AdminService {
         'totalUsers': 0,
         'recentPosts': 0,
         'totalServers': 0,
+        'feedbackCount': 0,
       };
     }
   }

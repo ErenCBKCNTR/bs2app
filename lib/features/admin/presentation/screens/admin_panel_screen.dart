@@ -3,6 +3,7 @@ import 'package:blind_social/features/admin/data/services/admin_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:blind_social/features/admin/presentation/screens/user_list_screen.dart';
 import 'package:blind_social/features/admin/presentation/screens/server_list_screen.dart';
+import 'package:blind_social/features/admin/presentation/screens/feedback_management_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
   const AdminPanelScreen({super.key});
@@ -88,6 +89,20 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                     subtitle: 'Son 15 dakika içinde paylaşılanlar',
                     icon: Icons.article,
                     color: Colors.green,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildStatCard(
+                    title: 'Geri Bildirimler',
+                    value: _stats['feedbackCount']?.toString() ?? '0',
+                    subtitle: 'Kullanıcılardan gelen bildirimler',
+                    icon: Icons.feedback_outlined,
+                    color: Colors.teal,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const FeedbackManagementScreen()),
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
                   _buildStatCard(

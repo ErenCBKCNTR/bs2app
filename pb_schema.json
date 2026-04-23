@@ -111,6 +111,24 @@
     }
   },
   {
+    "id": "col_feedback",
+    "name": "feedback",
+    "type": "base",
+    "system": false,
+    "schema": [
+      { "system": false, "id": "fb_user_id", "name": "user_id", "type": "relation", "required": true, "options": { "collectionId": "_pb_users_auth_", "cascadeDelete": true, "maxSelect": 1 } },
+      { "system": false, "id": "fb_category", "name": "category", "type": "select", "required": true, "options": { "maxSelect": 1, "values": ["Request", "Suggestion", "Complaint", "Thank you", "Other"] } },
+      { "system": false, "id": "fb_subject", "name": "subject", "type": "text", "required": true, "options": { "min": 3, "max": 100 } },
+      { "system": false, "id": "fb_message", "name": "message", "type": "text", "required": true, "options": { "min": 10, "max": 1000 } },
+      { "system": false, "id": "fb_logs", "name": "logs", "type": "text", "required": false, "options": { "max": 10000 } }
+    ],
+    "listRule": "@request.auth.id != \"\" && @request.auth.role = 0",
+    "viewRule": "@request.auth.id != \"\" && @request.auth.role = 0",
+    "createRule": "@request.auth.id != \"\"",
+    "updateRule": null,
+    "deleteRule": "@request.auth.id != \"\" && @request.auth.role = 0"
+  },
+  {
     "id": "collection_chats",
     "name": "chats",
     "type": "base",

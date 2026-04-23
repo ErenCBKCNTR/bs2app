@@ -15,6 +15,9 @@
 - [x] PocketBase şema aktarım hatası düzeltildi (v1.2.8).
 - [x] Sürüm notları kullanıcı odaklı hale getirildi ve dökümantasyon temizlendi (v1.2.9).
 - [x] Bağımlılık Envanteri (`BAGIMLILIK_ENVANTERI.md`) ve zorunlu web araması kuralı eklendi (v1.3.0).
+- [x] Sunucu oluşturma diyaloğu sadeleştirildi ve arayüz iyileştirildi (v1.3.1).
+- [x] İstek, Öneri ve Şikayet Bildirimi sistemi ve Yönetici Paneli entegrasyonu tamamlandı (v1.4.0).
+- [x] Veri sınırları ve TextField karakter kısıtlamaları tüm sisteme uygulandı (v1.4.0).
 
 ## 🛠️ Devam Eden / Bekleyen Görevler
 - [ ] Sunucu odaları için gelişmiş küfür filtreleme sistemini uygula.

@@ -27,3 +27,11 @@
 - **Zorunlu Web Araması:** Uygulamaya yeni bir paket ekleneceği zaman, mevcut eğitim verilerine güvenilmemelidir. Mutlaka `google_search` kullanılarak paket sürümünün ve dökümantasyonunun en güncel hali (pub.dev üzerinden) kontrol edilmelidir.
 - **Envanter Kontrolü:** Paket eklenmeden önce `docs/agents/BAGIMLILIK_ENVANTERI.md` dosyası okunarak mevcut paketlerle bir sürüm uyuşmazlığı olup olmayacağı analiz edilmelidir.
 - **Minimum Sürüm İlkesi:** Uygulamanın SDK kısıtlamalarına (`sdk: ">=3.0.0 <4.0.0"`) uygun en stabil ve en güncel sürüm tercih edilmelidir.
+
+## Veri Sınırları ve Optimizasyon
+- **Metin Girişi Sınırları:** Veritabanı şişmesini önlemek ve güvenliği sağlamak için kullanıcıdan alınan tüm metin girişlerine sektör standardında sınırlar konulmalıdır.
+    - **Konu Başlıkları:** Maksimum 100 karakter.
+    - **Kısa Mesajlar/Yorumlar:** Maksimum 500 karakter.
+    - **Uzun Mesajlar/Geri Bildirimler:** Maksimum 1000 karakter.
+    - **Hata Günlükleri (Ekstra):** Maksimum 10.000 karakter.
+- **UI Kontrolü:** Tüm `TextField` bileşenlerinde `maxLength` özelliği tanımlanmalı ve kullanıcı sınırlar hakkında bilgilendirilmelidir.

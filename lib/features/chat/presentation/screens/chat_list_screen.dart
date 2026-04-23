@@ -501,13 +501,10 @@ Widget? _buildFAB() {
 
   Future<void> _showCreateChatServerDialog() async {
     final titleController = TextEditingController();
-    final descController = TextEditingController();
     final formKey = GlobalKey<FormState>();
     int capacity = 24;
     bool isSaving = false;
-    bool canMembersCreateRooms = false;
     final passwordController = TextEditingController();
-    bool showAdvancedSettings = false;
     
     await showDialog(
       context: context,
@@ -543,17 +540,6 @@ Widget? _buildFAB() {
                         },
                       ),
                       const SizedBox(height: 16),
-                      TextField(
-                        controller: descController,
-                        maxLength: 255,
-                        decoration: const InputDecoration(
-                          labelText: 'Açıklama',
-                          hintText: 'Sunucu hakkında kısa bilgi',
-                          border: OutlineInputBorder(),
-                          counterText: "",
-                        ),
-                      ),
-                      const SizedBox(height: 16),
                       DropdownButtonFormField<int>(
                         value: capacity,
                         decoration: const InputDecoration(
@@ -574,14 +560,9 @@ Widget? _buildFAB() {
                       Theme(
                         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                         child: ExpansionTile(
-                          title: const Text('Gelişmiş Ayarlar'),
-                          leading: const Icon(Icons.settings_suggest, size: 20),
+                          title: const Text('Güvenlik Ayarları'),
+                          leading: const Icon(Icons.security, size: 20),
                           children: [
-                            SwitchListTile(
-                              title: const Text('Üyeler Oda Açabilsin'),
-                              value: canMembersCreateRooms,
-                              onChanged: (val) => setStateDialog(() => canMembersCreateRooms = val),
-                            ),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               child: TextField(
@@ -612,7 +593,6 @@ Widget? _buildFAB() {
                     if (!formKey.currentState!.validate()) return;
                     
                     final name = titleController.text.trim();
-                    final desc = descController.text.trim();
                     final password = passwordController.text.trim();
                     
                     setStateDialog(() => isSaving = true);
@@ -620,9 +600,9 @@ Widget? _buildFAB() {
                     try {
                       await ChatServerService().createServer(
                         name: name,
-                        description: desc,
+                        description: '', // Açıklama varsayılan olarak boş
                         capacity: capacity,
-                        canMembersCreateRooms: canMembersCreateRooms,
+                        canMembersCreateRooms: false, // Varsayılan olarak kapalı
                         password: password,
                       );
                       

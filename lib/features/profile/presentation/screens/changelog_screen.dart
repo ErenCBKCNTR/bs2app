@@ -13,13 +13,32 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            version: '1.4.0',
+            date: '23 Nisan 2026',
+            changes: [
+              'Yeni: İstek, Öneri ve Şikayet Bildirimi özelliği eklendi. Artık görüşlerinizi doğrudan bize iletebilirsiniz.',
+              'Yeni: Geri bildirimleriniz ile birlikte varsa sistemsel hatalar yöneticiye otomatik olarak iletilir.',
+              'İyileştirme: Veri güvenliği ve veritabanı optimizasyonu için tüm mesaj alanlarına karakter sınırları getirildi.',
+            ],
+            isLatest: true,
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
+            version: '1.3.1',
+            date: '23 Nisan 2026',
+            changes: [
+              'İyileştirme: Sunucu oluşturma arayüzü sadeleştirildi ve daha hızlı hale getirildi.',
+              'İyileştirme: Sunucu oluştururken güvenlik ayarları bölümü eklendi.',
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
             version: '1.3.0',
             date: '23 Nisan 2026',
             changes: [
               'İyileştirme: Uygulama altyapısı ve sürüm yönetim sistemi güncellendi.',
               'İyileştirme: Sistem kararlılığını artıracak yeni geliştirme standartları devreye alındı.',
             ],
-            isLatest: true,
           ),
           const SizedBox(height: 24),
           _buildVersionSection(

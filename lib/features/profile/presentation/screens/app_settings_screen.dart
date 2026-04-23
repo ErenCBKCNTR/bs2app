@@ -5,6 +5,7 @@ import 'notification_settings_screen.dart';
 import 'accessibility_settings_screen.dart';
 import 'privacy_settings_screen.dart';
 import 'changelog_screen.dart';
+import 'feedback_screen.dart';
 
 class AppSettingsScreen extends StatefulWidget {
   const AppSettingsScreen({super.key});
@@ -79,12 +80,25 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('Sürüm Bilgisi'),
-            subtitle: const Text('v1.3.0 - Neler yeni?'),
+            subtitle: const Text('v1.4.0 - Neler yeni?'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const ChangelogScreen()),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.feedback_outlined),
+            title: const Text('İstek, Öneri ve Şikayet Bildirimi'),
+            subtitle: const Text('Görüşlerinizi bizimle paylaşın'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const FeedbackScreen()),
               );
             },
           ),
