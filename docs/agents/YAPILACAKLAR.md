@@ -18,13 +18,17 @@
 - [x] Sunucu oluşturma diyaloğu sadeleştirildi ve arayüz iyileştirildi (v1.3.1).
 - [x] İstek, Öneri ve Şikayet Bildirimi sistemi ve Yönetici Paneli entegrasyonu tamamlandı (v1.4.0).
 - [x] Veri sınırları ve TextField karakter kısıtlamaları tüm sisteme uygulandı (v1.4.0).
+- [x] **[YENİ]** Veritabanı "2 Tablolu Sade Mimari"ye (Sources & Campaigns) geçirildi (v1.5.0).
+- [x] **[YENİ]** Bot, hassas tarih ayrıştırma (split) mantığıyla 4 ayrı tarih alanına kayıt yapacak şekilde güncellendi (v1.5.0).
+- [x] **[YENİ]** Kampanya detay ekranı ve filtreleme sistemi yeni tarih yapısına göre optimize edildi (v1.5.0).
+- [x] **[YENİ]** Bot, "Web sayfasında görüntüle" linkini (asıl banka linkini) yakalayacak şekilde güçlendirildi (v1.6.0).
+- [x] **[YENİ]** Uygulama tarafında butonlar, kullanıcıyı doğrudan bu asıl linke yönlendirecek şekilde güncellendi (v1.6.0).
 
 ## 🛠️ Devam Eden / Bekleyen Görevler
-- [ ] Sunucu odaları için gelişmiş küfür filtreleme sistemini uygula.
-- [ ] Düşük bant genişliği senaryoları için VoIP arama kalitesini optimize et.
+- [ ] Süresi dolan kampanyaların otomatik olarak "Pasif" işaretlenmesi için bir cron-job veya bot kontrolü ekle.
+- [ ] Farklı kampanya siteleri için genel bir bot adaptörü geliştir.
 - [ ] Gizlilik ayarlarına daha fazla detay ekle (örneğin durum görünürlüğü).
 - [ ] Daha iyi topluluk moderasyonu için yönetici araçlarını genişlet.
-- [ ] Canlı yayın kararlılığı için "Radyo" özelliğini iyileştir.
 
 ## 📈 Gelecek Hedefleri
 - [ ] Çoklu dil desteği (TR/EN ötesinde yerelleştirme).

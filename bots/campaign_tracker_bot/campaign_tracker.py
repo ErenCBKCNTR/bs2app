@@ -40,11 +40,16 @@ class CampaignBotAPI:
                 "source_id": source_id,
                 "title": data["Baslik"],
                 "image_url": data["Gorsel_URL"],
-                "duration_text": data["Kampanya_Katilimi"],
-                "usage_text": data["Kazancin_Kullanimi"],
+                "camp_start": data.get("Kampanya_Baslangic", ""),
+                "camp_end": data.get("Kampanya_Bitis", ""),
+                "usage_start": data.get("Kazanc_Baslangic", ""),
+                "usage_end": data.get("Kazanc_Bitis", ""),
+                "duration_text": data.get("Kampanya_Katilimi", ""),
+                "usage_text": data.get("Kazancin_Kullanimi", ""),
                 "details_json": data["Detaylar"],
                 "brands_json": data["Markalar"],
                 "conditions_json": data["Kosullar"],
+                "actual_source_url": data.get("Kampanya_Detay_URL", ""),
                 "original_url": data["Kampanya_URL"]
             }
 
@@ -61,7 +66,7 @@ class CampaignBotAPI:
         except Exception as e:
             print(f"Kayıt sırasında hata: {e}")
 
-# --- Senin Sağladığın Scraping Mantığı (PocketBase Entegrasyonlu) ---
+# --- Senin Sağladığın Scraping Mantığı (Hassas Tarih Ayrıştırmalı) ---
 
 def liste_sayfasindan_linkleri_al(kategori_url):
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
@@ -83,13 +88,17 @@ def liste_sayfasindan_linkleri_al(kategori_url):
 
 def scraping_to_dict(url):
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-    veri = {"Kampanya_URL": url, "Baslik": "", "Gorsel_URL": "", "Kampanya_Katilimi": "", "Kazancin_Kullanimi": "", "Detaylar": {}, "Markalar": [], "Kosullar": []}
+    veri = {
+        "Kampanya_URL": url, "Baslik": "", "Gorsel_URL": "", 
+        "Kampanya_Baslangic": "", "Kampanya_Bitis": "",
+        "Kazanc_Baslangic": "", "Kazanc_Bitis": "",
+        "Detaylar": {}, "Markalar": [], "Kosullar": []
+    }
     try:
         response = requests.get(url, headers=headers)
         response.encoding = 'utf-8'
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Görsel Çekimi
         og_image = soup.find('meta', property='og:image')
         if og_image: veri["Gorsel_URL"] = og_image.get('content', '')
 
@@ -97,12 +106,36 @@ def scraping_to_dict(url):
         h1 = main_content.find('h1')
         if h1: veri["Baslik"] = h1.get_text(strip=True)
 
+        # Orijinal Kampanya Kaynak Linki (actual_source_url)
+        for a in main_content.find_all('a', href=True):
+            if "Web sayfasında görüntüle" in a.get_text(strip=True):
+                veri["Kampanya_Detay_URL"] = a['href']
+                break
+
+        # Tarih Ayrıştırma (Split Mantığı)
         tarihler = main_content.find_all('span', class_='text-neutral-500')
         for span in tarihler:
             parent_text = span.parent.get_text(separator=" ", strip=True)
-            if "Kampanya Katılımı" in parent_text: veri["Kampanya_Katilimi"] = parent_text.replace("Kampanya Katılımı:", "").strip()
-            elif "Kazancın Kullanımı" in parent_text: veri["Kazancin_Kullanimi"] = parent_text.replace("Kazancın Kullanımı:", "").strip()
+            
+            if "Kampanya Katılımı" in parent_text:
+                temiz_metin = parent_text.replace("Kampanya Katılımı:", "").strip()
+                parcalar = temiz_metin.split("-")
+                if len(parcalar) == 2:
+                    veri["Kampanya_Baslangic"] = parcalar[0].strip()
+                    veri["Kampanya_Bitis"] = parcalar[1].strip()
+                else:
+                    veri["Kampanya_Baslangic"] = temiz_metin
 
+            elif "Kazancın Kullanımı" in parent_text:
+                temiz_metin = parent_text.replace("Kazancın Kullanımı:", "").strip()
+                parcalar = temiz_metin.split("-")
+                if len(parcalar) == 2:
+                    veri["Kazanc_Baslangic"] = parcalar[0].strip()
+                    veri["Kazanc_Bitis"] = parcalar[1].strip()
+                else:
+                    veri["Kazanc_Baslangic"] = temiz_metin
+
+        # Detaylar, Markalar ve Diğerleri
         for h3 in main_content.find_all('h3', class_=lambda c: c and 'font-semibold' in c):
             baslik = h3.get_text(strip=True)
             p_desc = h3.find_next_sibling('p')
@@ -125,7 +158,6 @@ def scraping_to_dict(url):
                         kosullar_metni = item['disambiguatingDescription']
                         veri["Kosullar"] = [k.strip() for k in kosullar_metni.split(';') if k.strip()]
                         break
-                if veri["Kosullar"]: break
             except Exception: continue
             
         return veri

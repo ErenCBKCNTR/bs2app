@@ -22,16 +22,22 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
     
     final title = campaign.getStringValue('title');
     final imageUrl = campaign.getStringValue('image_url');
-    final durationText = campaign.getStringValue('duration_text');
-    final usageText = campaign.getStringValue('usage_text');
+    
+    // Yeni tarih yapısı
+    final campStart = campaign.getStringValue('camp_start');
+    final campEnd = campaign.getStringValue('camp_end');
+    final usageStart = campaign.getStringValue('usage_start');
+    final usageEnd = campaign.getStringValue('usage_end');
+    
+    // Öncelik: Botun bulduğu asıl sayfa URL'si, yoksa getkampania detay linki
+    final actualUrl = campaign.getStringValue('actual_source_url');
     final originalUrl = campaign.getStringValue('original_url');
+    final finalUrl = actualUrl.isNotEmpty ? actualUrl : originalUrl;
     
     // JSON verilerini işle
     final detailsMap = campaign.getDataValue<Map<String, dynamic>>('details_json');
     final brandsList = campaign.getDataValue<List<dynamic>>('brands_json');
     final conditionsList = campaign.getDataValue<List<dynamic>>('conditions_json');
-
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -41,7 +47,6 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Kampanya Görseli
             if (imageUrl.isNotEmpty)
               Container(
                 width: double.infinity,
@@ -50,9 +55,6 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                 child: Image.network(
                   imageUrl,
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Center(
-                    child: Icon(Icons.broken_image, size: 64, color: Colors.grey),
-                  ),
                 ),
               ),
 
@@ -61,54 +63,52 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Kaynak Etiketi
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          sourceName,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      const Text(
-                        'Güncel Kampanya',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Başlık
                   Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 22,
+                    sourceName.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      height: 1.3,
+                      color: Theme.of(context).primaryColor,
                     ),
                   ),
-                  const SizedBox(height: 20),
-
-                  // Tarih/Süre Bilgisi
-                  if (durationText.isNotEmpty)
-                    _buildInfoBox('KAMPANYA KATILIMI', durationText, Icons.calendar_today_outlined, Colors.blue),
-                  
-                  if (usageText.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    _buildInfoBox('KAZANCIN KULLANIMI', usageText, Icons.stars_rounded, Colors.orange),
-                  ],
-                  
+                  const SizedBox(height: 8),
+                  Text(
+                    title,
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 24),
+
+                  // Kampanya Tarihleri
+                  if (campStart.isNotEmpty) ...[
+                    const Text('KAMPANYA KATILIMI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _buildDateBadge('Başlangıç', campStart, Colors.blue),
+                        if (campEnd.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          _buildDateBadge('Bitiş', campEnd, Colors.red),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // Kazanç Kullanım Tarihleri
+                  if (usageStart.isNotEmpty) ...[
+                    const Text('KAZANCIN KULLANIMI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _buildDateBadge('Başlangıç', usageStart, Colors.orange),
+                        if (usageEnd.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          _buildDateBadge('Bitiş', usageEnd, Colors.deepOrange),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
 
                   // Markalar (Varsa)
                   if (brandsList.isNotEmpty) ...[
@@ -159,11 +159,11 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                   ],
 
                   // Buton
-                  if (originalUrl.isNotEmpty)
+                  if (finalUrl.isNotEmpty)
                     ElevatedButton.icon(
                       icon: const Icon(Icons.open_in_new),
                       label: const Text('Kampanya Sayfasına Git'),
-                      onPressed: () => _launchURL(originalUrl),
+                      onPressed: () => _launchURL(finalUrl),
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 56),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -180,30 +180,29 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
     );
   }
 
-  Widget _buildInfoBox(String label, String text, IconData icon, Color color) {
+  Widget _buildDateBadge(String label, String date, Color color) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.1)),
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: color),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold, letterSpacing: 1),
-              ),
-            ],
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 9,
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+          Text(
+            date,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );

@@ -34,6 +34,14 @@ Bu dosya, projede karşılaşılan teknik hataların kök nedenlerini, çözüml
 
 ---
 
+### [23 Nisan 2026] - PocketBase Schema / JSON Field Hataları
+- **Hata Mesajı:** `"options": { "maxSize": "cannot be blank" }`
+- **Kök Neden:** PocketBase şemasında `json` tipi alanlar tanımlanırken `options` bloğu içinde `maxSize` (byte limiti) belirtilmemesi. Şema içe aktarılırken (import) bu alan boş bırakılamaz.
+- **Çözüm:** `pb_schema.json` dosyasındaki tüm `json` alanlarına `"maxSize": 2097152` (2MB) gibi bir sınır eklendi.
+- **Ders:** Veritabanı şeması manuel veya ajanın kod üretimiyle oluşturulurken, tip spesifik zorunlu alanlara (JSON için maxSize, file için mimeTypes vb.) dikkat edilmelidir.
+
+---
+
 ## 🚀 Geliştirme Öncesi Kontrol Listesi
 1. [ ] Yeni eklenen TextField bileşenlerinde `maxLength` var mı? (Günevlik Protokolü)
 2. [ ] PocketBase Record objelerinden tarih okunurken `DateTime.parse` kullanıldı mı?
@@ -41,6 +49,7 @@ Bu dosya, projede karşılaşılan teknik hataların kök nedenlerini, çözüml
 4. [ ] Yeni bağımlılık eklendiyse `BAGIMLILIK_ENVANTERI.md` güncellendi mi?
 5. [ ] **[YENİ]** Dinamik değer alan padding veya margin alanlarında `const` kaldırıldı mı?
 6. [ ] **[YENİ]** Dış kütüphane metodları (url_launcher vb.) için importlar eksiksiz mi?
+7. [ ] **[YENİ]** PocketBase `json` tipi alanlarda `maxSize` tanımlandı mı?
 
 ---
 
