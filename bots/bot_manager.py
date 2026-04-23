@@ -119,17 +119,12 @@ def install_dependencies(req_file):
             subprocess.run(["apt-get", "install", "-y", "python3-pip"], check=False)
             print("[✓] 'pip' başarıyla kuruldu.")
 
-        print("[+] İşletim sistemi seviyesindeki tarayıcı bağımlılıkları (Chromium) kuruluyor...")
-        # Selenium'un headless çalışabilmesi için gerekli olan kütüphaneler (Status 127 hatasının çözümü)
-        subprocess.run(["apt-get", "update"], check=False)
-        os_deps_cmd = "apt-get install -y chromium chromium-browser chromium-chromedriver libnss3 libgconf-2-4 libfontconfig1 libglib2.0-0 libxcb1 libx11-xcb1"
-        subprocess.run(os_deps_cmd, shell=True, check=False)
-
         print("[+] Python kütüphaneleri kuruluyor...")
         # Şimdi kütüphaneleri kur
-        # --break-system-packages: Yeni nesil Ubuntu'lardaki kısıtlamayı aşmak için gerekli
-        # --ignore-installed: Debian'ın 'RECORD file not found' hatasını aşmak için veriyi zorla kurar
         subprocess.run([sys.executable, "-m", "pip", "install", "--ignore-installed", "--break-system-packages", "-r", req_file], check=True)
+        
+        print("[+] Playwright Tarayıcı Altyapısı Kuruluyor (Snap / Root kısıtlamalarından bağımsız)...")
+        subprocess.run([sys.executable, "-m", "playwright", "install", "chromium", "--with-deps"], check=False)
         return True
     except Exception as e:
         print(f"\n[X] Bağımlılıklar kurulamadı: {e}")

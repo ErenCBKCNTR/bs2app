@@ -194,86 +194,63 @@ class CampaignBotAPI:
 
 # --- Senin Sağladığın Scraping Mantığı (Hassas Tarih Ayrıştırmalı) ---
 
+from playwright.sync_api import sync_playwright
+
 def liste_sayfasindan_linkleri_al(kategori_url):
-    print(f"[*] Kategori sayfası taranıyor (Selenium ile): {kategori_url}")
-    
-    # Sunucuda arayüzsüz (headless) çalışması için tarayıcı ayarları
-    chrome_options = Options()
-    
-    # [SNAP ROOT ÇÖKME ENGELLERİ (CHROME INSTANCE EXITED)]
-    chrome_options.add_argument("--headless=new") # Daha güncel headless modu
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--remote-debugging-port=9222") # Port açmak çöküşü sönümler
-    chrome_options.add_argument("--user-data-dir=/tmp/safari_bot_profile") # Snap'in profil izolasyon dizesini geçer
-    chrome_options.add_argument("--window-size=1920,1080")
-    
-    # [KRİTİK DÜZELTME] -> UBUNTU 24.04 SNAP DESTEĞİ
-    driver = None
-    
-    # 1. Deneme: Ubuntu 24.04 ve üstü SNAP Kurulumu yolu
-    try:
-        chrome_options.binary_location = '/snap/bin/chromium'
-        service = Service('/snap/bin/chromium.chromedriver')
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-    except Exception as e_snap:
-        # 2. Deneme: Eski tip APT kurulumu (veya Debian)
-        try:
-            chrome_options.binary_location = '/usr/bin/chromium-browser'
-            service = Service('/usr/bin/chromedriver')
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-        except Exception as e_apt:
-            # 3. Deneme: Orijinal Webdriver Manager (Her şey başarısız olursa)
-            try:
-                chrome_options.binary_location = '' # Kendi bulsun
-                driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-            except Exception as e_wdm:
-                print(f"  [HATA] Tarayıcı başlatılamadı.\n  Snap Hatası -> {e_snap}\n  Apt Hatası -> {e_apt}\n  İndirilen WDM Hatası -> {e_wdm}")
-                return []
+    print(f"[*] Kategori sayfası taranıyor (Playwright ile): {kategori_url}")
+    linkler = []
     
     try:
-        driver.get(kategori_url)
-        
-        # Sayfayı en aşağıya kadar kaydırma döngüsü (Tüm JS verileri yüklenene kadar)
-        last_height = driver.execute_script("return document.body.scrollHeight")
-        while True:
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(2) # JS'nin yeni kampanyaları yüklemesi için mola
+        with sync_playwright() as p:
+            # Playwright'ın kendi izole tarayıcısını (chromium) başlatıyoruz
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
             
-            new_height = driver.execute_script("return document.body.scrollHeight")
-            if new_height == last_height:
-                # "Daha Fazla" butonu varsa tıklamayı dene
-                try:
-                    button = driver.find_element("xpath", "//button[contains(text(), 'Daha Fazla')]")
-                    driver.execute_script("arguments[0].click();", button)
-                    time.sleep(2)
-                    new_height = driver.execute_script("return document.body.scrollHeight")
-                    if new_height == last_height: break
-                except:
-                    break # Daha fazla kayacak yer kalmadıysa döngüyü kır
-            last_height = new_height
+            # Sayfaya git ve yüklenmesini bekle
+            page.goto(kategori_url, wait_until="networkidle")
             
-        # JS ile tam yüklenmiş son HTML kaynağını çekiyoruz
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        
-        linkler = []
-        for a_etiketi in soup.find_all('a', href=True):
-            href = a_etiketi['href']
-            if '/kampanyalar/' in href and not href.endswith('/kampanyalar'):
-                full_url = urljoin("https://www.getkampania.com", href)
-                clean_url = full_url.split('?')[0].rstrip('/')
-                if clean_url not in linkler:
-                    linkler.append(clean_url)
-                    
-        print(f"  [BİLGİ] Selenium ile toplam {len(linkler)} adet kampanya linki toplandı.")
-        return linkler
-        
+            # Sonsuz kaydırma simülasyonu
+            last_height = page.evaluate("document.body.scrollHeight")
+            while True:
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                page.wait_for_timeout(2000) # JS'nin yeni içeriği yüklemesi için 2 sn
+                
+                new_height = page.evaluate("document.body.scrollHeight")
+                if new_height == last_height:
+                    # Daha Fazla butonu varsa bas
+                    try:
+                        # Butonu bul ve tıkla
+                        if page.locator("button:has-text('Daha Fazla')").count() > 0:
+                            page.locator("button:has-text('Daha Fazla')").click()
+                            page.wait_for_timeout(2000)
+                            new_height = page.evaluate("document.body.scrollHeight")
+                            if new_height == last_height: break
+                        else:
+                            break
+                    except Exception as e_btn:
+                        break # Buton tıklandığında hata olursa döngüyü kır
+                        
+                last_height = new_height
+            
+            # Tam yüklenmiş HTML kaynağını çek ve BeautifulSoup'a ver
+            html_content = page.content()
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            for a_etiketi in soup.find_all('a', href=True):
+                href = a_etiketi['href']
+                if '/kampanyalar/' in href and not href.endswith('/kampanyalar'):
+                    full_url = urljoin("https://www.getkampania.com", href)
+                    clean_url = full_url.split('?')[0].rstrip('/')
+                    if clean_url not in linkler:
+                        linkler.append(clean_url)
+                        
+            print(f"  [BİLGİ] Playwright ile toplam {len(linkler)} adet kampanya linki toplandı.")
+            browser.close()
+            return linkler
+            
     except Exception as e:
         print(f"[-] Liste çekilirken hata: {e}")
         return []
-    finally:
-        driver.quit()
 
 def scraping_to_dict(url):
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
