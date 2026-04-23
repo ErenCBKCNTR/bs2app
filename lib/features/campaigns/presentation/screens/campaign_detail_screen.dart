@@ -18,8 +18,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final campaign = widget.campaign;
-    final source = campaign.expand['source_id']?.first;
-    final brands = campaign.expand['brand_ids'] ?? [];
+    final brand = campaign.expand['brand_id']?.first;
     
     final title = campaign.getStringValue('title');
     final description = campaign.getStringValue('description');
@@ -67,7 +66,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Kaynak ve Markalar
+                  // Marka Etiketi
                   Row(
                     children: [
                       Container(
@@ -77,7 +76,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          source?.getStringValue('name') ?? 'Genel Kaynak',
+                          brand?.getStringValue('name') ?? 'Genel Marka',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -114,31 +113,6 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-
-                  // İlgili Markalar (Chips)
-                  if (brands.isNotEmpty) ...[
-                    const Text(
-                      'İlgili Markalar',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 0,
-                      children: brands.map<Widget>((brand) {
-                        return Chip(
-                          label: Text(
-                            brand.getStringValue('name'),
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          backgroundColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
-                          padding: EdgeInsets.zero,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
 
                   const Divider(),
                   const SizedBox(height: 16),

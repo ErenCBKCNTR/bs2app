@@ -174,17 +174,20 @@ class PocketBaseBot:
 
 def parse_turkish_date(date_str):
     """Türkçe ay içeren tarih dizisini PocketBase formatına (ISO) çevirir."""
+    # Gereksiz boşlukları temizle
+    date_str = re.sub(r'\s+', ' ', date_str.strip())
     months = {
         'Oca': '01', 'Şub': '02', 'Mar': '03', 'Nis': '04', 'May': '05', 'Haz': '06',
         'Tem': '07', 'Ağu': '08', 'Eyl': '09', 'Eki': '10', 'Kas': '11', 'Ara': '12'
     }
     try:
-        # Örnek: "1 Nis 2026"
+        # Örnek: "1 Nis 2026" veya "01 Nisan 2026"
         parts = date_str.split()
         if len(parts) >= 3:
             day = parts[0].zfill(2)
-            # Ay ismini bul
-            month_name = next((m for m in months if parts[1].startswith(m)), '01')
+            # Ay ismini bul (İlk 3 harfi eşleştir)
+            month_input = parts[1].capitalize()
+            month_name = next((m for m in months if month_input.startswith(m)), '01')
             month = months.get(month_name, '01')
             year = parts[2]
             return f"{year}-{month}-{day} 00:00:00"
@@ -206,13 +209,22 @@ def scrape_getkampania_details(url):
         
         # 2. Tarihler (Kampanya Katılımı: 1 Nis 2026 - 30 Nis 2026)
         start_date, end_date = None, None
-        date_section = soup.find(string=re.compile("Kampanya Katılımı:"))
+        # Hem "Kampanya Katılımı" hem de "Kampanya Tarihi" gibi başlıkları ara (Case-insensitive)
+        date_section = soup.find(string=re.compile(r"(Kampanya Katılımı|Kampanya Tarihi):", re.IGNORECASE))
         if date_section:
-            parent = date_section.parent.get_text()
-            dates = re.findall(r"\d+\s+[A-Za-zçğıöşüÇĞİÖŞÜ]+\s+\d+", parent)
+            parent_text = date_section.parent.get_text()
+            # Tarih formatlarını yakala (Örn: 1 Nis 2026 veya 01.04.2026)
+            # 1. Metin tabanlı tarih: 1 Nis 2026
+            dates = re.findall(r"\d{1,2}\s+[A-Za-zçğıöşüÇĞİÖŞÜ]+\s+\d{4}", parent_text)
             if len(dates) >= 2:
                 start_date = parse_turkish_date(dates[0])
                 end_date = parse_turkish_date(dates[1])
+            # 2. Nümerik tarih denemesi: 01.04.2026
+            elif len(dates) == 0:
+                num_dates = re.findall(r"\d{1,2}[\./]\d{1,2}[\./]\d{4}", parent_text)
+                if len(num_dates) >= 2:
+                    start_date = f"{num_dates[0].replace('.', '-')[-4:]}-{num_dates[0].split('.')[1].zfill(2)}-{num_dates[0].split('.')[0].zfill(2)} 00:00:00"
+                    end_date = f"{num_dates[1].replace('.', '-')[-4:]}-{num_dates[1].split('.')[1].zfill(2)}-{num_dates[1].split('.')[0].zfill(2)} 00:00:00"
 
         # 3. Görsel
         img_tag = soup.find('img', {'alt': title}) or soup.find('main').find('img') if soup.find('main') else None
