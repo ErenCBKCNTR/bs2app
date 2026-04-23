@@ -55,7 +55,7 @@ class FeedbackDetailScreen extends StatelessWidget {
     final subject = feedback.getStringValue('subject');
     final message = feedback.getStringValue('message');
     final logs = feedback.getStringValue('logs');
-    final created = DateFormat('dd/MM/yyyy HH:mm').format(feedback.created.toLocal());
+    final created = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(feedback.created).toLocal());
 
     return Scaffold(
       appBar: AppBar(

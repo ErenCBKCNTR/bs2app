@@ -10,7 +10,7 @@
 - **Dosya İsimlendirme:** Yeni oluşturulan hafıza dosyalarının isimleri de Türkçe karakter içermeyen ancak Türkçe anlam taşıyan şekilde (örneğin: `YENI_KURAL.md`) seçilmelidir.
 
 ## Görev Başlatma
-- **ZORUNLU GÖREV BAŞLATMA KONTROLÜ:** Yapay zeka ajanları, HER görevin başında `docs/agents/` dizinindeki ilgili dosyaları okumalıdır. Bu kural tartışılamazdır.
+- **ZORUNLU GÖREV BAŞLATMA KONTROLÜ:** Yapay zeka ajanları, HER görevin başında `docs/agents/` dizinindeki ilgili dosyaları (`HATA_COZUM_REHBERI.md` dahil) okumalıdır. Bu kural tartışılamazdır.
 - Yeni bir şey oluşturmadan önce, `SISTEM_KATALOGU.md` dosyasında uygun bir bileşenin veya servisin zaten mevcut olup olmadığını kontrol edin.
 - Yeni bir bağımlılık eklemeden önce `BAGIMLILIK_ENVANTERI.md` dosyasını kontrol edin ve mutlaka web araması yapın.
 - Veritabanıyla ilgili herhangi bir işlem yapmadan önce, tam tutarlılığı sağlamak için `pb_schema.json` dosyasını bir kez okuyun.
