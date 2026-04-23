@@ -135,19 +135,6 @@ class CampaignBotAPI:
             print(f"Kayıt sırasında hata: {e}")
 
 # --- Senin Sağladığın Scraping Mantığı ---
-# ... (bu kısımlar değişmediği için kısaltıyorum ama dosyada kalacak)
-                items = resp.json().get('items', [])
-                print(f"  [BİLGİ] Veritabanından {len(items)} adet kaynak çekildi.")
-                return items
-            else:
-                print(f"  [HATA] Kaynaklar çekilemedi. Durum Kodu: {resp.status_code}")
-                print(f"  [HATA] Yanıt: {resp.text}")
-        except Exception as e:
-            print(f"  [HATA] Kaynaklar çekilirken istisna oluştu: {e}")
-        return []
-
-    def save_campaign(self, source_id, data):
-        """Botun bulduğu kampanyayı PocketBase'e kaydeder veya günceller."""
         try:
             # Mükerrer kaydı önlemek için URL kontrolü
             check_resp = requests.get(
