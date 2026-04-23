@@ -137,8 +137,8 @@
       { "system": false, "id": "cs_name", "name": "name", "type": "text", "required": true, "options": { "min": 1, "max": 100 } },
       { "system": false, "id": "cs_url", "name": "url", "type": "text", "required": true, "options": {} }
     ],
-    "listRule": "@request.auth.id != \"\"",
-    "viewRule": "@request.auth.id != \"\"",
+    "listRule": "",
+    "viewRule": "",
     "createRule": "@request.auth.id != \"\" && @request.auth.role = 0",
     "updateRule": "@request.auth.id != \"\" && @request.auth.role = 0",
     "deleteRule": "@request.auth.id != \"\" && @request.auth.role = 0"
@@ -164,8 +164,8 @@
       { "system": false, "id": "nc_actual_url", "name": "actual_source_url", "type": "text", "required": false, "options": {} },
       { "system": false, "id": "nc_url", "name": "original_url", "type": "text", "required": true, "options": {} }
     ],
-    "listRule": "@request.auth.id != \"\"",
-    "viewRule": "@request.auth.id != \"\"",
+    "listRule": "",
+    "viewRule": "",
     "createRule": "@request.auth.id != \"\" && @request.auth.role = 0",
     "updateRule": "@request.auth.id != \"\" && @request.auth.role = 0",
     "deleteRule": "@request.auth.id != \"\" && @request.auth.role = 0"
