@@ -155,6 +155,8 @@
       { "system": false, "id": "cp_title", "name": "title", "type": "text", "required": true, "options": { "min": 5, "max": 200 } },
       { "system": false, "id": "cp_desc", "name": "description", "type": "text", "required": true, "options": { "min": 10, "max": 2000 } },
       { "system": false, "id": "cp_url", "name": "source_url", "type": "text", "required": false, "options": {} },
+      { "system": false, "id": "cp_image", "name": "image_url", "type": "text", "required": false, "options": {} },
+      { "system": false, "id": "cp_start", "name": "start_date", "type": "date", "required": false, "options": {} },
       { "system": false, "id": "cp_end", "name": "end_date", "type": "date", "required": false, "options": {} },
       { "system": false, "id": "cp_active", "name": "is_active", "type": "bool", "required": false, "options": {} }
     ],

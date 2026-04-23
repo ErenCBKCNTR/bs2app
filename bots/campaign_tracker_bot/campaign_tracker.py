@@ -75,7 +75,7 @@ class PocketBaseBot:
             return resp.json().get("items", [])
         return []
 
-    def save_campaign(self, brand_id, title, description, source_url):
+    def save_campaign(self, brand_id, title, description, source_url, image_url=None, end_date=None):
         """Yeni bir kampanya kaydı oluşturur."""
         # Önce bu başlıkta bir kampanya var mı kontrol et (Mükerrer kaydı önlemek için)
         headers = {"Authorization": f"Bearer {self.token}"}
@@ -93,6 +93,8 @@ class PocketBaseBot:
             "title": title,
             "description": description,
             "source_url": source_url,
+            "image_url": image_url or "",
+            "end_date": end_date,
             "is_active": True
         }
         requests.post(create_url, headers=headers, json=data)
@@ -107,23 +109,41 @@ def scrape_generic(url):
         resp = requests.get(url, headers=headers, timeout=15)
         soup = BeautifulSoup(resp.text, 'html.parser')
         
-        # Basitleştirilmiş: Linkleri ve başlıkları topla
         found_data = []
-        # Not: Burası site bazlı özelleştirilebilir veya LLM/regex tabanlı analiz edilebilir.
-        # Şimdilik h3/h2 başlıklarını ve yakınındaki linkleri baz alan genel bir mantık:
+        # Kampanya bloklarını bulmaya çalış (Genelde div veya article içindedir)
+        # H2-H3 başlıklarını baz alan gelişmiş mantık:
         for heading in soup.find_all(['h2', 'h3']):
             title = heading.get_text().strip()
-            if len(title) > 10: # Çok kısa başlıkları ele
-                # En yakın linki bulmaya çalış
-                link_tag = heading.find_parent().find('a', href=True) or heading.find_next('a', href=True)
-                href = link_tag['href'] if link_tag else url
-                full_link = f"{url.split('.com')[0]}.com{href}" if href.startswith('/') else href
-                
-                found_data.append({
-                    "title": title,
-                    "desc": "Kampanya detayları için web sitesini ziyaret ediniz.",
-                    "url": full_link
-                })
+            if len(title) < 10: continue
+
+            # Başlığın ebeveyn kapsayıcısını bul
+            container = heading.find_parent()
+            
+            # Açıklama bul (başlığın altındaki p etiketleri)
+            desc_tag = heading.find_next('p')
+            desc = desc_tag.get_text().strip() if desc_tag else "Kampanya detayları için web sitesini ziyaret ediniz."
+            if len(desc) < 20 and desc_tag: 
+                desc = desc_tag.find_next('p').get_text().strip() if desc_tag.find_next('p') else desc
+
+            # Görsel bul (kapsayıcı içindeki ilk görsel)
+            img_tag = container.find('img', src=True) or heading.find_next('img', src=True)
+            img_url = ""
+            if img_tag:
+                src = img_tag.get('src')
+                img_url = f"{url.split('.com')[0]}.com{src}" if src.startswith('/') else src
+
+            # Link bul
+            link_tag = container.find('a', href=True) or heading.find_next('a', href=True)
+            href = link_tag['href'] if link_tag else url
+            full_link = f"{url.split('.com')[0]}.com{href}" if href.startswith('/') else href
+            
+            found_data.append({
+                "title": title,
+                "desc": desc,
+                "url": full_link,
+                "image": img_url
+            })
+
         return found_data
     except Exception as e:
         print(f"Scrape hatası ({url}): {e}")
@@ -147,8 +167,14 @@ def main():
         campaigns = scrape_generic(track_url)
         
         for cp in campaigns:
-            bot_api.save_campaign(brand_id, cp['title'], cp['desc'], cp['url'])
-            time.sleep(1) # Siteyi yormamak için
+            bot_api.save_campaign(
+                brand_id, 
+                cp['title'], 
+                cp['desc'], 
+                cp['url'], 
+                image_url=cp.get('image')
+            )
+            time.sleep(1) 
 
 if __name__ == "__main__":
     main()

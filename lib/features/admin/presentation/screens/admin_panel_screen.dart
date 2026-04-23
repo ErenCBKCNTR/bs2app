@@ -62,90 +62,74 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  _buildStatCard(
-                    title: 'Toplam Kullanıcılar',
-                    value: _stats['totalUsers'].toString(),
-                    subtitle: 'Sistemdeki kayıtlı tüm kullanıcılar',
-                    icon: Icons.group,
-                    color: Colors.purple,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const UserListScreen()),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildStatCard(
-                    title: 'Aktif Kullanıcılar',
-                    value: _stats['activeUsers'].toString(),
-                    subtitle: 'Son 15 dakika içinde aktif olanlar',
-                    icon: Icons.people,
-                    color: Colors.blue,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildStatCard(
-                    title: 'Yeni Blog Gönderileri',
-                    value: _stats['recentPosts'].toString(),
-                    subtitle: 'Son 15 dakika içinde paylaşılanlar',
-                    icon: Icons.article,
-                    color: Colors.green,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildStatCard(
-                    title: 'Geri Bildirimler',
-                    value: _stats['feedbackCount']?.toString() ?? '0',
-                    subtitle: 'Kullanıcılardan gelen bildirimler',
-                    icon: Icons.feedback_outlined,
-                    color: Colors.teal,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const FeedbackManagementScreen()),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildStatCard(
-                    title: 'Toplam Sunucular',
-                    value: _stats['totalServers'].toString(),
-                    subtitle: 'Sistemdeki toplam sohbet sunucusu',
-                    icon: Icons.dns,
-                    color: Colors.orange,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const ServerListScreen()),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 32),
-                  const Text(
-                    'Moderasyon Araçları',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.delete_forever, color: Colors.red),
-                    title: const Text('Tüm Blog Gönderileri'),
-                    subtitle: const Text('Gönderileri silmek için blog sayfasına gidin (Yönetici yetkisi ile silme aktiftir)'),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Blog sayfasındaki herhangi bir gönderiyi artık silebilirsiniz.')),
-                      );
-                    },
-                  ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.business_outlined, color: Colors.orange),
-                    title: const Text('Marka & Kampanya Kaynağı Yönetimi'),
-                    subtitle: const Text('Botun kampanya çekeceği markaları ve URL adreslerini yönetin'),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const BrandManagementScreen()),
-                      );
-                    },
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 1.1,
+                    children: [
+                      _buildStatCard(
+                        title: 'Tüm Kullanıcılar',
+                        value: _stats['totalUsers'].toString(),
+                        subtitle: 'Kayıtlı hesaplar',
+                        icon: Icons.group,
+                        color: Colors.purple,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const UserListScreen()),
+                          );
+                        },
+                      ),
+                      _buildStatCard(
+                        title: 'Aktif Kullanıcılar',
+                        value: _stats['activeUsers'].toString(),
+                        subtitle: 'Son 15 dakika',
+                        icon: Icons.people,
+                        color: Colors.blue,
+                      ),
+                      _buildStatCard(
+                        title: 'Geri Bildirimler',
+                        value: _stats['feedbackCount']?.toString() ?? '0',
+                        subtitle: 'Gelen mesajlar',
+                        icon: Icons.feedback_outlined,
+                        color: Colors.teal,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const FeedbackManagementScreen()),
+                          );
+                        },
+                      ),
+                      _buildStatCard(
+                        title: 'Toplam Sunucular',
+                        value: _stats['totalServers'].toString(),
+                        subtitle: 'Aktif sunucular',
+                        icon: Icons.dns,
+                        color: Colors.orange,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ServerListScreen()),
+                          );
+                        },
+                      ),
+                      _buildStatCard(
+                        title: 'Kampanya Yönetimi',
+                        value: 'BOT',
+                        subtitle: 'Marka ve Kaynaklar',
+                        icon: Icons.campaign,
+                        color: Colors.red,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const BrandManagementScreen()),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -167,67 +151,59 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
       button: onTap != null,
       label: "$title istatistiği. Değer: $value. $subtitle",
       onTapHint: onTap != null ? "Detaylı listeyi görmek için çift dokunun" : null,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF232B2B) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF232B2B) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color.withOpacity(0.2)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
-                child: Icon(icon, color: color, size: 32),
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      value,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDarkMode ? Colors.grey[500] : Colors.grey[500],
-                      ),
-                    ),
-                  ],
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: color, size: 28),
                 ),
-              ),
-              if (onTap != null)
-                Icon(Icons.chevron_right, color: color.withOpacity(0.5)),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDarkMode ? Colors.grey[300] : Colors.grey[800],
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
       ),

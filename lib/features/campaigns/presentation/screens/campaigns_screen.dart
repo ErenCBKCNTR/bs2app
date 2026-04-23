@@ -144,7 +144,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.8,
+        childAspectRatio: 0.85, // Karemsi kutu görünümü için
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -155,48 +155,72 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
         final brandName = brand?.getStringValue('name') ?? 'Marka';
         final title = campaign.getStringValue('title');
         final baseUrl = PocketBaseService.client.baseUrl;
+        
+        // Kampanya görseli veya marka logosu
+        final campaignImage = campaign.getStringValue('image_url');
         final logo = brand?.getStringValue('logo');
         final logoUrl = logo != null ? '$baseUrl/api/files/${brand!.collectionId}/${brand.id}/$logo' : null;
+        
+        // Öncelik kampanya görselinde, yoksa marka logosunda
+        final displayImageUrl = campaignImage.isNotEmpty ? campaignImage : logoUrl;
 
         return Card(
+          elevation: 4,
           clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: InkWell(
-            onTap: () => _showCampaignDetail(campaign, brandName),
+            onTap: () => _showCampaignDetail(campaign, brandName, displayImageUrl),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
+                  flex: 3,
                   child: Container(
-                    width: double.infinity,
                     color: Colors.white,
-                    child: logoUrl != null 
+                    child: displayImageUrl != null 
                       ? Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Image.network(logoUrl, fit: BoxFit.contain),
+                          padding: const EdgeInsets.all(displayImageUrl == campaignImage ? 0 : 12),
+                          child: Image.network(
+                            displayImageUrl, 
+                            fit: displayImageUrl == campaignImage ? BoxFit.cover : BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: Colors.grey),
+                          ),
                         )
-                      : const Icon(Icons.business, size: 50, color: Colors.grey),
+                      : const Icon(Icons.campaign_outlined, size: 40, color: Colors.grey),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        brandName,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        title,
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    padding: const EdgeInsets.all(8.0),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      border: Border(top: BorderSide(color: Colors.grey.withOpacity(0.1))),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          brandName.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10, 
+                            fontWeight: FontWeight.bold, 
+                            color: Theme.of(context).primaryColor,
+                            letterSpacing: 1,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          title,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -207,48 +231,137 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     );
   }
 
-  void _showCampaignDetail(RecordModel campaign, String brandName) {
+  void _showCampaignDetail(RecordModel campaign, String brandName, String? logoUrl) {
+    // Tarih formatlama
+    final startDateStr = campaign.getStringValue('start_date');
+    final endDateStr = campaign.getStringValue('end_date');
+    final createdAt = campaign.getStringValue('created');
+    
+    final displayStart = startDateStr.isNotEmpty ? startDateStr.split(' ')[0] : createdAt.split(' ')[0];
+    final displayEnd = endDateStr.isNotEmpty ? endDateStr.split(' ')[0] : 'Süresiz';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      useSafeArea: true, // Kural gereği SafeArea kullanımı
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          minChildSize: 0.4,
-          maxChildSize: 0.9,
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
           expand: false,
           builder: (context, scrollController) {
-            return SingleChildScrollView(
-              controller: scrollController,
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    brandName,
-                    style: TextStyle(fontSize: 14, color: Theme.of(context).primaryColor),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    campaign.getStringValue('title'),
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  const Divider(height: 32),
-                  Text(
-                    campaign.getStringValue('description'),
-                    style: const TextStyle(fontSize: 16, height: 1.5),
-                  ),
-                  const SizedBox(height: 24),
-                  if (campaign.getStringValue('source_url').isNotEmpty)
-                    ElevatedButton(
-                      onPressed: () {
-                        // Launch URL logic
-                      },
-                      style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
-                      child: const Text('Kampanya Detayına Git'),
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
                     ),
-                ],
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        if (logoUrl != null)
+                          Container(
+                            width: 50,
+                            height: 50,
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                            ),
+                            child: Image.network(logoUrl, fit: BoxFit.contain),
+                          ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                brandName,
+                                style: TextStyle(
+                                  fontSize: 14, 
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                              const Text('Güncel Kampanya', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      campaign.getStringValue('title'),
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Takvim/Tarih Kutuları
+                    Row(
+                      children: [
+                        _buildDateBox('Başlangıç', displayStart, Icons.calendar_today_outlined, Colors.blue),
+                        const SizedBox(width: 12),
+                        _buildDateBox('Bitiş', displayEnd, Icons.event_available, Colors.red),
+                      ],
+                    ),
+                    
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Divider(),
+                    ),
+                    
+                    const Text(
+                      'Kampanya Hakkında',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      campaign.getStringValue('description'),
+                      style: const TextStyle(fontSize: 16, height: 1.6, color: Colors.grey),
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    if (campaign.getStringValue('source_url').isNotEmpty)
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.open_in_new),
+                        label: const Text('Kampanya Detayına Git'),
+                        onPressed: () async {
+                          final url = Uri.parse(campaign.getStringValue('source_url'));
+                          try {
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(url, mode: LaunchMode.externalApplication);
+                            }
+                          } catch (e) {
+                            AppLogger.instance.error('URL açılamadı: $e');
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 0,
+                        ),
+                      ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             );
           },
@@ -256,4 +369,32 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       },
     );
   }
+
+  Widget _buildDateBox(String label, String date, IconData icon, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.1)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 14, color: color),
+                const SizedBox(width: 6),
+                Text(label, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(date, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
+}
 }
