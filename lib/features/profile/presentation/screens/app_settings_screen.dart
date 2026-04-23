@@ -3,6 +3,7 @@ import '../../../../core/services/settings_service.dart';
 import 'theme_settings_screen.dart';
 import 'notification_settings_screen.dart';
 import 'accessibility_settings_screen.dart';
+import 'changelog_screen.dart';
 
 class AppSettingsScreen extends StatefulWidget {
   const AppSettingsScreen({super.key});
@@ -14,11 +15,13 @@ class AppSettingsScreen extends StatefulWidget {
 class _AppSettingsScreenState extends State<AppSettingsScreen> {
   final SettingsService _settingsService = SettingsService();
   bool _showOnLockScreen = false;
+  bool _screenProtection = true;
 
   @override
   void initState() {
     super.initState();
     _showOnLockScreen = _settingsService.showOnLockScreenEnabled;
+    _screenProtection = _settingsService.screenProtectionEnabled;
   }
 
   @override
@@ -68,6 +71,29 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             },
           ),
           const Divider(),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Text(
+              'Gizlilik',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.security),
+            title: const Text('Ekran Kaydı Koruması'),
+            subtitle: const Text('Uygulama içinde ekran görüntüsü alınmasını ve kaydedilmesini engeller'),
+            value: _screenProtection,
+            onChanged: (bool value) async {
+              await _settingsService.setScreenProtectionEnabled(value);
+              setState(() {
+                _screenProtection = value;
+              });
+            },
+          ),
+          const Divider(),
           SwitchListTile(
             secondary: const Icon(Icons.screen_lock_portrait),
             title: const Text('Kilit Ekranında Göster'),
@@ -80,6 +106,27 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               });
             },
           ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: const Text('Sürüm Bilgisi'),
+            subtitle: const Text('v1.2.1 - Neler yeni?'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ChangelogScreen()),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          const Center(
+            child: Text(
+              'Blind Social © 2026',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );

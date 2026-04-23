@@ -29,6 +29,7 @@
 - **Screenshot Protection:** `SecurityService().protectScreen()` MUST be called in `main.dart` to prevent screenshots and screen recordings on supported platforms (Android).
 - **API Audit Headers:** Every API request MUST include device metadata (ID, Model, OS) via `PocketBaseService` headers to allow server-side auditing and anomaly detection.
 - **Hardened Database Rules:** `pb_schema.json` MUST enforce `@request.auth.id != ""` for all list/view operations and strict owner-based update/delete rules for all collections.
+- **Changelog Updates:** `lib/features/profile/presentation/screens/changelog_screen.dart` MUST be updated with every new feature or version update, clearly listing the added/removed features for the user. Every update MUST also increment the version number in a sequential manner (e.g., 1.2.0 -> 1.2.1).
 
 ---
 
