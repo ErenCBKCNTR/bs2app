@@ -204,7 +204,20 @@ def liste_sayfasindan_linkleri_al(kategori_url):
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
     
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    # [KRİTİK DÜZELTME]
+    # Webdriver-Manager Linux/ARM sistemlerinde (Android Termux vb.) yanlış mimari (x86_64) indirip Status 127 hatasına sebep olur.
+    # Önce işletim sisteminin kütüphanesini (apt-get ile kurduğumuz /usr/bin/chromedriver) denemesini sağlıyoruz.
+    driver = None
+    try:
+        service = Service('/usr/bin/chromedriver')
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+    except Exception as e_sys:
+        try:
+            # Sistemdeki çalışmazsa x86_64 paketine başvur
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+        except Exception as e_wdm:
+            print(f"  [HATA] Tarayıcı başlatılamadı.\n  Detay: Sistem->{e_sys} | İndirilen->{e_wdm}")
+            return []
     
     try:
         driver.get(kategori_url)
