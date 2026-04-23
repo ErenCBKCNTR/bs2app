@@ -12,6 +12,7 @@
 - [x] Yapay Zeka Ajanı İletişim Protokolü (`AJAN_PROTOKOLU.md`) oluşturuldu.
 - [x] Tüm proje dökümantasyonu ve hafıza sistemi Türkçeye çevrildi.
 - [x] Gelecek dökümantasyonlar için Türkçe dil zorunluluğu kuralı getirildi.
+- [x] PocketBase şema aktarım hatası düzeltildi (v1.2.8).
 
 ## 🛠️ Devam Eden / Bekleyen Görevler
 - [ ] Sunucu odaları için gelişmiş küfür filtreleme sistemini uygula.

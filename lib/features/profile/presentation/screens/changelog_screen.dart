@@ -13,13 +13,22 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            version: '1.2.8',
+            date: '23 Nisan 2026',
+            changes: [
+              'Hata Düzeltmesi: PocketBase şema dosyasındaki API kuralı operatörleri düzeltildi (== yerine =).',
+              'İyileştirme: Veritabanı şema aktarımı uyumluluğu sağlandı.',
+            ],
+            isLatest: true,
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
             version: '1.2.7',
             date: '23 Nisan 2026',
             changes: [
               'Kural: Tüm dökümantasyon ve hafıza kayıtları için Türkçe dil zorunluluğu getirildi.',
               'Kural: Yeni oluşturulacak Ajan dosyalarının Türkçe isimlendirilmesi zorunlu kılındı.',
             ],
-            isLatest: true,
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
