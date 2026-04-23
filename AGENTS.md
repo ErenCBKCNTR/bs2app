@@ -141,6 +141,16 @@ Projede kullanılan kritik `pubspec.yaml` paket listesi:
 
 <br>
 
+<h2 id="8-altyapi-ve-sunucu-bilgileri">8. ALTYAPI VE SUNUCU BİLGİLERİ</h2>
+
+- **Veritabanı (PocketBase):** Yönetici erişimi mevcuttur. Şema güncellemeleri *import* yöntemi ile yapılabilir.
+- **İşletim Sistemi:** Ubuntu 24.04 LTS (Sunucu erişimi mevcuttur).
+- **LiveKit:** Canlı sesli iletişim için LiveKit sunucusu aktif ve kuruludur.
+
+---
+
+<br>
+
 <h2 id="7-proje-yol-haritasi-ve-yapilacaklar">7. PROJE YOL HARİTASI VE YAPILACAKLAR</h2>
 
 **✅ Yakın Zamanda Tamamlananlar (Özet)**

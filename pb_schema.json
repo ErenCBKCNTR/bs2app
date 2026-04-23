@@ -488,7 +488,11 @@
       { "system": false, "id": "p_content", "name": "content", "type": "text", "required": true, "options": {} },
       { "system": false, "id": "p_likes", "name": "likes_count", "type": "number", "required": false, "options": {} }
     ],
-    "listRule": "", "viewRule": "", "createRule": "", "updateRule": "", "deleteRule": ""
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.id != ''",
+    "updateRule": "@request.auth.id != ''",
+    "deleteRule": "@request.auth.id != ''"
   },
   {
     "id": "collection_comments",
@@ -500,7 +504,7 @@
       { "system": false, "id": "pc_user_id", "name": "user_id", "type": "relation", "required": true, "options": { "collectionId": "_pb_users_auth_", "cascadeDelete": true, "maxSelect": 1 } },
       { "system": false, "id": "pc_content", "name": "content", "type": "text", "required": true, "options": {} }
     ],
-    "listRule": "", "viewRule": "", "createRule": "", "updateRule": "", "deleteRule": ""
+    "listRule": "@request.auth.id != ''", "viewRule": "@request.auth.id != ''", "createRule": "@request.auth.id != ''", "updateRule": "@request.auth.id != ''", "deleteRule": "@request.auth.id != ''"
   },
   {
     "id": "col_post_likes",
@@ -511,7 +515,7 @@
       { "system": false, "id": "pl_post_id", "name": "post_id", "type": "relation", "required": true, "options": { "collectionId": "collection_posts", "cascadeDelete": true, "maxSelect": 1 } },
       { "system": false, "id": "pl_user_id", "name": "user_id", "type": "relation", "required": true, "options": { "collectionId": "_pb_users_auth_", "cascadeDelete": true, "maxSelect": 1 } }
     ],
-    "listRule": "", "viewRule": "", "createRule": "", "updateRule": "", "deleteRule": ""
+    "listRule": "@request.auth.id != ''", "viewRule": "@request.auth.id != ''", "createRule": "@request.auth.id != ''", "updateRule": "@request.auth.id != ''", "deleteRule": "@request.auth.id != ''"
   },
   {
     "id": "col_voice_rooms",
@@ -523,7 +527,7 @@
       { "system": false, "id": "vr_created_by", "name": "created_by", "type": "relation", "required": true, "options": { "collectionId": "_pb_users_auth_", "cascadeDelete": true, "maxSelect": 1 } },
       { "system": false, "id": "vr_is_active", "name": "is_active", "type": "bool", "required": false, "options": {} }
     ],
-    "listRule": "", "viewRule": "", "createRule": "", "updateRule": "", "deleteRule": ""
+    "listRule": "@request.auth.id != ''", "viewRule": "@request.auth.id != ''", "createRule": "@request.auth.id != ''", "updateRule": "@request.auth.id != ''", "deleteRule": "@request.auth.id != ''"
   },
   {
     "id": "col_chat_servers",
@@ -613,11 +617,7 @@
       }
     ],
     "indexes": [],
-    "listRule": "",
-    "viewRule": "",
-    "createRule": "",
-    "updateRule": "",
-    "deleteRule": "",
+    "listRule": "@request.auth.id != ''", "viewRule": "@request.auth.id != ''", "createRule": "@request.auth.id != ''", "updateRule": "@request.auth.id != ''", "deleteRule": "@request.auth.id != ''",
     "options": {}
   },
   {
@@ -668,11 +668,11 @@
       }
     ],
     "indexes": [],
-    "listRule": "",
-    "viewRule": "",
-    "createRule": "",
-    "updateRule": "",
-    "deleteRule": "",
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.id != ''",
+    "updateRule": "@request.auth.id != ''",
+    "deleteRule": "@request.auth.id != ''",
     "options": {}
   },
   {
@@ -715,11 +715,11 @@
     "indexes": [
       "CREATE UNIQUE INDEX `idx_server_user` ON `server_memberships` (`server_id`, `user_id`)"
     ],
-    "listRule": "",
-    "viewRule": "",
-    "createRule": "",
-    "updateRule": "",
-    "deleteRule": "",
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.id != ''",
+    "updateRule": "@request.auth.id != ''",
+    "deleteRule": "@request.auth.id != ''",
     "options": {}
   },
   {
