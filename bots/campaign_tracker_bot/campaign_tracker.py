@@ -7,28 +7,81 @@ import time
 import re
 
 # Pocketbase bağlantısı için gerekli bilgiler
-PB_URL = "https://api.cabukcan.com" 
+PB_URL = "https://api.cabukcan.com"
+CONFIG_FILE = "bot_config.json"
 
 class CampaignBotAPI:
     def __init__(self, pb_url):
         self.pb_url = pb_url
+        self.token = ""
+        self.email = ""
+        self.password = ""
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
 
+    def load_config(self):
+        """Kaydedilmiş giriş bilgilerini yükler."""
+        if os.path.exists(CONFIG_FILE):
+            try:
+                with open(CONFIG_FILE, 'r') as f:
+                    config = json.load(f)
+                    self.email = config.get('email', '')
+                    self.password = config.get('password', '')
+                    return True
+            except: pass
+        return False
+
+    def save_config(self):
+        """Giriş bilgilerini dosyaya kaydeder."""
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump({'email': self.email, 'password': self.password}, f)
+
+    def authenticate(self):
+        """PocketBase'e giriş yapar. Bilgiler yoksa veya yanlışsa soru sorar."""
+        # Önce dosyadan yüklemeyi dene
+        self.load_config()
+
+        while True:
+            if not self.email or not self.password:
+                print("\n--- PocketBase Giriş Bilgileri Gerekli ---")
+                self.email = input("E-posta adresinizi girin: ").strip()
+                self.password = input("Şifrenizi girin: ").strip()
+
+            try:
+                resp = requests.post(
+                    f"{self.pb_url}/api/collections/users/auth-with-password",
+                    json={"identity": self.email, "password": self.password}
+                )
+                if resp.status_code == 200:
+                    self.token = resp.json().get('token', '')
+                    self.headers["Authorization"] = f"Bearer {self.token}"
+                    print(f"  [BAŞARILI] {self.email} olarak giriş yapıldı.")
+                    self.save_config() # Başarılı girişi kaydet
+                    return True
+                else:
+                    print(f"  [HATA] Giriş başarısız. Lütfen bilgileri kontrol edin.")
+                    self.email = "" # Bilgileri sıfırla ki tekrar sorsun
+                    self.password = ""
+            except Exception as e:
+                print(f"  [HATA] Bağlantı hatası: {e}")
+                return False
+
     def get_sources_to_track(self):
         """Yönetici panelinden eklenen kaynakları (URL) çeker."""
         try:
-            resp = requests.get(f"{self.pb_url}/api/collections/campaign_sources/records")
+            resp = requests.get(
+                f"{self.pb_url}/api/collections/campaign_sources/records",
+                headers=self.headers
+            )
             if resp.status_code == 200:
                 items = resp.json().get('items', [])
                 print(f"  [BİLGİ] Veritabanından {len(items)} adet kaynak çekildi.")
                 return items
             else:
-                print(f"  [HATA] Kaynaklar çekilemedi. Durum Kodu: {resp.status_code}")
-                print(f"  [HATA] Yanıt: {resp.text}")
+                print(f"  [HATA] Kaynaklar çekilemedi: {resp.status_code}")
         except Exception as e:
-            print(f"  [HATA] Kaynaklar çekilirken istisna oluştu: {e}")
+            print(f"  [HATA] Kaynak çekme hatası: {e}")
         return []
 
     def save_campaign(self, source_id, data):
@@ -37,7 +90,8 @@ class CampaignBotAPI:
             # Mükerrer kaydı önlemek için URL kontrolü
             check_resp = requests.get(
                 f"{self.pb_url}/api/collections/campaigns/records",
-                params={"filter": f'original_url="{data["Kampanya_URL"]}"'}
+                params={"filter": f'original_url="{data["Kampanya_URL"]}"'},
+                headers=self.headers
             )
             existing = check_resp.json().get('items', []) if check_resp.status_code == 200 else []
             
@@ -61,12 +115,88 @@ class CampaignBotAPI:
             if existing:
                 # Güncelle
                 record_id = existing[0]['id']
-                requests.patch(f"{self.pb_url}/api/collections/campaigns/records/{record_id}", json=payload)
-                print(f"  [GÜNCELLENDİ] {data['Baslik']}")
+                r = requests.patch(
+                    f"{self.pb_url}/api/collections/campaigns/records/{record_id}", 
+                    json=payload,
+                    headers=self.headers
+                )
+                if r.status_code == 200:
+                    print(f"  [GÜNCELLENDİ] {data['Baslik']}")
             else:
                 # Yeni oluştur
-                requests.post(f"{self.pb_url}/api/collections/campaigns/records", json=payload)
-                print(f"  [YENİ KAYIT] {data['Baslik']}")
+                r = requests.post(
+                    f"{self.pb_url}/api/collections/campaigns/records", 
+                    json=payload,
+                    headers=self.headers
+                )
+                if r.status_code == 200:
+                    print(f"  [YENİ KAYIT] {data['Baslik']}")
+        except Exception as e:
+            print(f"Kayıt sırasında hata: {e}")
+
+# --- Senin Sağladığın Scraping Mantığı ---
+# ... (bu kısımlar değişmediği için kısaltıyorum ama dosyada kalacak)
+                items = resp.json().get('items', [])
+                print(f"  [BİLGİ] Veritabanından {len(items)} adet kaynak çekildi.")
+                return items
+            else:
+                print(f"  [HATA] Kaynaklar çekilemedi. Durum Kodu: {resp.status_code}")
+                print(f"  [HATA] Yanıt: {resp.text}")
+        except Exception as e:
+            print(f"  [HATA] Kaynaklar çekilirken istisna oluştu: {e}")
+        return []
+
+    def save_campaign(self, source_id, data):
+        """Botun bulduğu kampanyayı PocketBase'e kaydeder veya günceller."""
+        try:
+            # Mükerrer kaydı önlemek için URL kontrolü
+            check_resp = requests.get(
+                f"{self.pb_url}/api/collections/campaigns/records",
+                params={"filter": f'original_url="{data["Kampanya_URL"]}"'},
+                headers=self.headers
+            )
+            existing = check_resp.json().get('items', []) if check_resp.status_code == 200 else []
+            
+            payload = {
+                "source_id": source_id,
+                "title": data["Baslik"],
+                "image_url": data["Gorsel_URL"],
+                "camp_start": data.get("Kampanya_Baslangic", ""),
+                "camp_end": data.get("Kampanya_Bitis", ""),
+                "usage_start": data.get("Kazanc_Baslangic", ""),
+                "usage_end": data.get("Kazanc_Bitis", ""),
+                "duration_text": data.get("Kampanya_Katilimi", ""),
+                "usage_text": data.get("Kazancin_Kullanimi", ""),
+                "details_json": data["Detaylar"],
+                "brands_json": data["Markalar"],
+                "conditions_json": data["Kosullar"],
+                "actual_source_url": data.get("Kampanya_Detay_URL", ""),
+                "original_url": data["Kampanya_URL"]
+            }
+
+            if existing:
+                # Güncelle
+                record_id = existing[0]['id']
+                r = requests.patch(
+                    f"{self.pb_url}/api/collections/campaigns/records/{record_id}", 
+                    json=payload,
+                    headers=self.headers
+                )
+                if r.status_code == 200:
+                    print(f"  [GÜNCELLENDİ] {data['Baslik']}")
+                else:
+                    print(f"  [HATA] Güncelleme başarısız ({r.status_code}): {r.text}")
+            else:
+                # Yeni oluştur
+                r = requests.post(
+                    f"{self.pb_url}/api/collections/campaigns/records", 
+                    json=payload,
+                    headers=self.headers
+                )
+                if r.status_code == 200:
+                    print(f"  [YENİ KAYIT] {data['Baslik']}")
+                else:
+                    print(f"  [HATA] Kayıt başarısız ({r.status_code}): {r.text}")
                 
         except Exception as e:
             print(f"Kayıt sırasında hata: {e}")
@@ -185,6 +315,12 @@ def scraping_to_dict(url):
 
 def run_bot():
     bot_api = CampaignBotAPI(PB_URL)
+    
+    # Giriş yap (Authenticate)
+    if not bot_api.authenticate():
+        print("[KRİTİK] Veritabanı girişi başarısız! Bilgileri kontrol edin.")
+        return
+
     while True:
         print(f"\n[{time.strftime('%H:%M:%S')}] --- Bot Döngüsü Başladı ---")
         sources = bot_api.get_sources_to_track()
