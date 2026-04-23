@@ -13,32 +13,33 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 
 def check_and_add_alias():
-    """Terminalde 'bot' veya 'bots' komutunun çalışması için alias ekler."""
+    """Terminalde 'blind' komutunun çalışması için alias ekler."""
     script_path = os.path.abspath(__file__)
     home = os.path.expanduser("~")
     bashrc_path = os.path.join(home, ".bashrc")
     
-    # Hem 'bot' hem de 'bots' için alias tanımlıyoruz
-    alias_bot = f"alias bot='python3 {script_path}'\n"
-    alias_bots = f"alias bots='python3 {script_path}'\n"
+    # Yeni özel alias
+    alias_blind = f"alias blind='python3 {script_path}'\n"
     
     try:
         if os.path.exists(bashrc_path):
             with open(bashrc_path, 'r') as f:
-                content = f.read()
+                lines = f.readlines()
             
-            changes_made = False
-            with open(bashrc_path, 'a') as f:
-                if alias_bot not in content:
-                    f.write(f"\n# Blind Social Bot Manager Alias\n{alias_bot}")
-                    changes_made = True
-                if alias_bots not in content:
-                    f.write(alias_bots)
-                    changes_made = True
+            # Eski aliasları ve mevcut blind alias'ını temizle/kontrol et
+            new_lines = []
+            for line in lines:
+                if "alias bot=" not in line and "alias bots=" not in line and "alias blind=" not in line:
+                    new_lines.append(line)
             
-            if changes_made:
-                print("\n[+] 'bot' ve 'bots' kısayolları sisteminize eklendi.")
-                print("[!] Aktif olması için: 'source ~/.bashrc' yazın.")
+            # Yeni alias'ı ekle
+            new_lines.append(f"\n# Blind Social Bot Manager Alias\n{alias_blind}")
+            
+            with open(bashrc_path, 'w') as f:
+                f.writelines(new_lines)
+            
+            print("\n[+] 'blind' kısayolu sisteminize tanımlandı.")
+            print("[!] Aktif olması için: 'source ~/.bashrc' yazın.")
     except Exception as e:
         print(f"Kısayol eklenirken hata oluştu: {e}")
 
@@ -104,6 +105,28 @@ def update_bot():
         print(f"Güncelleme hatası: {e}")
         print("İpucu: Sunucuda curl ve tar kurulu olduğundan emin olun.")
 
+def install_dependencies(req_file):
+    """Bağımlılıkları pip üzerinden kurar, pip yoksa önce onu kurmaya çalışır."""
+    try:
+        print("[+] Bağımlılıklar kontrol ediliyor...")
+        # Önce pip var mı kontrol et
+        check_pip = subprocess.run([sys.executable, "-m", "pip", "--version"], capture_output=True)
+        
+        if check_pip.returncode != 0:
+            print("[!] 'pip' bulunamadı. Sunucunuza kurulmaya çalışılıyor...")
+            # Sunucu root olduğu için apt-get ile kurmayı dene
+            subprocess.run(["apt-get", "update"], check=True)
+            subprocess.run(["apt-get", "install", "-y", "python3-pip"], check=True)
+            print("[✓] 'pip' başarıyla kuruldu.")
+
+        # Şimdi kütüphaneleri kur
+        subprocess.run([sys.executable, "-m", "pip", "install", "-k", "-r", req_file], check=True)
+        return True
+    except Exception as e:
+        print(f"\n[X] Bağımlılıklar kurulamadı: {e}")
+        print("[!] Lütfen manuel olarak şu komutu terminale yazın: apt install python3-pip")
+        return False
+
 def manage_bot(bot):
     while True:
         print(f"\n--- {bot['name']} Yönetimi ---")
@@ -118,10 +141,11 @@ def manage_bot(bot):
             req_file = os.path.join(bot_dir, "requirements.txt")
             bot_path = os.path.join(bot_dir, bot['main'])
             
-            # Botu çalıştırmadan önce bağımlılıkları kontrol et/kur
+            # Bağımlılıkları kurmayı dene
             if os.path.exists(req_file):
-                print("[+] Bağımlılıklar kontrol ediliyor...")
-                subprocess.run([sys.executable, "-m", "pip", "install", "-r", req_file], check=True)
+                if not install_dependencies(req_file):
+                    # Kütüphaneler kurulamazsa devam etme
+                    continue
             
             print(f"Bot başlatılıyor: {bot_path}")
             try:
@@ -133,8 +157,7 @@ def manage_bot(bot):
         elif choice == '3':
             req_file = os.path.join(PROJECT_ROOT, bot['path'], "requirements.txt")
             if os.path.exists(req_file):
-                print("[+] Kuruluyor...")
-                subprocess.run([sys.executable, "-m", "pip", "install", "-r", req_file])
+                install_dependencies(req_file)
             else:
                 print("requirements.txt bulunamadı.")
         elif choice == '0':
