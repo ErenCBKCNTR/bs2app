@@ -34,3 +34,9 @@ Bu dosya, projede karşılaşılan teknik hataların kök nedenlerini, çözüml
 - **Scraping Etiği:** Botlar taranacak siteyi yormamak için (Denial of Wallet/Service önlemek adına) istekler arasına `time.sleep()` koymalıdır.
 - **Dinamik İçerik:** JavaScript ile yüklenen siteler için `requests` yerine `Selenium` veya `Playwright` gerekebilir. Şimdilik `BeautifulSoup` standart olarak belirlendi.
 - **Database Bağlantısı:** Botlar PocketBase'e admin token ile veya gizli bir API user ile bağlanmalıdır. Şifreler çevre değişkenleri (environment variables) üzerinden geçilmelidir.
+
+---
+
+## 📱 Flutter Arayüz Geliştirme Notları
+- **Image.network ve Padding:** `Image.network` widget'ı doğrudan `padding` parametresi almaz. Görsele boşluk vermek gerekiyorsa mutlaka `Padding` widget'ı ile sarmalanmalıdır. (Hata: `No named parameter with the name 'padding'`).
+- **Semantics:** Erişilebilirlik için butonlara ve önemli görsellere mutlaka `Semantics` widget'ı veya `label` parametresi eklenmelidir.

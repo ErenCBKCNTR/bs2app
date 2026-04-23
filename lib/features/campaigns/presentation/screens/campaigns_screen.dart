@@ -171,7 +171,10 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                     width: double.infinity,
                     color: Colors.white,
                     child: logoUrl != null 
-                      ? Image.network(logoUrl, fit: BoxFit.contain, padding: const EdgeInsets.all(8))
+                      ? Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Image.network(logoUrl, fit: BoxFit.contain),
+                        )
                       : const Icon(Icons.business, size: 50, color: Colors.grey),
                   ),
                 ),
