@@ -99,12 +99,20 @@ class AdminService {
       );
       final feedbackCount = feedbackResponse.totalItems;
 
+      // 6. Total Sources (Brands)
+      final sourcesResponse = await PocketBaseService.client.collection('brands').getList(
+        page: 1,
+        perPage: 1,
+      );
+      final totalSourcesCount = sourcesResponse.totalItems;
+
       return {
         'activeUsers': activeUsersCount,
         'totalUsers': totalUsersCount,
         'recentPosts': recentPostsCount,
         'totalServers': totalServersCount,
         'feedbackCount': feedbackCount,
+        'totalSources': totalSourcesCount,
       };
     } catch (e) {
       AppLogger.instance.error('Admin istatistikleri alınamadı: $e');

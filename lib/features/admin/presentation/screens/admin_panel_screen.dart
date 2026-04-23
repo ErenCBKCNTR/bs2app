@@ -125,7 +125,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                           ),
                           _buildStatCard(
                             title: 'Kaynak Yönetimi',
-                            value: 'BOT',
+                            value: _stats['totalSources']?.toString() ?? '0',
                             subtitle: 'Tarama Kaynakları',
                             icon: Icons.campaign,
                             color: Colors.red,

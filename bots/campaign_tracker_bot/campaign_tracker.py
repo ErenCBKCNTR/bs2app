@@ -67,10 +67,10 @@ class PocketBaseBot:
                 return None
 
     def get_sources_to_track(self):
-        """Veritabanından takip edilecek URL'si olan kaynakları (sources) çeker."""
+        """Veritabanından takip edilecek URL'si olan kaynakları (brands) çeker."""
         headers = {"Authorization": f"Bearer {self.token}"}
-        # ID: col_brands (sources koleksiyonu)
-        url = f"{self.base_url}/api/collections/col_brands/records"
+        # Kullanicinin panelindeki asil tablo ismi: brands
+        url = f"{self.base_url}/api/collections/brands/records"
         params = {"filter": 'campaign_url != ""'}
         
         resp = requests.get(url, headers=headers, params=params)
@@ -105,33 +105,59 @@ class PocketBaseBot:
             return create_resp.json().get("id")
         return None
 
-    def save_campaign(self, source_id, brand_names, title, description, source_url, image_url=None, start_date=None, end_date=None):
-        """Yeni bir kampanya kaydı oluşturur."""
+    def get_or_create_brand(self, brand_name):
+        """Marka ismine göre veritabanında arama yapar (İsimle), yoksa oluşturur ve ID döndürür."""
+        if not brand_name: return None
+        brand_name = brand_name.strip()
         headers = {"Authorization": f"Bearer {self.token}"}
         
-        # Emojileri temizle (Ekran okuyucular için)
-        # Sadece temel Latin karakterlerini ve Türkçe karakterleri tut
+        # Markayı ara (Paneldeki 'brands' koleksiyonu)
+        search_url = f"{self.base_url}/api/collections/brands/records"
+        safe_name = brand_name.replace('"', '\\"')
+        params = {"filter": f'name = "{safe_name}"'}
+        resp = requests.get(search_url, headers=headers, params=params)
+        
+        if resp.status_code == 200:
+            items = resp.json().get("items", [])
+            if items:
+                # Zaten varsa o ID'yi dön
+                return items[0]["id"]
+        
+        # Yoksa yeni marka satırı oluştur (URL kısmı boş kalacak)
+        print(f"  [+] Yeni marka otomatik olarak ekleniyor: {brand_name}")
+        create_url = f"{self.base_url}/api/collections/brands/records"
+        data = {"name": brand_name}
+        create_resp = requests.post(create_url, headers=headers, json=data)
+        if create_resp.status_code == 200:
+            return create_resp.json().get("id")
+        return None
+
+    def save_campaign(self, source_brand_id, campaign_brand_names, title, description, source_url, image_url=None, start_date=None, end_date=None):
+        """Yeni bir kampanya kaydı oluşturur. Hem kaynağı hem de asıl markayı bağlar."""
+        headers = {"Authorization": f"Bearer {self.token}"}
+        
+        # Emojileri temizle
         description = re.sub(r'[^\x00-\x7FğüşıöçĞÜŞİÖÇ\s\n\r\t.,!?;:()%-]', '', description)
         
-        # Marka ID'lerini al
-        brand_ids = []
-        for name in brand_names:
-            bid = self.get_or_create_brand(name)
-            if bid: brand_ids.append(bid)
+        # Kampanyanın ait olduğu asıl marka ID'sini bul (Örn: Migros)
+        # Eğer özel bir marka tespiti yoksa, kaynağın kendisini kullan
+        target_brand_id = source_brand_id
+        if campaign_brand_names:
+            first_brand_id = self.get_or_create_brand(campaign_brand_names[0])
+            if first_brand_id: target_brand_id = first_brand_id
 
-        # Başlık üzerinden kontrol (Duplicate önleme) (ID: col_campaigns)
+        # Başlık üzerinden kontrol (Duplicate önleme)
         check_url = f"{self.base_url}/api/collections/col_campaigns/records"
         safe_title = title.replace('"', '\\"')
-        params = {"filter": f'source_id = "{source_id}" && title = "{safe_title}"'}
+        params = {"filter": f'brand_id = "{target_brand_id}" && title = "{safe_title}"'}
         check_resp = requests.get(check_url, headers=headers, params=params)
         if check_resp.status_code == 200 and len(check_resp.json().get("items", [])) > 0:
             return
 
-        # Yeni kayıt ekle (ID: col_campaigns)
+        # Kaydet
         create_url = f"{self.base_url}/api/collections/col_campaigns/records"
         data = {
-            "source_id": source_id,
-            "brand_ids": brand_ids,
+            "brand_id": target_brand_id,
             "title": title,
             "description": description,
             "source_url": source_url,
@@ -144,7 +170,7 @@ class PocketBaseBot:
         if resp.status_code == 200:
             print(f"Yeni kampanya eklendi: {title}")
         else:
-            print(f"Hata: Kampanya kaydedilemedi: {resp.text}")
+            print(f"Hata: {resp.text}")
 
 def parse_turkish_date(date_str):
     """Türkçe ay içeren tarih dizisini PocketBase formatına (ISO) çevirir."""
@@ -312,7 +338,7 @@ def main():
         for cp in campaigns:
             bot_api.save_campaign(
                 src['id'], 
-                cp.get('brand_names', []),
+                cp.get('brand_names', []), # Marka listesini artik burada gonderiyoruz
                 cp['title'], 
                 cp['description'], 
                 cp['url'], 

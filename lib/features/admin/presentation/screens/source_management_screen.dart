@@ -22,8 +22,8 @@ class _SourceManagementScreenState extends State<SourceManagementScreen> {
 
   Future<void> _fetchSources() async {
     try {
-      // PocketBase 404 hatalarını önlemek için koleksiyon isminden ziyade benzersiz ID ('col_brands') kullanıldı.
-      final records = await PocketBaseService.client.collection('col_brands').getFullList(
+      // Kullanicinin panelinde gordugu asil tablo ismi 'brands'
+      final records = await PocketBaseService.client.collection('brands').getFullList(
         sort: '-created',
       );
       if (mounted) {
@@ -96,9 +96,9 @@ class _SourceManagementScreenState extends State<SourceManagementScreen> {
                 };
 
                 if (source == null) {
-                  await PocketBaseService.client.collection('col_brands').create(body: body);
+                  await PocketBaseService.client.collection('brands').create(body: body);
                 } else {
-                  await PocketBaseService.client.collection('col_brands').update(source.id, body: body);
+                  await PocketBaseService.client.collection('brands').update(source.id, body: body);
                 }
                 
                 if (mounted) {
@@ -173,7 +173,7 @@ class _SourceManagementScreenState extends State<SourceManagementScreen> {
                             ),
                           );
                           if (confirmed == true) {
-                            await PocketBaseService.client.collection('col_brands').delete(source.id);
+                            await PocketBaseService.client.collection('brands').delete(source.id);
                             _fetchSources();
                           }
                         },
