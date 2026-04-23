@@ -26,10 +26,6 @@ class PocketBaseService {
       );
 
       client = PocketBase('https://api.cabukcan.com', authStore: authStore);
-
-      // 3. Cihaz bilgilerini header'lara ekle
-      final metadata = await SecurityService().getDeviceMetadata();
-      client.headers.addAll(metadata);
     } catch (e) {
       debugPrint("PocketBase initialization failed: $e");
     }

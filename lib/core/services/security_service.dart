@@ -16,20 +16,13 @@ class SecurityService {
       bool isJailBroken = await SafeDevice.isJailBroken;
       bool isRealDevice = await SafeDevice.isRealDevice;
       bool isSafeDevice = await SafeDevice.isSafeDevice;
-      bool isDevelopmentMode = await SafeDevice.isDevelopmentMode;
-      bool isDebuggerAttached = await SafeDevice.isDebuggerAttached;
       
       if (isJailBroken) {
         AppLogger.instance.error('Güvenlik İhlali: Cihaz rootlu/jailbreakli tespit edildi.');
         return false;
       }
 
-      if (isDebuggerAttached && !kDebugMode) {
-        AppLogger.instance.error('Güvenlik İhlali: Hata ayıklayıcı (Debugger) tespit edildi.');
-        return false;
-      }
-
-      if (!isSafeDevice && !isDevelopmentMode) {
+      if (!isSafeDevice && isRealDevice) {
         AppLogger.instance.error('Güvenlik İhlali: Cihaz güvenli olmayan bir ortamda çalışıyor.');
         return false;
       }
