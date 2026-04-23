@@ -13,13 +13,32 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            version: '1.2.3',
+            date: '23 Nisan 2026',
+            changes: [
+              'Yeni: Proje hafıza sistemi modüler hale getirildi (docs/agents/).',
+              'Yeni: Bilgi ve kurallar UI, Güvenlik, Katalog ve TODO olarak ayrıldı.',
+              'İyileştirme: Yapay zeka ajanları için dokümantasyon optimizasyonu yapıldı.',
+            ],
+            isLatest: true,
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
+            version: '1.2.2',
+            date: '23 Nisan 2026',
+            changes: [
+              'Güncelleme: Tasarım rehberi ve minimalist arayüz kuralları güncellendi.',
+              'Güncelleme: Simetrik yerleşim ve kimlik gizliliği (kullanıcı adı önceliği) prensipleri eklendi.',
+              'Güncelleme: Agents.md dosyası yapay zeka ajanları için optimize edildi.',
+            ],
+          ),
+          _buildVersionSection(
             version: '1.2.1',
             date: '23 Nisan 2026',
             changes: [
               'Güncelleme: Sürüm takip sistemi projenin ana kurallarına (Agents.md) eklendi.',
               'Güncelleme: Otomatik versiyon artış kuralı devreye alındı.',
             ],
-            isLatest: true,
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
