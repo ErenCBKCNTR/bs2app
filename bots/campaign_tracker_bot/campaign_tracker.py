@@ -208,36 +208,26 @@ def liste_sayfasindan_linkleri_al(kategori_url):
                 full_url = urljoin("https://www.getkampania.com", href)
                 linkler.add(full_url.split('?')[0].rstrip('/'))
 
-        # 2. Aşama: Sitenin içindeki gizli "Zekasını" (JSON Scriptleri) tara
-        # Next.js veya React siteleri genellikle veriyi __NEXT_DATA__ içinde saklar
-        scripts = soup.find_all('script', id='__NEXT_DATA__')
-        for s in scripts:
-            try:
-                js_data = json.loads(s.string)
+        # 2. Next.js JSON Verisi (__NEXT_DATA__)
+        # Bu kısım genellikle sayfadaki TÜM (hatta görünmeyen) kampanyaları içerir
+        try:
+            next_data_script = soup.find('script', id='__NEXT_DATA__')
+            if next_data_script:
+                data = json.loads(next_data_script.string)
                 # JSON içinde kampanya veya slug geçen her şeyi tara
-                found_slugs = re.findall(r'"slug":"([^"]+)"', s.string)
+                found_slugs = re.findall(r'"slug":"([^"]+)"', next_data_script.string)
                 for slug in found_slugs:
-                    if '-' in slug: # Kampanya slugları genellikle tirelidir
+                    if '-' in slug and len(slug) > 10:
                         linkler.add(f"https://www.getkampania.com/kampanyalar/{slug}")
-            except: pass
+        except Exception as je:
+            print(f"  [UYARI] JSON ayrıştırma hatası: {je}")
 
-        # 3. Aşama: Agresif Sayfalama (Eğer API açıksa)
-        # Sitede 'items' veya 'count' gibi parametreler olabilir, en garantisi 'list' parametresini zorlamak
-        for page in range(1, 5):
-            api_target = f"{kategori_url}?p={page}&limit=50" # Limit zorlaması
-            r = requests.get(api_target, headers=headers, timeout=10)
-            if r.status_code == 200:
-                s_api = BeautifulSoup(r.text, 'html.parser')
-                found = 0
-                for a in s_api.find_all('a', href=True):
-                    href = a['href']
-                    if '/kampanyalar/' in href and not href.endswith('/kampanyalar'):
-                        full_url = urljoin("https://www.getkampania.com", href)
-                        clean = full_url.split('?')[0].rstrip('/')
-                        if clean not in linkler:
-                            linkler.add(clean)
-                            found += 1
-                if found == 0 and page > 1: break # Artık yeni bir şey gelmiyorsa dur
+        # 3. Agresif Regex Taraması
+        regex_links = re.findall(r'\"/kampanyalar/[a-zA-Z0-9_-]+\"', html_content)
+        for rl in regex_links:
+            clean_rel = rl.strip('"')
+            if not clean_rel.endswith('/kampanyalar'):
+                linkler.add(urljoin("https://www.getkampania.com", clean_rel))
                 
     except Exception as e:
         print(f"  [HATA] Liste tarama hatası: {e}")
