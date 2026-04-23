@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CampaignsScreen extends StatefulWidget {
   const CampaignsScreen({super.key});
@@ -179,7 +180,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                     color: Colors.white,
                     child: displayImageUrl != null 
                       ? Padding(
-                          padding: const EdgeInsets.all(displayImageUrl == campaignImage ? 0 : 12),
+                          padding: EdgeInsets.all(displayImageUrl == campaignImage ? 0 : 12),
                           child: Image.network(
                             displayImageUrl, 
                             fit: displayImageUrl == campaignImage ? BoxFit.cover : BoxFit.contain,
@@ -396,5 +397,4 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       ),
     );
   }
-}
 }

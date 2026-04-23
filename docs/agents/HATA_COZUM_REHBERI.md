@@ -21,11 +21,26 @@ Bu dosya, projede karşılaşılan teknik hataların kök nedenlerini, çözüml
 
 ---
 
+### [23 Nisan 2026] - Release Build / Const ve Import Hataları
+- **Hata Mesajı:** `Error: Not a constant expression.` ve `Error: The method 'canLaunchUrl' isn't defined.`
+- **Dosya:** `lib/features/campaigns/presentation/screens/campaigns_screen.dart`
+- **Kök Neden:** 
+  1. `EdgeInsets.all()` içinde değişken (`displayImageUrl == campaignImage`) kullanılmasına rağmen başına `const` eklenmiş. Const ifadeleri çalışma zamanı (runtime) değişkenlerini kabul etmez.
+  2. `canLaunchUrl` ve `launchUrl` metodları kullanılmadan önce `url_launcher` paketi import edilmemiş.
+- **Çözüm:** 
+  1. Dinamik kontrol içeren widget'ların başındaki `const` ifadeleri kaldırıldı.
+  2. `import 'package:url_launcher/url_launcher.dart';` satırı eklendi.
+- **Ders:** Widget ağacında dinamik değerler kullanılıyorsa üst widget'larda `const` kullanımı dikkatle incelenmelidir. Paket metodları çağrılmadan önce import listesi kontrol edilmelidir.
+
+---
+
 ## 🚀 Geliştirme Öncesi Kontrol Listesi
 1. [ ] Yeni eklenen TextField bileşenlerinde `maxLength` var mı? (Günevlik Protokolü)
 2. [ ] PocketBase Record objelerinden tarih okunurken `DateTime.parse` kullanıldı mı?
 3. [ ] `expand` edilen verilerde null kontrolü yapıldı mı?
 4. [ ] Yeni bağımlılık eklendiyse `BAGIMLILIK_ENVANTERI.md` güncellendi mi?
+5. [ ] **[YENİ]** Dinamik değer alan padding veya margin alanlarında `const` kaldırıldı mı?
+6. [ ] **[YENİ]** Dış kütüphane metodları (url_launcher vb.) için importlar eksiksiz mi?
 
 ---
 
