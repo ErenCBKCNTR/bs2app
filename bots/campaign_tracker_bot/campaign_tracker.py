@@ -7,7 +7,7 @@ import time
 import re
 
 # Pocketbase bağlantısı için gerekli bilgiler
-PB_URL = "http://127.0.0.1:8090" 
+PB_URL = "https://api.cabukcan.com" 
 
 class CampaignBotAPI:
     def __init__(self, pb_url):
