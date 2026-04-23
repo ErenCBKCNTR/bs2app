@@ -137,6 +137,7 @@ def manage_bot(bot):
         print("1. Botu Çalıştır (Anlık)")
         print("2. Bot Klasörüne Git (Bilgi)")
         print("3. Bağımlılıkları Kur (pip install)")
+        print("4. Zamanlayıcı Ayarları (Cron Jobs)")
         print("0. Geri Dön")
         
         choice = input("\nSeçiminiz: ")
@@ -164,6 +165,65 @@ def manage_bot(bot):
                 install_dependencies(req_file)
             else:
                 print("requirements.txt bulunamadı.")
+        elif choice == '4':
+            bot_dir = os.path.join(PROJECT_ROOT, bot['path'])
+            bot_path = os.path.join(bot_dir, bot['main'])
+            
+            print("\n--- Zamanlayıcı Ayarları ---")
+            print("1. Günde 1 Kere (Gece 03:00)")
+            print("2. Günde 2 Kere (Gece 00:00 ve Öğlen 12:00)")
+            print("3. Günde 3 Kere (00:00, 12:00, 18:00)")
+            print("4. Günde 4 Kere (00:00, 06:00, 12:00, 20:00)")
+            print("5. Zamanlayıcıyı Kapat (İptal)")
+            print("0. İptal")
+            
+            cron_choice = input("Seçiminiz: ")
+            
+            schedule = ""
+            if cron_choice == '1':
+                schedule = "0 3 * * *"
+            elif cron_choice == '2':
+                schedule = "0 0,12 * * *"
+            elif cron_choice == '3':
+                schedule = "0 0,12,18 * * *"
+            elif cron_choice == '4':
+                schedule = "0 0,6,12,20 * * *"
+            elif cron_choice == '5':
+                schedule = "REMOVE"
+            else:
+                continue
+                
+            try:
+                # Mevcut crontab'i oku
+                current_cron = subprocess.run(['crontab', '-l'], capture_output=True, text=True).stdout
+                
+                # Bu botla ilgili eski satırları temizle
+                new_cron_lines = []
+                for line in current_cron.splitlines():
+                    if bot_path not in line: # Bot scripti geçmeyenleri koru
+                        new_cron_lines.append(line)
+                
+                # Yeni komutu oluştur ve ekle
+                if schedule != "REMOVE":
+                    cron_cmd = f"{schedule} {sys.executable} {bot_path} >> {os.path.join(bot_dir, 'cron_log.txt')} 2>&1"
+                    new_cron_lines.append(cron_cmd)
+                    
+                final_cron = "\n".join(new_cron_lines) + "\n"
+                
+                # Yeni yapılandırmayı bash process üzerinden pipe'la crontab'a yaz
+                process = subprocess.Popen(['crontab', '-'], stdin=subprocess.PIPE, text=True)
+                process.communicate(final_cron)
+                
+                print(f"\n[✓] ZAMANLAYICI AKTİF! Sistem başarıyla güncellendi.")
+                if schedule != "REMOVE":
+                    print(f"Çalışma düzeni: {schedule}")
+                else:
+                    print("Zamanlayıcı iptal edildi.")
+                
+            except Exception as e:
+                print(f"Crontab ayarlanırken bir hata oluştu: {e}")
+                print("Lütfen sunucuda 'cron' servisinin çalıştığından emin olun.")
+
         elif choice == '0':
             break
 
