@@ -14,12 +14,30 @@ class MainActivity: FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
-            if (call.method == "setLockScreenVisibility") {
-                val isVisible = call.argument<Boolean>("isVisible") ?: false
-                setLockScreenVisibility(isVisible)
-                result.success(null)
+            when (call.method) {
+                "setLockScreenVisibility" -> {
+                    val isVisible = call.argument<Boolean>("isVisible") ?: false
+                    setLockScreenVisibility(isVisible)
+                    result.success(null)
+                }
+                "toggleScreenProtection" -> {
+                    val enabled = call.argument<Boolean>("enabled") ?: false
+                    toggleScreenProtection(enabled)
+                    result.success(null)
+                }
+                else -> {
+                    result.notImplemented()
+                }
+            }
+        }
+    }
+
+    private fun toggleScreenProtection(enabled: Boolean) {
+        runOnUiThread {
+            if (enabled) {
+                window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
             } else {
-                result.notImplemented()
+                window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
     }

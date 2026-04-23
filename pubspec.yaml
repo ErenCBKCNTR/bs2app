@@ -44,7 +44,6 @@ dependencies:
   ffmpeg_kit_flutter_new_https: ^2.0.0
   flutter_secure_storage: ^9.2.2
   safe_device: ^1.1.7
-  flutter_windowmanager: ^0.2.0
   device_info_plus: ^12.4.0
  
 dev_dependencies:

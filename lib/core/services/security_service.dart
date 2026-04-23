@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:safe_device/safe_device.dart';
-import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:io';
 import 'package:blind_social/core/utils/logger.dart';
@@ -9,6 +9,8 @@ class SecurityService {
   static final SecurityService _instance = SecurityService._internal();
   factory SecurityService() => _instance;
   SecurityService._internal();
+
+  static const _channel = MethodChannel('com.example.blind_social/lockscreen');
 
   /// Uygulamanın güvenli bir cihazda çalışıp çalışmadığını kontrol eder.
   Future<bool> isDeviceSecure() async {
@@ -37,9 +39,13 @@ class SecurityService {
   /// Ekran görüntüsü alınmasını ve ekran kaydı yapılmasını engeller (Sadece Android).
   /// iOS tarafında sistem düzeyinde kısıtlama gerektiğinden genellikle sadece bilgi verilir.
   Future<void> protectScreen() async {
-    if (Platform.isAndroid) {
-      await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
-      AppLogger.instance.info('Ekran koruması aktif edildi (Screenshot protection).');
+    try {
+      if (Platform.isAndroid) {
+        await _channel.invokeMethod('toggleScreenProtection', {'enabled': true});
+        AppLogger.instance.info('Ekran koruması aktif edildi (Screenshot protection).');
+      }
+    } catch (e) {
+      AppLogger.instance.error('Ekran koruması başlatılırken hata: $e');
     }
   }
 
