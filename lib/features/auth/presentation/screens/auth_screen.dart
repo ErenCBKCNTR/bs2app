@@ -220,7 +220,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
           if (authData.meta!['isNew'] == true || currentFullName.isEmpty) {
             // Kendi e-postanı admin yapmak için özel kural
-            final userEmail = authData.record!.email.toLowerCase();
+            final userEmail = authData.record!.getStringValue('email').toLowerCase();
             final isDeveloperEmail = userEmail == 'erencs87@gmail.com';
 
             await PocketBaseService.client.collection('users').update(authData.record!.id, body: {
