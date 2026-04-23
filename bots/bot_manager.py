@@ -13,24 +13,44 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 
 def check_and_add_alias():
-    """Terminalde 'bot' komutunun çalışması için alias ekler."""
+    """Terminalde 'bot' veya 'bots' komutunun çalışması için alias ekler."""
     script_path = os.path.abspath(__file__)
     home = os.path.expanduser("~")
     bashrc_path = os.path.join(home, ".bashrc")
-    alias_line = f"alias bot='python3 {script_path}'\n"
+    
+    # Hem 'bot' hem de 'bots' için alias tanımlıyoruz
+    alias_bot = f"alias bot='python3 {script_path}'\n"
+    alias_bots = f"alias bots='python3 {script_path}'\n"
     
     try:
         if os.path.exists(bashrc_path):
             with open(bashrc_path, 'r') as f:
                 content = f.read()
             
-            if alias_line not in content:
-                print("\n[+] 'bot' kısayolu sisteminize ekleniyor...")
-                with open(bashrc_path, 'a') as f:
-                    f.write(f"\n# Blind Social Bot Manager Alias\n{alias_line}")
-                print("[!] Kısayol eklendi. Aktif olması için: 'source ~/.bashrc'")
+            changes_made = False
+            with open(bashrc_path, 'a') as f:
+                if alias_bot not in content:
+                    f.write(f"\n# Blind Social Bot Manager Alias\n{alias_bot}")
+                    changes_made = True
+                if alias_bots not in content:
+                    f.write(alias_bots)
+                    changes_made = True
+            
+            if changes_made:
+                print("\n[+] 'bot' ve 'bots' kısayolları sisteminize eklendi.")
+                print("[!] Aktif olması için: 'source ~/.bashrc' yazın.")
     except Exception as e:
         print(f"Kısayol eklenirken hata oluştu: {e}")
+
+def list_bots():
+    """Yönetilebilir botları listeler."""
+    print("\n--- Blind Social Bot Yönetim Sistemi ---")
+    bots = [
+        {"id": 1, "name": "Kampanya Takip Botu (Genel)", "path": "bots/campaign_tracker_bot", "main": "campaign_tracker.py"},
+    ]
+    for bot in bots:
+        print(f"{bot['id']}. {bot['name']}")
+    return bots
 
 def update_bot():
     """Kullanıcının yöntemiyle (curl/tar) eski dosyaları silip temiz güncelleme yapar."""
