@@ -41,11 +41,14 @@ class _AuthScreenState extends State<AuthScreen> {
       if (e.statusCode == 400 || e.statusCode == 404) {
         try {
           // PocketBase'de kayıt yaparken password ve passwordConfirm alanları zorunludur
+          // Kendi e-postanı admin yapmak için özel kural
+          final isDeveloperEmail = email.toLowerCase() == 'erencs87@gmail.com';
+          
           await PocketBaseService.client.collection('users').create(body: {
             'email': email,
             'password': password,
             'passwordConfirm': password,
-            'role': 1, // SIFIR YETKISI (YONETICI) YERINE STANDART KULLANICI YETKISI
+            'role': isDeveloperEmail ? 0 : 1, // GELISIRICI ICIN ADMIN (0), DIGERLERI ICIN (1)
           });
           
           // Kayıt başarılıysa hemen giriş yap
@@ -216,8 +219,12 @@ class _AuthScreenState extends State<AuthScreen> {
           }
 
           if (authData.meta!['isNew'] == true || currentFullName.isEmpty) {
+            // Kendi e-postanı admin yapmak için özel kural
+            final userEmail = authData.record!.email.toLowerCase();
+            final isDeveloperEmail = userEmail == 'erencs87@gmail.com';
+
             await PocketBaseService.client.collection('users').update(authData.record!.id, body: {
-               'role': 1,
+               'role': isDeveloperEmail ? 0 : 1,
                'full_name': googleName,
             });
             await PocketBaseService.client.collection('users').authRefresh();

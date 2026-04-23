@@ -26,6 +26,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
 
   Future<void> _loadStats() async {
     setState(() => _isLoading = true);
+    
+    // Auto-promote/Fix admin role for developer emails if they are in admin panel
+    await _adminService.checkAndFixAdminRole();
+    
     final stats = await _adminService.getStats();
     if (mounted) {
       setState(() {

@@ -101,10 +101,31 @@ class _SourceManagementScreenState extends State<SourceManagementScreen> {
                   await PocketBaseService.client.collection('col_brands').update(source.id, body: body);
                 }
                 
-                Navigator.pop(context);
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Kaynak başarıyla kaydedildi.')),
+                  );
+                }
                 _fetchSources();
               } catch (e) {
                 AppLogger.instance.error('Kaynak kaydedilemedi: $e');
+                if (mounted) {
+                  String errorMessage = 'Kayıt başarısız yetki hatası olabilir.';
+                  if (e.toString().contains('403')) {
+                    errorMessage = 'Erişim reddedildi: Bu işlemi yapmaya yetkiniz yok (403).';
+                  } else if (e.toString().contains('404')) {
+                    errorMessage = 'Veritabanı koleksiyonu bulunamadı (404).';
+                  }
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(errorMessage),
+                      backgroundColor: Colors.red,
+                      duration: const Duration(seconds: 5),
+                    ),
+                  );
+                }
               }
             },
             child: const Text('Kaydet'),
