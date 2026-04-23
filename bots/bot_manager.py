@@ -1,35 +1,38 @@
 import os
 import sys
+import subprocess
 
 def list_bots():
     print("\n--- Blind Social Bot Yönetim Sistemi ---")
-    # Gelecekte bots/ klasörü altındaki klasörleri tarayacak şekilde geliştirilecek
     bots = [
-        {"id": 1, "name": "Kampanya Takip Botu", "path": "campaign_tracker_bot"},
+        {"id": 1, "name": "Kampanya Takip Botu (Genel)", "path": "campaign_tracker_bot", "main": "campaign_tracker.py"},
     ]
     
     for bot in bots:
         print(f"{bot['id']}. {bot['name']}")
     return bots
 
-def manage_bot(bot_id):
-    if bot_id == 1:
-        print("\n--- Kampanya Takip Botu Yönetimi ---")
-        print("1. Botu Başlat")
-        print("2. Botu Durdur")
-        print("3. Logları Görüntüle")
+def manage_bot(bot):
+    while True:
+        print(f"\n--- {bot['name']} Yönetimi ---")
+        print("1. Botu Çalıştır (Anlık)")
+        print("2. Bot Klasörüne Git (Bilgi)")
+        print("3. Logları Görüntüle (Simüle)")
         print("0. Geri Dön")
         
         choice = input("\nSeçiminiz: ")
         if choice == '1':
-            print("Kampanya Takip Botu başlatılıyor...")
-            # subprocess.Popen ile bot scripti çalıştırılacak
+            bot_path = os.path.join(os.getcwd(), bot['path'], bot['main'])
+            print(f"Bot başlatılıyor: {bot_path}")
+            try:
+                # Botu bağımsız bir işlem olarak başlat
+                subprocess.run([sys.executable, bot_path], check=True)
+            except Exception as e:
+                print(f"Hata: {e}")
         elif choice == '2':
-            print("Kampanya Takip Botu durduruluyor...")
-        elif choice == '3':
-            print("Son loglar yükleniyor...")
-    else:
-        print("Geçersiz bot ID.")
+            print(f"Konum: {os.path.join(os.getcwd(), bot['path'])}")
+        elif choice == '0':
+            break
 
 if __name__ == "__main__":
     while True:
@@ -41,6 +44,11 @@ if __name__ == "__main__":
             if choice == 0:
                 print("Kapatılıyor...")
                 break
-            manage_bot(choice)
+            
+            selected_bot = next((b for b in available_bots if b['id'] == choice), None)
+            if selected_bot:
+                manage_bot(selected_bot)
+            else:
+                print("Geçersiz bot numarası.")
         except ValueError:
             print("Lütfen bir sayı girin.")
