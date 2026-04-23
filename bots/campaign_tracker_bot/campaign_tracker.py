@@ -192,32 +192,42 @@ class CampaignBotAPI:
 
 def liste_sayfasindan_linkleri_al(kategori_url):
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-    try:
-        print(f"  [BİLGİ] Sayfa taranıyor: {kategori_url}")
-        response = requests.get(kategori_url, headers=headers)
-        response.encoding = 'utf-8'
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        linkler = []
-        # GetKampania link yapısı: /kampanyalar/kampanya-adi-id
-        # Sektor ve Kategori sayfalarındaki tüm kampanya linklerini yakalamak için daha genel bir regex veya kontrol
-        for a_etiketi in soup.find_all('a', href=True):
-            href = a_etiketi['href']
-            # Link mutlaka /kampanyalar/ ile başlamalı (detay sayfaları budur)
-            if '/kampanyalar/' in href:
-                # Absolute URL'e çevir
-                full_url = urljoin("https://www.getkampania.com", href)
-                # Query parametrelerini temizle (analiz kodları vb. için)
-                clean_url = full_url.split('?')[0].rstrip('/')
+    linkler = []
+    
+    # Sayfalama desteği (İlk 5 sayfayı kontrol et)
+    for page in range(1, 6):
+        try:
+            target_url = f"{kategori_url}?p={page}" if "?" not in kategori_url else f"{kategori_url}&p={page}"
+            print(f"  [BİLGİ] Sayfa taranıyor ({page}/5): {target_url}")
+            
+            response = requests.get(target_url, headers=headers, timeout=15)
+            response.encoding = 'utf-8'
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            found_on_page = 0
+            for a_etiketi in soup.find_all('a', href=True):
+                href = a_etiketi['href']
+                if '/kampanyalar/' in href:
+                    full_url = urljoin("https://www.getkampania.com", href)
+                    clean_url = full_url.split('?')[0].rstrip('/')
+                    
+                    if clean_url not in linkler:
+                        linkler.append(clean_url)
+                        found_on_page += 1
+            
+            if found_on_page == 0:
+                print(f"  [BİLGİ] {page}. sayfada yeni kampanya bulunamadı, tarama bitiriliyor.")
+                break
                 
-                if clean_url not in linkler:
-                    linkler.append(clean_url)
-        
-        print(f"  [BİLGİ] Bulunan benzersiz kampanya linki sayısı: {len(linkler)}")
-        return linkler
-    except Exception as e:
-        print(f"  [HATA] Kategori tarama hatası: {e}")
-        return []
+            print(f"  [BİLGİ] {page}. sayfadan {found_on_page} adet yeni link alındı.")
+            time.sleep(1) # Sayfalar arası bekleme
+            
+        except Exception as e:
+            print(f"  [HATA] Sayfa {page} taranırken hata: {e}")
+            break
+            
+    print(f"  [BİLGİ] Toplam benzersiz kampanya linki sayısı: {len(linkler)}")
+    return linkler
 
 def scraping_to_dict(url):
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}

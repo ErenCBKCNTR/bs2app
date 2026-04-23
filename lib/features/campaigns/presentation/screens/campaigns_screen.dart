@@ -148,7 +148,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                     child: imageUrl.isNotEmpty 
                       ? Image.network(
                           imageUrl, 
-                          fit: BoxFit.contain,
+                          fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: Colors.grey),
                         )
                       : const Icon(Icons.campaign_outlined, size: 40, color: Colors.grey),

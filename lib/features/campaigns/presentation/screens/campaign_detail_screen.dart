@@ -54,7 +54,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                 color: Colors.white,
                 child: Image.network(
                   imageUrl,
-                  fit: BoxFit.contain,
+                  fit: BoxFit.cover,
                 ),
               ),
 
