@@ -203,21 +203,30 @@ def liste_sayfasindan_linkleri_al(kategori_url):
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920,1080")
     
-    # [KRİTİK DÜZELTME]
-    # Webdriver-Manager Linux/ARM sistemlerinde (Android Termux vb.) yanlış mimari (x86_64) indirip Status 127 hatasına sebep olur.
-    # Önce işletim sisteminin kütüphanesini (apt-get ile kurduğumuz /usr/bin/chromedriver) denemesini sağlıyoruz.
+    # [KRİTİK DÜZELTME] -> UBUNTU 24.04 SNAP DESTEĞİ
     driver = None
+    
+    # 1. Deneme: Ubuntu 24.04 ve üstü SNAP Kurulumu yolu
     try:
-        service = Service('/usr/bin/chromedriver')
+        chrome_options.binary_location = '/snap/bin/chromium'
+        service = Service('/snap/bin/chromium.chromedriver')
         driver = webdriver.Chrome(service=service, options=chrome_options)
-    except Exception as e_sys:
+    except Exception as e_snap:
+        # 2. Deneme: Eski tip APT kurulumu (veya Debian)
         try:
-            # Sistemdeki çalışmazsa x86_64 paketine başvur
-            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-        except Exception as e_wdm:
-            print(f"  [HATA] Tarayıcı başlatılamadı.\n  Detay: Sistem->{e_sys} | İndirilen->{e_wdm}")
-            return []
+            chrome_options.binary_location = '/usr/bin/chromium-browser'
+            service = Service('/usr/bin/chromedriver')
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+        except Exception as e_apt:
+            # 3. Deneme: Orijinal Webdriver Manager (Her şey başarısız olursa)
+            try:
+                chrome_options.binary_location = '' # Kendi bulsun
+                driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+            except Exception as e_wdm:
+                print(f"  [HATA] Tarayıcı başlatılamadı.\n  Snap Hatası -> {e_snap}\n  Apt Hatası -> {e_apt}\n  İndirilen WDM Hatası -> {e_wdm}")
+                return []
     
     try:
         driver.get(kategori_url)
