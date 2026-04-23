@@ -194,37 +194,60 @@ def liste_sayfasindan_linkleri_al(kategori_url):
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
     linkler = []
     
-    # Sayfalama desteği (İlk 5 sayfayı kontrol et)
-    for page in range(1, 6):
-        try:
-            target_url = f"{kategori_url}?p={page}" if "?" not in kategori_url else f"{kategori_url}&p={page}"
-            print(f"  [BİLGİ] Sayfa taranıyor ({page}/5): {target_url}")
-            
-            response = requests.get(target_url, headers=headers, timeout=15)
-            response.encoding = 'utf-8'
-            soup = BeautifulSoup(response.text, 'html.parser')
-            
-            found_on_page = 0
-            for a_etiketi in soup.find_all('a', href=True):
-                href = a_etiketi['href']
-                if '/kampanyalar/' in href:
-                    full_url = urljoin("https://www.getkampania.com", href)
-                    clean_url = full_url.split('?')[0].rstrip('/')
+    # Sayfalama varyasyonlarını dene
+    parametreler = ["p", "page", "pg", "pagination"]
+    
+    for param in parametreler:
+        for page in range(1, 10): # Daha derine in (10 sayfa)
+            try:
+                # URL oluşturma
+                if "?" in kategori_url:
+                    target_url = f"{kategori_url}&{param}={page}"
+                else:
+                    target_url = f"{kategori_url}?{param}={page}"
+                
+                print(f"  [BİLGİ] Tarama Denemesi ({param}={page}): {target_url}")
+                
+                response = requests.get(target_url, headers=headers, timeout=15)
+                response.encoding = 'utf-8'
+                soup = BeautifulSoup(response.text, 'html.parser')
+                
+                found_on_page = 0
+                for a_etiketi in soup.find_all('a', href=True):
+                    href = a_etiketi['href']
+                    # Kampanya detay linklerini yakala
+                    if '/kampanyalar/' in href and not href.endswith('/kampanyalar'):
+                        full_url = urljoin("https://www.getkampania.com", href)
+                        clean_url = full_url.split('?')[0].rstrip('/')
+                        
+                        if clean_url not in linkler:
+                            linkler.append(clean_url)
+                            found_on_page += 1
+                
+                if found_on_page == 0:
+                    break # Bu parametre/sayfa için bitti
                     
-                    if clean_url not in linkler:
-                        linkler.append(clean_url)
-                        found_on_page += 1
-            
-            if found_on_page == 0:
-                print(f"  [BİLGİ] {page}. sayfada yeni kampanya bulunamadı, tarama bitiriliyor.")
+                print(f"  [BİLGİ] {param}={page} üzerinden {found_on_page} adet yeni link alındı.")
+                
+            except Exception as e:
+                print(f"  [HATA] {param}={page} hatası: {e}")
                 break
                 
-            print(f"  [BİLGİ] {page}. sayfadan {found_on_page} adet yeni link alındı.")
-            time.sleep(1) # Sayfalar arası bekleme
-            
-        except Exception as e:
-            print(f"  [HATA] Sayfa {page} taranırken hata: {e}")
+        if len(linkler) > 15: # Eğer bir parametre çalıştıysa ve 12'den fazla bulduysa dur
             break
+
+    # Bonus: Kategori sayfasının kendisinde gizli olan tüm linkleri bir kez daha tara
+    try:
+        response = requests.get(kategori_url, headers=headers, timeout=15)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        for a in soup.find_all('a', href=True):
+            href = a['href']
+            if '/kampanyalar/' in href:
+                full_url = urljoin("https://www.getkampania.com", href)
+                clean_url = full_url.split('?')[0].rstrip('/')
+                if clean_url not in linkler:
+                    linkler.append(clean_url)
+    except: pass
             
     print(f"  [BİLGİ] Toplam benzersiz kampanya linki sayısı: {len(linkler)}")
     return linkler
