@@ -13,39 +13,20 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
-            version: '1.2.8',
+            version: '1.2.9',
             date: '23 Nisan 2026',
             changes: [
-              'Hata Düzeltmesi: PocketBase şema dosyasındaki API kuralı operatörleri düzeltildi (== yerine =).',
-              'İyileştirme: Veritabanı şema aktarımı uyumluluğu sağlandı.',
+              'İyileştirme: Sürüm notları kullanıcı odaklı ve daha sade hale getirildi.',
+              'İyileştirme: Teknik geliştirme detayları sürüm geçmişinden temizlendi.',
             ],
             isLatest: true,
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
-            version: '1.2.7',
+            version: '1.2.8',
             date: '23 Nisan 2026',
             changes: [
-              'Kural: Tüm dökümantasyon ve hafıza kayıtları için Türkçe dil zorunluluğu getirildi.',
-              'Kural: Yeni oluşturulacak Ajan dosyalarının Türkçe isimlendirilmesi zorunlu kılındı.',
-            ],
-          ),
-          const SizedBox(height: 24),
-          _buildVersionSection(
-            version: '1.2.6',
-            date: '23 Nisan 2026',
-            changes: [
-              'Yeni: Tüm proje hafıza dökümanları (Agent files) Türkçeye çevrildi.',
-              'Yeni: docs/agents/ dizinindeki dosyalar yerelleştirilmiş isimlerle güncellendi.',
-              'Bilgi: Yapay zeka ajanları artık dökümanları Türkçe olarak referans alacaktır.',
-            ],
-          ),
-          _buildVersionSection(
-            version: '1.2.5',
-            date: '23 Nisan 2026',
-            changes: [
-              'Yeni: AI Ajan İletişim Protokolü (AJAN_PROTOKOLU.md) oluşturuldu.',
-              'Kural: AI ajanları artık her yanıtta hangi dökümanları okuduğunu belirtmek zorundadır.',
+              'İyileştirme: Veritabanı bağlantı kararlılığı ve genel sistem iyileştirmeleri yapıldı.',
             ],
           ),
           const SizedBox(height: 24),
@@ -57,42 +38,14 @@ class ChangelogScreen extends StatelessWidget {
               'İyileştirme: Ayarlar menüsü daha modüler ve düzenli hale getirildi.',
             ],
           ),
-          _buildVersionSection(
-            version: '1.2.3',
-            date: '23 Nisan 2026',
-            changes: [
-              'Yeni: Proje hafıza sistemi modüler hale getirildi (docs/agents/).',
-              'Yeni: Bilgi ve kurallar UI, Güvenlik, Katalog ve TODO olarak ayrıldı.',
-              'İyileştirme: Yapay zeka ajanları için dokümantasyon optimizasyonu yapıldı.',
-            ],
-          ),
-          const SizedBox(height: 24),
-          _buildVersionSection(
-            version: '1.2.2',
-            date: '23 Nisan 2026',
-            changes: [
-              'Güncelleme: Tasarım rehberi ve minimalist arayüz kuralları güncellendi.',
-              'Güncelleme: Simetrik yerleşim ve kimlik gizliliği (kullanıcı adı önceliği) prensipleri eklendi.',
-              'Güncelleme: Agents.md dosyası yapay zeka ajanları için optimize edildi.',
-            ],
-          ),
-          _buildVersionSection(
-            version: '1.2.1',
-            date: '23 Nisan 2026',
-            changes: [
-              'Güncelleme: Sürüm takip sistemi projenin ana kurallarına (Agents.md) eklendi.',
-              'Güncelleme: Otomatik versiyon artış kuralı devreye alındı.',
-            ],
-          ),
           const SizedBox(height: 24),
           _buildVersionSection(
             version: '1.2.0',
             date: '23 Nisan 2026',
             changes: [
-              'Yeni: Gizlilik ayarların eklendi.',
+              'Yeni: Gizlilik ayarları menüsü eklendi.',
               'Yeni: Ekran görüntüsü ve kayıt koruması kullanıcı kontrolüne sunuldu.',
               'Yeni: Sürüm notları sayfası eklendi.',
-              'İyileştirme: Bağımlılık çakışmaları ve build hataları giderildi.',
               'İyileştirme: Uygulama performansı ve güvenliği artırıldı.',
             ],
           ),
@@ -102,9 +55,8 @@ class ChangelogScreen extends StatelessWidget {
             date: '22 Nisan 2026',
             changes: [
               'Yeni: Gelişmiş güvenlik katmanları aktif edildi.',
-              'Yeni: Screenshot (ekran görüntüsü) engelleme özelliği eklendi.',
-              'Yeni: Root ve Debugger algılama sistemi devreye alındı.',
-              'Yeni: Cihaz metadata doğrulaması eklendi.',
+              'Yeni: Ekran görüntüsü (screenshot) engelleme özelliği eklendi.',
+              'Yeni: Cihaz güvenliği doğrulama sistemi devreye alındı.',
             ],
           ),
           const SizedBox(height: 24),
@@ -113,9 +65,9 @@ class ChangelogScreen extends StatelessWidget {
             date: '15 Nisan 2026',
             changes: [
               'Blind Social ilk sürümü yayınlandı!',
-              'Erişilebilir sesli odalar ve chat özellikleri.',
+              'Erişilebilir sesli odalar ve sohbet özellikleri.',
               'Görme engelliler için optimize edilmiş arayüz.',
-              'Google OAuth entegrasyonu.',
+              'Google ile kolay giriş yapma özelliği.',
             ],
           ),
         ],

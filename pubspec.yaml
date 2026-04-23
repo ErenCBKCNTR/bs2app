@@ -1,6 +1,6 @@
 name: blind_social
 description: Görme engelliler için erişilebilir iletişim ağı.
-version: 1.2.8+10
+version: 1.2.9+11
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

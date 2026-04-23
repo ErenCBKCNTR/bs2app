@@ -79,7 +79,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('Sürüm Bilgisi'),
-            subtitle: const Text('v1.2.8 - Neler yeni?'),
+            subtitle: const Text('v1.2.9 - Neler yeni?'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(

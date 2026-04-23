@@ -13,6 +13,7 @@
 - [x] Tüm proje dökümantasyonu ve hafıza sistemi Türkçeye çevrildi.
 - [x] Gelecek dökümantasyonlar için Türkçe dil zorunluluğu kuralı getirildi.
 - [x] PocketBase şema aktarım hatası düzeltildi (v1.2.8).
+- [x] Sürüm notları kullanıcı odaklı hale getirildi ve dökümantasyon temizlendi (v1.2.9).
 
 ## 🛠️ Devam Eden / Bekleyen Görevler
 - [ ] Sunucu odaları için gelişmiş küfür filtreleme sistemini uygula.

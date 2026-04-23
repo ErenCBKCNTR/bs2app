@@ -18,4 +18,7 @@
 - **OAuth Özel Sekme Geri Dönüşü (Android):** `window.close()` ve `closeInAppWebView()` fonksiyonları, Özel Sekmeler (Custom Tabs) içindeki Android 13/14+ güvenlik politikaları nedeniyle temelden engellenmiştir.
     - Yol: `AndroidManifest.xml`, `<data android:scheme="blindsocial" android:host="auth" />` intent'ini içermelidir.
     - Kurtarma: Dahili loopback sunucumuz tarafından sunulan HTML, Android işletim sistemini uygulamamızı ön plana çıkarmaya zorlamak için `window.location.replace("blindsocial://auth");` kullanmalıdır.
-- **Değişiklik Günlüğü (Changelog) Güncellemeleri:** `lib/features/profile/presentation/screens/changelog_screen.dart`, her yeni özellik veya sürüm güncellemesinde kullanıcıya eklenen/kaldırılan özellikleri açıkça listeleyerek güncellenmelidir. Her güncelleme ayrıca sürüm numarasını sıralı bir şekilde artırmalıdır (örneğin 1.2.0 -> 1.2.1).
+- **Değişiklik Günlüğü (Changelog) Güncellemeleri:** `lib/features/profile/presentation/screens/changelog_screen.dart`, her yeni cihaz veya özellik güncellemesinde güncellenmelidir.
+    - **Kullanıcı Odaklılık:** Sürüm notları SADECE kullanıcıyı ilgilendiren yeni özellikleri, arayüz değişikliklerini ve hata düzeltmelerini içermelidir.
+    - **Teknik Detay Yasağı:** "Ajan dosyaları güncellendi", "Hafıza protokolü eklendi", "Dosya yapısı değişti" gibi sadece geliştiriciyi ilgilendiren teknik detaylar kesinlikle sürüm notlarına eklenmemelidir.
+    - **Sıralı Artış:** Her güncelleme sürüm numarasını sıralı bir şekilde artırmalıdır (örneğin 1.2.0 -> 1.2.1).
