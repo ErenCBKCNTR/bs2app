@@ -114,7 +114,7 @@ class ChangelogScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Padding(
-                    padding: EdgeInsets.top(6.0),
+                    padding: EdgeInsets.only(top: 6.0),
                     child: Icon(Icons.circle, size: 6, color: Colors.blue),
                   ),
                   const SizedBox(width: 12),
