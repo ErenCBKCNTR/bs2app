@@ -21,9 +21,14 @@ class CampaignBotAPI:
         try:
             resp = requests.get(f"{self.pb_url}/api/collections/campaign_sources/records")
             if resp.status_code == 200:
-                return resp.json().get('items', [])
+                items = resp.json().get('items', [])
+                print(f"  [BİLGİ] Veritabanından {len(items)} adet kaynak çekildi.")
+                return items
+            else:
+                print(f"  [HATA] Kaynaklar çekilemedi. Durum Kodu: {resp.status_code}")
+                print(f"  [HATA] Yanıt: {resp.text}")
         except Exception as e:
-            print(f"Kaynaklar çekilirken hata: {e}")
+            print(f"  [HATA] Kaynaklar çekilirken istisna oluştu: {e}")
         return []
 
     def save_campaign(self, source_id, data):
@@ -71,19 +76,30 @@ class CampaignBotAPI:
 def liste_sayfasindan_linkleri_al(kategori_url):
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
     try:
+        print(f"  [BİLGİ] Sayfa taranıyor: {kategori_url}")
         response = requests.get(kategori_url, headers=headers)
         response.encoding = 'utf-8'
         soup = BeautifulSoup(response.text, 'html.parser')
+        
         linkler = []
+        # GetKampania link yapısı: /kampanyalar/kampanya-adi-id
+        # Sektor ve Kategori sayfalarındaki tüm kampanya linklerini yakalamak için daha genel bir regex veya kontrol
         for a_etiketi in soup.find_all('a', href=True):
             href = a_etiketi['href']
-            if href.startswith('/kampanyalar/'):
+            # Link mutlaka /kampanyalar/ ile başlamalı (detay sayfaları budur)
+            if '/kampanyalar/' in href:
+                # Absolute URL'e çevir
                 full_url = urljoin("https://www.getkampania.com", href)
-                if full_url not in linkler:
-                    linkler.append(full_url)
+                # Query parametrelerini temizle (analiz kodları vb. için)
+                clean_url = full_url.split('?')[0].rstrip('/')
+                
+                if clean_url not in linkler:
+                    linkler.append(clean_url)
+        
+        print(f"  [BİLGİ] Bulunan benzersiz kampanya linki sayısı: {len(linkler)}")
         return linkler
     except Exception as e:
-        print(f"Kategori hatası: {e}")
+        print(f"  [HATA] Kategori tarama hatası: {e}")
         return []
 
 def scraping_to_dict(url):
@@ -172,6 +188,9 @@ def run_bot():
     while True:
         print(f"\n[{time.strftime('%H:%M:%S')}] --- Bot Döngüsü Başladı ---")
         sources = bot_api.get_sources_to_track()
+        
+        if not sources:
+            print("  [UYARI] Taranacak kaynak bulunamadı. Lütfen yönetim panelinden 'Kaynaklar' ekleyin.")
         
         for src in sources:
             print(f"\nKaynak taranıyor: {src['name']}")

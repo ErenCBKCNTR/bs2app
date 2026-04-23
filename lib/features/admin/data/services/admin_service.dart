@@ -32,9 +32,12 @@ class AdminService {
   Future<void> checkAndFixAdminRole() async {
     try {
       final user = PocketBaseService.client.authStore.model;
-      if (user == null || user.email.isEmpty) return;
+      if (user == null) return;
       
-      final String userEmail = user.email.toLowerCase();
+      final email = user.getStringValue('email');
+      if (email.isEmpty) return;
+      
+      final String userEmail = email.toLowerCase();
       final bool isDeveloper = userEmail == 'erencs87@gmail.com';
       final dynamic roleValue = user.data['role'];
       

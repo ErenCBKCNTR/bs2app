@@ -34,11 +34,12 @@ Bu dosya, projede karşılaşılan teknik hataların kök nedenlerini, çözüml
 
 ---
 
-### [23 Nisan 2026] - PocketBase Schema / JSON Field Hataları
-- **Hata Mesajı:** `"options": { "maxSize": "cannot be blank" }`
-- **Kök Neden:** PocketBase şemasında `json` tipi alanlar tanımlanırken `options` bloğu içinde `maxSize` (byte limiti) belirtilmemesi. Şema içe aktarılırken (import) bu alan boş bırakılamaz.
-- **Çözüm:** `pb_schema.json` dosyasındaki tüm `json` alanlarına `"maxSize": 2097152` (2MB) gibi bir sınır eklendi.
-- **Ders:** Veritabanı şeması manuel veya ajanın kod üretimiyle oluşturulurken, tip spesifik zorunlu alanlara (JSON için maxSize, file için mimeTypes vb.) dikkat edilmelidir.
+### [23 Nisan 2026] - Admin / Yetki ve Bot URL Hataları
+- **Hata 1:** `NoSuchMethodError: RecordModel has no getter 'email'`.
+  - **Çözüm:** `user.email` yerine `user.getStringValue('email')` kullanıldı. AdminService güncellendi.
+- **Hata 2:** Botun `/sektorler/` gibi alt sayfalardaki kampanyaları görememesi.
+  - **Çözüm:** Link yakalama mantığı `startswith` yerine `in` kontrolüne ve `urljoin` optimizasyonuna geçirildi.
+- **Ders:** PocketBase SDK objelerine erişirken her zaman `getStringValue`, `getBoolValue` gibi tip güvenli metodlar tercih edilmelidir. Bot scraping mantığı site yapısındaki değişimlere karşı her zaman "esnek" (greedy) tasarlanmalıdır.
 
 ---
 
@@ -50,6 +51,7 @@ Bu dosya, projede karşılaşılan teknik hataların kök nedenlerini, çözüml
 5. [ ] **[YENİ]** Dinamik değer alan padding veya margin alanlarında `const` kaldırıldı mı?
 6. [ ] **[YENİ]** Dış kütüphane metodları (url_launcher vb.) için importlar eksiksiz mi?
 7. [ ] **[YENİ]** PocketBase `json` tipi alanlarda `maxSize` tanımlandı mı?
+8. [ ] **[YENİ]** `RecordModel` verilerine `.email` veya `.data['field']` yerine `getStringValue` ile erişildi mi?
 
 ---
 
