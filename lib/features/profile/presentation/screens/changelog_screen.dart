@@ -13,6 +13,42 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            version: '1.2.7',
+            date: '23 Nisan 2026',
+            changes: [
+              'Kural: Tüm dökümantasyon ve hafıza kayıtları için Türkçe dil zorunluluğu getirildi.',
+              'Kural: Yeni oluşturulacak Ajan dosyalarının Türkçe isimlendirilmesi zorunlu kılındı.',
+            ],
+            isLatest: true,
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
+            version: '1.2.6',
+            date: '23 Nisan 2026',
+            changes: [
+              'Yeni: Tüm proje hafıza dökümanları (Agent files) Türkçeye çevrildi.',
+              'Yeni: docs/agents/ dizinindeki dosyalar yerelleştirilmiş isimlerle güncellendi.',
+              'Bilgi: Yapay zeka ajanları artık dökümanları Türkçe olarak referans alacaktır.',
+            ],
+          ),
+          _buildVersionSection(
+            version: '1.2.5',
+            date: '23 Nisan 2026',
+            changes: [
+              'Yeni: AI Ajan İletişim Protokolü (AJAN_PROTOKOLU.md) oluşturuldu.',
+              'Kural: AI ajanları artık her yanıtta hangi dökümanları okuduğunu belirtmek zorundadır.',
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
+            version: '1.2.4',
+            date: '23 Nisan 2026',
+            changes: [
+              'İyileştirme: Gizlilik ayarları ayrı bir sayfa yapısına taşındı.',
+              'İyileştirme: Ayarlar menüsü daha modüler ve düzenli hale getirildi.',
+            ],
+          ),
+          _buildVersionSection(
             version: '1.2.3',
             date: '23 Nisan 2026',
             changes: [
@@ -20,7 +56,6 @@ class ChangelogScreen extends StatelessWidget {
               'Yeni: Bilgi ve kurallar UI, Güvenlik, Katalog ve TODO olarak ayrıldı.',
               'İyileştirme: Yapay zeka ajanları için dokümantasyon optimizasyonu yapıldı.',
             ],
-            isLatest: true,
           ),
           const SizedBox(height: 24),
           _buildVersionSection(

@@ -3,6 +3,7 @@ import '../../../../core/services/settings_service.dart';
 import 'theme_settings_screen.dart';
 import 'notification_settings_screen.dart';
 import 'accessibility_settings_screen.dart';
+import 'privacy_settings_screen.dart';
 import 'changelog_screen.dart';
 
 class AppSettingsScreen extends StatefulWidget {
@@ -14,15 +15,6 @@ class AppSettingsScreen extends StatefulWidget {
 
 class _AppSettingsScreenState extends State<AppSettingsScreen> {
   final SettingsService _settingsService = SettingsService();
-  bool _showOnLockScreen = false;
-  bool _screenProtection = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _showOnLockScreen = _settingsService.showOnLockScreenEnabled;
-    _screenProtection = _settingsService.screenProtectionEnabled;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,46 +63,23 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             },
           ),
           const Divider(),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Text(
-              'Gizlilik',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
-            ),
-          ),
-          SwitchListTile(
-            secondary: const Icon(Icons.security),
-            title: const Text('Ekran Kaydı Koruması'),
-            subtitle: const Text('Uygulama içinde ekran görüntüsü alınmasını ve kaydedilmesini engeller'),
-            value: _screenProtection,
-            onChanged: (bool value) async {
-              await _settingsService.setScreenProtectionEnabled(value);
-              setState(() {
-                _screenProtection = value;
-              });
-            },
-          ),
-          const Divider(),
-          SwitchListTile(
-            secondary: const Icon(Icons.screen_lock_portrait),
-            title: const Text('Kilit Ekranında Göster'),
-            subtitle: const Text('Ekran kilitliyken bile uygulama görünür kalır'),
-            value: _showOnLockScreen,
-            onChanged: (bool value) async {
-              await _settingsService.setShowOnLockScreenEnabled(value);
-              setState(() {
-                _showOnLockScreen = value;
-              });
+          ListTile(
+            leading: const Icon(Icons.security),
+            title: const Text('Gizlilik Ayarları'),
+            subtitle: const Text('Ekran koruma ve kilit ekranı seçenekleri'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PrivacySettingsScreen()),
+              );
             },
           ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('Sürüm Bilgisi'),
-            subtitle: const Text('v1.2.3 - Neler yeni?'),
+            subtitle: const Text('v1.2.7 - Neler yeni?'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(
