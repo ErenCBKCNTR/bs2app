@@ -107,7 +107,7 @@ class _ServerRoomChatScreenState extends State<ServerRoomChatScreen> {
                       itemBuilder: (context, index) {
                         final message = _messages[index];
                         final isMe = message.senderId == ChatServerService().currentUserId;
-                        final senderName = message.expand?['sender_id']?['name'] ?? 'Bilinmeyen';
+                        final senderName = message.expand?['sender_id']?['username'] ?? 'Bilinmeyen';
                         final isVoice = message.content.startsWith('[VOICE]');
                         
                         String? voiceUrl;

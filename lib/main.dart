@@ -14,6 +14,8 @@ import 'package:blind_social/core/services/notification_service.dart';
 
 import 'package:blind_social/core/services/security_service.dart';
 
+import 'package:blind_social/core/services/audio_cache_service.dart';
+
 void main() async {
   // Global hata yakalayıcı (Framework hataları)
   FlutterError.onError = (FlutterErrorDetails details) {
@@ -114,6 +116,9 @@ Future<void> _initializeFirebase() async {
     );
     // Bildirim servisini başlat
     await NotificationService().init();
+    
+    // Uygulama zilseslerini önbelleğe al
+    await AudioCacheService.initializeCache();
   } catch (e) {
     debugPrint("Firebase başlatılamadı: $e");
   }

@@ -24,6 +24,7 @@ class ActiveVoiceRoomScreen extends StatefulWidget {
 class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   bool _isMuted = false;
   bool _isConnected = false;
+  String? _errorMessage;
   Room? _room;
   late final EventsListener<RoomEvent> _listener;
   List<Participant> _participants = [];
@@ -91,7 +92,7 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
           ? '@${user!.getStringValue('username')}' 
           : 'Misafir';
       
-      final String livekitToken = _generateToken(apiKey, apiSecret, widget.roomName, userId, userName);
+      final String livekitToken = _generateToken(apiKey, apiSecret, widget.roomId, userId, userName);
 
       _room = Room();
       _listener = _room!.createListener();
@@ -133,6 +134,9 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
     } catch (e) {
       AppLogger.instance.error('LiveKit bağlantı hatası: $e');
       if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Bağlantı hatası: $e')),
         );
@@ -177,9 +181,11 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: _isConnected 
-        ? _buildParticipantGrid()
-        : const Center(child: CircularProgressIndicator()),
+      body: _errorMessage != null 
+        ? Center(child: Padding(padding: const EdgeInsets.all(16.0), child: Text('Bağlantı hatası: $_errorMessage\nLütfen tekrar deneyin.', textAlign: TextAlign.center, style: const TextStyle(color: Colors.red))))
+        : _isConnected 
+          ? _buildParticipantGrid()
+          : const Center(child: CircularProgressIndicator()),
       bottomNavigationBar: _isConnected ? _buildBottomControls() : null,
     );
   }

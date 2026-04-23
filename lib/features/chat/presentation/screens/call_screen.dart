@@ -10,6 +10,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/services/settings_service.dart';
+import '../../../../core/services/audio_cache_service.dart';
 
 class CallScreen extends StatefulWidget {
   final String chatId;
@@ -131,6 +132,13 @@ class _CallScreenState extends State<CallScreen> {
 
     try {
       await _ringtonePlayer.setReleaseMode(ReleaseMode.loop);
+      if (!widget.isIncoming) {
+        final cachedPath = await AudioCacheService.getCachedOutgoingCallPath();
+        if (cachedPath != null) {
+          await _ringtonePlayer.play(DeviceFileSource(cachedPath));
+          return;
+        }
+      }
       final soundPath = widget.isIncoming ? 'sounds/incoming_call.mp3' : 'sounds/outgoing_call.mp3';
       await _ringtonePlayer.play(AssetSource(soundPath));
     } catch (e) {

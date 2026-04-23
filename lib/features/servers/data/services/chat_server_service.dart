@@ -143,7 +143,7 @@ class ChatServerService {
   }
 
   Future<UnsubscribeFunc> subscribeToRoomMessages(String roomId, void Function(RecordSubscriptionEvent) onEvent) {
-    return _pb.collection('server_messages').subscribe('*', onEvent, filter: 'room_id = "$roomId"');
+    return _pb.collection('server_messages').subscribe('*', onEvent, filter: 'room_id = "$roomId"', expand: 'sender_id');
   }
 
   // Memberships
