@@ -12,6 +12,8 @@ import 'package:blind_social/core/utils/logger.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:blind_social/core/services/notification_service.dart';
 
+import 'package:blind_social/core/services/security_service.dart';
+
 void main() async {
   // Global hata yakalayıcı (Framework hataları)
   FlutterError.onError = (FlutterErrorDetails details) {
@@ -64,6 +66,9 @@ void main() async {
   };
 
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Ekran korumasını başlat (Screenshot engelleme)
+  await SecurityService().protectScreen();
   
   // Settings servislerini başlat
   try {

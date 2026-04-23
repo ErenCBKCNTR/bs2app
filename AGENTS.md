@@ -2,6 +2,7 @@
 
 > [!IMPORTANT]
 > **MANDATORY TASK START CHECK:** You MUST read this file at the beginning of EVERY task. This is non-negotiable. This file is the source of truth for existing components, services, and architectural standards. Before creating anything new, check if a suitable component or service already exists here.
+> **SECURITY CHECK:** Before performing any database-related operations, you MUST read `pb_schema.json` once to ensure full consistency and prevent memory drift regarding the schema structure.
 
 ## UI & Layout Rules
 - **SafeArea First:** Every page (Screen) and global component MUST be wrapped in a `SafeArea` widget to prevent content from being obscured by system bars (status bar, navigation bar, notches).
@@ -22,6 +23,12 @@
     - The `AndroidManifest.xml` MUST contain the `<data android:scheme="blindsocial" android:host="auth" />` intent.
     - The HTML served by our internal loopback server must use `window.location.replace("blindsocial://auth");` to force the Android OS to bring our app to the foreground, which natively kills the blocking Custom Tab. Never rely solely on timer-based `close()` calls for Android.
 - **Admin Route Security:** The AdminService historically possessed a fallback hook authorizing the owner by email address. This is now STRICTLY RESTRICTED. `AdminService().isAdmin()` must only evaluate `user.data['role'] == '0'`. Furthermore, ALL screens and routes belonging to the administrator panel MUST wrap their `build` context with `if (!AdminService().isAdmin()) return AccessDeniedWidget();` to ensure no data is fetched or UI rendered if a standard user illegitimately forces navigation into the module.
+- **Reverse Engineering Prevention:** All production builds MUST use Flutter's obfuscation flags: `flutter build apk --obfuscate --split-debug-info=./debug-info`. This renames classes and methods to unreadable strings.
+- **Data Security:** Sensitive data (JWT tokens, user IDs, private keys) MUST NOT be stored in plain text (SharedPreferences). Use `FlutterSecureStorage` via `PocketBaseService` ensure encryption at rest.
+- **Environment Integrity:** The application MUST perform device integrity checks (root/jailbreak detection) via `SecurityService` during initialization. If a security violation is detected, sensitive features should be disabled.
+- **Screenshot Protection:** `SecurityService().protectScreen()` MUST be called in `main.dart` to prevent screenshots and screen recordings on supported platforms (Android).
+- **API Audit Headers:** Every API request MUST include device metadata (ID, Model, OS) via `PocketBaseService` headers to allow server-side auditing and anomaly detection.
+- **Hardened Database Rules:** `pb_schema.json` MUST enforce `@request.auth.id != ""` for all list/view operations and strict owner-based update/delete rules for all collections.
 
 ---
 

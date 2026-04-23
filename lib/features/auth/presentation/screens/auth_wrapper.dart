@@ -4,6 +4,8 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/features/auth/presentation/screens/auth_screen.dart';
 import 'package:blind_social/features/auth/presentation/screens/profile_setup_screen.dart';
 import 'package:blind_social/features/chat/presentation/screens/chat_list_screen.dart';
+import 'package:blind_social/core/services/security_service.dart';
+import 'package:flutter/services.dart';
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -16,10 +18,26 @@ class _AuthWrapperState extends State<AuthWrapper> {
   bool _isLoading = true;
   bool _isAuthenticated = false;
   bool _isProfileComplete = false;
+  bool _isDeviceCompromised = false;
 
   @override
   void initState() {
     super.initState();
+    _performSecurityCheck();
+  }
+
+  Future<void> _performSecurityCheck() async {
+    final isSecure = await SecurityService().isDeviceSecure();
+    if (!isSecure) {
+      if (mounted) {
+        setState(() {
+          _isDeviceCompromised = true;
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+    
     _checkInitialSession();
     _setupAuthListener();
   }
@@ -103,6 +121,45 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isDeviceCompromised) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.security_update_warning, color: Colors.red, size: 80),
+                const SizedBox(height: 24),
+                const Text(
+                  'Güvenlik İhlali Tespit Edildi',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Cihazınızda root/jailbreak veya bir hata ayıklayıcı tespit edildi. Blind Social verilerinizin güvenliği için modifiyeli cihazlarda çalışmayı reddeder.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+                const SizedBox(height: 40),
+                ElevatedButton(
+                  onPressed: () => SystemNavigator.pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                  child: const Text('UYGULAMAYI KAPAT'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     if (_isLoading) {
       return const Scaffold(
         body: Center(

@@ -326,29 +326,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
             ),
           ),
-          actions: [
-            if (_tabController.index == 2) ...[
-              IconButton(
-                icon: const Icon(Icons.star_outline, size: 18),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const FavoriteMessagesScreen()),
-                  );
-                },
-                tooltip: "Favori Mesajlar",
-              ),
-              IconButton(
-                icon: const Icon(Icons.archive_outlined, size: 18),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const ArchivedMessagesScreen()),
-                  );
-                },
-                tooltip: "Arşivli Sunucular",
-              ),
-            ],
+          actions: _tabController.index == 2 ? [] : [
             Semantics(
               label: "Kullanıcı Ara",
               child: IconButton(
@@ -1109,14 +1087,15 @@ Widget? _buildFAB() {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminPanelScreen()));
               },
             ),
-          ListTile(
-            leading: const Icon(Icons.bug_report_outlined),
-            title: const Text('Geliştirici Modu / Loglar'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperLogsScreen()));
-            },
-          ),
+          if (AdminService().isAdmin())
+            ListTile(
+              leading: const Icon(Icons.bug_report_outlined),
+              title: const Text('Geliştirici Modu / Loglar'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperLogsScreen()));
+              },
+            ),
           const Spacer(),
           const Padding(
             padding: EdgeInsets.all(16.0),
