@@ -120,7 +120,8 @@ def install_dependencies(req_file):
             print("[✓] 'pip' başarıyla kuruldu.")
 
         # Şimdi kütüphaneleri kur
-        subprocess.run([sys.executable, "-m", "pip", "install", "-r", req_file], check=True)
+        # --break-system-packages: Yeni nesil Ubuntu'lardaki kısıtlamayı aşmak için gerekli
+        subprocess.run([sys.executable, "-m", "pip", "install", "--break-system-packages", "-r", req_file], check=True)
         return True
     except Exception as e:
         print(f"\n[X] Bağımlılıklar kurulamadı: {e}")
