@@ -3,6 +3,7 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:blind_social/core/widgets/expandable_text.dart';
 
 class CampaignDetailScreen extends StatefulWidget {
   final RecordModel campaign;
@@ -14,8 +15,6 @@ class CampaignDetailScreen extends StatefulWidget {
 }
 
 class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
-  bool _isDescriptionExpanded = false;
-
   @override
   Widget build(BuildContext context) {
     final campaign = widget.campaign;
@@ -151,7 +150,15 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                   ),
                   const SizedBox(height: 12),
                   
-                  _buildDescription(description),
+                  ExpandableText(
+                    text: description,
+                    maxLines: 5,
+                    style: TextStyle(
+                      fontSize: 15,
+                      height: 1.6,
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
+                    ),
+                  ),
 
                   const SizedBox(height: 32),
 
@@ -174,32 +181,6 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildDescription(String text) {
-    final isLong = text.length > 300;
-    final displayText = !_isDescriptionExpanded && isLong 
-        ? '${text.substring(0, 300)}...' 
-        : text;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          displayText,
-          style: TextStyle(
-            fontSize: 15,
-            height: 1.6,
-            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
-          ),
-        ),
-        if (isLong)
-          TextButton(
-            onPressed: () => setState(() => _isDescriptionExpanded = !_isDescriptionExpanded),
-            child: Text(_isDescriptionExpanded ? 'Daha az göster' : 'Tümünü gör'),
-          ),
-      ],
     );
   }
 

@@ -55,85 +55,91 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadStats,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 1.1,
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _loadStats,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
                     children: [
-                      _buildStatCard(
-                        title: 'Tüm Kullanıcılar',
-                        value: _stats['totalUsers'].toString(),
-                        subtitle: 'Kayıtlı hesaplar',
-                        icon: Icons.group,
-                        color: Colors.purple,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const UserListScreen()),
-                          );
-                        },
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: 1.1,
+                        children: [
+                          _buildStatCard(
+                            title: 'Tüm Kullanıcılar',
+                            value: _stats['totalUsers'].toString(),
+                            subtitle: 'Kayıtlı hesaplar',
+                            icon: Icons.group,
+                            color: Colors.purple,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const UserListScreen()),
+                              );
+                            },
+                          ),
+                          _buildStatCard(
+                            title: 'Aktif Kullanıcılar',
+                            value: _stats['activeUsers'].toString(),
+                            subtitle: 'Son 15 dakika',
+                            icon: Icons.people,
+                            color: Colors.blue,
+                          ),
+                          _buildStatCard(
+                            title: 'Geri Bildirimler',
+                            value: _stats['feedbackCount']?.toString() ?? '0',
+                            subtitle: 'Gelen mesajlar',
+                            icon: Icons.feedback_outlined,
+                            color: Colors.teal,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const FeedbackManagementScreen()),
+                              );
+                            },
+                          ),
+                          _buildStatCard(
+                            title: 'Toplam Sunucular',
+                            value: _stats['totalServers'].toString(),
+                            subtitle: 'Aktif sunucular',
+                            icon: Icons.dns,
+                            color: Colors.orange,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const ServerListScreen()),
+                              );
+                            },
+                          ),
+                          _buildStatCard(
+                            title: 'Kaynak Yönetimi',
+                            value: 'BOT',
+                            subtitle: 'Tarama Kaynakları',
+                            icon: Icons.campaign,
+                            color: Colors.red,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const SourceManagementScreen()),
+                              );
+                            },
+                          ),
+                        ],
                       ),
-                      _buildStatCard(
-                        title: 'Aktif Kullanıcılar',
-                        value: _stats['activeUsers'].toString(),
-                        subtitle: 'Son 15 dakika',
-                        icon: Icons.people,
-                        color: Colors.blue,
-                      ),
-                      _buildStatCard(
-                        title: 'Geri Bildirimler',
-                        value: _stats['feedbackCount']?.toString() ?? '0',
-                        subtitle: 'Gelen mesajlar',
-                        icon: Icons.feedback_outlined,
-                        color: Colors.teal,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const FeedbackManagementScreen()),
-                          );
-                        },
-                      ),
-                      _buildStatCard(
-                        title: 'Toplam Sunucular',
-                        value: _stats['totalServers'].toString(),
-                        subtitle: 'Aktif sunucular',
-                        icon: Icons.dns,
-                        color: Colors.orange,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const ServerListScreen()),
-                          );
-                        },
-                      ),
-                      _buildStatCard(
-                        title: 'Kaynak Yönetimi',
-                        value: 'BOT',
-                        subtitle: 'Tarama Kaynakları',
-                        icon: Icons.campaign,
-                        color: Colors.red,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const SourceManagementScreen()),
-                          );
-                        },
-                      ),
+                      const SizedBox(height: 20),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
+      ),
     );
   }
 

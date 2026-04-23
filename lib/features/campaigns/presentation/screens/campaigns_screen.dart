@@ -50,6 +50,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     try {
       String filter = 'is_active = true';
       if (_selectedCategory != 'All') {
+        // ID: col_brands (sources koleksiyonu)
         filter += ' && source_id.category = "$_selectedCategory"';
       }
       if (_searchQuery.isNotEmpty) {
@@ -57,7 +58,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
         filter += ' && (title ~ "$_searchQuery" || source_id.name ~ "$_searchQuery" || brand_ids.name ~ "$_searchQuery")';
       }
 
-      final records = await PocketBaseService.client.collection('campaigns').getFullList(
+      // PocketBase ID kullanımı (col_campaigns)
+      final records = await PocketBaseService.client.collection('col_campaigns').getFullList(
         filter: filter,
         expand: 'source_id,brand_ids',
         sort: '-created',

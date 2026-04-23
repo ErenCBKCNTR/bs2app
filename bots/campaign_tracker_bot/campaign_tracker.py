@@ -69,7 +69,8 @@ class PocketBaseBot:
     def get_sources_to_track(self):
         """Veritabanından takip edilecek URL'si olan kaynakları (sources) çeker."""
         headers = {"Authorization": f"Bearer {self.token}"}
-        url = f"{self.base_url}/api/collections/sources/records"
+        # ID: col_brands (sources koleksiyonu)
+        url = f"{self.base_url}/api/collections/col_brands/records"
         params = {"filter": 'campaign_url != ""'}
         
         resp = requests.get(url, headers=headers, params=params)
@@ -83,8 +84,8 @@ class PocketBaseBot:
         brand_name = brand_name.strip()
         headers = {"Authorization": f"Bearer {self.token}"}
         
-        # Markayı ara
-        search_url = f"{self.base_url}/api/collections/brands/records"
+        # Markayı ara (ID: col_real_brands)
+        search_url = f"{self.base_url}/api/collections/col_real_brands/records"
         # Tırnak işaretlerini kaçış karakteriyle koru
         safe_name = brand_name.replace('"', '\\"')
         params = {"filter": f'name = "{safe_name}"'}
@@ -95,9 +96,9 @@ class PocketBaseBot:
             if items:
                 return items[0]["id"]
         
-        # Yoksa oluştur
+        # Yoksa oluştur (ID: col_real_brands)
         print(f"  [+] Yeni marka oluşturuluyor: {brand_name}")
-        create_url = f"{self.base_url}/api/collections/brands/records"
+        create_url = f"{self.base_url}/api/collections/col_real_brands/records"
         data = {"name": brand_name}
         create_resp = requests.post(create_url, headers=headers, json=data)
         if create_resp.status_code == 200:
@@ -118,16 +119,16 @@ class PocketBaseBot:
             bid = self.get_or_create_brand(name)
             if bid: brand_ids.append(bid)
 
-        # Başlık üzerinden kontrol (Duplicate önleme)
-        check_url = f"{self.base_url}/api/collections/campaigns/records"
+        # Başlık üzerinden kontrol (Duplicate önleme) (ID: col_campaigns)
+        check_url = f"{self.base_url}/api/collections/col_campaigns/records"
         safe_title = title.replace('"', '\\"')
         params = {"filter": f'source_id = "{source_id}" && title = "{safe_title}"'}
         check_resp = requests.get(check_url, headers=headers, params=params)
         if check_resp.status_code == 200 and len(check_resp.json().get("items", [])) > 0:
             return
 
-        # Yeni kayıt ekle
-        create_url = f"{self.base_url}/api/collections/campaigns/records"
+        # Yeni kayıt ekle (ID: col_campaigns)
+        create_url = f"{self.base_url}/api/collections/col_campaigns/records"
         data = {
             "source_id": source_id,
             "brand_ids": brand_ids,
