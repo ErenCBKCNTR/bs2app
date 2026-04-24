@@ -75,7 +75,7 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
             final List<dynamic> decoded = jsonDecode(cachedServersStr);
             if (mounted) {
               setState(() {
-                _servers = decoded.map((e) => ChatServer.fromJson(e)).toList();
+                _servers = decoded.map<ChatServer>((e) => ChatServer.fromJson(e as Map<String, dynamic>)).toList();
                 _cachedServers = _servers;
                 _isLoading = false;
               });

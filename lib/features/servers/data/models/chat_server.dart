@@ -43,13 +43,35 @@ class ChatServer {
     );
   }
 
+  factory ChatServer.fromJson(Map<String, dynamic> json) {
+    return ChatServer(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      description: json['description'] ?? '',
+      creatorId: json['creator'] ?? '',
+      admins: List<String>.from(json['admins'] ?? []),
+      capacity: json['capacity'] ?? 100,
+      avatar: json['avatar'],
+      canMembersCreateRooms: json['can_members_create_rooms'] ?? false,
+      password: json['password'],
+      created: json['created'] != null ? DateTime.parse(json['created']) : DateTime.now(),
+      updated: json['updated'] != null ? DateTime.parse(json['updated']) : DateTime.now(),
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'name': name,
       'description': description,
       'creator': creatorId,
       'admins': admins,
       'capacity': capacity,
+      'avatar': avatar,
+      'can_members_create_rooms': canMembersCreateRooms,
+      'password': password,
+      'created': created.toIso8601String(),
+      'updated': updated.toIso8601String(),
     };
   }
 }
