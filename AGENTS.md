@@ -143,21 +143,16 @@ Projede kullanılan kritik `pubspec.yaml` paket listesi:
 
 <br>
 
-<h2 id="8-altyapi-ve-sunucu-bilgileri">8. ALTYAPI VE SUNUCU BİLGİLERİ</h2>
+<h2 id="8-altyapi-ve-sunucu-bilgileri">8. ALTYAPI VE SUNUCU BİLGİLERİ VE CI/CD</h2>
 
 - **Veritabanı (PocketBase):** Yönetici erişimi mevcuttur. Şema güncellemeleri *import* yöntemi ile yapılabilir.
 - **İşletim Sistemi:** Ubuntu 24.04 LTS (Sunucu erişimi mevcuttur).
 - **LiveKit:** Canlı sesli iletişim için LiveKit sunucusu aktif ve kuruludur.
-
----
-
-<br>
-
-<h2 id="8-altyapi-ve-sunucu-bilgileri">8. ALTYAPI VE SUNUCU BİLGİLERİ</h2>
-
-- **Veritabanı (PocketBase):** Yönetici erişimi mevcuttur. Şema güncellemeleri *import* yöntemi ile yapılabilir.
-- **İşletim Sistemi:** Ubuntu 24.04 LTS (Sunucu erişimi mevcuttur).
-- **LiveKit:** Canlı sesli iletişim için LiveKit sunucusu aktif ve kuruludur.
+- **GitHub Actions (CI/CD):** `.github/workflows/android_build.yml` veya benzeri build pipeline dosyaları güncellendiğinde, `.env` oluşturma aşaması **KESİNLİKLE** aşağıdaki değişkenleri de içermelidir (bu değişkenler silinmemeli veya dokunulmamalıdır):
+  - `LIVEKIT_URL=${{ secrets.LIVEKIT_URL }}`
+  - `LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }}`
+  - `LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}`
+  - `PB_URL=https://api.cabukcan.com`
 
 ---
 

@@ -30,6 +30,9 @@ jobs:
         run: |
           touch .env
           echo "PB_URL=https://api.cabukcan.com" >> .env
+          echo "LIVEKIT_URL=${{ secrets.LIVEKIT_URL }}" >> .env
+          echo "LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }}" >> .env
+          echo "LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}" >> .env
 
       - name: Install dependencies
         run: flutter pub get
