@@ -22,6 +22,11 @@ class ChatServerService {
     return records.map((r) => ChatServer.fromRecord(r)).toList();
   }
 
+  Future<ChatServer> getServer(String serverId) async {
+    final record = await _pb.collection('chat_servers').getOne(serverId);
+    return ChatServer.fromRecord(record);
+  }
+
   Future<ChatServer> updateServer({
     required String serverId,
     String? name,

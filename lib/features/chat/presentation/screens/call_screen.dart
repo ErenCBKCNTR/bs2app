@@ -135,9 +135,9 @@ class _CallScreenState extends State<CallScreen> {
       await _ringtonePlayer.setReleaseMode(ReleaseMode.loop);
       if (!widget.isIncoming) {
         if (kIsWeb) {
-          // Web üzerinde Google Drive adresi CORS nedeniyle çalışmayabilir ancak URL'den okumayı deniyoruz
+          // Web üzerinde harici adres CORS nedeniyle çalışmayabilir ancak URL'den okumayı deniyoruz
           try {
-            await _ringtonePlayer.play(UrlSource('https://drive.google.com/uc?export=download&id=1bUmwgR4fdbPhDkUlCSrSUYPuLOcEf3-h'));
+            await _ringtonePlayer.play(UrlSource('https://api.cabukcan.com/sounds/outgoing_call.mp3'));
             return;
           } catch(e) {
             AppLogger.instance.warning('Web üzerinde URL Source başlatılamadı, varsayılan sese dönülüyor.');

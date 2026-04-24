@@ -15,12 +15,14 @@ class ChatServerRoomsScreen extends StatefulWidget {
 }
 
 class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
+  late ChatServer _server;
   List<ChatServerRoom> _rooms = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _server = widget.server;
     _fetchRooms();
   }
 
@@ -158,26 +160,31 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isCreator = widget.server.creatorId == ChatServerService().currentUserId;
-    final canCreateRoom = isCreator || widget.server.canMembersCreateRooms;
+    final isCreator = _server.creatorId == ChatServerService().currentUserId;
+    final canCreateRoom = isCreator || _server.canMembersCreateRooms;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(ProfanityFilter.filter(widget.server.name)),
+        title: Text(ProfanityFilter.filter(_server.name)),
         actions: [
-          if (isCreator || widget.server.admins.contains(ChatServerService().currentUserId))
+          if (isCreator || _server.admins.contains(ChatServerService().currentUserId))
             IconButton(
               icon: const Icon(Icons.settings),
               onPressed: () async {
                 final updated = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ServerSettingsScreen(server: widget.server),
+                    builder: (context) => ServerSettingsScreen(server: _server),
                   ),
                 );
                 if (updated == true && mounted) {
-                  // Re-fetch rooms or handle server object refresh if needed.
-                  // For full consistency, we should ideally fetch the server object again here.
+                  // Server ayarları değişti, objeyi güncelle.
+                  final updatedServer = await ChatServerService().getServer(_server.id);
+                  if (mounted) {
+                    setState(() {
+                      _server = updatedServer;
+                    });
+                  }
                   _fetchRooms(); 
                 }
               },

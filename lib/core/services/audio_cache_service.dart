@@ -4,7 +4,7 @@ import 'package:path_provider/path_provider.dart';
 
 class AudioCacheService {
   static const String _outgoingCallUrl =
-      'https://drive.google.com/uc?export=download&id=1bUmwgR4fdbPhDkUlCSrSUYPuLOcEf3-h';
+      'https://api.cabukcan.com/sounds/outgoing_call.mp3';
   static bool _isInitialized = false;
 
   static Future<void> initializeCache() async {
