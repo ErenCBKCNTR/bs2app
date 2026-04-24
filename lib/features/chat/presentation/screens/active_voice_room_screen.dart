@@ -5,6 +5,7 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
 
+import 'package:permission_handler/permission_handler.dart';
 import '../../../../core/services/settings_service.dart';
 
 class ActiveVoiceRoomScreen extends StatefulWidget {
@@ -65,6 +66,16 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   }
 
   Future<void> _connectToRoom() async {
+    final status = await Permission.microphone.request();
+    if (status != PermissionStatus.granted) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Sohbete katılmak için mikrofon izni gereklidir.';
+        });
+      }
+      return;
+    }
+
     AppLogger.instance.info('Odaya bağlanılıyor: ${widget.roomName} (${widget.roomId})');
     
     final String livekitUrl = dotenv.env['LIVEKIT_URL'] ?? '';
@@ -72,15 +83,11 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
     final String apiSecret = dotenv.env['LIVEKIT_API_SECRET'] ?? '';
 
     if (livekitUrl.isEmpty || apiKey.isEmpty || apiSecret.isEmpty) {
-      AppLogger.instance.warning('LiveKit URL, Key veya Secret bulunamadı. Simülasyon modunda açılıyor.');
-      await Future.delayed(const Duration(seconds: 1));
+      AppLogger.instance.warning('LiveKit URL, Key veya Secret bulunamadı.');
       if (mounted) {
         setState(() {
-          _isConnected = true;
-          // Simülasyon için sahte katılımcılar (test amaçlı)
-          // Gerçek LiveKit bağlı olmadığında Participant oluşturmak zor olabilir çünkü abstract sınıflardır.
+          _errorMessage = 'LiveKit sunucu ayarları yapılandırılmadığı için sohbet odasına bağlanılamıyor. Lütfen .env dosyanızı kontrol edin.';
         });
-        AppLogger.instance.info('Odaya simülasyon modunda başarıyla bağlanıldı: ${widget.roomName}');
       }
       return;
     }

@@ -9,6 +9,10 @@ class AudioCacheService {
 
   static Future<void> initializeCache() async {
     if (_isInitialized) return;
+    if (kIsWeb) {
+      _isInitialized = true;
+      return; // Web için dosya sistemi kullanılmıyor
+    }
     try {
       final directory = await getApplicationDocumentsDirectory();
       final File cachedFile = File('${directory.path}/outgoing_call_cached.mp3');
@@ -34,6 +38,7 @@ class AudioCacheService {
   }
 
   static Future<String?> getCachedOutgoingCallPath() async {
+    if (kIsWeb) return null; // Web'de her zaman null döner, doğrudan url kullanılır
     try {
       final directory = await getApplicationDocumentsDirectory();
       final File cachedFile = File('${directory.path}/outgoing_call_cached.mp3');
@@ -46,3 +51,4 @@ class AudioCacheService {
     return null;
   }
 }
+

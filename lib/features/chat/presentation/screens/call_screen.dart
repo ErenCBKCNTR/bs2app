@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart'; // SemanticsService için eklendi
+import 'package:flutter/foundation.dart';
 import 'package:livekit_client/livekit_client.dart' as lk;
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -133,10 +134,20 @@ class _CallScreenState extends State<CallScreen> {
     try {
       await _ringtonePlayer.setReleaseMode(ReleaseMode.loop);
       if (!widget.isIncoming) {
-        final cachedPath = await AudioCacheService.getCachedOutgoingCallPath();
-        if (cachedPath != null) {
-          await _ringtonePlayer.play(DeviceFileSource(cachedPath));
-          return;
+        if (kIsWeb) {
+          // Web üzerinde Google Drive adresi CORS nedeniyle çalışmayabilir ancak URL'den okumayı deniyoruz
+          try {
+            await _ringtonePlayer.play(UrlSource('https://drive.google.com/uc?export=download&id=1bUmwgR4fdbPhDkUlCSrSUYPuLOcEf3-h'));
+            return;
+          } catch(e) {
+            AppLogger.instance.warning('Web üzerinde URL Source başlatılamadı, varsayılan sese dönülüyor.');
+          }
+        } else {
+          final cachedPath = await AudioCacheService.getCachedOutgoingCallPath();
+          if (cachedPath != null) {
+            await _ringtonePlayer.play(DeviceFileSource(cachedPath));
+            return;
+          }
         }
       }
       final soundPath = widget.isIncoming ? 'sounds/incoming_call.mp3' : 'sounds/outgoing_call.mp3';
