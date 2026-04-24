@@ -6,6 +6,7 @@ import 'package:blind_social/features/auth/presentation/screens/profile_setup_sc
 import 'package:blind_social/features/chat/presentation/screens/chat_list_screen.dart';
 import 'package:blind_social/core/services/security_service.dart';
 import 'package:flutter/services.dart';
+import 'package:blind_social/core/services/user_metadata_service.dart';
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -89,6 +90,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
       if (mounted) {
         setState(() {
           _isAuthenticated = true;
+          UserMetadataService().updateMetadata();
           // Eğer kullanıcı veritabanında varsa ve dob alanı doluysa profil tamamlanmıştır
           final dob = record.getStringValue('dob');
           

@@ -159,4 +159,14 @@ class AdminService {
       rethrow;
     }
   }
+
+  Future<void> deleteUserCascade(String userId) async {
+    try {
+      await PocketBaseService.client.collection('users').delete(userId);
+      AppLogger.instance.info('Kullanıcı [$userId] başarıyla silindi.');
+    } catch (e) {
+      AppLogger.instance.error('Kullanıcı silinemedi: $e');
+      rethrow;
+    }
+  }
 }

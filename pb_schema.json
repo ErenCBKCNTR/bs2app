@@ -90,6 +90,34 @@
           "max": 10,
           "noDecimal": true
         }
+      },
+      {
+        "system": false,
+        "id": "last_ip_field",
+        "name": "last_ip",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "pattern": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "last_location_field",
+        "name": "last_location",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "pattern": ""
+        }
       }
     ],
     "indexes": [],
