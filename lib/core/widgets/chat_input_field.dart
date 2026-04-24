@@ -50,11 +50,12 @@ class _ChatInputFieldState extends State<ChatInputField> {
     super.dispose();
   }
 
+  bool _isPaused = false;
+
   void _startTimer() {
     _recordTimer?.cancel();
-    _recordDuration = 0;
     _recordTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      if (mounted) {
+      if (mounted && !_isPaused) {
         setState(() => _recordDuration++);
       }
     });
@@ -81,6 +82,8 @@ class _ChatInputFieldState extends State<ChatInputField> {
         Vibration.vibrate(duration: 50);
         setState(() {
           _isRecording = true;
+          _isPaused = false;
+          _recordDuration = 0;
         });
         _startTimer();
       }
@@ -89,11 +92,41 @@ class _ChatInputFieldState extends State<ChatInputField> {
     }
   }
 
+  Future<void> _pauseOrResumeRecording() async {
+    try {
+      if (_isPaused) {
+        await _audioRecorder.resume();
+        setState(() => _isPaused = false);
+      } else {
+        await _audioRecorder.pause();
+        setState(() => _isPaused = true);
+      }
+    } catch (e) {
+      debugPrint('Pause/Resume error: $e');
+    }
+  }
+
+  Future<void> _cancelRecording() async {
+    try {
+      _stopTimer();
+      await _audioRecorder.stop(); // Ignore the path, we cancel
+      setState(() {
+        _isRecording = false;
+        _isPaused = false;
+        _recordDuration = 0;
+      });
+      Vibration.vibrate(duration: 50);
+    } catch(e) {
+      debugPrint('Cancel recording error: $e');
+    }
+  }
+
   Future<void> _stopRecordingAndSend() async {
     _stopTimer();
     final path = await _audioRecorder.stop();
     setState(() {
       _isRecording = false;
+      _isPaused = false;
     });
 
     if (path != null && _recordDuration >= 1) {
@@ -124,42 +157,72 @@ class _ChatInputFieldState extends State<ChatInputField> {
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    maxLength: 4000,
-                    style: const TextStyle(fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: _isRecording 
-                        ? 'Kayıt: ${_formatRecordDuration(_recordDuration)}' 
-                        : widget.hintText,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: _isRecording 
-                        ? Colors.red.withOpacity(0.2) 
-                        : (isDarkMode ? Colors.grey[800] : Colors.grey[200]),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      counterText: "",
+                if (_isRecording) ...[
+                  Semantics(
+                    label: "Kaydı iptal et",
+                    button: true,
+                    child: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: _cancelRecording,
                     ),
-                    enabled: !_isRecording,
-                    maxLines: null,
-                    onSubmitted: (_) => _handleSendText(),
                   ),
-                ),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Text(
+                        _isPaused 
+                          ? 'Durduruldu: ${_formatRecordDuration(_recordDuration)}'
+                          : 'Kayıt: ${_formatRecordDuration(_recordDuration)}',
+                        style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                  Semantics(
+                    label: _isPaused ? "Kayda devam et" : "Kaydı duraklat",
+                    button: true,
+                    child: IconButton(
+                      icon: Icon(_isPaused ? Icons.mic : Icons.pause, color: Colors.orange),
+                      onPressed: _pauseOrResumeRecording,
+                    ),
+                  ),
+                ] else ...[
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      maxLength: 4000,
+                      style: const TextStyle(fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: widget.hintText,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        counterText: "",
+                      ),
+                      maxLines: null,
+                      onSubmitted: (_) => _handleSendText(),
+                    ),
+                  ),
+                ],
                 const SizedBox(width: 8),
                 if (_isRecording)
                   Semantics(
-                    label: "Ses kaydını durdur ve gönder",
+                    label: "Ses kaydını tamamla ve gönder",
                     button: true,
                     child: GestureDetector(
                       onTap: _stopRecordingAndSend,
                       child: const CircleAvatar(
                         radius: 22,
-                        backgroundColor: Colors.red,
-                        child: Icon(Icons.stop, color: Colors.white, size: 24),
+                        backgroundColor: Colors.green,
+                        child: Icon(Icons.send, color: Colors.white, size: 20),
                       ),
                     ),
                   )
@@ -180,10 +243,13 @@ class _ChatInputFieldState extends State<ChatInputField> {
                   Semantics(
                     label: "Mesajı gönder",
                     button: true,
-                    child: IconButton(
-                      icon: const Icon(Icons.send),
-                      onPressed: _handleSendText,
-                      color: Theme.of(context).colorScheme.primary,
+                    child: CircleAvatar(
+                      radius: 22,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      child: IconButton(
+                        icon: const Icon(Icons.send, color: Colors.black, size: 20),
+                        onPressed: _handleSendText,
+                      ),
                     ),
                   ),
               ],

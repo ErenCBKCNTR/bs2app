@@ -2,6 +2,8 @@ import 'package:blind_social/features/chat/presentation/screens/call_screen.dart
 import 'package:blind_social/features/chat/presentation/screens/favorite_messages_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart' hide SettingsService;
 import 'package:record/record.dart';
@@ -123,9 +125,26 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   Future<void> _fetchMessages({bool isBackground = false}) async {
+    final chatId = widget.chat['id'];
     try {
-      final chatId = widget.chat['id'];
-      
+      if (!isBackground && _messages.isEmpty) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final cachedMsgStr = prefs.getString('cached_messages_$chatId');
+          if (cachedMsgStr != null) {
+            final List<dynamic> decoded = jsonDecode(cachedMsgStr);
+            if (mounted) {
+              setState(() {
+                _messages = List<Map<String, dynamic>>.from(decoded);
+                _isLoading = false;
+              });
+            }
+          }
+        } catch (e) {
+          debugPrint('Sohbet detayı önbellek okuma hatası: $e');
+        }
+      }
+
       String filter = 'chat_id = "$chatId"';
       
       // PoketBase'de deleted_for alanı yoksa hata vermemesi için korumalı ekliyoruz.
@@ -194,6 +213,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       };
       _isLoading = false;
     });
+
+    try {
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setString('cached_messages_$chatId', jsonEncode(_messages));
+      });
+    } catch(e) {}
 
     // Mark as read
     if (response.isNotEmpty) {

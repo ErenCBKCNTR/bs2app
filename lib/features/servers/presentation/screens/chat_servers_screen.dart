@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blind_social/features/servers/data/services/chat_server_service.dart';
 import 'package:blind_social/features/servers/data/models/chat_server.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
@@ -65,6 +67,25 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
 
   Future<void> _fetchServers() async {
     try {
+      if (_servers.isEmpty) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final cachedServersStr = prefs.getString('cached_chat_servers_list');
+          if (cachedServersStr != null) {
+            final List<dynamic> decoded = jsonDecode(cachedServersStr);
+            if (mounted) {
+              setState(() {
+                _servers = decoded.map((e) => ChatServer.fromJson(e)).toList();
+                _cachedServers = _servers;
+                _isLoading = false;
+              });
+            }
+          }
+        } catch (e) {
+          debugPrint('Sunucu önbelleği okuma hatası: $e');
+        }
+      }
+
       final servers = await ChatServerService().getServers().timeout(const Duration(seconds: 15));
       
       if (mounted) {
@@ -73,6 +94,13 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
           _cachedServers = servers;
           _isLoading = false;
         });
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final encoded = jsonEncode(servers.map((e) => e.toJson()).toList());
+          prefs.setString('cached_chat_servers_list', encoded);
+        } catch (e) {
+          debugPrint('Sunucu önbelleği yazma hatası: $e');
+        }
       }
     } catch (e) {
       if (mounted) {

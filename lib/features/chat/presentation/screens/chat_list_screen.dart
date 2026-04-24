@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart' hide SettingsService;
 import 'package:blind_social/features/chat/presentation/widgets/chat_list_item.dart';
@@ -157,6 +159,25 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
         if (mounted && !isBackground) setState(() => _isLoadingChats = false);
         return;
       }
+
+      // 1. Önce önbellekten yükle
+      if (!isBackground && _chats.isEmpty) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final cachedChatsStr = prefs.getString('cached_chat_list_$userId');
+          if (cachedChatsStr != null) {
+            final List<dynamic> decoded = jsonDecode(cachedChatsStr);
+            if (mounted) {
+              setState(() {
+                _chats = decoded.map((e) => RecordModel.fromJson(e as Map<String, dynamic>)).toList();
+                _isLoadingChats = false;
+              });
+            }
+          }
+        } catch (e) {
+          debugPrint('Sohbet önbelleği okuma hatası: $e');
+        }
+      }
       
       // PocketBase'de önce kullanıcının katılımcı olduğu chat ID'lerini bulalım.
       final myParticipants = await PocketBaseService.client.collection('chat_participants').getFullList(
@@ -196,6 +217,16 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
           _chats = chatRecords.where((c) => !_pendingOperations.contains(c.id)).toList();
           _isLoadingChats = false;
         });
+        
+        // Yenisini önbelleğe al
+        try {
+          final prefs = await SharedPreferences.getInstance();
+           // toJson ensures it works flawlessly, then jsonEncode
+          final encoded = jsonEncode(_chats.map((e) => e.toJson()).toList());
+          prefs.setString('cached_chat_list_$userId', encoded);
+        } catch(e) {
+          debugPrint('Sohbet önbelleği yazma hatası: $e');
+        }
       }
     } catch (e) {
       if (!isBackground) {

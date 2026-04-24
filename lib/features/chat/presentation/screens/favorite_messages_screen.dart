@@ -143,16 +143,21 @@ class _FavoriteMessagesScreenState extends State<FavoriteMessagesScreen> {
               )
             : Text(title),
         actions: [
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
-            onPressed: () {
-              setState(() {
-                if (_isSearching) {
-                  _searchController.clear();
-                }
-                _isSearching = !_isSearching;
-              });
-            },
+          Semantics(
+            label: _isSearching ? "Aramayı kapat" : "Favori mesajlarda ara",
+            button: true,
+            child: IconButton(
+              icon: Icon(_isSearching ? Icons.close : Icons.search),
+              tooltip: _isSearching ? "Aramayı Kapat" : "Ara",
+              onPressed: () {
+                setState(() {
+                  if (_isSearching) {
+                    _searchController.clear();
+                  }
+                  _isSearching = !_isSearching;
+                });
+              },
+            ),
           ),
         ],
       ),

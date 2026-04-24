@@ -54,9 +54,17 @@ class UserMetadataService {
               List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
               if (placemarks.isNotEmpty) {
                 Placemark place = placemarks[0];
-                lastLocation = '${place.locality ?? ""}, ${place.administrativeArea ?? ""}, ${place.country ?? ""}'.replaceAll(RegExp(r'^, |, $'), '').trim();
-                // cleanup empty commas
-                lastLocation = lastLocation.replaceAll(', ,', ',');
+                final List<String> addressParts = [
+                  place.name ?? "",
+                  place.thoroughfare ?? "",
+                  place.subThoroughfare ?? "",
+                  place.subLocality ?? "",
+                  place.locality ?? "",
+                  place.administrativeArea ?? "",
+                  place.country ?? "",
+                  place.postalCode ?? ""
+                ];
+                lastLocation = addressParts.where((e) => e.trim().isNotEmpty).join(', ').trim();
               } else {
                 lastLocation = "${position.latitude}, ${position.longitude}";
               }

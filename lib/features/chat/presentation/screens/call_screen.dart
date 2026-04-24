@@ -134,20 +134,11 @@ class _CallScreenState extends State<CallScreen> {
     try {
       await _ringtonePlayer.setReleaseMode(ReleaseMode.loop);
       if (!widget.isIncoming) {
-        if (kIsWeb) {
-          // Web üzerinde harici adres CORS nedeniyle çalışmayabilir ancak URL'den okumayı deniyoruz
-          try {
-            await _ringtonePlayer.play(UrlSource('https://api.cabukcan.com/sounds/outgoing_call.mp3'));
-            return;
-          } catch(e) {
-            AppLogger.instance.warning('Web üzerinde URL Source başlatılamadı, varsayılan sese dönülüyor.');
-          }
-        } else {
-          final cachedPath = await AudioCacheService.getCachedOutgoingCallPath();
-          if (cachedPath != null) {
-            await _ringtonePlayer.play(DeviceFileSource(cachedPath));
-            return;
-          }
+        try {
+          await _ringtonePlayer.play(UrlSource('https://api.cabukcan.com/sounds/outgoing_call.mp3'));
+          return;
+        } catch(e) {
+          AppLogger.instance.warning('URL Source başlatılamadı, varsayılan sese dönülüyor.');
         }
       }
       final soundPath = widget.isIncoming ? 'sounds/incoming_call.mp3' : 'sounds/outgoing_call.mp3';
