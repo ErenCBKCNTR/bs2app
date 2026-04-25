@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
+import 'package:blind_social/core/utils/json_utils.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:intl/intl.dart';
 import 'package:blind_social/core/utils/logger.dart';
@@ -77,7 +78,7 @@ class _BlogScreenState extends State<BlogScreen> {
           
       if (mounted) {
         setState(() {
-          final newPosts = response.map((e) => e.toJson()).toList();
+          final newPosts = response.map((e) => JsonUtils.deeplySerializeRecord(e)).toList();
           // If we have processing likes, we don't want to override those posts with stale data from server
           if (_processingLikes.isNotEmpty) {
             for (var i = 0; i < newPosts.length; i++) {

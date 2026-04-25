@@ -2,6 +2,7 @@ import 'package:blind_social/features/chat/presentation/screens/call_screen.dart
 import 'package:blind_social/features/chat/presentation/screens/favorite_messages_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:blind_social/core/utils/json_utils.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
@@ -205,7 +206,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     }
 
     setState(() {
-      _messages = response.map((e) => e.toJson()).toList();
+      _messages = response.map((e) => JsonUtils.deeplySerializeRecord(e)).toList();
       _messageCache[chatId] = _messages; // Cache güncelle
       _chat = {
         ..._chat,
@@ -732,9 +733,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       final bool isFavorite = message['is_favorite'] == true;
                       
                       // Mesaj düzenlenmiş mi kontrol et (updated ve created arasındaki fark 1 saniyeden fazlaysa)
-                      final created = DateTime.parse(message['created']).toUtc();
-                      final updated = DateTime.parse(message['updated']).toUtc();
-                      final bool isEdited = updated.difference(created).inSeconds > 1;
+                      final createdStr = message['created']?.toString() ?? DateTime.now().toIso8601String();
+                      final updatedStr = message['updated']?.toString() ?? createdStr;
+                      final created = DateTime.parse(createdStr).toUtc();
+                      final updated = DateTime.parse(updatedStr).toUtc();
+                      final bool isEdited = updated.difference(created).inSeconds > 1 || message['is_edited'] == true;
+
                       
                       String displayContent = content.toString();
                       IconData? callIcon;

@@ -10,6 +10,7 @@ import 'package:blind_social/features/profile/presentation/screens/my_profile_sc
 import 'package:blind_social/features/profile/presentation/screens/user_profile_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/app_settings_screen.dart';
 import 'package:blind_social/features/developer/presentation/screens/developer_logs_screen.dart';
+import 'package:blind_social/core/utils/json_utils.dart';
 import 'package:blind_social/features/chat/presentation/screens/blog_screen.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
@@ -263,8 +264,8 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
           final encoded = jsonEncode(_chats.map((e) {
             final myPart = e.data['my_participant'] as RecordModel?;
             return {
-              'chat': e.toJson(),
-              'my_participant': myPart?.toJson(),
+              'chat': JsonUtils.deeplySerializeRecord(e),
+              'my_participant': myPart != null ? JsonUtils.deeplySerializeRecord(myPart) : null,
             };
           }).toList());
           prefs.setString('cached_chat_list_$userId', encoded);

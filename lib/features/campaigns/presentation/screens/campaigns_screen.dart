@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:blind_social/core/utils/json_utils.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
@@ -63,7 +64,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
           );
           _allCachedCampaigns = records;
           
-          final jsonList = records.map((r) => r.toJson()).toList();
+          final jsonList = records.map((r) => JsonUtils.deeplySerializeRecord(r)).toList();
           prefs.setString('cached_campaigns_data', jsonEncode(jsonList));
           prefs.setInt('cached_campaigns_time', now);
           loadedFromAPI = true;
