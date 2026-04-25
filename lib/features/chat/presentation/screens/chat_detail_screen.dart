@@ -136,14 +136,38 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             final List<dynamic> decoded = jsonDecode(cachedMsgStr);
             if (mounted) {
               setState(() {
-                _messages = List<Map<String, dynamic>>.from(decoded);
+                final parsedMessages = <Map<String, dynamic>>[];
+                for (var e in decoded) {
+                  try {
+                    parsedMessages.add(Map<String, dynamic>.from(e as Map));
+                  } catch (itemErr) {
+                    AppLogger.instance.error('Tekil mesaj çözme hatası: $itemErr');
+                  }
+                }
+                _messages = parsedMessages;
                 _isLoading = false;
               });
             }
           }
         } catch (e) {
-          debugPrint('Sohbet detayı önbellek okuma hatası: $e');
+          AppLogger.instance.error('Sohbet detayı önbellek okuma hatası: $e');
         }
+      }
+
+      // İnternet kontrolü yap (Kullanıcı talebi)
+      bool hasInternet = true;
+      try {
+        final result = await InternetAddress.lookup('api.cabukcan.com').timeout(const Duration(seconds: 3));
+        if (result.isEmpty || result[0].rawAddress.isEmpty) {
+          hasInternet = false;
+        }
+      } catch (_) {
+        hasInternet = false;
+      }
+
+      if (!hasInternet && _messages.isNotEmpty) {
+        AppLogger.instance.info('İnternet bağlantısı yok, var olan mesaj önbelleği kullanılacak.');
+        return;
       }
 
       String filter = 'chat_id = "$chatId"';

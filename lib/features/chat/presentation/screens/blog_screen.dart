@@ -13,6 +13,7 @@ import 'package:blind_social/core/utils/profanity_filter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
 
 class BlogScreen extends StatefulWidget {
   const BlogScreen({super.key});
@@ -52,13 +53,21 @@ class _BlogScreenState extends State<BlogScreen> {
         final List<dynamic> decoded = jsonDecode(cachedStr);
         if (mounted) {
           setState(() {
-            _posts = decoded.map((e) => e as Map<String, dynamic>).toList();
+            final parsedPosts = <Map<String, dynamic>>[];
+            for (var e in decoded) {
+              try {
+                parsedPosts.add(Map<String, dynamic>.from(e as Map));
+              } catch (err) {
+                AppLogger.instance.error('Tekil post çözme hatası: $err');
+              }
+            }
+            _posts = parsedPosts;
             _isLoading = false;
           });
         }
       }
     } catch (e) {
-      debugPrint('Önbellek okuma hatası: $e');
+      AppLogger.instance.error('Önbellek okuma hatası: $e');
     }
   }
 
@@ -70,6 +79,24 @@ class _BlogScreenState extends State<BlogScreen> {
   }
 
   Future<void> _fetchPosts({bool isBackground = false}) async {
+    // İnternet kontrolü (önbellek varsa boşa ağ isteği atma)
+    if (_posts.isNotEmpty) {
+      bool hasInternet = true;
+      try {
+        final result = await InternetAddress.lookup('api.cabukcan.com').timeout(const Duration(seconds: 3));
+        if (result.isEmpty || result[0].rawAddress.isEmpty) {
+          hasInternet = false;
+        }
+      } catch (_) {
+        hasInternet = false;
+      }
+      
+      if (!hasInternet) {
+        AppLogger.instance.info('İnternet bağlantısı yok, var olan post önbelleği kullanılacak.');
+        return;
+      }
+    }
+
     try {
       final response = await PocketBaseService.client.collection('posts').getFullList(
           sort: '-created',

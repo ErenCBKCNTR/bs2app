@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
+import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart' hide SettingsService;
@@ -188,35 +189,54 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
             final List<dynamic> decoded = jsonDecode(cachedChatsStr);
             if (mounted) {
               setState(() {
-                _chats = decoded.map((e) {
-                  final eMap = e as Map<String, dynamic>;
-                  RecordModel chat;
-                  
-                  if (eMap.containsKey('chat')) {
-                    // New cache format
-                    final chatRaw = eMap['chat'] as Map<String, dynamic>;
-                    chat = JsonUtils.deeplyDeserializeRecord(chatRaw);
-                    if (eMap['my_participant'] != null) {
-                      chat.data['my_participant'] = JsonUtils.deeplyDeserializeRecord(eMap['my_participant'] as Map<String, dynamic>);
+                final parsedChats = <RecordModel>[];
+                for (var e in decoded) {
+                  try {
+                    final eMap = e as Map<String, dynamic>;
+                    RecordModel chat;
+                    
+                    if (eMap.containsKey('chat')) {
+                      final chatRaw = eMap['chat'] as Map<String, dynamic>;
+                      chat = JsonUtils.deeplyDeserializeRecord(chatRaw);
+                      if (eMap['my_participant'] != null) {
+                        chat.data['my_participant'] = JsonUtils.deeplyDeserializeRecord(eMap['my_participant'] as Map<String, dynamic>);
+                      }
+                    } else {
+                      chat = JsonUtils.deeplyDeserializeRecord(eMap);
+                      if (chat.data['my_participant'] != null && chat.data['my_participant'] is Map) {
+                        chat.data['my_participant'] = JsonUtils.deeplyDeserializeRecord(Map<String, dynamic>.from(chat.data['my_participant']));
+                      }
                     }
-                  } else {
-                    // Old cache format
-                    chat = JsonUtils.deeplyDeserializeRecord(eMap);
-                    if (chat.data['my_participant'] != null && chat.data['my_participant'] is Map) {
-                      chat.data['my_participant'] = JsonUtils.deeplyDeserializeRecord(Map<String, dynamic>.from(chat.data['my_participant']));
-                    }
+                    parsedChats.add(chat);
+                  } catch (itemErr) {
+                    AppLogger.instance.error('Tekil sohbet çözme hatası: \$itemErr');
                   }
-                  
-                  return chat;
-                }).toList();
+                }
+                _chats = parsedChats;
                 _isLoadingChats = false;
               });
               loadedFromCache = true;
             }
           }
         } catch (e) {
-          debugPrint('Sohbet önbelleği okuma hatası: $e');
+          AppLogger.instance.error('Sohbet önbelleği okuma hatası: $e');
         }
+      }
+      
+      // İnternet kontrolü yap (Kullanıcı talebi: İnternetsiz açıldığında API denemesin)
+      bool hasInternet = true;
+      try {
+        final result = await InternetAddress.lookup('api.cabukcan.com').timeout(const Duration(seconds: 3));
+        if (result.isEmpty || result[0].rawAddress.isEmpty) {
+          hasInternet = false;
+        }
+      } catch (_) {
+        hasInternet = false;
+      }
+
+      if (!hasInternet && loadedFromCache) {
+        AppLogger.instance.info('İnternet bağlantısı yok, var olan önbellek kullanılacak.');
+        return;
       }
       
       // PocketBase'de önce kullanıcının katılımcı olduğu chat ID'lerini bulalım.
@@ -270,7 +290,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
           }).toList());
           prefs.setString('cached_chat_list_$userId', encoded);
         } catch(e) {
-          debugPrint('Sohbet önbelleği yazma hatası: $e');
+          AppLogger.instance.error('Sohbet önbelleği yazma hatası: $e');
         }
       }
     } catch (e) {
