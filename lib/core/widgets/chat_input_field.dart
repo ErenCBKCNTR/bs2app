@@ -6,6 +6,8 @@ import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:vibration/vibration.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:flutter/foundation.dart' as foundation;
 
 class ChatInputField extends StatefulWidget {
   final Function(String) onSendText;
@@ -30,9 +32,11 @@ class ChatInputField extends StatefulWidget {
 class _ChatInputFieldState extends State<ChatInputField> {
   final TextEditingController _controller = TextEditingController();
   final AudioRecorder _audioRecorder = AudioRecorder();
+  final FocusNode _focusNode = FocusNode();
   bool _isRecording = false;
   int _recordDuration = 0;
   Timer? _recordTimer;
+  bool _showEmojiPicker = false;
 
   @override
   void initState() {
@@ -40,12 +44,20 @@ class _ChatInputFieldState extends State<ChatInputField> {
     _controller.addListener(() {
       if (mounted) setState(() {});
     });
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus && _showEmojiPicker) {
+        setState(() {
+          _showEmojiPicker = false;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _controller.dispose();
     _audioRecorder.dispose();
+    _focusNode.dispose();
     _recordTimer?.cancel();
     super.dispose();
   }
@@ -193,10 +205,31 @@ class _ChatInputFieldState extends State<ChatInputField> {
                 ] else ...[
                   Expanded(
                     child: TextField(
+                      focusNode: _focusNode,
                       controller: _controller,
                       maxLength: 4000,
                       style: const TextStyle(fontSize: 14),
                       decoration: InputDecoration(
+                        prefixIcon: Semantics(
+                          label: "Emoji klavyesini aç veya kapat",
+                          button: true,
+                          child: IconButton(
+                            icon: Icon(
+                              _showEmojiPicker ? Icons.keyboard : Icons.emoji_emotions_outlined,
+                              color: isDarkMode ? Colors.white70 : Colors.black54,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _showEmojiPicker = !_showEmojiPicker;
+                              });
+                              if (_showEmojiPicker) {
+                                FocusScope.of(context).unfocus();
+                              } else {
+                                FocusScope.of(context).requestFocus(_focusNode);
+                              }
+                            },
+                          ),
+                        ),
                         hintText: widget.hintText,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
@@ -255,6 +288,31 @@ class _ChatInputFieldState extends State<ChatInputField> {
               ],
             ),
           ),
+          if (_showEmojiPicker)
+            SizedBox(
+              height: 250,
+              child: foundation.kIsWeb
+                  ? const Center(child: Text('Web sürümünde emoji seçici desteklenmiyor.'))
+                  : EmojiPicker(
+                      textEditingController: _controller,
+                      config: Config(
+                        emojiViewConfig: EmojiViewConfig(
+                          columns: 7,
+                          emojiSizeMax: 32,
+                          backgroundColor: isDarkMode ? const Color(0xFF222222) : const Color(0xFFF2F2F2),
+                        ),
+                        categoryViewConfig: CategoryViewConfig(
+                          backgroundColor: isDarkMode ? const Color(0xFF222222) : const Color(0xFFF2F2F2),
+                          indicatorColor: Theme.of(context).colorScheme.primary,
+                          iconColorSelected: Theme.of(context).colorScheme.primary,
+                          iconColor: Colors.grey,
+                        ),
+                        bottomActionBarConfig: const BottomActionBarConfig(
+                          enabled: false,
+                        ),
+                      ),
+                    ),
+            ),
         ],
       ),
     );

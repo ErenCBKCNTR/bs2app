@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:blind_social/core/utils/json_utils.dart';
 import 'package:pocketbase/pocketbase.dart';
@@ -15,12 +16,18 @@ class CampaignsScreen extends StatefulWidget {
 }
 
 class _CampaignsScreenState extends State<CampaignsScreen> {
-  List<RecordModel> _allCachedCampaigns = [];
   List<RecordModel> _campaigns = [];
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  int _currentPage = 1;
+  final int _perPage = 20;
+
   String _selectedCategory = 'Tümü';
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  Timer? _debounce;
 
   final List<String> _categories = [
     'Tümü', 'Akaryakıt', 'Araç', 'E-Ticaret', 'Eğitim & Kırtasiye', 'Eğlence', 
@@ -31,86 +38,99 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchCampaigns();
+    _fetchCampaigns(refresh: true);
+    _scrollController.addListener(_scrollListener);
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      if (!_isLoading && !_isLoadingMore && _hasMore) {
+        _fetchCampaigns();
+      }
+    }
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _fetchCampaigns({bool forceRefresh = false}) async {
-    setState(() => _isLoading = true);
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final cachedData = prefs.getString('cached_campaigns_data');
-      final cachedTime = prefs.getInt('cached_campaigns_time') ?? 0;
-      
-      final now = DateTime.now().millisecondsSinceEpoch;
-      // 12 hours cache
-      final isCacheValid = (now - cachedTime) < (12 * 60 * 60 * 1000); 
+  Future<void> _fetchCampaigns({bool refresh = false}) async {
+    if (refresh) {
+      if (mounted) {
+        setState(() {
+          _currentPage = 1;
+          _isLoading = true;
+          _hasMore = true;
+        });
+      }
+    } else {
+      if (mounted) setState(() => _isLoadingMore = true);
+    }
 
-      bool loadedFromAPI = false;
-      if (!forceRefresh && isCacheValid && cachedData != null) {
-        List<dynamic> jsonList = jsonDecode(cachedData);
-        _allCachedCampaigns = jsonList.map((e) => JsonUtils.deeplyDeserializeRecord(e as Map<String, dynamic>)).toList();
-        loadedFromAPI = true; // Not API, but successfully loaded
-      } else {
-        try {
-          final records = await PocketBaseService.client.collection('campaigns').getFullList(
-            expand: 'source_id',
-            sort: '-created',
-          );
-          _allCachedCampaigns = records;
-          
-          final jsonList = records.map((r) => JsonUtils.deeplySerializeRecord(r)).toList();
-          prefs.setString('cached_campaigns_data', jsonEncode(jsonList));
-          prefs.setInt('cached_campaigns_time', now);
-          loadedFromAPI = true;
-        } catch (e) {
-          AppLogger.instance.error('Kampanyalar API yüklenemedi: $e');
-          // Fallback to cache even if expired
-          if (cachedData != null) {
-            List<dynamic> jsonList = jsonDecode(cachedData);
-            _allCachedCampaigns = jsonList.map((e) => JsonUtils.deeplyDeserializeRecord(e as Map<String, dynamic>)).toList();
-          } else {
-            rethrow;
-          }
-        }
+    try {
+      String filter = '';
+      List<String> conditions = [];
+      
+      if (_selectedCategory != 'Tümü') {
+        conditions.add('category = "$_selectedCategory"');
       }
       
-      _applyLocalFilters();
+      if (_searchQuery.isNotEmpty) {
+        final safeQ = _searchQuery.replaceAll('"', '\\"');
+        conditions.add('(title ~ "$safeQ" || duration_text ~ "$safeQ" || brands_json ~ "$safeQ")');
+      }
+      
+      if (conditions.isNotEmpty) {
+        filter = conditions.join(' && ');
+      }
+
+      final result = await PocketBaseService.client.collection('campaigns').getList(
+        page: _currentPage,
+        perPage: _perPage,
+        expand: 'source_id',
+        sort: '-created',
+        filter: filter,
+      );
+
+      if (mounted) {
+        setState(() {
+          if (refresh) {
+            _campaigns = result.items;
+          } else {
+            _campaigns.addAll(result.items);
+          }
+          
+          _hasMore = result.items.length == _perPage;
+          if (_hasMore) {
+            _currentPage++;
+          }
+          
+          _isLoading = false;
+          _isLoadingMore = false;
+        });
+      }
     } catch (e) {
       AppLogger.instance.error('Kampanyalar yüklenemedi: $e');
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isLoadingMore = false;
+        });
+      }
     }
   }
 
-  void _applyLocalFilters() {
-    if (!mounted) return;
-    
-    List<RecordModel> filtered = _allCachedCampaigns;
-    
-    if (_searchQuery.isNotEmpty) {
-      final q = _searchQuery.toLowerCase();
-      filtered = filtered.where((c) {
-        final title = c.getStringValue('title').toLowerCase();
-        final duration = c.getStringValue('duration_text').toLowerCase();
-        final brandsList = c.getDataValue<List<dynamic>>('brands_json');
-        final brandsStr = brandsList.join(" ").toLowerCase();
-        
-        return title.contains(q) || duration.contains(q) || brandsStr.contains(q);
-      }).toList();
-    }
-    
-    if (_selectedCategory != 'Tümü') {
-      filtered = filtered.where((c) => c.getStringValue('category') == _selectedCategory).toList();
-    }
-    
-    setState(() {
-      _campaigns = filtered;
-      _isLoading = false;
+  void _onSearchChanged(String val) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() => _searchQuery = val);
+        _fetchCampaigns(refresh: true);
+      }
     });
   }
 
@@ -144,13 +164,10 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                 padding: const EdgeInsets.all(12.0),
                 child: Semantics(
                   button: true,
-                  hint: 'Toplam ${_allCachedCampaigns.length} kampanya arasında aramak için tıklayın',
+                  hint: 'Kampanyalar arasında aramak için tıklayın',
                   child: TextField(
                     controller: _searchController,
-                    onChanged: (val) {
-                      setState(() => _searchQuery = val);
-                      _applyLocalFilters();
-                    },
+                    onChanged: _onSearchChanged,
                     decoration: InputDecoration(
                       hintText: 'Aramak istediğiniz markayı girin...',
                       prefixIcon: const Icon(Icons.search),
@@ -163,8 +180,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                             icon: const Icon(Icons.clear),
                             onPressed: () {
                               _searchController.clear();
-                              setState(() => _searchQuery = '');
-                              _applyLocalFilters();
+                              _onSearchChanged('');
                             },
                           ) 
                         : null,
@@ -211,7 +227,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
   void _changeCategory(String cat) {
     setState(() => _selectedCategory = cat);
-    _applyLocalFilters();
+    _fetchCampaigns(refresh: true);
 
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -223,99 +239,110 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   }
 
   Widget _buildCampaignGrid() {
-    return GridView.builder(
-      padding: const EdgeInsets.all(12),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.78,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: _campaigns.length,
-      itemBuilder: (context, index) {
-        final campaign = _campaigns[index];
-        final sourceName = campaign.expand['source_id']?.first.getStringValue('name') ?? 'Genel';
-        final title = campaign.getStringValue('title');
-        final imageUrl = campaign.getStringValue('image_url');
-        final duration = campaign.getStringValue('duration_text');
+    return Column(
+      children: [
+        Expanded(
+          child: GridView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.all(12),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.78,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: _campaigns.length,
+            itemBuilder: (context, index) {
+              final campaign = _campaigns[index];
+              final sourceName = campaign.expand['source_id']?.first.getStringValue('name') ?? 'Genel';
+              final title = campaign.getStringValue('title');
+              final imageUrl = campaign.getStringValue('image_url');
+              final duration = campaign.getStringValue('duration_text');
 
-        return Card(
-          elevation: 2,
-          clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: InkWell(
-            onTap: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CampaignDetailScreen(
-                    campaigns: _campaigns,
-                    initialIndex: index,
+              return Card(
+                elevation: 2,
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: InkWell(
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CampaignDetailScreen(
+                          campaigns: _campaigns,
+                          initialIndex: index,
+                        ),
+                      ),
+                    );
+
+                    if (result != null && result is String) {
+                      // Return from detail screen with a specific brand name to search
+                      _searchController.text = result;
+                      _onSearchChanged(result);
+                    }
+                  },
+                  child: Semantics(
+                    button: true,
+                    label: '$title. $duration',
+                    excludeSemantics: true,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Container(
+                            color: Colors.white,
+                            child: imageUrl.isNotEmpty 
+                              ? Image.network(
+                                  imageUrl, 
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: Colors.grey),
+                                )
+                              : const Icon(Icons.campaign_outlined, size: 40, color: Colors.grey),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    title,
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, height: 1.2),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (duration.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    duration,
+                                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
-
-              if (result != null && result is String) {
-                // Return from detail screen with a specific brand name to search
-                _searchController.text = result;
-                setState(() => _searchQuery = result);
-                _fetchCampaigns();
-              }
             },
-            child: Semantics(
-              button: true,
-              label: '$title. $duration',
-              excludeSemantics: true,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Container(
-                      color: Colors.white,
-                      child: imageUrl.isNotEmpty 
-                        ? Image.network(
-                            imageUrl, 
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: Colors.grey),
-                          )
-                        : const Icon(Icons.campaign_outlined, size: 40, color: Colors.grey),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              title,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, height: 1.2),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (duration.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              duration,
-                              style: const TextStyle(fontSize: 10, color: Colors.grey),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
-        );
-      },
+        ),
+        if (_isLoadingMore)
+          const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: CircularProgressIndicator(),
+          ),
+      ],
     );
   }
 }

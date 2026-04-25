@@ -837,5 +837,40 @@
       { "system": false, "id": "vrp_user", "name": "user_id", "type": "relation", "required": true, "options": { "collectionId": "_pb_users_auth_", "cascadeDelete": true, "maxSelect": 1 } }
     ],
     "listRule": "@request.auth.id != ''", "viewRule": "@request.auth.id != ''", "createRule": "@request.auth.id != ''", "updateRule": "@request.auth.id != ''", "deleteRule": "@request.auth.id != ''"
+  },
+  {
+    "id": "col_quiz_questions",
+    "name": "quiz_questions",
+    "type": "base",
+    "system": false,
+    "schema": [
+      { "system": false, "id": "qq_question", "name": "question", "type": "text", "required": true, "options": {} },
+      { "system": false, "id": "qq_optA", "name": "option_a", "type": "text", "required": true, "options": {} },
+      { "system": false, "id": "qq_optB", "name": "option_b", "type": "text", "required": true, "options": {} },
+      { "system": false, "id": "qq_optC", "name": "option_c", "type": "text", "required": true, "options": {} },
+      { "system": false, "id": "qq_optD", "name": "option_d", "type": "text", "required": true, "options": {} },
+      { "system": false, "id": "qq_answer", "name": "correct_answer", "type": "select", "required": true, "options": { "values": ["a", "b", "c", "d"], "maxSelect": 1 } },
+      { "system": false, "id": "qq_diff", "name": "difficulty", "type": "number", "required": false, "options": { "min": 1, "max": 3 } }
+    ],
+    "listRule": "@request.auth.id != ''", "viewRule": "@request.auth.id != ''", "createRule": "@request.auth.id != '' && @request.auth.role = 0", "updateRule": "@request.auth.id != '' && @request.auth.role = 0", "deleteRule": "@request.auth.id != '' && @request.auth.role = 0"
+  },
+  {
+    "id": "col_quiz_games",
+    "name": "quiz_games",
+    "type": "base",
+    "system": false,
+    "schema": [
+      { "system": false, "id": "qg_p1", "name": "player1_id", "type": "relation", "required": true, "options": { "collectionId": "_pb_users_auth_", "cascadeDelete": true, "maxSelect": 1 } },
+      { "system": false, "id": "qg_p2", "name": "player2_id", "type": "relation", "required": false, "options": { "collectionId": "_pb_users_auth_", "cascadeDelete": true, "maxSelect": 1 } },
+      { "system": false, "id": "qg_status", "name": "status", "type": "select", "required": true, "options": { "values": ["waiting", "active", "finished"], "maxSelect": 1 } },
+      { "system": false, "id": "qg_turn", "name": "current_turn_id", "type": "relation", "required": false, "options": { "collectionId": "_pb_users_auth_", "cascadeDelete": false, "maxSelect": 1 } },
+      { "system": false, "id": "qg_p1s", "name": "player1_score", "type": "number", "required": false, "options": {} },
+      { "system": false, "id": "qg_p2s", "name": "player2_score", "type": "number", "required": false, "options": {} },
+      { "system": false, "id": "qg_qindex", "name": "current_question_index", "type": "number", "required": false, "options": {} },
+      { "system": false, "id": "qg_questions", "name": "questions_json", "type": "json", "required": false, "options": {} },
+      { "system": false, "id": "qg_winner", "name": "winner_id", "type": "relation", "required": false, "options": { "collectionId": "_pb_users_auth_", "cascadeDelete": false, "maxSelect": 1 } },
+      { "system": false, "id": "qg_is_single", "name": "is_singleplayer", "type": "bool", "required": false, "options": {} }
+    ],
+    "listRule": "@request.auth.id != ''", "viewRule": "@request.auth.id != ''", "createRule": "@request.auth.id != ''", "updateRule": "@request.auth.id != ''", "deleteRule": "@request.auth.id != ''"
   }
 ]

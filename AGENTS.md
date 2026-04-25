@@ -171,6 +171,8 @@ Projede kullanılan kritik `pubspec.yaml` paket listesi:
 *   Bot Yöneticisine otonom Linux Crontab arayüzü eklendi (v1.6.1).
 *   Kampanya listesinde *sağa sola Swipe* (kaydırma) ile kategoriler arası gezinme sağlandı (v1.6.2).
 *   Detay sayfasında `PageView` kullanılarak kampanyalar arasında akıcı hızlı geçiş desteği eklendi ve SharePlus ile Paylaş butonu getirildi (v1.6.2).
+*   Sohbet klavyesine akıllı emoji seçici (en çok kullanılanları hatırlayan yerel önbellek destekli) eklendi (v1.6.3).
+*   Çağrı başlangıcındaki "bip" sesi daha yumuşak bir sistem tonuyla değiştirildi (v1.6.3).
 
 **🛠️ Devam Eden / Bekleyen Görevler**
 *   Süresi dolan kampanyaların otomatik olarak "Pasif" işaretlenmesi için bir cron-job botu entegre edilecek.

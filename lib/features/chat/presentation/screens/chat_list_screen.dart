@@ -12,6 +12,7 @@ import 'package:blind_social/features/profile/presentation/screens/user_profile_
 import 'package:blind_social/features/profile/presentation/screens/app_settings_screen.dart';
 import 'package:blind_social/features/developer/presentation/screens/developer_logs_screen.dart';
 import 'package:blind_social/core/utils/json_utils.dart';
+import 'package:blind_social/features/games/presentation/screens/games_screen.dart' as blind_social_games;
 import 'package:blind_social/features/chat/presentation/screens/blog_screen.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
@@ -50,6 +51,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   UnsubscribeFunc? _realtimeMessagesUnsub;
   UnsubscribeFunc? _realtimeChatsUnsub;
   UnsubscribeFunc? _realtimeParticipantsUnsub;
+  UnsubscribeFunc? _realtimeGamesUnsub;
 
   final ScrollController _chatListScrollController = ScrollController();
 
@@ -153,6 +155,61 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     _realtimeParticipantsUnsub = await PocketBaseService.client.collection('chat_participants').subscribe('*', (e) {
        _fetchChats(isBackground: true);
     });
+
+    _realtimeGamesUnsub = await PocketBaseService.client.collection('quiz_games').subscribe('*', (e) {
+      if (e.action == 'create' && e.record != null) {
+        final r = e.record!;
+        if (r.getStringValue('player2_id') == myId && r.getStringValue('status') == 'waiting') {
+           _showGameInviteDialog(r);
+        }
+      }
+    });
+  }
+
+  void _showGameInviteDialog(RecordModel game) {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Oyun İsteği'),
+          content: const Text('Biri sizi Bilgi Yarışması oynamaya davet etti! Katılmak ister misiniz?'),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                try {
+                  await PocketBaseService.client.collection('quiz_games').update(game.id, body: {
+                    'status': 'finished'
+                  });
+                } catch (_) {}
+              },
+              child: const Text('Reddet'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                try {
+                  await PocketBaseService.client.collection('quiz_games').update(game.id, body: {
+                    'status': 'active'
+                  });
+                  if (mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => blind_social_games.QuizGameScreen(gameId: game.id, isSinglePlayer: false)),
+                    );
+                  }
+                } catch (e) {
+                  AppLogger.instance.error('Game accept error: $e');
+                }
+              },
+              child: const Text('Kabul Et'),
+            ),
+          ],
+        );
+      }
+    );
   }
 
   void _scrollListener() {                
@@ -164,6 +221,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     _realtimeMessagesUnsub?.call();
     _realtimeChatsUnsub?.call();
     _realtimeParticipantsUnsub?.call();
+    _realtimeGamesUnsub?.call();
     _tabController.dispose();
     _chatListScrollController.dispose();
     super.dispose();
@@ -1153,6 +1211,14 @@ Widget? _buildFAB() {
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (_) => const RadioListScreen()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.games_outlined),
+            title: const Text('Oyun Alanı'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const blind_social_games.GamesScreen()));
             },
           ),
           const Divider(),
