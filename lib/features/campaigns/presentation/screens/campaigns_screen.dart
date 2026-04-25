@@ -50,19 +50,33 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       // 12 hours cache
       final isCacheValid = (now - cachedTime) < (12 * 60 * 60 * 1000); 
 
+      bool loadedFromAPI = false;
       if (!forceRefresh && isCacheValid && cachedData != null) {
         List<dynamic> jsonList = jsonDecode(cachedData);
         _allCachedCampaigns = jsonList.map((e) => RecordModel.fromJson(e as Map<String, dynamic>)).toList();
+        loadedFromAPI = true; // Not API, but successfully loaded
       } else {
-        final records = await PocketBaseService.client.collection('campaigns').getFullList(
-          expand: 'source_id',
-          sort: '-created',
-        );
-        _allCachedCampaigns = records;
-        
-        final jsonList = records.map((r) => r.toJson()).toList();
-        prefs.setString('cached_campaigns_data', jsonEncode(jsonList));
-        prefs.setInt('cached_campaigns_time', now);
+        try {
+          final records = await PocketBaseService.client.collection('campaigns').getFullList(
+            expand: 'source_id',
+            sort: '-created',
+          );
+          _allCachedCampaigns = records;
+          
+          final jsonList = records.map((r) => r.toJson()).toList();
+          prefs.setString('cached_campaigns_data', jsonEncode(jsonList));
+          prefs.setInt('cached_campaigns_time', now);
+          loadedFromAPI = true;
+        } catch (e) {
+          AppLogger.instance.error('Kampanyalar API yüklenemedi: $e');
+          // Fallback to cache even if expired
+          if (cachedData != null) {
+            List<dynamic> jsonList = jsonDecode(cachedData);
+            _allCachedCampaigns = jsonList.map((e) => RecordModel.fromJson(e as Map<String, dynamic>)).toList();
+          } else {
+            rethrow;
+          }
+        }
       }
       
       _applyLocalFilters();

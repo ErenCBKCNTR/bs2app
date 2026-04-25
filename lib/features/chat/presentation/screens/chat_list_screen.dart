@@ -178,6 +178,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       }
 
       // 1. Önce önbellekten yükle
+      bool loadedFromCache = false;
       if (!isBackground && _chats.isEmpty) {
         try {
           final prefs = await SharedPreferences.getInstance();
@@ -187,14 +188,29 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
             if (mounted) {
               setState(() {
                 _chats = decoded.map((e) {
-                  final chat = RecordModel.fromJson(e as Map<String, dynamic>);
-                  if (chat.data['my_participant'] != null && chat.data['my_participant'] is Map) {
-                    chat.data['my_participant'] = RecordModel.fromJson(Map<String, dynamic>.from(chat.data['my_participant']));
+                  final eMap = e as Map<String, dynamic>;
+                  RecordModel chat;
+                  
+                  if (eMap.containsKey('chat')) {
+                    // New cache format
+                    final chatRaw = eMap['chat'] as Map<String, dynamic>;
+                    chat = RecordModel.fromJson(chatRaw);
+                    if (eMap['my_participant'] != null) {
+                      chat.data['my_participant'] = RecordModel.fromJson(eMap['my_participant'] as Map<String, dynamic>);
+                    }
+                  } else {
+                    // Old cache format
+                    chat = RecordModel.fromJson(eMap);
+                    if (chat.data['my_participant'] != null && chat.data['my_participant'] is Map) {
+                      chat.data['my_participant'] = RecordModel.fromJson(Map<String, dynamic>.from(chat.data['my_participant']));
+                    }
                   }
+                  
                   return chat;
                 }).toList();
                 _isLoadingChats = false;
               });
+              loadedFromCache = true;
             }
           }
         } catch (e) {
@@ -244,13 +260,12 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
         // Yenisini önbelleğe al
         try {
           final prefs = await SharedPreferences.getInstance();
-           // toJson ensures it works flawlessly, then jsonEncode
           final encoded = jsonEncode(_chats.map((e) {
-            final data = e.toJson();
-            if (data['my_participant'] is RecordModel) {
-              data['my_participant'] = (data['my_participant'] as RecordModel).toJson();
-            }
-            return data;
+            final myPart = e.data['my_participant'] as RecordModel?;
+            return {
+              'chat': e.toJson(),
+              'my_participant': myPart?.toJson(),
+            };
           }).toList());
           prefs.setString('cached_chat_list_$userId', encoded);
         } catch(e) {
