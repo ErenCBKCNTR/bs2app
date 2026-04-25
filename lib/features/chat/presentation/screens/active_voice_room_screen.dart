@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
@@ -30,6 +31,15 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   late final EventsListener<RoomEvent> _listener;
   List<Participant> _participants = [];
   final SettingsService _settingsService = SettingsService();
+
+  Future<void> _playSystemBeep({required bool isJoin}) async {
+    try {
+      await const MethodChannel('com.example.blind_social/lockscreen')
+          .invokeMethod('playTone', {'type': isJoin ? 'start' : 'end', 'duration': 150});
+    } catch (e) {
+      AppLogger.instance.warning('Sistem biplenirken hata: $e');
+    }
+  }
 
   @override
   void initState() {
@@ -137,6 +147,7 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
 
       await _room!.localParticipant?.setMicrophoneEnabled(true);
       AppLogger.instance.info('LiveKit odaya başarıyla bağlanıldı: ${widget.roomName}');
+      _playSystemBeep(isJoin: true);
 
     } catch (e) {
       AppLogger.instance.error('LiveKit bağlantı hatası: $e');
@@ -170,6 +181,9 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
 
   @override
   void dispose() {
+    if (_isConnected) {
+      _playSystemBeep(isJoin: false);
+    }
     _room?.disconnect();
     super.dispose();
   }
@@ -422,18 +436,18 @@ class _ControlButton extends StatelessWidget {
       label: label,
       hint: hint,
       button: true,
-      container: true,
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: FloatingActionButton(
-          onPressed: onPressed,
-          backgroundColor: backgroundColor,
-          tooltip: label, // Flutter'ın varsayılan erişilebilirlik ve tooltip mekanizmasını kullan
-          elevation: 0,
-          highlightElevation: 0,
-          shape: const CircleBorder(),
-          child: ExcludeSemantics(
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onPressed,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: backgroundColor ?? Colors.grey.withOpacity(0.2),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
             child: Icon(icon, color: Colors.white, size: iconSize),
           ),
         ),

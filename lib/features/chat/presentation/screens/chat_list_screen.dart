@@ -93,6 +93,23 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
 
             // Gelen mesaj bir arama ise direkt CallScreen'e yönlendir
             if (content == '[VOICE_CALL_STARTED]' || content == '[VIDEO_CALL_STARTED]') {
+              if (CallScreen.isInCall) {
+                // Zaten görüşmede, arayan kişiye BUSY (meşgul) mesajı gönder
+                AppLogger.instance.info('Kullanıcı görüşmede, gelen arama meşgule atılıyor.');
+                try {
+                  const MethodChannel('com.example.blind_social/lockscreen')
+                      .invokeMethod('playTone', {'type': 'start', 'duration': 100}); // Arka planda gelen çağrı uyarı sisi
+                  await PocketBaseService.client.collection('messages').create(body: {
+                     'chat_id': chatId,
+                     'sender_id': myId,
+                     'content': '[CALL_BUSY]',
+                  });
+                } catch (e) {
+                   AppLogger.instance.error('Meşgul mesajı gönderilemedi: $e');
+                }
+                return;
+              }
+
               try {
                 final senderRecord = await PocketBaseService.client.collection('users').getOne(senderId);
                 final senderName = senderRecord.getStringValue('username');

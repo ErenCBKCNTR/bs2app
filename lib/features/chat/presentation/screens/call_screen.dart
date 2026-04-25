@@ -22,6 +22,8 @@ class CallScreen extends StatefulWidget {
   final bool isVideo;
   final bool isIncoming;
 
+  static bool isInCall = false;
+
   const CallScreen({
     super.key,
     required this.chatId,
@@ -55,6 +57,10 @@ class _CallScreenState extends State<CallScreen> {
   
   // Timer for call duration
   Timer? _durationTimer;
+  Timer? _reconnectTimer;
+  Timer? _reconnectBeepTimer;
+  Timer? _callTimeoutTimer; // 45s without answer
+  
   int _secondsElapsed = 0;
   
   late final String _myId;
@@ -64,6 +70,7 @@ class _CallScreenState extends State<CallScreen> {
   @override
   void initState() {
     super.initState();
+    CallScreen.isInCall = true;
     _myId = PocketBaseService.client.authStore.model!.id;
     _isVideoCall = widget.isVideo;
     
@@ -75,6 +82,21 @@ class _CallScreenState extends State<CallScreen> {
     _initCall();
     _playRingtone();
     _listenToCallEndEvents();
+    _startCallTimeout();
+  }
+
+  void _startCallTimeout() {
+    _callTimeoutTimer?.cancel();
+    _callTimeoutTimer = Timer(const Duration(seconds: 45), () {
+      if (!_isAccepted) {
+        if (!widget.isIncoming) {
+           _cancelCall();
+        } else {
+           // Gelen arama da cevapsız kaldığı için kapansın
+           _hangUp();
+        }
+      }
+    });
   }
 
   void _listenToCallEndEvents() async {
@@ -90,10 +112,31 @@ class _CallScreenState extends State<CallScreen> {
             if (mounted) {
               Navigator.pop(context);
             }
+          } else if (content.contains('CALL_BUSY')) {
+            // Karşı taraf başka bir görüşmede
+            _stopRingtone();
+            _callTimeoutTimer?.cancel();
+            if (mounted) {
+              setState(() {
+                _connectionStatus = "Meşgul";
+              });
+              try {
+                // Meşgul sesi çal (ton generatör ile)
+                final channel = const MethodChannel('com.example.blind_social/lockscreen');
+                channel.invokeMethod('playTone', {'type': 'end', 'duration': 400});
+                await Future.delayed(const Duration(milliseconds: 600));
+                channel.invokeMethod('playTone', {'type': 'end', 'duration': 400});
+                await Future.delayed(const Duration(milliseconds: 600));
+                channel.invokeMethod('playTone', {'type': 'end', 'duration': 400});
+                await Future.delayed(const Duration(milliseconds: 800));
+              } catch (_) {}
+              if (mounted) Navigator.pop(context);
+            }
           } else if (content == '[CALL_ACCEPTED]') {
             // Arayan taraf için: Karşı taraf aramayı kabul etti
             if (!widget.isIncoming && !_isAccepted) {
                _stopRingtone();
+               _callTimeoutTimer?.cancel();
                if (mounted) {
                  setState(() {
                    _isAccepted = true;
@@ -337,12 +380,19 @@ class _CallScreenState extends State<CallScreen> {
           break;
         case lk.ConnectionState.connected:
           _connectionStatus = 'Bağlandı';
+          _reconnectTimer?.cancel();
+          _reconnectBeepTimer?.cancel();
           break;
         case lk.ConnectionState.reconnecting:
           _connectionStatus = 'Yeniden Bağlanıyor...';
+          if (_reconnectTimer == null || !_reconnectTimer!.isActive) {
+            _startReconnectionProcess();
+          }
           break;
         case lk.ConnectionState.disconnected:
           _connectionStatus = 'Bağlantı Kesildi';
+          _reconnectTimer?.cancel();
+          _reconnectBeepTimer?.cancel();
           break;
       }
     });
@@ -350,8 +400,27 @@ class _CallScreenState extends State<CallScreen> {
     AppLogger.instance.info('Oda durumu güncellendi: ${_room!.connectionState}');
   }
 
+  void _startReconnectionProcess() {
+    _reconnectTimer?.cancel();
+    _reconnectBeepTimer?.cancel();
+
+    // 10 saniye süre tanı, bağlanmazsa kapat
+    _reconnectTimer = Timer(const Duration(seconds: 10), () {
+      if (mounted && _room?.connectionState != lk.ConnectionState.connected) {
+        AppLogger.instance.warning('Yeniden bağlanma zaman aşımına uğradı, çağrı sonlandırılıyor.');
+        _hangUp();
+      }
+    });
+
+    // Yeniden bağlanırken 'dıt dıt' sesi çal (1 saniyede bir)
+    _reconnectBeepTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+       _playSystemBeep(isEnd: true); 
+    });
+  }
+
   void _handleAccept() async {
     _stopRingtone();
+    _callTimeoutTimer?.cancel();
     setState(() {
       _isAccepted = true;
     });
@@ -391,7 +460,11 @@ class _CallScreenState extends State<CallScreen> {
 
   @override
   void dispose() {
+    CallScreen.isInCall = false;
     _stopRingtone();
+    _callTimeoutTimer?.cancel();
+    _reconnectTimer?.cancel();
+    _reconnectBeepTimer?.cancel();
     _durationTimer?.cancel();
     _ringtonePlayer.dispose();
     _room?.removeListener(_onRoomStateChanged);
