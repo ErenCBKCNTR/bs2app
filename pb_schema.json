@@ -867,7 +867,7 @@
       { "system": false, "id": "qg_p1s", "name": "player1_score", "type": "number", "required": false, "options": {} },
       { "system": false, "id": "qg_p2s", "name": "player2_score", "type": "number", "required": false, "options": {} },
       { "system": false, "id": "qg_qindex", "name": "current_question_index", "type": "number", "required": false, "options": {} },
-      { "system": false, "id": "qg_questions", "name": "questions_json", "type": "json", "required": false, "options": {} },
+      { "system": false, "id": "qg_questions", "name": "questions_json", "type": "json", "required": false, "options": { "maxSize": 2000000 } },
       { "system": false, "id": "qg_winner", "name": "winner_id", "type": "relation", "required": false, "options": { "collectionId": "_pb_users_auth_", "cascadeDelete": false, "maxSelect": 1 } },
       { "system": false, "id": "qg_is_single", "name": "is_singleplayer", "type": "bool", "required": false, "options": {} }
     ],
