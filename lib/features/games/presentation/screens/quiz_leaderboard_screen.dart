@@ -93,9 +93,9 @@ class _QuizLeaderboardScreenState extends State<QuizLeaderboardScreen> {
                             final user = _users[index];
                             final isMe = user.id == _myId;
                             final score = user.getIntValue('quiz_score');
-                            final name = user.getStringValue('full_name').isNotEmpty 
-                                ? user.getStringValue('full_name') 
-                                : user.getStringValue('username');
+                            final name = user.getStringValue('username').isNotEmpty
+                                ? user.getStringValue('username')
+                                : 'Anonim';
                             
                             return ListTile(
                               leading: CircleAvatar(

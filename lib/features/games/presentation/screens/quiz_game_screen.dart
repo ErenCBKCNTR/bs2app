@@ -138,9 +138,19 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     if (isCorrect) {
       // Correct feedback (short, short, long)
       Vibration.vibrate(pattern: [0, 100, 50, 100, 50, 300]);
+      try {
+        await player.play(UrlSource('https://api.cabukcan.com/sounds/games/quiz/dogru_cevap.mp3'));
+      } catch (e) {
+        AppLogger.instance.error('Doğru cevap sesi çalınamadı: $e');
+      }
     } else {
       // Wrong feedback (long, long)
       Vibration.vibrate(pattern: [0, 400, 100, 400]);
+      try {
+        await player.play(UrlSource('https://api.cabukcan.com/sounds/games/quiz/yanlis_cevap.mp3'));
+      } catch (e) {
+        AppLogger.instance.error('Yanlış cevap sesi çalınamadı: $e');
+      }
     }
 
     try {
@@ -163,22 +173,26 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       String nextStatus = _game!.getStringValue('status');
       String nextTurnId = _game!.getStringValue('current_turn_id');
       
-      if (widget.isSinglePlayer) {
-        currentIndex++;
-        if (currentIndex >= _game!.getDataValue<List>('questions_json').length) {
-          nextStatus = 'finished';
-        }
+      if (!isCorrect) {
+        nextStatus = 'finished';
       } else {
-        // Multiplayer alternating logic
-        if (isPlayer1) {
-          nextTurnId = _game!.getStringValue('player2_id');
+        if (widget.isSinglePlayer) {
+          currentIndex++;
+          if (currentIndex >= _game!.getDataValue<List>('questions_json').length) {
+            nextStatus = 'finished';
+          }
         } else {
-          nextTurnId = _game!.getStringValue('player1_id');
-          currentIndex++; // Both players answered this question
-        }
-        
-        if (currentIndex >= _game!.getDataValue<List>('questions_json').length) {
-          nextStatus = 'finished';
+          // Multiplayer alternating logic
+          if (isPlayer1) {
+            nextTurnId = _game!.getStringValue('player2_id');
+          } else {
+            nextTurnId = _game!.getStringValue('player1_id');
+            currentIndex++; // Both players answered this question
+          }
+          
+          if (currentIndex >= _game!.getDataValue<List>('questions_json').length) {
+            nextStatus = 'finished';
+          }
         }
       }
 
@@ -196,7 +210,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
           _answering = false;
           _selectedOption = null;
         });
-        if (nextStatus == 'finished') {
+        if (nextStatus == 'finished' && isCorrect) {
            _playEndSound();
         }
       }

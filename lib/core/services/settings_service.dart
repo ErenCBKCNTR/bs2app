@@ -32,7 +32,7 @@ class SettingsService {
   bool get callVibrationEnabled => _prefs.getBool(_keyCallVibration) ?? true;
   bool get showOnLockScreenEnabled => _prefs.getBool(_keyShowOnLockScreen) ?? false; // Varsayılan olarak kapalı
   bool get voiceRoomNotificationsEnabled => _prefs.getBool(_keyVoiceRoomNotifications) ?? true; // Varsayılan olarak açık
-  bool get screenProtectionEnabled => _prefs.getBool(_keyScreenProtection) ?? true; // Varsayılan olarak açık (Kullanıcı isteği)
+  bool get screenProtectionEnabled => _prefs.getBool(_keyScreenProtection) ?? false; // Varsayılan olarak kapalı (Kullanıcı isteği)
 
   // Setters
   Future<void> setMessageSoundEnabled(bool value) async => await _prefs.setBool(_keyMessageSound, value);
