@@ -195,15 +195,15 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                   if (eMap.containsKey('chat')) {
                     // New cache format
                     final chatRaw = eMap['chat'] as Map<String, dynamic>;
-                    chat = RecordModel.fromJson(chatRaw);
+                    chat = JsonUtils.deeplyDeserializeRecord(chatRaw);
                     if (eMap['my_participant'] != null) {
-                      chat.data['my_participant'] = RecordModel.fromJson(eMap['my_participant'] as Map<String, dynamic>);
+                      chat.data['my_participant'] = JsonUtils.deeplyDeserializeRecord(eMap['my_participant'] as Map<String, dynamic>);
                     }
                   } else {
                     // Old cache format
-                    chat = RecordModel.fromJson(eMap);
+                    chat = JsonUtils.deeplyDeserializeRecord(eMap);
                     if (chat.data['my_participant'] != null && chat.data['my_participant'] is Map) {
-                      chat.data['my_participant'] = RecordModel.fromJson(Map<String, dynamic>.from(chat.data['my_participant']));
+                      chat.data['my_participant'] = JsonUtils.deeplyDeserializeRecord(Map<String, dynamic>.from(chat.data['my_participant']));
                     }
                   }
                   

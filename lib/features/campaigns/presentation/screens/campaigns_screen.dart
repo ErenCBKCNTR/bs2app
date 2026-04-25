@@ -54,7 +54,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       bool loadedFromAPI = false;
       if (!forceRefresh && isCacheValid && cachedData != null) {
         List<dynamic> jsonList = jsonDecode(cachedData);
-        _allCachedCampaigns = jsonList.map((e) => RecordModel.fromJson(e as Map<String, dynamic>)).toList();
+        _allCachedCampaigns = jsonList.map((e) => JsonUtils.deeplyDeserializeRecord(e as Map<String, dynamic>)).toList();
         loadedFromAPI = true; // Not API, but successfully loaded
       } else {
         try {
@@ -73,7 +73,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
           // Fallback to cache even if expired
           if (cachedData != null) {
             List<dynamic> jsonList = jsonDecode(cachedData);
-            _allCachedCampaigns = jsonList.map((e) => RecordModel.fromJson(e as Map<String, dynamic>)).toList();
+            _allCachedCampaigns = jsonList.map((e) => JsonUtils.deeplyDeserializeRecord(e as Map<String, dynamic>)).toList();
           } else {
             rethrow;
           }
