@@ -24,6 +24,12 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
     super.initState();
     _server = widget.server;
     _fetchRooms();
+    
+    // Ekran okuyucu için sunucuya katılma bildirimi
+    SemanticsService.announce(
+      "Şu anda ${ProfanityFilter.filter(_server.name)} isimli sunucuya bağlandınız.", 
+      TextDirection.ltr,
+    );
   }
 
   Future<void> _fetchRooms() async {
