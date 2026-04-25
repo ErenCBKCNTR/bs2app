@@ -170,13 +170,10 @@ class _ChatInputFieldState extends State<ChatInputField> {
             child: Row(
               children: [
                 if (_isRecording) ...[
-                  Semantics(
-                    label: "Kaydı iptal et",
-                    button: true,
-                    child: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: _cancelRecording,
-                    ),
+                  IconButton(
+                    tooltip: "Kaydı iptal et",
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: _cancelRecording,
                   ),
                   Expanded(
                     child: Container(
@@ -194,13 +191,10 @@ class _ChatInputFieldState extends State<ChatInputField> {
                       ),
                     ),
                   ),
-                  Semantics(
-                    label: _isPaused ? "Kayda devam et" : "Kaydı duraklat",
-                    button: true,
-                    child: IconButton(
-                      icon: Icon(_isPaused ? Icons.mic : Icons.pause, color: Colors.orange),
-                      onPressed: _pauseOrResumeRecording,
-                    ),
+                  IconButton(
+                    tooltip: _isPaused ? "Kayda devam et" : "Kaydı duraklat",
+                    icon: Icon(_isPaused ? Icons.mic : Icons.pause, color: Colors.orange),
+                    onPressed: _pauseOrResumeRecording,
                   ),
                 ] else ...[
                   Expanded(
@@ -210,25 +204,22 @@ class _ChatInputFieldState extends State<ChatInputField> {
                       maxLength: 4000,
                       style: const TextStyle(fontSize: 14),
                       decoration: InputDecoration(
-                        prefixIcon: Semantics(
-                          label: "Emoji klavyesini aç veya kapat",
-                          button: true,
-                          child: IconButton(
-                            icon: Icon(
-                              _showEmojiPicker ? Icons.keyboard : Icons.emoji_emotions_outlined,
-                              color: isDarkMode ? Colors.white70 : Colors.black54,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _showEmojiPicker = !_showEmojiPicker;
-                              });
-                              if (_showEmojiPicker) {
-                                FocusScope.of(context).unfocus();
-                              } else {
-                                FocusScope.of(context).requestFocus(_focusNode);
-                              }
-                            },
+                        prefixIcon: IconButton(
+                          tooltip: "Emoji klavyesini aç veya kapat",
+                          icon: Icon(
+                            _showEmojiPicker ? Icons.keyboard : Icons.emoji_emotions_outlined,
+                            color: isDarkMode ? Colors.white70 : Colors.black54,
                           ),
+                          onPressed: () {
+                            setState(() {
+                              _showEmojiPicker = !_showEmojiPicker;
+                            });
+                            if (_showEmojiPicker) {
+                              FocusScope.of(context).unfocus();
+                            } else {
+                              FocusScope.of(context).requestFocus(_focusNode);
+                            }
+                          },
                         ),
                         hintText: widget.hintText,
                         border: OutlineInputBorder(
@@ -273,16 +264,13 @@ class _ChatInputFieldState extends State<ChatInputField> {
                     ),
                   )
                 else
-                  Semantics(
-                    label: "Mesajı gönder",
-                    button: true,
-                    child: CircleAvatar(
-                      radius: 22,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      child: IconButton(
-                        icon: const Icon(Icons.send, color: Colors.black, size: 20),
-                        onPressed: _handleSendText,
-                      ),
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    child: IconButton(
+                      tooltip: "Mesajı gönder",
+                      icon: const Icon(Icons.send, color: Colors.black, size: 20),
+                      onPressed: _handleSendText,
                     ),
                   ),
               ],

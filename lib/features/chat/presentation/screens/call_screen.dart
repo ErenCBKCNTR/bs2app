@@ -971,19 +971,15 @@ class _CallScreenState extends State<CallScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Semantics(
-                          label: "Vazgeç",
-                          button: true,
-                          child: FloatingActionButton(
-                            heroTag: "cancel",
-                            onPressed: _cancelCall,
-                            backgroundColor: Colors.red,
-                            tooltip: "Vazgeç",
-                            child: const Icon(Icons.call_end, color: Colors.white, size: 30),
-                          ),
+                        FloatingActionButton(
+                          heroTag: "cancel",
+                          onPressed: _cancelCall,
+                          backgroundColor: Colors.red,
+                          tooltip: "Vazgeç",
+                          child: const Icon(Icons.call_end, color: Colors.white, size: 30),
                         ),
                         const SizedBox(height: 12),
-                        const Text("Vazgeç", style: TextStyle(color: Colors.white)),
+                        const ExcludeSemantics(child: Text("Vazgeç", style: TextStyle(color: Colors.white))),
                       ],
                     ),
                   ),

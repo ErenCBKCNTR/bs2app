@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/core/utils/logger.dart';
@@ -28,6 +29,8 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   bool _answering = false;
   String? _selectedOption;
   bool _scoreAdded = false;
+  int _currentQuestionIndex = -1;
+  final FocusNode _questionFocusNode = FocusNode();
 
   final player = AudioPlayer();
 
@@ -44,6 +47,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   void dispose() {
     _unsub?.call();
     player.dispose();
+    _questionFocusNode.dispose();
     super.dispose();
   }
 
@@ -287,6 +291,16 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     final currentTurnId = _game!.getStringValue('current_turn_id');
     final myId = PocketBaseService.client.authStore.model!.id;
 
+    if (currentIndex != _currentQuestionIndex) {
+      _currentQuestionIndex = currentIndex;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _questionFocusNode.canRequestFocus) {
+          _questionFocusNode.requestFocus();
+          SemanticsService.announce(questions[currentIndex]['question'] ?? '', TextDirection.ltr);
+        }
+      });
+    }
+
     if (currentIndex >= questions.length) {
       return const Scaffold(body: Center(child: Text('Hata: Soru indeksi sınırların dışında.')));
     }
@@ -319,10 +333,13 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Center(
-                      child: Text(
-                        currentQ['question'] ?? '',
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.center,
+                      child: Focus(
+                        focusNode: _questionFocusNode,
+                        child: Text(
+                          currentQ['question'] ?? '',
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ),
                   ),

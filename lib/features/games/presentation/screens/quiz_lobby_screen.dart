@@ -233,6 +233,8 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 24),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        backgroundColor: Colors.deepPurple,
+                        foregroundColor: Colors.white,
                       ),
                       onPressed: _startSinglePlayerGame,
                       icon: const Icon(Icons.person, size: 32),
