@@ -5,6 +5,7 @@ import 'package:blind_social/features/admin/presentation/screens/user_list_scree
 import 'package:blind_social/features/admin/presentation/screens/server_list_screen.dart';
 import 'package:blind_social/features/admin/presentation/screens/feedback_management_screen.dart';
 import 'package:blind_social/features/admin/presentation/screens/source_management_screen.dart';
+import 'package:blind_social/features/admin/presentation/screens/game_management_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
   const AdminPanelScreen({super.key});
@@ -133,6 +134,19 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(builder: (context) => const SourceManagementScreen()),
+                              );
+                            },
+                          ),
+                          _buildStatCard(
+                            title: 'Oyun Alanı',
+                            value: 'Yönetim',
+                            subtitle: 'Oyun Ayarları',
+                            icon: Icons.games,
+                            color: Colors.green,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const GameManagementScreen()),
                               );
                             },
                           ),
