@@ -13,6 +13,7 @@ import 'package:blind_social/features/profile/presentation/screens/app_settings_
 import 'package:blind_social/features/developer/presentation/screens/developer_logs_screen.dart';
 import 'package:blind_social/core/utils/json_utils.dart';
 import 'package:blind_social/features/games/presentation/screens/games_screen.dart' as blind_social_games;
+import 'package:blind_social/features/games/presentation/screens/quiz_game_screen.dart' as quiz_game;
 import 'package:blind_social/features/chat/presentation/screens/blog_screen.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
@@ -197,7 +198,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                   if (mounted) {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => blind_social_games.QuizGameScreen(gameId: game.id, isSinglePlayer: false)),
+                      MaterialPageRoute(builder: (_) => quiz_game.QuizGameScreen(gameId: game.id, isSinglePlayer: false)),
                     );
                   }
                 } catch (e) {

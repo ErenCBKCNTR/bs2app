@@ -223,7 +223,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  widget.isSinglePlayer ? 'Puanınız: \$p1Score' : 'Siz: \$p1Score - Rakip: \$p2Score',
+                  widget.isSinglePlayer ? 'Puanınız: $p1Score' : 'Siz: $p1Score - Rakip: $p2Score',
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 20),
                 ),
@@ -254,7 +254,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Soru \${currentIndex + 1} / \${questions.length}'),
+        title: Text('Soru ${currentIndex + 1} / ${questions.length}'),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -266,8 +266,8 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Puan: \${_game!.getIntValue('player1_score')}'),
-                  if (!widget.isSinglePlayer) Text('Rakip Puan: \${_game!.getIntValue('player2_score')}'),
+                  Text('Puan: ${_game!.getIntValue("player1_score")}'),
+                  if (!widget.isSinglePlayer) Text('Rakip Puan: ${_game!.getIntValue("player2_score")}'),
                 ],
               ),
               const SizedBox(height: 24),
