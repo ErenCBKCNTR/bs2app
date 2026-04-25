@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart'; // SemanticsService için eklendi
 import 'package:flutter/foundation.dart';
 import 'package:livekit_client/livekit_client.dart' as lk;
+import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
@@ -37,6 +38,8 @@ class _CallScreenState extends State<CallScreen> {
   lk.Room? _room;
   bool _isMuted = false;
   bool _isCamOff = false;
+  bool _isLocalVideoFullscreen = false;
+  bool _isScreenSharing = false;
   bool _isJoined = false;
   bool _isAccepted = false; // Arama cevaplandı mı?
   bool _isSpeakerOn = false;
@@ -140,6 +143,14 @@ class _CallScreenState extends State<CallScreen> {
         } catch(e) {
           AppLogger.instance.warning('URL Source başlatılamadı, varsayılan sese dönülüyor.');
         }
+      } else {
+        try {
+          // Play system ringtone
+          FlutterRingtonePlayer().playRingtone();
+          return;
+        } catch(e) {
+          AppLogger.instance.warning('Sistem zil sesi çalınamadı, varsayılan sese dönülüyor.');
+        }
       }
       final soundPath = widget.isIncoming ? 'sounds/incoming_call.mp3' : 'sounds/outgoing_call.mp3';
       await _ringtonePlayer.play(AssetSource(soundPath));
@@ -161,6 +172,9 @@ class _CallScreenState extends State<CallScreen> {
 
   Future<void> _stopRingtone() async {
     Vibration.cancel();
+    try {
+      FlutterRingtonePlayer().stop();
+    } catch(_) {}
     await _ringtonePlayer.stop();
   }
 
@@ -452,6 +466,107 @@ class _CallScreenState extends State<CallScreen> {
     }
   }
 
+  void _showShareMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[600],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Icon(
+                  _isScreenSharing ? Icons.stop_screen_share : Icons.screen_share,
+                  color: Colors.white,
+                ),
+                title: Text(
+                  _isScreenSharing ? "Ekran Paylaşımını Durdur" : "Ekranı Paylaş",
+                  style: const TextStyle(color: Colors.white),
+                ),
+                onTap: () {
+                  Navigator.pop(context); // Menüyü kapat
+                  _toggleScreenShare();
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _toggleScreenShare() async {
+    if (_isScreenSharing) {
+      try {
+        await _room?.localParticipant?.setScreenShareEnabled(false);
+        setState(() {
+          _isScreenSharing = false;
+        });
+        SemanticsService.announce("Ekran paylaşımı durduruldu", TextDirection.ltr);
+      } catch (e) {
+        AppLogger.instance.error('Ekran paylaşımı durdurulamadı: $e');
+      }
+    } else {
+      // Prompt user confirm
+      bool? confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.grey[900],
+          title: const Text("Ekranı Paylaş", style: TextStyle(color: Colors.white)),
+          content: const Text(
+            "Görüntülü görüşmede ekranda yer alan içerikleri karşı taraf görecek. Görüntünüz kapatılacaktır. Onaylıyor musunuz?",
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("İptal", style: TextStyle(color: Colors.white54)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Paylaş", style: TextStyle(color: Colors.blue)),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm == true) {
+        if (_isVideoCall && !_isCamOff) {
+          _toggleCam(); // Kamerayı kapat
+        }
+        try {
+          await _room?.localParticipant?.setScreenShareEnabled(true);
+          setState(() {
+            _isScreenSharing = true;
+          });
+          SemanticsService.announce("Ekran paylaşımı başlatıldı", TextDirection.ltr);
+        } catch (e) {
+          AppLogger.instance.error('Ekran paylaşımı başlatılamadı: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Ekran paylaşımı başlatılamadı veya desteklenmiyor.')),
+            );
+          }
+        }
+      }
+    }
+  }
+
   void _toggleSpeaker() {
     setState(() {
       _isSpeakerOn = !_isSpeakerOn;
@@ -544,32 +659,54 @@ class _CallScreenState extends State<CallScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Background - Remote Video if available
-          if (_isVideoCall && _remoteVideoTrack != null && !_isCamOff)
+          // Fullscreen Video
+          if (_isVideoCall && _isJoined)
             Positioned.fill(
-              child: lk.VideoTrackRenderer(_remoteVideoTrack!),
-            )
-          else if (_isVideoCall && _isJoined)
-            const Center(
-              child: Icon(Icons.videocam_off, color: Colors.white24, size: 80),
+              child: GestureDetector(
+                onTap: () {
+                  if (_localVideoTrack != null && _remoteVideoTrack != null) {
+                    setState(() => _isLocalVideoFullscreen = !_isLocalVideoFullscreen);
+                  }
+                },
+                child: _isLocalVideoFullscreen
+                    ? (_localVideoTrack != null && !_isCamOff
+                        ? lk.VideoTrackRenderer(_localVideoTrack!)
+                        : const Center(child: Icon(Icons.videocam_off, color: Colors.white24, size: 80)))
+                    : (_remoteVideoTrack != null
+                        ? lk.VideoTrackRenderer(_remoteVideoTrack!)
+                        : const Center(child: Icon(Icons.videocam_off, color: Colors.white24, size: 80))),
+              ),
             ),
           
-          // Local Video (PiP)
-          if (_isVideoCall && _localVideoTrack != null)
+          // PiP Video
+          if (_isVideoCall && _isJoined)
             Positioned(
               top: MediaQuery.of(context).padding.top + 20,
               right: 20,
-              child: Container(
-                width: 100,
-                height: 150,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white24),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: lk.VideoTrackRenderer(_localVideoTrack!),
+              child: GestureDetector(
+                onTap: () {
+                  if (_localVideoTrack != null && _remoteVideoTrack != null) {
+                    setState(() => _isLocalVideoFullscreen = !_isLocalVideoFullscreen);
+                  }
+                },
+                child: Container(
+                  width: 100,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: _isLocalVideoFullscreen
+                        ? (_remoteVideoTrack != null
+                            ? lk.VideoTrackRenderer(_remoteVideoTrack!)
+                            : const Center(child: Icon(Icons.videocam_off, color: Colors.white24)))
+                        : (_localVideoTrack != null && !_isCamOff
+                            ? lk.VideoTrackRenderer(_localVideoTrack!)
+                            : const Center(child: Icon(Icons.videocam_off, color: Colors.white24))),
+                  ),
                 ),
               ),
             ),
@@ -665,19 +802,22 @@ class _CallScreenState extends State<CallScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             _buildControlButton(
-                              icon: Icons.more_horiz,
-                              color: Colors.white10,
+                              icon: Icons.ios_share,
+                              color: _isScreenSharing ? Colors.blue : Colors.white10,
                               iconColor: Colors.white,
-                              onPressed: () {}, // Diğer/Genişletme (Şimdilik boş)
-                              label: "Diğer",
+                              onPressed: () => _showShareMenu(context),
+                              label: "Paylaş",
                             ),
-                            _buildControlButton(
-                              icon: _isVideoCall ? Icons.flip_camera_ios : Icons.share,
-                              color: Colors.white10,
-                              iconColor: Colors.white,
-                              onPressed: _isVideoCall ? _switchCamera : () {}, // Paylaş veya Kamera Değiştir
-                              label: _isVideoCall ? "Kamera Değiştir" : "Paylaş",
-                            ),
+                            if (_isVideoCall)
+                              _buildControlButton(
+                                icon: Icons.flip_camera_ios,
+                                color: Colors.white10,
+                                iconColor: Colors.white,
+                                onPressed: _switchCamera,
+                                label: "Kamera Değiştir",
+                              )
+                            else
+                              const SizedBox(width: 56),
                             _buildControlButton(
                               icon: Icons.call_end,
                               color: Colors.red,

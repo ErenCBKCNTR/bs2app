@@ -916,7 +916,10 @@ Widget? _buildFAB() {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const ArchivedMessagesScreen()));
               },
               icon: const Icon(Icons.archive, size: 18),
-              label: const Text("Arşivlenmiş Sohbetler"),
+              label: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text("Arşivlenmiş Sohbetler"),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
@@ -931,7 +934,10 @@ Widget? _buildFAB() {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoriteMessagesScreen()));
               },
               icon: const Icon(Icons.star, size: 18),
-              label: const Text("Favori Mesajlar"),
+              label: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text("Favori Mesajlar"),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
                 foregroundColor: Colors.white,
