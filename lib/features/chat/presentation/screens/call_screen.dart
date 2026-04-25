@@ -78,7 +78,7 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   void _listenToCallEndEvents() async {
-    _messagesUnsub = await PocketBaseService.client.collection('messages').subscribe('*', (e) {
+    _messagesUnsub = await PocketBaseService.client.collection('messages').subscribe('*', (e) async {
       if (e.action == 'create') {
         final msg = e.record;
         if (msg != null && msg.getStringValue('chat_id') == widget.chatId && msg.getStringValue('sender_id') != _myId) {
