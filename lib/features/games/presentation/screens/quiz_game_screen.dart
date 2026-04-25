@@ -27,6 +27,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   UnsubscribeFunc? _unsub;
   bool _answering = false;
   String? _selectedOption;
+  bool _scoreAdded = false;
 
   final player = AudioPlayer();
 
@@ -46,6 +47,29 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     super.dispose();
   }
 
+  Future<void> _checkAndAddScore() async {
+    if (_game == null) return;
+    if (_scoreAdded) return;
+    if (_game!.getStringValue('status') == 'finished') {
+      _scoreAdded = true;
+      final myId = PocketBaseService.client.authStore.model!.id;
+      final isPlayer1 = _game!.getStringValue('player1_id') == myId;
+      final myEarnedScore = isPlayer1 ? _game!.getIntValue('player1_score') : _game!.getIntValue('player2_score');
+      
+      if (myEarnedScore > 0) {
+        try {
+          final user = await PocketBaseService.client.collection('users').getOne(myId);
+          final currentScore = user.getIntValue('quiz_score');
+          await PocketBaseService.client.collection('users').update(myId, body: {
+            'quiz_score': currentScore + myEarnedScore
+          });
+        } catch (e) {
+          AppLogger.instance.error('Skor ekleme hatası: $e');
+        }
+      }
+    }
+  }
+
   Future<void> _fetchGame() async {
     try {
       final game = await PocketBaseService.client.collection('quiz_games').getOne(widget.gameId);
@@ -54,6 +78,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
           _game = game;
           _isLoading = false;
         });
+        _checkAndAddScore();
       }
     } catch (e) {
       AppLogger.instance.error('Oyun yüklenemedi: $e');
@@ -73,6 +98,9 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
             _answering = false;
             _selectedOption = null;
           });
+          
+          // Also call it here so multiplayer clients apply score on update
+          _checkAndAddScore();
           
           if (e.record!.getStringValue('status') == 'finished') {
              _playEndSound();

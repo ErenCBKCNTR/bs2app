@@ -1,36 +1,37 @@
 import 'package:pocketbase/pocketbase.dart';
 
 class JsonUtils {
-  static Map<String, dynamic> deeplySerializeRecord(RecordModel record) {
+  static Map<String, dynamic> deeplySerializeRecord(RecordModel record, [Set<String>? serializedIds]) {
+    serializedIds ??= {};
+    
+    if (record.id.isNotEmpty && serializedIds.contains(record.id)) {
+       return {'id': record.id, 'collectionId': record.collectionId, '_circular': true};
+    }
+    
+    if (record.id.isNotEmpty) {
+      serializedIds.add(record.id);
+    }
+
     final data = Map<String, dynamic>.from(record.toJson());
     final processedData = <String, dynamic>{};
 
-    data.forEach((key, value) {
+    dynamic processValue(dynamic value) {
       if (value is RecordModel) {
-        processedData[key] = deeplySerializeRecord(value);
+        return deeplySerializeRecord(value, Set.from(serializedIds!));
       } else if (value is List) {
-        processedData[key] = value.map((e) {
-          if (e is RecordModel) return deeplySerializeRecord(e);
-          return e;
-        }).toList();
+        return value.map((e) => processValue(e)).toList();
       } else if (value is Map) {
         final subMap = <String, dynamic>{};
         value.forEach((k, v) {
-          if (v is RecordModel) {
-            subMap[k.toString()] = deeplySerializeRecord(v);
-          } else if (v is List) {
-            subMap[k.toString()] = v.map((e) {
-              if (e is RecordModel) return deeplySerializeRecord(e);
-              return e;
-            }).toList();
-          } else {
-            subMap[k.toString()] = v;
-          }
+          subMap[k.toString()] = processValue(v);
         });
-        processedData[key] = subMap;
-      } else {
-        processedData[key] = value;
+        return subMap;
       }
+      return value;
+    }
+
+    data.forEach((key, value) {
+      processedData[key] = processValue(value);
     });
 
     return processedData;

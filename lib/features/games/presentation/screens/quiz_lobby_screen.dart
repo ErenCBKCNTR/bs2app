@@ -3,6 +3,7 @@ import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:blind_social/features/games/presentation/screens/quiz_game_screen.dart';
+import 'package:blind_social/features/games/presentation/screens/quiz_leaderboard_screen.dart';
 
 class QuizLobbyScreen extends StatefulWidget {
   const QuizLobbyScreen({super.key});
@@ -13,6 +14,27 @@ class QuizLobbyScreen extends StatefulWidget {
 
 class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
   bool _isLoading = false;
+  int _myScore = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMyScore();
+  }
+
+  Future<void> _fetchMyScore() async {
+    try {
+      final myId = PocketBaseService.client.authStore.model!.id;
+      final user = await PocketBaseService.client.collection('users').getOne(myId);
+      if (mounted) {
+        setState(() {
+          _myScore = user.getIntValue('quiz_score');
+        });
+      }
+    } catch (e) {
+      AppLogger.instance.error('Skor çekilemedi: $e');
+    }
+  }
 
   Future<void> _startSinglePlayerGame() async {
     setState(() => _isLoading = true);
@@ -183,6 +205,20 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bilgi Yarışması'),
+        actions: [
+          Semantics(
+            label: 'Toplam Puanınız $_myScore',
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: Center(
+                child: Text(
+                  '$_myScore Puan',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          )
+        ],
       ),
       body: SafeArea(
         child: _isLoading
@@ -213,6 +249,23 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
                       onPressed: _showMultiplayerInviteDialog,
                       icon: const Icon(Icons.people, size: 32),
                       label: const Text('Arkadaşınla Oyna', style: TextStyle(fontSize: 20)),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const QuizLeaderboardScreen()),
+                        ).then((_) => _fetchMyScore());
+                      },
+                      icon: const Icon(Icons.leaderboard, size: 32),
+                      label: const Text('Puan Tablosu', style: TextStyle(fontSize: 20)),
                     ),
                   ],
                 ),
