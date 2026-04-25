@@ -1,7 +1,11 @@
 package com.example.blind_social
 
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -25,10 +29,30 @@ class MainActivity: FlutterActivity() {
                     toggleScreenProtection(enabled)
                     result.success(null)
                 }
+                "playTone" -> {
+                    val type = call.argument<String>("type") ?: "start"
+                    val duration = call.argument<Int>("duration") ?: 150
+                    playTone(type, duration)
+                    result.success(null)
+                }
                 else -> {
                     result.notImplemented()
                 }
             }
+        }
+    }
+
+    private fun playTone(type: String, durationMs: Int) {
+        try {
+            val toneGen = ToneGenerator(AudioManager.STREAM_DTMF, 100)
+            val toneParam = if (type == "end") ToneGenerator.TONE_PROP_PROMPT else ToneGenerator.TONE_SUP_PIP
+            toneGen.startTone(toneParam, durationMs)
+            
+            Handler(Looper.getMainLooper()).postDelayed({
+                toneGen.release()
+            }, (durationMs + 50).toLong())
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart'; // SemanticsService için eklendi
 import 'package:flutter/foundation.dart';
 import 'package:livekit_client/livekit_client.dart' as lk;
@@ -85,6 +86,7 @@ class _CallScreenState extends State<CallScreen> {
           
           if (content.contains('CALL_ENDED') || content.contains('CALL_REJECTED') || content.contains('CALL_CANCELLED')) {
             _stopRingtone();
+            await _playEndSound();
             if (mounted) {
               Navigator.pop(context);
             }
@@ -124,6 +126,15 @@ class _CallScreenState extends State<CallScreen> {
     });
   }
 
+  Future<void> _playSystemBeep({required bool isEnd}) async {
+    try {
+      await const MethodChannel('com.example.blind_social/lockscreen')
+          .invokeMethod('playTone', {'type': isEnd ? 'end' : 'start', 'duration': isEnd ? 200 : 150});
+    } catch (e) {
+      AppLogger.instance.warning('Sistem biplenirken hata: $e');
+    }
+  }
+
   Future<void> _playRingtone() async {
     final settings = SettingsService();
     
@@ -137,6 +148,10 @@ class _CallScreenState extends State<CallScreen> {
     try {
       await _ringtonePlayer.setReleaseMode(ReleaseMode.loop);
       if (!widget.isIncoming) {
+        // Giden aramada çalmadan önce kısa "bip" sesi çal
+        await _playSystemBeep(isEnd: false);
+        await Future.delayed(const Duration(milliseconds: 300));
+        
         try {
           await _ringtonePlayer.play(UrlSource('https://api.cabukcan.com/sounds/outgoing_call.mp3'));
           return;
@@ -160,14 +175,8 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   Future<void> _playEndSound() async {
-    try {
-      final player = AudioPlayer();
-      await player.play(AssetSource('sounds/call_ended.mp3'));
-      await Future.delayed(const Duration(seconds: 2));
-      await player.dispose();
-    } catch (e) {
-      AppLogger.instance.warning('Bitiş sesi çalınamadı: $e');
-    }
+    await _playSystemBeep(isEnd: true);
+    await Future.delayed(const Duration(milliseconds: 300));
   }
 
   Future<void> _stopRingtone() async {
