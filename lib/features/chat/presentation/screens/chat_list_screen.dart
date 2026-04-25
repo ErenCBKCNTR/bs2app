@@ -186,7 +186,13 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
             final List<dynamic> decoded = jsonDecode(cachedChatsStr);
             if (mounted) {
               setState(() {
-                _chats = decoded.map((e) => RecordModel.fromJson(e as Map<String, dynamic>)).toList();
+                _chats = decoded.map((e) {
+                  final chat = RecordModel.fromJson(e as Map<String, dynamic>);
+                  if (chat.data['my_participant'] != null && chat.data['my_participant'] is Map) {
+                    chat.data['my_participant'] = RecordModel.fromJson(Map<String, dynamic>.from(chat.data['my_participant']));
+                  }
+                  return chat;
+                }).toList();
                 _isLoadingChats = false;
               });
             }
@@ -239,7 +245,13 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
         try {
           final prefs = await SharedPreferences.getInstance();
            // toJson ensures it works flawlessly, then jsonEncode
-          final encoded = jsonEncode(_chats.map((e) => e.toJson()).toList());
+          final encoded = jsonEncode(_chats.map((e) {
+            final data = e.toJson();
+            if (data['my_participant'] is RecordModel) {
+              data['my_participant'] = (data['my_participant'] as RecordModel).toJson();
+            }
+            return data;
+          }).toList());
           prefs.setString('cached_chat_list_$userId', encoded);
         } catch(e) {
           debugPrint('Sohbet önbelleği yazma hatası: $e');

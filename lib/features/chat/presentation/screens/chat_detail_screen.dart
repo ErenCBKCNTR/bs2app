@@ -259,6 +259,34 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   Future<void> _sendMessage(String text) async {
     if (text.isEmpty) return;
 
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final replyData = _replyingTo;
+    
+    setState(() {
+      _messages.add({
+        'id': tempId,
+        'chat_id': _chat['id'],
+        'sender_id': _myUserId,
+        'content': text,
+        'created': DateTime.now().toIso8601String(),
+        'is_pending': true,
+        if (replyData != null) 'reply_to': replyData['id'],
+        if (replyData != null) 'reply_content': replyData['content']?.toString() ?? '',
+      });
+      _replyingTo = null;
+    });
+    
+    // Scroll down immediately
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent + 200,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+
     try {
       final body = {
         'chat_id': _chat['id'],
@@ -266,21 +294,24 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         'content': text,
       };
 
-      if (_replyingTo != null) {
-        body['reply_to'] = _replyingTo!['id'];
-        body['reply_content'] = _replyingTo!['content']?.toString() ?? '';
+      if (replyData != null) {
+        body['reply_to'] = replyData['id'];
+        body['reply_content'] = replyData['content']?.toString() ?? '';
       }
 
-      await PocketBaseService.client.collection('messages').create(body: body);
+      final record = await PocketBaseService.client.collection('messages').create(body: body);
 
-      setState(() {
-        _replyingTo = null;
-      });
+      if (mounted) {
+        setState(() {
+          final idx = _messages.indexWhere((m) => m['id'] == tempId);
+          if (idx != -1) _messages[idx] = record.toJson();
+        });
+      }
 
       // Sohbetin updated_at alanını güncelle
       await PocketBaseService.client.collection('chats').update(_chat['id'], body: {
         'updated_at': DateTime.now().toUtc().toIso8601String(),
-      });
+      }).catchError((_) => null);
 
       // Mesaj gönderildi sesi
       final settings = SettingsService();
@@ -289,30 +320,45 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         player.play(AssetSource('sounds/message_sent.mp3')).catchError((_) => null);
       }
 
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent + 100,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
     } catch (e) {
       AppLogger.instance.error('Mesaj gönderilirken hata: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Bağlantı hatası: Mesaj gönderiliyor olarak işaretlendi.'),
+          duration: Duration(seconds: 2),
+        ));
       }
     }
   }
 
   Future<void> _sendAudioMessage(String path) async {
-    try {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses mesajı gönderiliyor...')));
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    
+    setState(() {
+      _messages.add({
+        'id': tempId,
+        'chat_id': widget.chat['id'],
+        'sender_id': _myUserId,
+        'content': '[VOICE]',
+        'created': DateTime.now().toIso8601String(),
+        'is_pending': true,
+      });
+    });
+    
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent + 200,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
       }
-      
+    });
+
+    try {
       final fileBytes = File(path).readAsBytesSync();
       
-      await PocketBaseService.client.collection('messages').create(
+      final record = await PocketBaseService.client.collection('messages').create(
         body: {
           'chat_id': widget.chat['id'],
           'sender_id': _myUserId,
@@ -322,9 +368,31 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           http.MultipartFile.fromBytes('file', fileBytes, filename: 'ses.m4a')
         ],
       );
-      _fetchMessages();
+      
+      if (mounted) {
+        setState(() {
+          final idx = _messages.indexWhere((m) => m['id'] == tempId);
+          if (idx != -1) _messages[idx] = record.toJson();
+        });
+      }
+
+      await PocketBaseService.client.collection('chats').update(widget.chat['id'], body: {
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }).catchError((_) => null);
+
+      final settings = SettingsService();
+      if (settings.messageSoundEnabled) {
+        final player = AudioPlayer();
+        player.play(AssetSource('sounds/message_sent.mp3')).catchError((_) => null);
+      }
     } catch (e) {
       AppLogger.instance.error('Ses gönderilemedi: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Bağlantı hatası: Ses mesajı gönderiliyor olarak işaretlendi.'),
+          duration: Duration(seconds: 2),
+        ));
+      }
     }
   }
 
@@ -885,6 +953,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   Widget _buildReadStatus(Map<String, dynamic> message) {
     if (message['sender_id'] != _myUserId) return const SizedBox.shrink();
+
+    if (message['is_pending'] == true) {
+      return const Icon(Icons.schedule, size: 14, color: Colors.white54);
+    }
 
     final participants = _chat['chat_participants'] as List<dynamic>? ?? [];
     String? otherLastReadId;

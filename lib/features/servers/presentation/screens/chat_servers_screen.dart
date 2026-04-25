@@ -106,6 +106,11 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
       if (mounted) {
         AppLogger.instance.error('Sunucular yüklenirken hata: $e');
         setState(() => _isLoading = false);
+        if (_servers.isEmpty) {
+           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+             content: Text('Lütfen internet bağlantınızı kontrol edin.'),
+           ));
+        }
       }
     }
   }
@@ -158,34 +163,33 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
                 onTap: () async {
-              // Join if not a member, then navigate
-              final isMember = await ChatServerService().isMember(server.id);
-              if (!isMember) {
-                // Şifre kontrolü
-                if (server.password != null && server.password!.isNotEmpty) {
-                  final passwordConfirmed = await _showPasswordDialog(server.password!);
-                  if (!passwordConfirmed) return;
-                }
+                  try {
+                    // Join if not a member, then navigate
+                    final isMember = await ChatServerService().isMember(server.id);
+                    if (!isMember) {
+                      // Şifre kontrolü
+                      if (server.password != null && server.password!.isNotEmpty) {
+                        final passwordConfirmed = await _showPasswordDialog(server.password!);
+                        if (!passwordConfirmed) return;
+                      }
 
-                try {
-                  await ChatServerService().joinServer(server.id);
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Katılma hatası: $e')));
+                      await ChatServerService().joinServer(server.id);
+                    }
+                    
+                    if (context.mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatServerRoomsScreen(server: server),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lütfen internet bağlantınızı kontrol edin.')));
+                    }
                   }
-                  return;
-                }
-              }
-              
-              if (context.mounted) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ChatServerRoomsScreen(server: server),
-                  ),
-                );
-              }
-            },
+                },
             child: Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(

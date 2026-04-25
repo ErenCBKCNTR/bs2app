@@ -265,7 +265,12 @@ class _CallScreenState extends State<CallScreen> {
       }
     } catch (e) {
       AppLogger.instance.error('Arama başlatma hatası: $e');
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Arama yapılamadı. Lütfen internet bağlantınızı kontrol edin.'),
+        ));
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -314,6 +319,27 @@ class _CallScreenState extends State<CallScreen> {
               if (mounted) Navigator.pop(context);
             });
           }
+        })
+        ..on<lk.ParticipantDisconnectedEvent>((event) {
+          AppLogger.instance.info('Karşı taraf ayrıldı: ${event.participant.identity}');
+          if (mounted) {
+            setState(() {
+              _connectionStatus = 'Karşı taraf bağlantıyı kesti'; // Status update immediately
+            });
+          }
+          // Arama ekranında isek eğer karşı taraf gittiyse birkaç saniye sonra doğrudan aramayı bitirelim.
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted && _room != null) {
+               _hangUp(); 
+            }
+          });
+        })
+        ..on<lk.ParticipantConnectedEvent>((event) {
+           AppLogger.instance.info('Biri katıldı: ${event.participant.identity}');
+           _remoteHasJoined = true;
+           if (mounted) {
+             setState(() {}); // Trigger refresh
+           }
         })
         ..on<lk.TrackSubscribedEvent>((event) {
           if (event.track.kind == lk.TrackType.VIDEO) {
@@ -367,11 +393,25 @@ class _CallScreenState extends State<CallScreen> {
       AppLogger.instance.info('LiveKit odasına bağlanıldı: $roomName');
     } catch (e) {
       AppLogger.instance.error('LiveKit bağlantı hatası: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Bağlantı kurulamadı. Lütfen internet bağlantınızı kontrol edin.'),
+          duration: Duration(seconds: 3),
+        ));
+        Navigator.pop(context);
+      }
     }
   }
 
+  bool _remoteHasJoined = false;
+  
   void _onRoomStateChanged() {
     if (!mounted || _room == null) return;
+    
+    // Yalnızca karşı taraf bağlandıysa takip et
+    if (_room!.remoteParticipants.isNotEmpty) {
+      _remoteHasJoined = true;
+    }
     
     setState(() {
       switch (_room!.connectionState) {
@@ -379,9 +419,17 @@ class _CallScreenState extends State<CallScreen> {
           _connectionStatus = 'Bağlanıyor...';
           break;
         case lk.ConnectionState.connected:
-          _connectionStatus = 'Bağlandı';
-          _reconnectTimer?.cancel();
-          _reconnectBeepTimer?.cancel();
+          // Karşı taraf çıkmışsa da bağlantı kesildi say
+          if (_remoteHasJoined && _room!.remoteParticipants.isEmpty) {
+            _connectionStatus = 'Karşı taraf bağlantısını kaybetti...';
+            if (_reconnectTimer == null || !_reconnectTimer!.isActive) {
+              _startReconnectionProcess();
+            }
+          } else {
+            _connectionStatus = 'Bağlandı';
+            _reconnectTimer?.cancel();
+            _reconnectBeepTimer?.cancel();
+          }
           break;
         case lk.ConnectionState.reconnecting:
           _connectionStatus = 'Yeniden Bağlanıyor...';
@@ -406,9 +454,13 @@ class _CallScreenState extends State<CallScreen> {
 
     // 10 saniye süre tanı, bağlanmazsa kapat
     _reconnectTimer = Timer(const Duration(seconds: 10), () {
-      if (mounted && _room?.connectionState != lk.ConnectionState.connected) {
-        AppLogger.instance.warning('Yeniden bağlanma zaman aşımına uğradı, çağrı sonlandırılıyor.');
-        _hangUp();
+      if (mounted && _room != null) {
+        bool stillDisconnected = _room!.connectionState != lk.ConnectionState.connected || 
+                                 (_remoteHasJoined && _room!.remoteParticipants.isEmpty);
+        if (stillDisconnected) {
+          AppLogger.instance.warning('Yeniden bağlanma zaman aşımına uğradı, çağrı sonlandırılıyor.');
+          _hangUp();
+        }
       }
     });
 
@@ -1090,29 +1142,29 @@ class _CallScreenState extends State<CallScreen> {
     required VoidCallback onPressed,
     required String label,
   }) {
-    return Semantics(
-      label: label,
-      button: true,
-      excludeSemantics: true,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          GestureDetector(
-            onTap: onPressed,
-            child: Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: iconColor, size: 28),
-            ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
           ),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-        ],
-      ),
+          child: IconButton(
+            icon: Icon(icon),
+            color: iconColor,
+            iconSize: 28,
+            onPressed: onPressed,
+            tooltip: label,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ExcludeSemantics(
+          child: Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        ),
+      ],
     );
   }
 }

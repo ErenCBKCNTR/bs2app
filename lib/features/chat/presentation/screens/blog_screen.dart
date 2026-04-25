@@ -9,6 +9,8 @@ import 'package:blind_social/features/chat/presentation/screens/my_blog_posts_sc
 import 'package:blind_social/core/widgets/expandable_text.dart';
 import 'package:blind_social/features/admin/data/services/admin_service.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'dart:async';
 
 class BlogScreen extends StatefulWidget {
@@ -33,10 +35,30 @@ class _BlogScreenState extends State<BlogScreen> {
   @override
   void initState() {
     super.initState();
+    _loadCachedPosts();
     _fetchPosts();
     _pollingTimer = Timer.periodic(const Duration(seconds: 4), (_) {
       _fetchPosts(isBackground: true);
     });
+  }
+
+  Future<void> _loadCachedPosts() async {
+    if (_posts.isNotEmpty) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedStr = prefs.getString('cached_blog_posts');
+      if (cachedStr != null) {
+        final List<dynamic> decoded = jsonDecode(cachedStr);
+        if (mounted) {
+          setState(() {
+            _posts = decoded.map((e) => e as Map<String, dynamic>).toList();
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Önbellek okuma hatası: $e');
+    }
   }
 
   @override
@@ -72,6 +94,12 @@ class _BlogScreenState extends State<BlogScreen> {
           _cachedPosts = _posts;
           _isLoading = false;
         });
+        
+        try {
+          SharedPreferences.getInstance().then((prefs) {
+            prefs.setString('cached_blog_posts', jsonEncode(_posts));
+          });
+        } catch(e) {}
       }
     } catch (e) {
       if (!isBackground) {
@@ -103,7 +131,7 @@ class _BlogScreenState extends State<BlogScreen> {
     } catch (e) {
       AppLogger.instance.error('Post oluştururken hata: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gönderilemedi: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gönderilemedi. Lütfen internet bağlantınızı kontrol edin.')));
       }
     } finally {
       if (mounted) setState(() => _isPosting = false);
