@@ -522,7 +522,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        final isCallOrVoice = textContent.startsWith('[VOICE]') || textContent.contains('CALL_');
+        final isCallMessage = textContent.contains('CALL_');
+        final isVoiceMessage = textContent.startsWith('[VOICE]');
         
         return Container(
           decoration: BoxDecoration(
@@ -533,41 +534,43 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: ['❤️', '😂', '👍', '😢', '🙏', '🔥', '😮', '👏'].map((emoji) => InkWell(
-                      onTap: () {
-                        Navigator.pop(context);
-                        _addReaction(message['id'], emoji);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(emoji, style: const TextStyle(fontSize: 28)),
-                      ),
-                    )).toList(),
+                if (!isCallMessage) ...[
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: ['❤️', '😂', '👍', '😢', '🙏', '🔥', '😮', '👏'].map((emoji) => InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                          _addReaction(message['id'], emoji);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(emoji, style: const TextStyle(fontSize: 28)),
+                        ),
+                      )).toList(),
+                    ),
                   ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.reply),
-                  title: const Text('Yanıtla'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    setState(() {
-                      _replyingTo = message;
-                    });
-                  },
-                ),
-                ListTile(
-                  leading: Icon(isFavorite ? Icons.star : Icons.star_border, color: Colors.amber),
-                  title: Text(isFavorite ? 'Favorilerden Çıkar' : 'Favorilere Ekle'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _toggleFavorite(message['id'], isFavorite);
-                  },
-                ),
-                if (isMyMessage && !isCallOrVoice)
+                  ListTile(
+                    leading: const Icon(Icons.reply),
+                    title: const Text('Yanıtla'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      setState(() {
+                        _replyingTo = message;
+                      });
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(isFavorite ? Icons.star : Icons.star_border, color: Colors.amber),
+                    title: Text(isFavorite ? 'Favorilerden Çıkar' : 'Favorilere Ekle'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _toggleFavorite(message['id'], isFavorite);
+                    },
+                  ),
+                ],
+                if (isMyMessage && !isCallMessage && !isVoiceMessage)
                   ListTile(
                     leading: const Icon(Icons.edit_outlined),
                     title: const Text('Düzenle'),
@@ -834,9 +837,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                 ? "$displayContent. $timeString" 
                                 : (isMyMessage ? "Gönderdiğiniz mesaj: $textContent. $timeString" : "Gelen mesaj: $textContent. $timeString"))}${isEdited ? '. Düzenlendi' : ''}",
                           customSemanticsActions: {
-                            CustomSemanticsAction(label: isFavorite ? 'Favorilerden Çıkar' : 'Favorilere Ekle'): () {
-                              _toggleFavorite(message['id'], isFavorite);
-                            },
+                            if (!isCallMessage)
+                              CustomSemanticsAction(label: isFavorite ? 'Favorilerden Çıkar' : 'Favorilere Ekle'): () {
+                                _toggleFavorite(message['id'], isFavorite);
+                              },
                             if (isMyMessage && !isVoiceMessage && !isCallMessage)
                               CustomSemanticsAction(label: 'Mesajı Düzenle'): () {
                                 _showEditMessageDialog(message['id'], textContent);

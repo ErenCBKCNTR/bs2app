@@ -954,7 +954,11 @@ Widget? _buildFAB() {
         // Sorting messages ascending originally means last is at end.
         // If sorting descending then last is first. Let's find latest by created date.
         messages.sort((a, b) => b.created.compareTo(a.created)); 
-        final lastMessage = messages.isNotEmpty ? messages.first : null;
+        final filteredMessages = messages.where((m) {
+           final content = m.getStringValue('content');
+           return !content.contains('CALL_');
+        }).toList();
+        final lastMessage = filteredMessages.isNotEmpty ? filteredMessages.first : null;
         
         // Calculate unread count
         int unreadCount = 0;
@@ -983,7 +987,10 @@ Widget? _buildFAB() {
         final semanticUnreadSuffix = unreadCount > 0 ? "Okunmamış $unreadCount yeni mesajınız var." : "";
         final semanticSubtitle = lastMessage != null ? "Son mesaj: $subtitleText." : "";
         
+        final bool isPinned = myPart?.getBoolValue('is_pinned') == true;
+        
         return Semantics(
+          key: ValueKey('${chat.id}_${isArchived}_$isPinned'),
           label: "$displayChatName. $semanticSubtitle $semanticUnreadSuffix",
           button: true,
           excludeSemantics: true,
@@ -992,8 +999,8 @@ Widget? _buildFAB() {
             CustomSemanticsAction(label: isArchived ? 'Arşivden Çıkar' : 'Arşivle'): () {
               _toggleArchive(chat.id, isArchived);
             },
-            CustomSemanticsAction(label: myPart?.getBoolValue('is_pinned') == true ? 'Sabitlemeyi Kaldır' : 'Sohbeti Sabitle'): () {
-               _togglePin(chat.id, myPart?.getBoolValue('is_pinned') ?? false);
+            CustomSemanticsAction(label: isPinned ? 'Sabitlemeden Çıkar' : 'Sabitle'): () {
+               _togglePin(chat.id, isPinned);
             },
             CustomSemanticsAction(label: 'Sohbeti Sil'): () {
               _confirmDeleteChat(chat);
@@ -1141,7 +1148,7 @@ Widget? _buildFAB() {
                   ),
                   ListTile(
                     leading: Icon(myPart?.getBoolValue('is_pinned') == true ? Icons.push_pin_outlined : Icons.push_pin),
-                    title: Text(myPart?.getBoolValue('is_pinned') == true ? 'Sabitlemeyi Kaldır' : 'Sabitle'),
+                    title: Text(myPart?.getBoolValue('is_pinned') == true ? 'Sabitlemeden Çıkar' : 'Sabitle'),
                     onTap: () {
                       Navigator.pop(context);
                       _togglePin(chat.id, myPart?.getBoolValue('is_pinned') ?? false);
