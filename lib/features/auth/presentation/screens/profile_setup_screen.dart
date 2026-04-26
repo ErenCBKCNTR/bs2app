@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/features/auth/presentation/screens/auth_wrapper.dart';
+import 'package:blind_social/features/update/presentation/screens/update_check_wrapper.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -96,7 +97,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         // but AuthWrapper uses state, so just updating PB model might be enough.
         // However, pushAndRemoveUntil ensures a clean slate.
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const AuthWrapper()),
+          MaterialPageRoute(builder: (context) => const UpdateCheckWrapper(child: AuthWrapper())),
           (route) => false,
         );
       }

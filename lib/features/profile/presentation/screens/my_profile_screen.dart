@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:intl/intl.dart';
-import 'package:blind_social/features/auth/presentation/screens/auth_screen.dart';
+import 'package:blind_social/features/auth/presentation/screens/auth_wrapper.dart';
+import 'package:blind_social/features/update/presentation/screens/update_check_wrapper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class MyProfileScreen extends ConsumerStatefulWidget {
@@ -65,7 +66,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     PocketBaseService.client.authStore.clear();
     if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const AuthScreen()),
+        MaterialPageRoute(builder: (_) => const UpdateCheckWrapper(child: AuthWrapper())),
         (route) => false,
       );
     }
