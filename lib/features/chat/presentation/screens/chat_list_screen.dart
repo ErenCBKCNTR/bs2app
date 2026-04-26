@@ -762,6 +762,10 @@ Widget? _buildFAB() {
                       String errorMsg = e.toString();
                       if (errorMsg.contains('validation_min_text_constraint')) {
                         errorMsg = 'Sunucu adı en az 3 karakter olmalıdır.';
+                      } else if (errorMsg.contains('Kullanıcı en fazla 3 adet')) {
+                        errorMsg = 'Kullanıcı en fazla 3 adet sunucu oluşturabilir';
+                      } else if (errorMsg.contains('Bir günde en fazla 2 adet')) {
+                        errorMsg = 'Bir günde en fazla 2 adet sunucu oluşturabilirsiniz';
                       } else if (errorMsg.contains('ClientException')) {
                         errorMsg = 'Sunucu oluşturulamadı. Lütfen tekrar deneyin.';
                       }

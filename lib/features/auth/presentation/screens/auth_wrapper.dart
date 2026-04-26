@@ -106,7 +106,28 @@ class _AuthWrapperState extends State<AuthWrapper> {
       }
     } catch (e) {
       debugPrint("Profile check error or timeout: $e");
-      // Hata durumunda veya zaman aşımında oturum geçerli sayılsa bile 
+      
+      bool isAuthInvalid = false;
+      if (e is ClientException) {
+        // Eğer sunucudan 401 (Unauthorized), 403 (Forbidden) veya 404 (Not Found) alınırsa
+        // kullanıcının hesabı silinmiş veya şifresi değiştirilmiştir.
+        if (e.statusCode == 401 || e.statusCode == 403 || e.statusCode == 404) {
+          isAuthInvalid = true;
+        }
+      }
+
+      if (isAuthInvalid) {
+        PocketBaseService.client.authStore.clear();
+        if (mounted) {
+          setState(() {
+            _isAuthenticated = false;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      // Hata durumunda (internet yoksayı vs) veya zaman aşımında oturum geçerli sayılsa bile 
       // profil setup sayfasına yönlendirilebilir veya oturum geçersiz sayılabilir.
       // Burada kullanıcıyı bekletmemek için isLoading'i kapatıyoruz.
       if (mounted) {

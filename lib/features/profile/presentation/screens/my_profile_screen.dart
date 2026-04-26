@@ -37,6 +37,19 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
         if (mounted) setState(() => _isLoading = false);
       }
     } catch (e) {
+      bool isAuthInvalid = false;
+      if (e is ClientException) {
+        if (e.statusCode == 401 || e.statusCode == 403 || e.statusCode == 404) {
+          isAuthInvalid = true;
+        }
+      }
+
+      if (isAuthInvalid) {
+        // Oturum geçersizse (şifre değişmiş veya hesap silinmiş) direkt çıkış yap
+        _signOut();
+        return;
+      }
+
       if (mounted) {
         setState(() {
           _isLoading = false;

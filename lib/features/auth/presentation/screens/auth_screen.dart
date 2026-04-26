@@ -90,8 +90,19 @@ class _AuthScreenState extends State<AuthScreen> {
         }
       } else {
         if (mounted) {
+          String errorMessage = 'Giriş yapılamadı.';
+          if (e.response.isNotEmpty && e.response['message'] != null) {
+            if (e.response['message'].toString().contains('Failed to authenticate')) {
+              errorMessage = 'E-posta adresi veya şifre hatalı.';
+            } else {
+              errorMessage = e.response['message'] ?? e.toString();
+            }
+          }
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Giriş hatası: ${e.response['message'] ?? e.toString()}')),
+            SnackBar(
+              content: Text(errorMessage),
+              duration: const Duration(seconds: 4),
+            ),
           );
         }
       }

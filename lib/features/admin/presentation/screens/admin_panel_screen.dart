@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:blind_social/features/admin/data/services/admin_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
+import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/features/admin/presentation/screens/user_list_screen.dart';
 import 'package:blind_social/features/admin/presentation/screens/server_list_screen.dart';
 import 'package:blind_social/features/admin/presentation/screens/feedback_management_screen.dart';
@@ -150,6 +151,16 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                               );
                             },
                           ),
+                          _buildStatCard(
+                            title: 'Sürüm Bilgisi',
+                            value: 'Güncelle',
+                            subtitle: 'Uygulama Sürümü',
+                            icon: Icons.system_update_alt,
+                            color: Colors.indigo,
+                            onTap: () {
+                              _showUpdateDialog(context);
+                            },
+                          ),
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -231,6 +242,78 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _showUpdateDialog(BuildContext context) async {
+    final versionController = TextEditingController();
+    final urlController = TextEditingController();
+    
+    // Fetch initial data
+    try {
+      final records = await PocketBaseService.client.collection('app_settings').getList(page: 1, perPage: 1);
+      if (records.items.isNotEmpty) {
+        versionController.text = records.items.first.getStringValue('current_version');
+        urlController.text = records.items.first.getStringValue('apk_url');
+      }
+    } catch (e) {
+      AppLogger.instance.error("App details fetch error: $e");
+    }
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Sürüm Bilgisi ve Güncelleme'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: versionController,
+                decoration: const InputDecoration(labelText: 'Güncel Sürüm (Örn: 1.5.0)'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: urlController,
+                decoration: const InputDecoration(labelText: 'APK URL Linki'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  final records = await PocketBaseService.client.collection('app_settings').getList(page: 1, perPage: 1);
+                  final body = {
+                    'current_version': versionController.text.trim(),
+                    'apk_url': urlController.text.trim(),
+                  };
+                  if (records.items.isNotEmpty) {
+                    await PocketBaseService.client.collection('app_settings').update(records.items.first.id, body: body);
+                  } else {
+                    await PocketBaseService.client.collection('app_settings').create(body: body);
+                  }
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Sürüm güncellendi!')),
+                    );
+                  }
+                } catch (e) {
+                  AppLogger.instance.error("Update settings error: $e");
+                }
+              },
+              child: const Text('Kaydet'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

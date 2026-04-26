@@ -58,14 +58,38 @@ class ChatServerService {
     bool canMembersCreateRooms = false,
     String? password,
   }) async {
+    final userId = _pb.authStore.model.id;
+
+    // 1. Toplam sunucu limit kontrolü
+    final totalResponse = await _pb.collection('chat_servers').getList(
+      page: 1,
+      perPage: 1,
+      filter: 'creator = "$userId"',
+    );
+    if (totalResponse.totalItems >= 3) {
+      throw Exception('Kullanıcı en fazla 3 adet sunucu oluşturabilir');
+    }
+
+    // 2. Günlük limit kontrolü
+    final now = DateTime.now().toUtc();
+    final todayStart = DateTime.utc(now.year, now.month, now.day).toIso8601String().replaceFirst('T', ' ');
+    final todayResponse = await _pb.collection('chat_servers').getList(
+      page: 1,
+      perPage: 1,
+      filter: 'creator = "$userId" && created >= "$todayStart"',
+    );
+    if (todayResponse.totalItems >= 2) {
+      throw Exception('Bir günde en fazla 2 adet sunucu oluşturabilirsiniz');
+    }
+
     final body = {
       'name': name,
       'description': description,
       'capacity': capacity,
       'can_members_create_rooms': canMembersCreateRooms,
       'password': password ?? '',
-      'creator': _pb.authStore.model.id,
-      'admins': [_pb.authStore.model.id],
+      'creator': userId,
+      'admins': [userId],
     };
     final record = await _pb.collection('chat_servers').create(body: body);
     
@@ -172,6 +196,7 @@ class ChatServerService {
     final body = {
       'server_id': serverId,
       'user_id': _pb.authStore.model.id,
+      'last_active': DateTime.now().toUtc().toIso8601String().replaceFirst('T', ' '),
     };
     await _pb.collection('server_memberships').create(body: body);
   }

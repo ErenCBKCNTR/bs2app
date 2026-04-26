@@ -16,6 +16,8 @@ import 'package:blind_social/core/services/security_service.dart';
 
 import 'package:blind_social/core/services/audio_cache_service.dart';
 
+import 'package:blind_social/features/update/presentation/screens/update_check_wrapper.dart';
+
 void main() async {
   // Global hata yakalayıcı (Framework hataları)
   FlutterError.onError = (FlutterErrorDetails details) {
@@ -170,7 +172,7 @@ class BlindSocialApp extends ConsumerWidget {
         // Erişilebilirlik için yüksek kontrast ve odak yönetimi
         focusColor: Colors.white.withOpacity(0.3),
       ),
-      home: const AuthWrapper(),
+      home: const UpdateCheckWrapper(child: AuthWrapper()),
     );
   }
 }

@@ -65,57 +65,59 @@ class AdminService {
       final fifteenMinsAgo = now.subtract(const Duration(minutes: 15));
       final fifteenMinsAgoStr = fifteenMinsAgo.toIso8601String().replaceFirst('T', ' ');
 
-      // 1. Active Users (last 15 mins)
-      final activeUsersResponse = await PocketBaseService.client.collection('users').getList(
+      // We execute 'users' collection queries sequentially or separately to avoid PocketBase SDK auto-cancellation
+      // which cancels previous queries on the same collection by default.
+      
+      final activeUsersFuture = PocketBaseService.client.collection('users').getList(
         page: 1,
         perPage: 1,
         filter: 'last_seen >= "$fifteenMinsAgoStr"',
       );
-      final activeUsersCount = activeUsersResponse.totalItems;
+      
+      final otherStatsFutures = Future.wait([
+        // 1. Total Users (We will run this AFTER active users to prevent cancellation)
+        // Actually, let's just make the totalUsers call separately.
+        
+        // 2. Recent Blog Posts (last 15 mins)
+        PocketBaseService.client.collection('posts').getList(
+          page: 1,
+          perPage: 1,
+          filter: 'created >= "$fifteenMinsAgoStr"',
+        ),
+        // 3. Total Servers
+        PocketBaseService.client.collection('chat_servers').getList(
+          page: 1,
+          perPage: 1,
+        ),
+        // 4. Total Feedback
+        PocketBaseService.client.collection('feedback').getList(
+          page: 1,
+          perPage: 1,
+        ),
+        // 5. Total Sources
+        PocketBaseService.client.collection('campaign_sources').getList(
+          page: 1,
+          perPage: 1,
+        ),
+      ]);
 
-      // 2. Total Users
+      // Wait for both independent batches
+      final activeUsersResponse = await activeUsersFuture;
+      
       final totalUsersResponse = await PocketBaseService.client.collection('users').getList(
         page: 1,
         perPage: 1,
       );
-      final totalUsersCount = totalUsersResponse.totalItems;
-
-      // 3. Recent Blog Posts (last 15 mins)
-      final postsResponse = await PocketBaseService.client.collection('posts').getList(
-        page: 1,
-        perPage: 1,
-        filter: 'created >= "$fifteenMinsAgoStr"',
-      );
-      final recentPostsCount = postsResponse.totalItems;
-
-      // 4. Total Servers
-      final serversResponse = await PocketBaseService.client.collection('chat_servers').getList(
-        page: 1,
-        perPage: 1,
-      );
-      final totalServersCount = serversResponse.totalItems;
-
-      // 5. Total Feedback
-      final feedbackResponse = await PocketBaseService.client.collection('feedback').getList(
-        page: 1,
-        perPage: 1,
-      );
-      final feedbackCount = feedbackResponse.totalItems;
-
-      // 6. Total Sources (Campaign Sources)
-      final sourcesResponse = await PocketBaseService.client.collection('campaign_sources').getList(
-        page: 1,
-        perPage: 1,
-      );
-      final totalSourcesCount = sourcesResponse.totalItems;
+      
+      final results = await otherStatsFutures;
 
       return {
-        'activeUsers': activeUsersCount,
-        'totalUsers': totalUsersCount,
-        'recentPosts': recentPostsCount,
-        'totalServers': totalServersCount,
-        'feedbackCount': feedbackCount,
-        'totalSources': totalSourcesCount,
+        'activeUsers': activeUsersResponse.totalItems,
+        'totalUsers': totalUsersResponse.totalItems,
+        'recentPosts': results[0].totalItems,
+        'totalServers': results[1].totalItems,
+        'feedbackCount': results[2].totalItems,
+        'totalSources': results[3].totalItems,
       };
     } catch (e) {
       AppLogger.instance.error('Admin istatistikleri alınamadı: $e');
@@ -125,6 +127,7 @@ class AdminService {
         'recentPosts': 0,
         'totalServers': 0,
         'feedbackCount': 0,
+        'totalSources': 0,
       };
     }
   }

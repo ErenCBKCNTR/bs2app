@@ -139,7 +139,7 @@ class NotificationService {
     final androidPlugin = _localNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin != null) {
       await androidPlugin.createNotificationChannel(const AndroidNotificationChannel(
-        'high_importance_channel_v4',
+        'high_importance_channel_v5',
         'Mesaj Bildirimleri',
         description: 'Bu kanal üzerinden mesaj bildirimleri gelir.',
         importance: Importance.max,
@@ -149,7 +149,7 @@ class NotificationService {
       ));
 
       await androidPlugin.createNotificationChannel(const AndroidNotificationChannel(
-        'call_channel_v4',
+        'call_channel_v5',
         'Gelen Aramalar',
         description: 'Gelen çağrılar için tam ekran bildirim kanalı',
         importance: Importance.max,
@@ -204,7 +204,7 @@ class NotificationService {
         body,
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'high_importance_channel_v4', 
+            'high_importance_channel_v5', 
             'Mesaj Bildirimleri', 
             channelDescription: 'Bu kanal üzerinden mesaj bildirimleri gelir.',
             importance: Importance.max,
@@ -226,7 +226,7 @@ class NotificationService {
   Future<void> showCallNotification(String title, String body, String chatId) async {
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'call_channel_v4',
+      'call_channel_v5',
       'Gelen Aramalar',
       channelDescription: 'Gelen çağrılar için tam ekran bildirim kanalı',
       importance: Importance.max,
