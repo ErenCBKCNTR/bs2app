@@ -150,7 +150,9 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
           final description = ProfanityFilter.filter(server.description.isEmpty ? 'Hoş geldiniz!' : server.description);
           final hasPassword = server.password != null && server.password!.isNotEmpty;
           final capacityStr = '${server.capacity}';
-          final encryptedText = hasPassword ? 'ş          return FutureBuilder<int>(
+          final encryptedText = hasPassword ? 'şifreli ' : '';
+
+          return FutureBuilder<int>(
             future: ChatServerService().getOnlineMemberCount(server.id),
             builder: (context, snapshot) {
               final onlineCount = snapshot.data ?? 0;

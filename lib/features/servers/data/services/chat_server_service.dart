@@ -242,7 +242,7 @@ class ChatServerService {
 
   Future<int> getOnlineMemberCount(String serverId) async {
     try {
-      final nowStr = DateTime.now().toUtc().subtract(const Duration(seconds: 45)).toIsoString().replaceAll('T', ' ');
+      final nowStr = DateTime.now().toUtc().subtract(const Duration(seconds: 45)).toIso8601String().replaceAll('T', ' ');
       final records = await _pb.collection('server_memberships').getFullList(
         filter: 'server_id = "$serverId" && last_active >= "$nowStr"',
       );
@@ -271,14 +271,14 @@ class ChatServerService {
         'server_id = "$serverId" && user_id = "$currentUserId"',
       );
       await _pb.collection('server_memberships').update(record.id, body: {
-        'last_active': DateTime.now().toUtc().toIsoString(),
+        'last_active': DateTime.now().toUtc().toIso8601String(),
       });
     } catch (_) {}
   }
 
   Future<void> cleanupGhostUsers() async {
     try {
-      final nowStr = DateTime.now().toUtc().subtract(const Duration(seconds: 45)).toIsoString().replaceAll('T', ' ');
+      final nowStr = DateTime.now().toUtc().subtract(const Duration(seconds: 45)).toIso8601String().replaceAll('T', ' ');
       final records = await _pb.collection('server_memberships').getFullList(
         filter: 'last_active < "$nowStr"',
       );
