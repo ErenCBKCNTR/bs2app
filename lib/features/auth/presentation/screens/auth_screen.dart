@@ -58,12 +58,33 @@ class _AuthScreenState extends State<AuthScreen> {
           await NotificationService().syncWithServer();
         } on ClientException catch (signUpError) {
           if (mounted) {
-            String errorMessage = signUpError.response['message'] ?? signUpError.toString();
-            if (signUpError.response['data'] != null) {
-               errorMessage += " Details: ${signUpError.response['data']}";
+            String errorMessage = 'Kayıt sırasında bir hata oluştu.';
+            if (signUpError.response.isNotEmpty && signUpError.response['data'] != null) {
+              final data = signUpError.response['data'] as Map<String, dynamic>;
+              final List<String> errors = [];
+              if (data['email'] != null) {
+                errors.add('E-posta: Geçerli bir e-posta adresi giriniz veya bu e-posta zaten kullanımda.');
+              }
+              if (data['password'] != null) {
+                errors.add('Şifre: En az 8 karakter uzunluğunda olmalıdır.');
+              }
+              if (data['username'] != null) {
+                errors.add('Kullanıcı Adı: Geçersiz veya kullanımda (en az 3 karakter boşluksuz).');
+              }
+              
+              if (errors.isNotEmpty) {
+                errorMessage = errors.join('\n');
+              } else {
+                errorMessage = signUpError.response['message'] ?? signUpError.toString();
+              }
+            } else {
+              errorMessage = signUpError.response['message'] ?? signUpError.toString();
             }
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Kayıt hatası: $errorMessage')),
+              SnackBar(
+                content: Text(errorMessage),
+                duration: const Duration(seconds: 4),
+              ),
             );
           }
         }

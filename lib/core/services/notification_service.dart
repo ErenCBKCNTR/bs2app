@@ -52,7 +52,7 @@ class NotificationService {
   Future<void> _initForBackground() async {
     if (_isInitialized) return;
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('ic_launcher');
+        AndroidInitializationSettings('@mipmap/ic_launcher');
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
     );

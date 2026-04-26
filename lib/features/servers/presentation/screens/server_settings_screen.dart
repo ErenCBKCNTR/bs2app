@@ -122,7 +122,7 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Üyeyi Uzaklaştır'),
-        content: Text('${user.getStringValue('full_name')} bu sunucudan uzaklaştırılsın mı?'),
+        content: Text('${user.getStringValue('username')} bu sunucudan uzaklaştırılsın mı?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
           TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Uzaklaştır', style: TextStyle(color: Colors.red))),
@@ -153,7 +153,7 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Üyeyi Yasakla (Banla)'),
-        content: Text('${user.getStringValue('full_name')} adlı kullanıcı sunucudan kalıcı olarak yasaklansın mı? Bir daha giriş yapamayacak.'),
+        content: Text('${user.getStringValue('username')} adlı kullanıcı sunucudan kalıcı olarak yasaklansın mı? Bir daha giriş yapamayacak.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
           TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Yasakla', style: TextStyle(color: Colors.red))),
@@ -184,7 +184,7 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Yasaklamayı Kaldır'),
-        content: Text('${user.getStringValue('full_name')} adlı kullanıcının yasağı kaldırılsın mı?'),
+        content: Text('${user.getStringValue('username')} adlı kullanıcının yasağı kaldırılsın mı?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
           TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Yasağı Kaldır')),
@@ -374,7 +374,7 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
         final user = membership.expand['user_id']?[0];
         if (user == null) return const SizedBox.shrink();
 
-        final userName = ProfanityFilter.filter(user.getStringValue('full_name'));
+        final userName = ProfanityFilter.filter(user.getStringValue('username'));
         final isCreator = user.id == widget.server.creatorId;
         final isAdmin = widget.server.admins.contains(user.id);
         final isMe = user.id == ChatServerService().currentUserId;
@@ -466,7 +466,7 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
         final user = ban.expand['user_id']?[0];
         if (user == null) return const SizedBox.shrink();
 
-        final userName = ProfanityFilter.filter(user.getStringValue('full_name'));
+        final userName = ProfanityFilter.filter(user.getStringValue('username'));
 
         return Semantics(
           customSemanticsActions: {
