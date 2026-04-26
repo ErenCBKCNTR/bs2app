@@ -7,6 +7,8 @@ import 'package:blind_social/core/utils/profanity_filter.dart';
 import 'package:blind_social/features/servers/presentation/screens/chat_room_detail_screen.dart';
 import 'package:blind_social/features/servers/presentation/screens/server_settings_screen.dart';
 
+import 'package:pocketbase/pocketbase.dart';
+
 class ChatServerRoomsScreen extends StatefulWidget {
   final ChatServer server;
   const ChatServerRoomsScreen({super.key, required this.server});
@@ -19,6 +21,7 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> with Widg
   late ChatServer _server;
   List<ChatServerRoom> _rooms = [];
   bool _isLoading = true;
+  UnsubscribeFunc? _serverSub;
 
   @override
   void initState() {
@@ -29,6 +32,16 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> with Widg
     
     // Start Heartbeat
     ChatServerService().startHeartbeat(_server.id);
+    
+    // Monitor server deletion
+    ChatServerService().subscribeToServers((e) {
+      if (e.action == 'delete' && e.record?.id == _server.id) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sunucu kapatıldı. Ana sayfaya yönlendiriliyorsunuz.')));
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      }
+    }).then((sub) => _serverSub = sub);
     
     // Ekran okuyucu için sunucuya katılma bildirimi
     SemanticsService.announce(
@@ -41,6 +54,7 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> with Widg
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     ChatServerService().stopHeartbeat();
+    _serverSub?.call();
     super.dispose();
   }
 
@@ -162,14 +176,24 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> with Widg
                         description: descController.text.trim(),
                         type: roomType,
                       );
+                      
+                      SemanticsService.announce("$name isimli oda başarıyla oluşturulmuştur.", TextDirection.ltr);
+
                       if (context.mounted) {
                         Navigator.pop(context);
                         _fetchRooms();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                           SnackBar(content: Text('$name isimli oda başarıyla oluşturuldu.')),
+                        );
                       }
                     } catch (e) {
+                      String errorMsg = e.toString();
+                      if (errorMsg.contains('20 oda oluşturulabilir')) {
+                        errorMsg = 'Bir sunucuda en fazla 20 oda oluşturulabilir.';
+                      }
                       setStateDialog(() => isSaving = false);
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $errorMsg')));
                       }
                     }
                   },
@@ -204,15 +228,19 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> with Widg
                     builder: (context) => ServerSettingsScreen(server: _server),
                   ),
                 );
-                if (updated == true && mounted) {
-                  // Server ayarları değişti, objeyi güncelle.
-                  final updatedServer = await ChatServerService().getServer(_server.id);
-                  if (mounted) {
-                    setState(() {
-                      _server = updatedServer;
-                    });
+                if (mounted) {
+                  // Her durumda odaları yenile (oda silinmiş olabilir)
+                  _fetchRooms();
+                  
+                  if (updated == true) {
+                    // Server ayarları değişti, objeyi güncelle.
+                    final updatedServer = await ChatServerService().getServer(_server.id);
+                    if (mounted) {
+                      setState(() {
+                        _server = updatedServer;
+                      });
+                    }
                   }
-                  _fetchRooms(); 
                 }
               },
               tooltip: 'Sunucu Ayarları',

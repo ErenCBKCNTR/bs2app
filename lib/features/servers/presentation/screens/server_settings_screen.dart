@@ -27,11 +27,13 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
   List<RecordModel> _bans = [];
   bool _isLoadingBans = true;
   bool _canMembersCreateRooms = false;
+  List<ChatServerRoom> _rooms = [];
+  bool _isLoadingRooms = true;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _nameController = TextEditingController(text: widget.server.name);
     _descController = TextEditingController(text: widget.server.description);
     _passwordController = TextEditingController(text: widget.server.password ?? '');
@@ -39,6 +41,23 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
     _canMembersCreateRooms = widget.server.canMembersCreateRooms;
     _fetchMembers();
     _fetchBans();
+    _fetchRooms();
+  }
+
+  Future<void> _fetchRooms() async {
+    try {
+      final rooms = await ChatServerService().getRooms(widget.server.id);
+      if (mounted) {
+        setState(() {
+          _rooms = rooms;
+          _isLoadingRooms = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingRooms = false);
+      }
+    }
   }
 
   @override
@@ -110,6 +129,37 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
       if (mounted) {
         setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sunucu güncellenemedi: $e')));
+      }
+    }
+  }
+
+  Future<void> _confirmDeleteServer() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sunucuyu Sil'),
+        content: const Text('Sunucuyu tamamen silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Evet, Sil', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isSaving = true);
+      try {
+        await ChatServerService().deleteServer(widget.server.id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sunucu silindi.')));
+          // Navigate to home / root, which triggers refreshing of servers
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isSaving = false);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Silinirken hata: $e')));
+        }
       }
     }
   }
@@ -214,8 +264,10 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
         title: const Text('Sunucu Ayarları'),
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: true,
           tabs: const [
             Tab(icon: Icon(Icons.settings), text: 'Genel'),
+            Tab(icon: Icon(Icons.meeting_room), text: 'Odalar'),
             Tab(icon: Icon(Icons.people), text: 'Üyeler'),
             Tab(icon: Icon(Icons.block), text: 'Yasaklılar'),
           ],
@@ -226,6 +278,7 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
           controller: _tabController,
           children: [
             _buildGeneralSettingsTab(),
+            _buildRoomsTab(),
             _buildMembersTab(),
             _buildBansTab(),
           ],
@@ -358,7 +411,85 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
                 : const Text('Değişiklikleri Kaydet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(height: 16),
+          if (ChatServerService().currentUserId == widget.server.creatorId)
+            ElevatedButton(
+              onPressed: _isSaving ? null : _confirmDeleteServer,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Sunucuyu Sil', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+          const SizedBox(height: 16),
         ],
+      ),
+    );
+  }
+
+  Future<void> _deleteRoom(ChatServerRoom room) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Odayı Sil'),
+        content: Text('${room.name} odasını silmek istediğinize emin misiniz?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sil', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await ChatServerService().deleteRoom(room.id);
+        _fetchRooms();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Oda silindi')));
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        }
+      }
+    }
+  }
+
+  Widget _buildRoomsTab() {
+    if (_isLoadingRooms) return const Center(child: CircularProgressIndicator());
+    if (_rooms.isEmpty) return const Center(child: Text('Oda bulunamadı.'));
+
+    final imCreator = ChatServerService().currentUserId == widget.server.creatorId;
+
+    return Semantics(
+      label: imCreator ? 'Odalar sekmesi. Odaları silmek için ilgili odanın üzerindeyken işlemler menüsünden odayı sil seçeneğini kullanabilirsiniz (tek parmakla yukarı ve aşağı kaydırarak).' : 'Odalar sekmesi',
+      child: ListView.builder(
+        itemCount: _rooms.length,
+        itemBuilder: (context, index) {
+          final room = _rooms[index];
+          return Semantics(
+            customSemanticsActions: {
+              if (imCreator)
+                CustomSemanticsAction(label: 'Odayı sil'): () {
+                  _deleteRoom(room);
+                },
+            },
+            child: ListTile(
+              leading: Icon(room.type.name == 'audio' ? Icons.headset_mic : Icons.tag),
+              title: Text(room.name),
+              subtitle: Text(room.description.isNotEmpty ? room.description : 'Açıklama yok'),
+              trailing: imCreator
+                ? ExcludeSemantics(
+                    child: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => _deleteRoom(room),
+                    ),
+                  )
+                : null,
+            ),
+          );
+        },
       ),
     );
   }

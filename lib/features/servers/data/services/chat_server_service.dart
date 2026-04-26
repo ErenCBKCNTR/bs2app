@@ -108,12 +108,30 @@ class ChatServerService {
     return records.map((r) => ChatServerRoom.fromRecord(r)).toList();
   }
 
+  Future<void> deleteServer(String serverId) async {
+    await _pb.collection('chat_servers').delete(serverId);
+  }
+
+  Future<void> deleteRoom(String roomId) async {
+    await _pb.collection('chat_server_rooms').delete(roomId);
+  }
+
   Future<ChatServerRoom> createRoom({
     required String serverId,
     required String name,
     required String description,
     required RoomType type,
   }) async {
+    // 1. Oda limiti kontrolü (Max 20)
+    final existingRooms = await _pb.collection('chat_server_rooms').getList(
+      page: 1,
+      perPage: 1,
+      filter: 'server_id = "$serverId"',
+    );
+    if (existingRooms.totalItems >= 20) {
+      throw Exception('Bir sunucuda en fazla 20 oda oluşturulabilir');
+    }
+
     // 2. Create the room
     final body = {
       'server_id': serverId,
