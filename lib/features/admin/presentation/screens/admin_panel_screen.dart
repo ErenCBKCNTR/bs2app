@@ -307,6 +307,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                   }
                 } catch (e) {
                   AppLogger.instance.error("Update settings error: $e");
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Hata: PocketBase ayarları güncellenemedi. Lütfen veritabanınızda app_settings adında bir koleksiyon oluşturun ve current_version ile apk_url alanlarının (text tipinde) olduğundan emin olun! Detay: $e'),
+                        duration: const Duration(seconds: 8),
+                      ),
+                    );
+                  }
                 }
               },
               child: const Text('Kaydet'),

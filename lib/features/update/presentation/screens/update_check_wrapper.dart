@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
+import 'package:blind_social/core/utils/logger.dart';
 
 class UpdateCheckWrapper extends StatefulWidget {
   final Widget child;
@@ -34,6 +35,8 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
         final dbVersion = setting.getStringValue('current_version');
         final apkUrl = setting.getStringValue('apk_url');
         
+        AppLogger.instance.info("Güncelleme Kontrolü: Cihaz sürümü = $currentVersion, DB Sürümü = $dbVersion");
+        
         if (dbVersion.isNotEmpty && _compareVersions(currentVersion, dbVersion) < 0) {
           if (mounted) {
             setState(() {
@@ -46,6 +49,7 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
         }
       }
     } catch (e) {
+      AppLogger.instance.error("Update check failed: $e");
       debugPrint("Update check failed: $e");
     }
     
