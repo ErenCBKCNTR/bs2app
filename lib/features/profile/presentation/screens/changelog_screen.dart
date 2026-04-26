@@ -13,6 +13,19 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            version: '1.6.4',
+            date: '26 Nisan 2026',
+            changes: [
+              'Yeni: Sohbet sunucuları için dinamik kişi sayısı kapasite sistemi eklendi.',
+              'İyileştirme: Ekran okuyucu kullanıcıları için sunucu listesinde kişi kapasitesi ("Şu anda sunucuda x kişi var" şeklinde) sesli dinleme deneyimine katıldı.',
+              'İyileştirme: Sunuculardaki hayalet kullanıcı sorunu çözüldü! Kullanıcılar oyundan (veya uygulamadan) düştüğünde sunucuda boş yer açılması için otomatik temizleyici entegre edildi.',
+              'Yeni: Sunucu kurucuları artık istenmeyen üyeleri sunucudan "Yasaklama (Ban)" işlemiyle kalıcı olarak uzaklaştırabilir.',
+              'Yeni: Sunucu ayarlarında "Yasaklılar" listesi oluşturuldu, dilediğiniz kullanıcının engeli yine bu sekmeden kaldırılabilir.',
+            ],
+            isLatest: true,
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
             version: '1.6.3',
             date: '23 Nisan 2026',
             changes: [
@@ -22,7 +35,7 @@ class ChangelogScreen extends StatelessWidget {
               'Yeni: Kampanyaları sosyal medyada ve WhatsApp üzerinden paylaşabilmeniz için "Paylaş" butonu eklendi.',
               'İyileştirme: Kampanyalar uygulamaya özel önbellekleme mimarisine geçirilerek yükleme süreleri anında açılacak şekilde (veriden tasarrufu edilerek) hızlandırıldı.',
             ],
-            isLatest: true,
+            isLatest: false,
           ),
           const SizedBox(height: 24),
           _buildVersionSection(

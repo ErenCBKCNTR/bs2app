@@ -15,7 +15,7 @@ class ChatServerRoomsScreen extends StatefulWidget {
   State<ChatServerRoomsScreen> createState() => _ChatServerRoomsScreenState();
 }
 
-class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
+class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> with WidgetsBindingObserver {
   late ChatServer _server;
   List<ChatServerRoom> _rooms = [];
   bool _isLoading = true;
@@ -23,14 +23,34 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _server = widget.server;
     _fetchRooms();
+    
+    // Start Heartbeat
+    ChatServerService().startHeartbeat(_server.id);
     
     // Ekran okuyucu için sunucuya katılma bildirimi
     SemanticsService.announce(
       "Şu anda ${ProfanityFilter.filter(_server.name)} isimli sunucuya bağlandınız.", 
       TextDirection.ltr,
     );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    ChatServerService().stopHeartbeat();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      ChatServerService().stopHeartbeat();
+    } else if (state == AppLifecycleState.resumed) {
+      ChatServerService().startHeartbeat(_server.id);
+    }
   }
 
   Future<void> _fetchRooms() async {

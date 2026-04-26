@@ -26,6 +26,7 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
   @override
   void initState() {
     super.initState();
+    ChatServerService().cleanupGhostUsers();
     _fetchServers();
     _setupSubscription();
   }
@@ -149,103 +150,126 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
           final description = ProfanityFilter.filter(server.description.isEmpty ? 'Hoş geldiniz!' : server.description);
           final hasPassword = server.password != null && server.password!.isNotEmpty;
           final capacityStr = '${server.capacity}';
-          final encryptedText = hasPassword ? 'şifreli ' : '';
+          final encryptedText = hasPassword ? 'ş          return FutureBuilder<int>(
+            future: ChatServerService().getOnlineMemberCount(server.id),
+            builder: (context, snapshot) {
+              final onlineCount = snapshot.data ?? 0;
+              final semanticLabel = 'Sunucu adı $serverName. Sunucu açıklaması $description. $capacityStr kişilik $encryptedText sunucu. Şu anda sunucuda $onlineCount kişi var.';
 
-          return Semantics(
-            label: 'Sunucu adı $serverName. Sunucu açıklaması $description. $capacityStr kişilik $encryptedText sunucu.',
-            onTapHint: 'Sunucuya katılmak için çift tıklayın',
-            excludeSemantics: true,
-            button: true,
-            child: Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              margin: EdgeInsets.zero,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () async {
-                  try {
-                    // Join if not a member, then navigate
-                    final isMember = await ChatServerService().isMember(server.id);
-                    if (!isMember) {
-                      // Şifre kontrolü
-                      if (server.password != null && server.password!.isNotEmpty) {
-                        final passwordConfirmed = await _showPasswordDialog(server.password!);
-                        if (!passwordConfirmed) return;
+              return Semantics(
+                label: semanticLabel,
+                onTapHint: 'Sunucuya katılmak için çift tıklayın',
+                excludeSemantics: true,
+                button: true,
+                child: Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  margin: EdgeInsets.zero,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () async {
+                      try {
+                        // Check if banned
+                        final isBanned = await ChatServerService().isBanned(server.id);
+                        if (isBanned) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bu sunucuya giriş yapamazsınız. Sunucudan yasaklandınız.')));
+                          }
+                          return;
+                        }
+
+                        // Check capacity
+                        if (onlineCount >= server.capacity) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sunucu kapasitesi dolu, giriş yapılamaz.')));
+                          }
+                          return;
+                        }
+
+                        // Join if not a member, then navigate
+                        final isMember = await ChatServerService().isMember(server.id);
+                        if (!isMember) {
+                          // Şifre kontrolü
+                          if (server.password != null && server.password!.isNotEmpty) {
+                            final passwordConfirmed = await _showPasswordDialog(server.password!);
+                            if (!passwordConfirmed) return;
+                          }
+
+                          await ChatServerService().joinServer(server.id);
+                        }
+                        
+                        if (context.mounted) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatServerRoomsScreen(server: server),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lütfen internet bağlantınızı kontrol edin.')));
+                        }
                       }
-
-                      await ChatServerService().joinServer(server.id);
-                    }
-                    
-                    if (context.mounted) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatServerRoomsScreen(server: server),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lütfen internet bağlantınızı kontrol edin.')));
-                    }
-                  }
-                },
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                        child: const Icon(Icons.dns, size: 20),
-                      ),
-                      if (hasPassword)
-                        const Icon(Icons.lock, size: 18, color: Colors.orange),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    serverName,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Expanded(
-                    child: Text(
-                      description,
-                      style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '$capacityStr Kişilik',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                child: const Icon(Icons.dns, size: 20),
+                              ),
+                              if (hasPassword)
+                                const Icon(Icons.lock, size: 18, color: Colors.orange),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            serverName,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Expanded(
+                            child: Text(
+                              description,
+                              style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '$onlineCount / $capacityStr',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          ),
+                ),
+              );
+            },
           );
         },
       ),

@@ -752,6 +752,16 @@
         "presentable": false,
         "unique": false,
         "options": {}
+      },
+      {
+        "system": false,
+        "id": "sm_last_active",
+        "name": "last_active",
+        "type": "date",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": "", "max": "" }
       }
     ],
     "indexes": [
@@ -886,5 +896,42 @@
       { "system": false, "id": "qg_is_single", "name": "is_singleplayer", "type": "bool", "required": false, "options": {} }
     ],
     "listRule": "@request.auth.id != ''", "viewRule": "@request.auth.id != ''", "createRule": "@request.auth.id != ''", "updateRule": "@request.auth.id != ''", "deleteRule": "@request.auth.id != ''"
+  },
+  {
+    "id": "col_server_bans",
+    "name": "server_bans",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "system": false,
+        "id": "sban_server",
+        "name": "server_id",
+        "type": "relation",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": { "collectionId": "col_chat_servers", "cascadeDelete": true, "minSelect": null, "maxSelect": 1, "displayFields": null }
+      },
+      {
+        "system": false,
+        "id": "sban_user",
+        "name": "user_id",
+        "type": "relation",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": { "collectionId": "_pb_users_auth_", "cascadeDelete": true, "minSelect": null, "maxSelect": 1, "displayFields": null }
+      }
+    ],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_server_ban` ON `server_bans` (`server_id`, `user_id`)"
+    ],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.id != ''",
+    "updateRule": "@request.auth.id != ''",
+    "deleteRule": "@request.auth.id != ''",
+    "options": {}
   }
 ]

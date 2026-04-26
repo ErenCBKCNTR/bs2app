@@ -23,18 +23,21 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
   bool _isSaving = false;
   List<RecordModel> _members = [];
   bool _isLoadingMembers = true;
+  List<RecordModel> _bans = [];
+  bool _isLoadingBans = true;
   bool _canMembersCreateRooms = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _nameController = TextEditingController(text: widget.server.name);
     _descController = TextEditingController(text: widget.server.description);
     _passwordController = TextEditingController(text: widget.server.password ?? '');
     _capacity = widget.server.capacity;
     _canMembersCreateRooms = widget.server.canMembersCreateRooms;
     _fetchMembers();
+    _fetchBans();
   }
 
   @override
@@ -58,6 +61,22 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingMembers = false);
+      }
+    }
+  }
+
+  Future<void> _fetchBans() async {
+    try {
+      final bans = await ChatServerService().getServerBans(widget.server.id);
+      if (mounted) {
+        setState(() {
+          _bans = bans;
+          _isLoadingBans = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingBans = false);
       }
     }
   }
@@ -102,7 +121,7 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Üyeyi Uzaklaştır'),
-        content: Text('${user.getStringValue('name')} bu sunucudan uzaklaştırılsın mı?'),
+        content: Text('${user.getStringValue('full_name')} bu sunucudan uzaklaştırılsın mı?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
           TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Uzaklaştır', style: TextStyle(color: Colors.red))),
@@ -115,7 +134,69 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
         await ChatServerService().removeMember(widget.server.id, user.id);
         _fetchMembers();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Üye uzaklaştırıldı.')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Üye uzaklaştırıldı')));
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        }
+      }
+    }
+  }
+
+  Future<void> _banMember(RecordModel membership) async {
+    final user = membership.expand['user_id']?[0];
+    if (user == null) return;
+    
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Üyeyi Yasakla (Banla)'),
+        content: Text('${user.getStringValue('full_name')} adlı kullanıcı sunucudan kalıcı olarak yasaklansın mı? Bir daha giriş yapamayacak.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Yasakla', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await ChatServerService().banMember(widget.server.id, user.id);
+        _fetchMembers();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Üye başarıyla yasaklandı.')));
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        }
+      }
+    }
+  }
+
+  Future<void> _unbanMember(RecordModel ban) async {
+    final user = ban.expand['user_id']?[0];
+    if (user == null) return;
+    
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Yasaklamayı Kaldır'),
+        content: Text('${user.getStringValue('full_name')} adlı kullanıcının yasağı kaldırılsın mı?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Yasağı Kaldır')),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await ChatServerService().unbanMember(widget.server.id, user.id);
+        _fetchBans();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kullanıcının yasağı kaldırıldı.')));
         }
       } catch (e) {
         if (mounted) {
@@ -135,6 +216,7 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
           tabs: const [
             Tab(icon: Icon(Icons.settings), text: 'Genel'),
             Tab(icon: Icon(Icons.people), text: 'Üyeler'),
+            Tab(icon: Icon(Icons.block), text: 'Yasaklılar'),
           ],
         ),
       ),
@@ -144,6 +226,7 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
           children: [
             _buildGeneralSettingsTab(),
             _buildMembersTab(),
+            _buildBansTab(),
           ],
         ),
       ),
@@ -290,20 +373,33 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
         final user = membership.expand['user_id']?[0];
         if (user == null) return const SizedBox.shrink();
 
-        final userName = ProfanityFilter.filter(user.getStringValue('name'));
+        final userName = ProfanityFilter.filter(user.getStringValue('full_name'));
         final isCreator = user.id == widget.server.creatorId;
         final isAdmin = widget.server.admins.contains(user.id);
         final isMe = user.id == ChatServerService().currentUserId;
+        final imCreator = ChatServerService().currentUserId == widget.server.creatorId;
+        final imAdmin = widget.server.admins.contains(ChatServerService().currentUserId);
 
-        return ListTile(
-          leading: ExcludeSemantics(
+        return Semantics(
+          customSemanticsActions: {
+            if (!isCreator && !isMe && (imCreator || imAdmin))
+              CustomSemanticsAction(label: 'Sunucudan At'): () {
+                _kickMember(membership);
+              },
+            if (!isCreator && !isMe && imCreator)
+              CustomSemanticsAction(label: 'Kullanıcıyı Yasakla'): () {
+                _banMember(membership);
+              },
+          },
+          child: ListTile(
+            leading: ExcludeSemantics(
             child: CircleAvatar(
               child: Text(userName.isEmpty ? '?' : userName[0].toUpperCase()),
             ),
           ),
           title: Row(
             children: [
-              Text(userName),
+              Text(userName.isEmpty ? 'İsimsiz' : userName),
               if (isCreator) 
                 const Padding(padding: EdgeInsets.only(left: 8), child: Icon(Icons.star, color: Colors.amber, size: 16)),
               if (isAdmin && !isCreator)
@@ -313,13 +409,87 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
             ],
           ),
           subtitle: Text(isCreator ? 'Kurucu' : (isAdmin ? 'Yönetici' : 'Üye')),
-          trailing: (!isCreator && !isMe) 
-            ? IconButton(
-                icon: const Icon(Icons.person_remove, color: Colors.redAccent),
-                onPressed: () => _kickMember(membership),
-                tooltip: 'Sunucudan At',
+          trailing: (!isCreator && !isMe && (imCreator || imAdmin)) 
+            ? PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'kick') {
+                    _kickMember(membership);
+                  } else if (value == 'ban') {
+                    if (imCreator) {
+                      _banMember(membership);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yalnızca sunucu sahibi yasaklama işlemi yapabilir.')));
+                    }
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'kick',
+                    child: Row(
+                      children: [
+                        Icon(Icons.person_remove, color: Colors.orange, size: 20),
+                        SizedBox(width: 8),
+                        Text('Sunucudan At'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'ban',
+                    child: Row(
+                      children: [
+                        Icon(Icons.block, color: Colors.red, size: 20),
+                        SizedBox(width: 8),
+                        Text('Yasakla (Ban)'),
+                      ],
+                    ),
+                  ),
+                ],
               )
             : null,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBansTab() {
+    if (_isLoadingBans) return const Center(child: CircularProgressIndicator());
+    if (_bans.isEmpty) return const Center(child: Text('Yasaklı üye bulunamadı.'));
+
+    final imCreator = ChatServerService().currentUserId == widget.server.creatorId;
+
+    return ListView.builder(
+      itemCount: _bans.length,
+      itemBuilder: (context, index) {
+        final ban = _bans[index];
+        final user = ban.expand['user_id']?[0];
+        if (user == null) return const SizedBox.shrink();
+
+        final userName = ProfanityFilter.filter(user.getStringValue('full_name'));
+
+        return Semantics(
+          customSemanticsActions: {
+            if (imCreator)
+              CustomSemanticsAction(label: 'Yasak listesinden çıkar'): () {
+                _unbanMember(ban);
+              },
+          },
+          child: ListTile(
+            leading: ExcludeSemantics(
+              child: CircleAvatar(
+                backgroundColor: Colors.red.shade100,
+                child: Text(userName.isEmpty ? '?' : userName[0].toUpperCase(), style: TextStyle(color: Colors.red.shade900)),
+              ),
+            ),
+            title: Text(userName.isEmpty ? 'İsimsiz' : userName),
+            trailing: imCreator 
+              ? IconButton(
+                  icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                  onPressed: () => _unbanMember(ban),
+                  tooltip: 'Yasak listesinden çıkar',
+                )
+              : null,
+          ),
         );
       },
     );

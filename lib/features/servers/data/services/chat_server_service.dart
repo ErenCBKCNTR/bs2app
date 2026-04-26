@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:blind_social/features/servers/data/models/chat_server.dart';
 import 'package:blind_social/features/servers/data/models/chat_server_room.dart';
 import 'package:blind_social/features/servers/data/models/server_message.dart';
@@ -176,10 +177,53 @@ class ChatServerService {
   }
 
   Future<void> leaveServer(String serverId) async {
-    final record = await _pb.collection('server_memberships').getFirstListItem(
-      'server_id = "$serverId" && user_id = "${_pb.authStore.model.id}"',
+    try {
+      final record = await _pb.collection('server_memberships').getFirstListItem(
+        'server_id = "$serverId" && user_id = "${currentUserId}"',
+      );
+      await _pb.collection('server_memberships').delete(record.id);
+    } catch (_) {}
+  }
+
+  Future<void> banMember(String serverId, String userId) async {
+    // 1. Üyeyi sil
+    try {
+      await removeMember(serverId, userId);
+    } catch (_) {}
+
+    // 2. Ban tablosuna ekle
+    try {
+      await _pb.collection('server_bans').create(body: {
+        'server_id': serverId,
+        'user_id': userId,
+      });
+    } catch (_) {}
+  }
+
+  Future<List<RecordModel>> getServerBans(String serverId) async {
+    final records = await _pb.collection('server_bans').getFullList(
+      filter: 'server_id = "$serverId"',
+      expand: 'user_id',
     );
-    await _pb.collection('server_memberships').delete(record.id);
+    return records;
+  }
+
+  Future<void> unbanMember(String serverId, String userId) async {
+    final record = await _pb.collection('server_bans').getFirstListItem(
+      'server_id = "$serverId" && user_id = "$userId"',
+    );
+    await _pb.collection('server_bans').delete(record.id);
+  }
+
+  Future<bool> isBanned(String serverId) async {
+    try {
+      await _pb.collection('server_bans').getFirstListItem(
+        'server_id = "$serverId" && user_id = "${currentUserId}"',
+      );
+      return true; // Ban bulunursa true
+    } catch (_) {
+      return false; // Ban yoksa false
+    }
   }
 
   Future<bool> isMember(String serverId) async {
@@ -191,5 +235,56 @@ class ChatServerService {
     } catch (_) {
       return false;
     }
+  }
+
+  // PRESENCE & CAPACITY
+  Timer? _heartbeatTimer;
+
+  Future<int> getOnlineMemberCount(String serverId) async {
+    try {
+      final nowStr = DateTime.now().toUtc().subtract(const Duration(seconds: 45)).toIsoString().replaceAll('T', ' ');
+      final records = await _pb.collection('server_memberships').getFullList(
+        filter: 'server_id = "$serverId" && last_active >= "$nowStr"',
+      );
+      return records.length;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  void startHeartbeat(String serverId) {
+    _heartbeatTimer?.cancel();
+    _pingPresence(serverId);
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 20), (timer) {
+      _pingPresence(serverId);
+    });
+  }
+
+  void stopHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+  }
+
+  Future<void> _pingPresence(String serverId) async {
+    try {
+      final record = await _pb.collection('server_memberships').getFirstListItem(
+        'server_id = "$serverId" && user_id = "$currentUserId"',
+      );
+      await _pb.collection('server_memberships').update(record.id, body: {
+        'last_active': DateTime.now().toUtc().toIsoString(),
+      });
+    } catch (_) {}
+  }
+
+  Future<void> cleanupGhostUsers() async {
+    try {
+      final nowStr = DateTime.now().toUtc().subtract(const Duration(seconds: 45)).toIsoString().replaceAll('T', ' ');
+      final records = await _pb.collection('server_memberships').getFullList(
+        filter: 'last_active < "$nowStr"',
+      );
+      for (final r in records) {
+        await _pb.collection('server_memberships').delete(r.id);
+      }
+    } catch (_) {}
   }
 }
