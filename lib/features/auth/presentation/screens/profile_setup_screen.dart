@@ -126,55 +126,71 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Kayıt İşlemini Tamamlayın',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+            Semantics(
+              label: 'Kör Sosyal Ağına Hoş Geldiniz. Lütfen profil bilgilerinizi tamamlayın.',
+              child: const Text(
+                'Kayıt İşlemini Tamamlayın',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
             ),
             const SizedBox(height: 32),
-            TextFormField(
-              controller: _fullNameController,
-              decoration: const InputDecoration(
-                labelText: 'İsim Soyisim',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.badge),
+            Semantics(
+              label: 'İsim ve Soyisminizi giriniz.',
+              child: TextFormField(
+                controller: _fullNameController,
+                decoration: const InputDecoration(
+                  labelText: 'İsim Soyisim',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.badge),
+                ),
+                textInputAction: TextInputAction.next,
+                textCapitalization: TextCapitalization.words,
               ),
-              textInputAction: TextInputAction.next,
-              textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _usernameController,
-              decoration: const InputDecoration(
-                labelText: 'Kullanıcı Adı',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.person),
+            Semantics(
+              label: 'Kendinize boşluksuz ve en az 3 karakterden oluşan bir kullanıcı adı belirleyin.',
+              child: TextFormField(
+                controller: _usernameController,
+                decoration: const InputDecoration(
+                  labelText: 'Kullanıcı Adı',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person),
+                ),
+                textInputAction: TextInputAction.next,
               ),
-              textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _dobController,
-              keyboardType: TextInputType.datetime,
-              decoration: const InputDecoration(
-                labelText: 'Doğum Tarihi (GG/AA/YYYY)',
-                hintText: 'Örn: 15/08/1995',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.calendar_today),
+            Semantics(
+              label: 'Doğum tarihinizi gün, ay ve yıl olarak bitişik şekilde giriniz veya araya eğik çizgi ekleyiniz. Örneğin 15081995.',
+              child: TextFormField(
+                controller: _dobController,
+                keyboardType: TextInputType.datetime,
+                decoration: const InputDecoration(
+                  labelText: 'Doğum Tarihi (GG/AA/YYYY)',
+                  hintText: 'Örn: 15/08/1995 veya 15081995',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.calendar_today),
+                ),
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _saveProfile(),
               ),
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _saveProfile(),
             ),
             const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _saveProfile,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Semantics(
+              label: 'Kaydet ve Başla. Profil bilgilerinizi kaydederek uygulamayı kullanmaya başlayın.',
+              button: true,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _saveProfile,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Kaydet ve Başla'),
               ),
-              child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Kaydet ve Başla'),
             ),
           ],
         ),

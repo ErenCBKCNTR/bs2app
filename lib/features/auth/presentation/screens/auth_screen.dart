@@ -315,39 +315,43 @@ class _AuthScreenState extends State<AuthScreen> {
               semanticsLabel: 'Kör Sosyal Ağına Hoş Geldiniz. Lütfen giriş yöntemi seçin.',
             ),
             const SizedBox(height: 32),
-            OutlinedButton.icon(
-              onPressed: _isLoading ? null : _authenticateWithGoogle,
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                backgroundColor: Theme.of(context).brightness == Brightness.dark 
-                    ? Colors.white.withOpacity(0.05) 
-                    : Colors.white,
-                side: BorderSide(
-                  color: Theme.of(context).brightness == Brightness.dark 
-                      ? Colors.white24 
-                      : Colors.grey,
+            Semantics(
+              button: true,
+              label: 'Google hesabınız ile hızlı giriş yapın veya kayıt olun.',
+              child: OutlinedButton.icon(
+                onPressed: _isLoading ? null : _authenticateWithGoogle,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.white.withOpacity(0.05) 
+                      : Colors.white,
+                  side: BorderSide(
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white24 
+                        : Colors.grey,
+                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              icon: Image.network(
-                'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
-                height: 24,
-                width: 24,
-                errorBuilder: (context, error, stackTrace) => Icon(
-                  Icons.g_mobiledata, 
-                  size: 24,
-                  color: Theme.of(context).brightness == Brightness.dark 
-                      ? Colors.white 
-                      : Colors.black87,
+                icon: Image.network(
+                  'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                  height: 24,
+                  width: 24,
+                  errorBuilder: (context, error, stackTrace) => Icon(
+                    Icons.g_mobiledata, 
+                    size: 24,
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white 
+                        : Colors.black87,
+                  ),
                 ),
-              ),
-              label: Text(
-                'Google ile Devam Et',
-                style: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.dark 
-                      ? Colors.white 
-                      : Colors.black87, 
-                  fontWeight: FontWeight.w600,
+                label: Text(
+                  'Google ile Devam Et',
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white 
+                        : Colors.black87, 
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -363,38 +367,50 @@ class _AuthScreenState extends State<AuthScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'E-posta Adresi',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.email),
+            Semantics(
+              label: 'E-posta adresinizi giriniz.',
+              child: TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'E-posta Adresi',
+                  hintText: 'ornek@eposta.com',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email),
+                ),
+                textInputAction: TextInputAction.next,
               ),
-              textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Şifre',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.lock),
+            Semantics(
+              label: 'Şifrenizi giriniz. Eğer hesabınız yoksa belirleyeceğiniz şifre en az 8 karakter olmalıdır.',
+              child: TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Şifre',
+                  hintText: 'En az 8 karakter',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.lock),
+                ),
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _authenticate(),
               ),
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _authenticate(),
             ),
             const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _authenticate,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Semantics(
+              label: 'Devam Et. Kayıtlı e-posta ise giriş yapar, değilse yeni hesap oluşturur.',
+              button: true,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _authenticate,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Devam Et'),
               ),
-              child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Devam Et'),
             ),
             const SizedBox(height: 16),
             const Text(

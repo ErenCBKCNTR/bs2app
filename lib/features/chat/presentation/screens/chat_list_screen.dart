@@ -23,6 +23,7 @@ import 'package:vibration/vibration.dart';
 import 'package:blind_social/core/services/settings_service.dart';
 import 'package:blind_social/features/servers/data/services/chat_server_service.dart';
 import 'package:blind_social/features/servers/presentation/screens/chat_servers_screen.dart';
+import 'package:blind_social/features/servers/presentation/screens/chat_server_rooms_screen.dart' as blind_social_server_rooms;
 import 'package:blind_social/features/admin/presentation/screens/admin_panel_screen.dart';
 import 'package:blind_social/features/admin/data/services/admin_service.dart';
 import 'chat_detail_screen.dart';
@@ -740,7 +741,7 @@ Widget? _buildFAB() {
                     setStateDialog(() => isSaving = true);
                     
                     try {
-                      await ChatServerService().createServer(
+                      final createdServer = await ChatServerService().createServer(
                         name: name,
                         description: '', // Açıklama varsayılan olarak boş
                         capacity: capacity,
@@ -749,28 +750,43 @@ Widget? _buildFAB() {
                       );
                       
                       if (context.mounted) {
-                        Navigator.pop(context);
+                        Navigator.pop(context); // Dialogu kapat
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Sunucu başarıyla oluşturuldu!')),
                         );
+                        
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => blind_social_server_rooms.ChatServerRoomsScreen(server: createdServer),
+                          ),
+                        ).then((_) {
+                           _refresh(); 
+                        });
                       }
-                      _refresh(); 
                     } catch (e) {
                       AppLogger.instance.error('Sunucu oluşturulurken hata: $e');
                       setStateDialog(() => isSaving = false);
                       
                       String errorMsg = e.toString();
+                      bool shouldCloseDialog = false;
+                      
                       if (errorMsg.contains('validation_min_text_constraint')) {
                         errorMsg = 'Sunucu adı en az 3 karakter olmalıdır.';
                       } else if (errorMsg.contains('Kullanıcı en fazla 3 adet')) {
                         errorMsg = 'Kullanıcı en fazla 3 adet sunucu oluşturabilir';
+                        shouldCloseDialog = true;
                       } else if (errorMsg.contains('Bir günde en fazla 2 adet')) {
                         errorMsg = 'Bir günde en fazla 2 adet sunucu oluşturabilirsiniz';
+                        shouldCloseDialog = true;
                       } else if (errorMsg.contains('ClientException')) {
                         errorMsg = 'Sunucu oluşturulamadı. Lütfen tekrar deneyin.';
                       }
 
                       if (context.mounted) {
+                        if (shouldCloseDialog) {
+                           Navigator.pop(context); // Limite takıldıysa pencereyi kapat
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(errorMsg)),
                         );
