@@ -1,8 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:blind_social/features/games/presentation/screens/quiz_lobby_screen.dart';
 
-class GamesScreen extends StatelessWidget {
+class GamesScreen extends StatefulWidget {
   const GamesScreen({super.key});
+
+  @override
+  State<GamesScreen> createState() => _GamesScreenState();
+}
+
+class _GamesScreenState extends State<GamesScreen> {
+  final FocusNode _titleFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _titleFocusNode.requestFocus();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _titleFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,10 +39,13 @@ class GamesScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Hoş Geldiniz! Oynamak istediğiniz oyunu seçin.',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
+              Focus(
+                focusNode: _titleFocusNode,
+                child: const Text(
+                  'Hoş Geldiniz! Oynamak istediğiniz oyunu seçin.',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
               ),
               const SizedBox(height: 24),
               Card(

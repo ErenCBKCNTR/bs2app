@@ -143,6 +143,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       // Correct feedback (short, short, long)
       Vibration.vibrate(pattern: [0, 100, 50, 100, 50, 300]);
       try {
+        await player.setVolume(0.5);
         await player.play(UrlSource('https://api.cabukcan.com/sounds/games/quiz/dogru_cevap.mp3'));
       } catch (e) {
         AppLogger.instance.error('Doğru cevap sesi çalınamadı: $e');
@@ -151,6 +152,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       // Wrong feedback (long, long)
       Vibration.vibrate(pattern: [0, 400, 100, 400]);
       try {
+        await player.setVolume(1.0);
         await player.play(UrlSource('https://api.cabukcan.com/sounds/games/quiz/yanlis_cevap.mp3'));
       } catch (e) {
         AppLogger.instance.error('Yanlış cevap sesi çalınamadı: $e');
@@ -292,8 +294,12 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     final myId = PocketBaseService.client.authStore.model!.id;
 
     if (currentIndex != _currentQuestionIndex) {
+      final prevIndex = _currentQuestionIndex;
       _currentQuestionIndex = currentIndex;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (prevIndex != -1) {
+          await Future.delayed(const Duration(seconds: 4));
+        }
         if (mounted && _questionFocusNode.canRequestFocus) {
           _questionFocusNode.requestFocus();
           SemanticsService.announce(questions[currentIndex]['question'] ?? '', TextDirection.ltr);
