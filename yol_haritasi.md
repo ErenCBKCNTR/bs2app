@@ -28,6 +28,8 @@
 - [x] Pano detay/içerik sayfasında görsel modernleştirme ve liste arka planlarını renklendirme.
 - [x] Pano içerisinde listelerin tümü açılışta kapalı (daraltılmış) gelecek. Listeler ve görevler arası gezinmede Semantics ve DoubleTap özellikleri geliştirilecek.
 - [x] Pano içi liste ve görev işlemleri için ekran okuyucu uyumlu "İşlemler Menüsü (CustomSemanticsAction)" yapısı entegre edilecek.
+- [x] Ekran okuyucu ile görev tamamlanma/eklenme bildirimleri sırasında sayfanın yenilenmesi nedeniyle oluşan konuşmanın yarım kalması sorunu, "arkaplanda sessiz yükleme" mantığı ile çözülecek.
+- [x] Görev kartlarına odaklanıldığında ekran okuyucunun düzenleme/görüntüleme için çift tıklama ve işlemler menüsü bildirimlerini okuması sağlandı.
 
 ## 4. İşbirliği ve Paylaşım
 - [x] Panoya başka kullanıcıları davet etme işleminde artık E-Posta adresinin yanında Kullanıcı Adı girerek de arama desteklendi.

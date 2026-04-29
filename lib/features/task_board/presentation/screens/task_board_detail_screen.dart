@@ -32,8 +32,8 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
     _fetchData();
   }
 
-  Future<void> _fetchData() async {
-    setState(() => _isLoading = true);
+  Future<void> _fetchData({bool showLoading = true}) async {
+    if (showLoading) setState(() => _isLoading = true);
     try {
       final lists = await _service.getLists(widget.board.id);
       final Map<String, List<TaskItem>> tasksTemp = {};
@@ -52,7 +52,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted && showLoading) setState(() => _isLoading = false);
     }
   }
 
@@ -75,7 +75,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
         _sortLists();
       });
       final isPinned = _currentUserId != null && updated.pinnedBy.contains(_currentUserId);
-      SemanticsService.announce(isPinned ? "Liste başa tutturuldu" : "Listenin başa tutturulması kaldırıldı", TextDirection.ltr);
+      SemanticsService.announce(isPinned ? "${listM.name} isimli liste başa tutturuldu" : "${listM.name} isimli listenin başa tutturulması kaldırıldı", TextDirection.ltr);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
     }
@@ -85,10 +85,10 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
     setState(() {
       if (_expandedLists.contains(listM.id)) {
         _expandedLists.remove(listM.id);
-        SemanticsService.announce("Liste daraltıldı", TextDirection.ltr);
+        SemanticsService.announce("${listM.name} isimli liste daraltıldı", TextDirection.ltr);
       } else {
         _expandedLists.add(listM.id);
-        SemanticsService.announce("Liste genişletildi", TextDirection.ltr);
+        SemanticsService.announce("${listM.name} isimli liste genişletildi", TextDirection.ltr);
       }
     });
   }
@@ -112,7 +112,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
         _lists[targetIndex] = updatedTarget;
         _sortLists();
       });
-      SemanticsService.announce(moveUp ? "Liste yukarı taşındı" : "Liste aşağı taşındı", TextDirection.ltr);
+      SemanticsService.announce(moveUp ? "${list.name} isimli liste yukarı taşındı" : "${list.name} isimli liste aşağı taşındı", TextDirection.ltr);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
     }
@@ -138,8 +138,8 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
     if (isConfirmed == true) {
       try {
         await _service.deleteList(list.id);
-        SemanticsService.announce("Liste silindi", TextDirection.ltr);
-        _fetchData();
+        SemanticsService.announce("${list.name} isimli liste silindi", TextDirection.ltr);
+        _fetchData(showLoading: false);
       } catch (e) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
@@ -166,8 +166,8 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
     if (isConfirmed == true) {
       try {
         await _service.deleteTask(task.id);
-        SemanticsService.announce("Görev silindi", TextDirection.ltr);
-        _fetchData();
+        SemanticsService.announce("${task.title} isimli görev silindi", TextDirection.ltr);
+        _fetchData(showLoading: false);
       } catch (e) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
@@ -210,10 +210,10 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                     try {
                       final order = _lists.length + 1;
                       await _service.createList(widget.board.id, nameCtrl.text.trim(), order);
-                      SemanticsService.announce("Liste eklendi", TextDirection.ltr);
+                      SemanticsService.announce("${nameCtrl.text.trim()} isimli liste oluşturuldu", TextDirection.ltr);
                       if (context.mounted) {
                         Navigator.pop(context);
-                        _fetchData();
+                        _fetchData(showLoading: false);
                       }
                     } catch (e) {
                       setStateDialog(() => isSaving = false);
@@ -282,10 +282,10 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                     try {
                       final currentTasksCount = _tasksByList[listId]?.length ?? 0;
                       await _service.createTask(listId, titleCtrl.text.trim(), descCtrl.text.trim(), currentTasksCount + 1);
-                      SemanticsService.announce("Görev eklendi", TextDirection.ltr);
+                      SemanticsService.announce("${titleCtrl.text.trim()} isimli görev eklendi", TextDirection.ltr);
                       if (context.mounted) {
                         Navigator.pop(context);
-                        _fetchData();
+                        _fetchData(showLoading: false);
                       }
                     } catch (e) {
                       setStateDialog(() => isSaving = false);
@@ -305,8 +305,8 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
   Future<void> _toggleTaskState(TaskItem task) async {
     try {
       await _service.updateTaskState(task.id, !task.isCompleted);
-      _fetchData();
-      SemanticsService.announce(!task.isCompleted ? "Görev tamamlandı olarak işaretlendi" : "Görev tamamlanmadı olarak işaretlendi", TextDirection.ltr);
+      _fetchData(showLoading: false);
+      SemanticsService.announce(!task.isCompleted ? "${task.title} isimli görev tamamlandı olarak işaretlendi" : "${task.title} isimli görev tamamlanmadı olarak işaretlendi", TextDirection.ltr);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
     }
@@ -519,7 +519,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                                   return SizedBox(
                                     width: 160,
                                     child: Semantics(
-                                      label: 'Görev numarası ${task.taskNumber}: ${task.title}. ${isTaskCompleted ? "Tamamlandı" : "Devam ediyor"}.',
+                                      label: 'Görev numarası ${task.taskNumber}: ${task.title}. ${isTaskCompleted ? "Tamamlandı" : "Devam ediyor"}. Düzenlemek veya görüntülemek için çift tıklayın. İşlem seçenekleri için parmağınızı yukarı veya aşağı kaydırın.',
                                       button: true,
                                       onTapHint: 'Görevi Aç',
                                       customSemanticsActions: {
@@ -540,7 +540,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                                                   builder: (_) => TaskDetailScreen(task: task, allLists: _lists),
                                                 ),
                                               );
-                                              if (refresh == true) _fetchData();
+                                              if (refresh == true) _fetchData(showLoading: false);
                                             },
                                             child: Padding(
                                               padding: const EdgeInsets.all(12.0),
