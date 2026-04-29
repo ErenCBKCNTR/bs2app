@@ -618,11 +618,16 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                           ]
                         ],
                       ),
-                    ),
                   );
                 },
               ),
       ),
     );
+  }
+
+  Color _parseColor(String colorStr) {
+    String hex = colorStr.toUpperCase().replaceAll("#", "");
+    if (hex.length == 6) hex = "FF$hex";
+    return Color(int.tryParse(hex, radix: 16) ?? 0xFF000000);
   }
 }
