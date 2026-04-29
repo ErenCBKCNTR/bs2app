@@ -147,6 +147,7 @@ Projede kullanılan kritik `pubspec.yaml` paket listesi:
 *   **ExpandableText:** (`lib/core/widgets/expandable_text.dart`) Uzun metin ("daha fazla oku") yönetimi.
 *   **Admin Özelliği:** (`lib/features/admin/`) Sistem yöneticileri için yönetim araçları ve Log ekranı.
 *   **Campaigns Özelliği:** (`lib/features/campaigns/`) Güncel Kampanyaların çekildiği merkez. Performansı artırmak için PocketBase listesi `SharedPreferences` ile önbelleklenmiş (`12 Saat`) yerel bir arama sistemine sahiptir.
+*   **TaskBoard Özelliği (Görev Panosu):** (`lib/features/task_board/`) Trello benzeri esnek görev yönetim arayüzü. Panolar, favori sistemleri, listeler (daraltılabilir/sabitlenebilir), kartlar (#ID bazlı), checklist'ler ve etiketlemeleri barındırır. PocketBase veritabanında `task_boards`, `task_lists`, `task_items`, `task_checklists` koleksiyonları kullanılır.
 
 ---
 

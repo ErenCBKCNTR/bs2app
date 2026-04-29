@@ -10,6 +10,8 @@ class TaskItem {
   final DateTime? dueDate;
   final int order;
   final bool isCompleted;
+  final int taskNumber;
+  final List<dynamic> labels;
   final DateTime created;
 
   TaskItem({
@@ -22,6 +24,8 @@ class TaskItem {
     this.dueDate,
     required this.order,
     required this.isCompleted,
+    required this.taskNumber,
+    required this.labels,
     required this.created,
   });
 
@@ -46,6 +50,8 @@ class TaskItem {
       dueDate: getDueDate(),
       order: record.getIntValue('order'),
       isCompleted: record.getBoolValue('is_completed'),
+      taskNumber: record.getIntValue('task_number'),
+      labels: record.getListValue<dynamic>('labels'),
       created: DateTime.parse(record.created).toLocal(),
     );
   }

@@ -1612,6 +1612,18 @@
           "collectionId": "_pb_users_auth_",
           "maxSelect": null
         }
+      },
+      {
+        "system": false,
+        "id": "tbd_fav",
+        "name": "favorited_by",
+        "type": "relation",
+        "required": false,
+        "options": {
+          "collectionId": "_pb_users_auth_",
+          "cascadeDelete": false,
+          "maxSelect": null
+        }
       }
     ],
     "listRule": "@request.auth.id != '' && (owner_id = @request.auth.id || members ~ @request.auth.id)",
@@ -1656,6 +1668,28 @@
         "type": "number",
         "required": true,
         "options": {}
+      },
+      {
+        "system": false,
+        "id": "tll_colb",
+        "name": "collapsed_by",
+        "type": "relation",
+        "required": false,
+        "options": {
+          "collectionId": "_pb_users_auth_",
+          "maxSelect": null
+        }
+      },
+      {
+        "system": false,
+        "id": "tll_pinb",
+        "name": "pinned_by",
+        "type": "relation",
+        "required": false,
+        "options": {
+          "collectionId": "_pb_users_auth_",
+          "maxSelect": null
+        }
       }
     ],
     "listRule": "@request.auth.id != ''",
@@ -1746,6 +1780,74 @@
         "name": "is_completed",
         "type": "bool",
         "required": false,
+        "options": {}
+      },
+      {
+        "system": false,
+        "id": "tsi_num",
+        "name": "task_number",
+        "type": "number",
+        "required": false,
+        "options": {}
+      },
+      {
+        "system": false,
+        "id": "tsi_lbl",
+        "name": "labels",
+        "type": "json",
+        "required": false,
+        "options": {}
+      }
+    ],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.id != ''",
+    "updateRule": "@request.auth.id != ''",
+    "deleteRule": "@request.auth.id != ''"
+  },
+  {
+    "id": "col_task_checklists",
+    "name": "task_checklists",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "system": false,
+        "id": "tck_task",
+        "name": "task_id",
+        "type": "relation",
+        "required": true,
+        "options": {
+          "collectionId": "col_task_items",
+          "cascadeDelete": true,
+          "maxSelect": 1
+        }
+      },
+      {
+        "system": false,
+        "id": "tck_title",
+        "name": "title",
+        "type": "text",
+        "required": true,
+        "options": {
+          "min": 1,
+          "max": 200
+        }
+      },
+      {
+        "system": false,
+        "id": "tck_comp",
+        "name": "is_completed",
+        "type": "bool",
+        "required": false,
+        "options": {}
+      },
+      {
+        "system": false,
+        "id": "tck_order",
+        "name": "order",
+        "type": "number",
+        "required": true,
         "options": {}
       }
     ],
