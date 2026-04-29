@@ -32,6 +32,13 @@ class TaskBoardService {
     return TaskBoard.fromRecord(record);
   }
 
+  Future<TaskBoard> updateBoard(String boardId, String name) async {
+    final record = await _pb.collection('task_boards').update(boardId, body: {
+      'name': name,
+    });
+    return TaskBoard.fromRecord(record);
+  }
+
   Future<void> deleteBoard(String boardId) async {
     await _pb.collection('task_boards').delete(boardId);
   }
@@ -53,10 +60,10 @@ class TaskBoardService {
     return TaskBoard.fromRecord(record);
   }
 
-  Future<void> addMemberByEmail(String boardId, String email) async {
-    // 1. Find user by email
-    final userRes = await _pb.collection('users').getList(filter: 'email = "$email"', page: 1, perPage: 1);
-    if (userRes.items.isEmpty) throw Exception("Bu e-posta adresiyle kayıtlı kullanıcı bulunamadı.");
+  Future<void> addMember(String boardId, String identifier) async {
+    // 1. Find user by email or username
+    final userRes = await _pb.collection('users').getList(filter: 'email = "$identifier" || username = "$identifier"', page: 1, perPage: 1);
+    if (userRes.items.isEmpty) throw Exception("Bu bilgilere (e-posta veya kullanıcı adı) sahip kayıtlı bir kullanıcı bulunamadı.");
 
     final newUserId = userRes.items.first.id;
 

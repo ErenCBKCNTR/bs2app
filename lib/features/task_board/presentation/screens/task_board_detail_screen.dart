@@ -23,6 +23,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
   String _searchQuery = '';
   List<TaskListM> _lists = [];
   Map<String, List<TaskItem>> _tasksByList = {};
+  Set<String> _expandedLists = {};
 
   @override
   void initState() {
@@ -80,18 +81,16 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
     }
   }
 
-  Future<void> _toggleCollapse(TaskListM listM) async {
-    try {
-      final updated = await _service.toggleListCollapsed(listM);
-      setState(() {
-        final index = _lists.indexWhere((l) => l.id == listM.id);
-        if (index != -1) _lists[index] = updated;
-      });
-      final isCollapsed = _currentUserId != null && updated.collapsedBy.contains(_currentUserId);
-      SemanticsService.announce(isCollapsed ? "Liste daraltıldı" : "Liste genişletildi", TextDirection.ltr);
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
-    }
+  void _toggleCollapse(TaskListM listM) {
+    setState(() {
+      if (_expandedLists.contains(listM.id)) {
+        _expandedLists.remove(listM.id);
+        SemanticsService.announce("Liste daraltıldı", TextDirection.ltr);
+      } else {
+        _expandedLists.add(listM.id);
+        SemanticsService.announce("Liste genişletildi", TextDirection.ltr);
+      }
+    });
   }
 
   Future<void> _moveList(TaskListM listM, bool moveUp) async {
@@ -116,6 +115,62 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
       SemanticsService.announce(moveUp ? "Liste yukarı taşındı" : "Liste aşağı taşındı", TextDirection.ltr);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+    }
+  }
+
+  Future<void> _deleteListDialog(TaskListM list) async {
+    final isConfirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Listeyi Sil'),
+        content: Text('"${list.name}" isimli listeyi ve içindeki tüm görevleri silmek istediğinize emin misiniz?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Evet, Sil', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      )
+    );
+
+    if (isConfirmed == true) {
+      try {
+        await _service.deleteList(list.id);
+        SemanticsService.announce("Liste silindi", TextDirection.ltr);
+        _fetchData();
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      }
+    }
+  }
+
+  Future<void> _deleteTaskDialog(TaskItem task) async {
+    final isConfirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Görevi Sil'),
+        content: Text('"${task.title}" isimli görevi silmek istediğinize emin misiniz?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Evet, Sil', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      )
+    );
+
+    if (isConfirmed == true) {
+      try {
+        await _service.deleteTask(task.id);
+        SemanticsService.announce("Görev silindi", TextDirection.ltr);
+        _fetchData();
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      }
     }
   }
 
@@ -301,7 +356,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                   title: const Text('Üye Davet Et'),
                   content: TextField(
                     controller: emailCtrl,
-                    decoration: const InputDecoration(hintText: 'Kullanıcının e-posta adresi'),
+                    decoration: const InputDecoration(hintText: 'Kullanıcı adı veya e-posta adresi'),
                   ),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
@@ -315,7 +370,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
 
               if (isAdded == true && emailCtrl.text.isNotEmpty) {
                 try {
-                  await _service.addMemberByEmail(widget.board.id, emailCtrl.text.trim());
+                  await _service.addMember(widget.board.id, emailCtrl.text.trim());
                   SemanticsService.announce("Kullanıcı panoya eklendi", TextDirection.ltr);
                   if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kullanıcı başarıyla eklendi!')));
                 } catch (e) {
@@ -353,132 +408,211 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                   }
 
                   final isPinned = _currentUserId != null && list.pinnedBy.contains(_currentUserId);
-                  final isCollapsed = _currentUserId != null && list.collapsedBy.contains(_currentUserId);
+                  final isCollapsed = !_expandedLists.contains(list.id);
                   
+                  int totalTasks = tasks.length;
+                  int completedTasks = tasks.where((t) => t.isCompleted).length;
+                  int percentage = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).round() : 0;
+                  
+                  final colorIndex = list.id.codeUnitAt(0) % Colors.primaries.length;
+                  final listColor = Colors.primaries[colorIndex].withOpacity(0.15);
+                  final borderColor = Colors.primaries[colorIndex].withOpacity(0.4);
+
                   return Card(
                     margin: const EdgeInsets.only(bottom: 24),
-                    elevation: 4,
-                    color: Theme.of(context).colorScheme.surfaceVariant,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-                            child: Row(
-                              children: [
-                                IconButton(
-                                  icon: Icon(isCollapsed ? Icons.expand_more : Icons.expand_less),
-                                  tooltip: isCollapsed ? 'Listeyi Genişlet' : 'Listeyi Daralt',
-                                  onPressed: () => _toggleCollapse(list),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: borderColor, width: 1.5),
+                    ),
+                    color: listColor,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Semantics(
+                          label: '${list.name} isimli liste içerisinde $totalTasks adet görev mevcut. Yüzde $percentage tamamlandı. Liste ile alakalı işlem yapmak için parmağınızı yukarı ya da aşağı kaydırın.',
+                          button: true,
+                          onTapHint: isCollapsed ? "Genişlet" : "Daralt",
+                          customSemanticsActions: {
+                            const CustomSemanticsAction(label: 'Listeyi Genişlet/Daralt'): () => _toggleCollapse(list),
+                            CustomSemanticsAction(label: isPinned ? 'Başa Tutturmayı Kaldır' : 'Başa Tuttur'): () => _togglePin(list),
+                            if (index > 0) const CustomSemanticsAction(label: 'Yukarı Taşı'): () => _moveList(list, true),
+                            if (index < _lists.length - 1) const CustomSemanticsAction(label: 'Aşağı Taşı'): () => _moveList(list, false),
+                            const CustomSemanticsAction(label: 'Görev Ekle'): () => _createTaskDialog(list.id),
+                            const CustomSemanticsAction(label: 'Listeyi Sil'): () => _deleteListDialog(list),
+                          },
+                          child: ExcludeSemantics(
+                            child: InkWell(
+                              onDoubleTap: () => _toggleCollapse(list),
+                              onTap: () => _toggleCollapse(list),
+                              borderRadius: isCollapsed ? BorderRadius.circular(16) : const BorderRadius.vertical(top: Radius.circular(16)),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                                child: Row(
+                                  children: [
+                                    Icon(isCollapsed ? Icons.expand_more : Icons.expand_less, size: 28),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            list.name,
+                                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                          ),
+                                          if (totalTasks > 0)
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 4.0),
+                                              child: Text(
+                                                '%$percentage Tamamlandı ($completedTasks/$totalTasks)',
+                                                style: const TextStyle(fontSize: 13, color: Colors.white70),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (isPinned)
+                                      const Icon(Icons.push_pin, color: Colors.blue),
+                                    const SizedBox(width: 8),
+                                    PopupMenuButton<String>(
+                                      icon: const Icon(Icons.more_vert),
+                                      tooltip: 'Liste İşlemleri',
+                                      onSelected: (val) {
+                                        if (val == 'pin') _togglePin(list);
+                                        else if (val == 'up') _moveList(list, true);
+                                        else if (val == 'down') _moveList(list, false);
+                                        else if (val == 'add') _createTaskDialog(list.id);
+                                        else if (val == 'delete') _deleteListDialog(list);
+                                      },
+                                      itemBuilder: (context) => [
+                                        const PopupMenuItem(value: 'add', child: Text('Görev Ekle')),
+                                        PopupMenuItem(value: 'pin', child: Text(isPinned ? 'Başa Tutturmayı Kaldır' : 'Başa Tuttur')),
+                                        if (index > 0) const PopupMenuItem(value: 'up', child: Text('Yukarı Taşı')),
+                                        if (index < _lists.length - 1) const PopupMenuItem(value: 'down', child: Text('Aşağı Taşı')),
+                                        const PopupMenuItem(value: 'delete', child: Text('Listeyi Sil', style: TextStyle(color: Colors.red))),
+                                      ],
+                                    )
+                                  ],
                                 ),
-                                Expanded(
-                                  child: Text(
-                                    list.name,
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: Icon(isPinned ? Icons.push_pin : Icons.push_pin_outlined, color: isPinned ? Colors.blue : null),
-                                  tooltip: isPinned ? 'Başa Tutturmayı Kaldır' : 'Başa Tuttur',
-                                  onPressed: () => _togglePin(list),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.arrow_upward),
-                                  tooltip: 'Yukarı Taşı',
-                                  onPressed: index > 0 ? () => _moveList(list, true) : null,
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.arrow_downward),
-                                  tooltip: 'Aşağı Taşı',
-                                  onPressed: index < _lists.length - 1 ? () => _moveList(list, false) : null,
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.add),
-                                  tooltip: '${list.name} içerisine görev ekle',
-                                  onPressed: () => _createTaskDialog(list.id),
-                                )
-                              ],
-                            ),
-                          ),
-                          if (!isCollapsed) ...[
-                            const Divider(),
-                            if (tasks.isEmpty)
-                              const Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Text('Bu listede henüz görev yok.'),
                               ),
+                            ),
+                          )
+                        ),
+                        if (!isCollapsed) ...[
+                          const Divider(height: 1),
+                          if (tasks.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Text('Bu listede henüz görev yok.'),
+                            ),
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.all(8.0),
+                              padding: const EdgeInsets.all(12.0),
                               child: Wrap(
                                 spacing: 12.0,
                                 runSpacing: 12.0,
                                 children: tasks.map((task) {
+                                  final isTaskCompleted = task.isCompleted;
+                                  final taskColorIndex = task.id.codeUnitAt(0) % Colors.primaries.length;
+                                  final taskColor = isTaskCompleted ? Colors.grey.withOpacity(0.1) : Colors.primaries[taskColorIndex].withOpacity(0.1);
+                                  
                                   return SizedBox(
-                                    width: 180, // Kütüphane raflarındaki gibi dizilim için sabit genişlik
-                                    child: Card(
-                                      elevation: 2,
-                                      child: InkWell(
-                                        onTap: () async {
-                                          final refresh = await Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => TaskDetailScreen(task: task, allLists: _lists),
-                                            ),
-                                          );
-                                          if (refresh == true) _fetchData();
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
+                                    width: 160,
+                                    child: Semantics(
+                                      label: 'Görev numarası ${task.taskNumber}: ${task.title}. ${isTaskCompleted ? "Tamamlandı" : "Devam ediyor"}.',
+                                      button: true,
+                                      onTapHint: 'Görevi Aç',
+                                      customSemanticsActions: {
+                                        const CustomSemanticsAction(label: 'Görevi Sil'): () => _deleteTaskDialog(task),
+                                        CustomSemanticsAction(label: isTaskCompleted ? 'Tamamlanmadı Olarak İşaretle' : 'Tamamlandı Olarak İşaretle'): () => _toggleTaskState(task),
+                                      },
+                                      child: ExcludeSemantics(
+                                        child: Card(
+                                          elevation: 2,
+                                          color: taskColor,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          child: InkWell(
+                                            borderRadius: BorderRadius.circular(12),
+                                            onTap: () async {
+                                              final refresh = await Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) => TaskDetailScreen(task: task, allLists: _lists),
+                                                ),
+                                              );
+                                              if (refresh == true) _fetchData();
+                                            },
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(12.0),
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
-                                                Expanded(
-                                                  child: Text(
-                                                    '#${task.taskNumber}',
-                                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                                    maxLines: 1,
+                                                  Row(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Expanded(
+                                                        child: Text(
+                                                          '#${task.taskNumber}',
+                                                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                                          maxLines: 1,
+                                                        ),
+                                                      ),
+                                                      Semantics(
+                                                        label: isTaskCompleted ? 'Tamamlandı olarak işaretli. Tıklayarak tamamlanmadı olarak işaretle' : 'Tamamlanmadı. Tıklayarak tamamlandı olarak işaretle',
+                                                        button: true,
+                                                        child: GestureDetector(
+                                                          onTap: () => _toggleTaskState(task),
+                                                          child: Icon(
+                                                            isTaskCompleted ? Icons.check_box : Icons.check_box_outline_blank,
+                                                            color: isTaskCompleted ? Colors.green : Colors.grey,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Text(
+                                                    task.title,
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      decoration: isTaskCompleted ? TextDecoration.lineThrough : null,
+                                                    ),
+                                                    maxLines: 3,
                                                     overflow: TextOverflow.ellipsis,
                                                   ),
-                                                ),
-                                                Checkbox(
-                                                  value: task.isCompleted,
-                                                  onChanged: (val) {
-                                                    if (val != null) _toggleTaskState(task);
-                                                  },
-                                                )
-                                              ],
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              task.title,
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                                                  if (task.labels.isNotEmpty) ...[
+                                                    const SizedBox(height: 8),
+                                                    Wrap(
+                                                      spacing: 4,
+                                                      runSpacing: 4,
+                                                      children: task.labels.take(3).map((l) {
+                                                        final hex = l['color'] as String? ?? '000000';
+                                                        final cInfo = _parseColor(hex);
+                                                        return Container(
+                                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                          decoration: BoxDecoration(
+                                                            color: cInfo,
+                                                            borderRadius: BorderRadius.circular(4),
+                                                          ),
+                                                          child: Text(
+                                                            l['text'] as String? ?? '',
+                                                            style: const TextStyle(fontSize: 10, color: Colors.white),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                        );
+                                                      }).toList(),
+                                                    )
+                                                  ]
+                                                ],
                                               ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                            if (task.description.isNotEmpty) ...[
-                                              const SizedBox(height: 8),
-                                              Text(
-                                                task.description,
-                                                style: const TextStyle(fontSize: 12),
-                                                maxLines: 3,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ],
-                                          ],
-                                        ),
+                                          ),
+                                        )
                                       ),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
+                                    )
+                                  );
+                                }).toList(),
                               ),
                             )
                           ]

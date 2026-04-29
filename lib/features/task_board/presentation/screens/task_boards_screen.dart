@@ -15,8 +15,11 @@ class TaskBoardsScreen extends StatefulWidget {
 class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
   final TaskBoardService _service = TaskBoardService();
   List<TaskBoard> _boards = [];
+  Map<String, int> _boardListCounts = {};
   bool _isLoading = true;
   bool _showFavoritesOnly = false;
+  bool _isSearching = false;
+  String _searchQuery = '';
   String? _currentUserId;
 
   @override
@@ -30,7 +33,25 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
     setState(() => _isLoading = true);
     try {
       final list = await _service.getMyBoards();
-      if (mounted) setState(() => _boards = list);
+      
+      final Map<String, int> counts = {};
+      for (var board in list) {
+        try {
+          final res = await PocketBaseService.client.collection('task_lists').getList(
+            filter: 'board_id = "${board.id}"',
+            page: 1,
+            perPage: 1,
+          );
+          counts[board.id] = res.totalItems;
+        } catch (_) {
+          counts[board.id] = 0;
+        }
+      }
+
+      if (mounted) setState(() {
+        _boards = list;
+        _boardListCounts = counts;
+      });
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
     } finally {
@@ -104,12 +125,12 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                     if (!formKey.currentState!.validate()) return;
                     setStateDialog(() => isSaving = true);
                     try {
-                      await _service.createBoard(nameCtrl.text.trim(), descCtrl.text.trim());
-                      SemanticsService.announce("Görev panosu başarıyla oluşturuldu", TextDirection.ltr);
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        _fetchBoards();
-                      }
+                       await _service.createBoard(nameCtrl.text.trim(), descCtrl.text.trim());
+                       SemanticsService.announce("Görev panosu başarıyla oluşturuldu", TextDirection.ltr);
+                       if (context.mounted) {
+                         Navigator.pop(context);
+                         _fetchBoards();
+                       }
                     } catch (e) {
                       setStateDialog(() => isSaving = false);
                       if (context.mounted) {
@@ -127,16 +148,134 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
     );
   }
 
+  Future<void> _editBoardDialog(TaskBoard board) async {
+    final nameCtrl = TextEditingController(text: board.name);
+    final formKey = GlobalKey<FormState>();
+    bool isSaving = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text('Pano Adını Düzenle'),
+              content: Form(
+                key: formKey,
+                child: TextFormField(
+                  controller: nameCtrl,
+                  maxLength: 100,
+                  enabled: !isSaving,
+                  decoration: const InputDecoration(labelText: 'Pano Adı'),
+                  validator: (v) => v != null && v.trim().isEmpty ? 'Lütfen pano adı giriniz' : null,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSaving ? null : () => Navigator.pop(context),
+                  child: const Text('İptal'),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving ? null : () async {
+                    if (!formKey.currentState!.validate()) return;
+                    setStateDialog(() => isSaving = true);
+                    try {
+                      await _service.updateBoard(board.id, nameCtrl.text.trim());
+                      SemanticsService.announce("Pano adı güncellendi", TextDirection.ltr);
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        _fetchBoards();
+                      }
+                    } catch (e) {
+                      setStateDialog(() => isSaving = false);
+                      if (context.mounted) {
+                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+                      }
+                    }
+                  },
+                  child: isSaving ? const CircularProgressIndicator() : const Text('Kaydet'),
+                ),
+              ],
+            );
+          }
+        );
+      }
+    );
+  }
+
+  Future<void> _deleteBoardDialog(TaskBoard board) async {
+    final isConfirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Panoyu Sil'),
+        content: Text('"${board.name}" isimli panoyu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Evet, Sil', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      )
+    );
+
+    if (isConfirmed == true) {
+      try {
+        await _service.deleteBoard(board.id);
+        SemanticsService.announce("Pano başarıyla silindi", TextDirection.ltr);
+        _fetchBoards();
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final filteredBoards = _showFavoritesOnly
+    List<TaskBoard> filteredBoards = _showFavoritesOnly
         ? _boards.where((b) => _currentUserId != null && b.favoritedBy.contains(_currentUserId)).toList()
         : _boards;
 
+    if (_searchQuery.isNotEmpty) {
+      filteredBoards = filteredBoards.where((b) => b.name.toLowerCase().contains(_searchQuery)).toList();
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Görev Panoları'),
+        title: _isSearching ? TextField(
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'Pano Ara',
+            hintStyle: TextStyle(color: Colors.white54),
+            border: InputBorder.none,
+          ),
+          onChanged: (val) {
+            setState(() {
+              _searchQuery = val.toLowerCase();
+            });
+          },
+        ) : const Text('Görev Panoları'),
         actions: [
+          IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            tooltip: _isSearching ? 'Aramayı Kapat' : 'Panolarda Ara',
+            onPressed: () {
+              setState(() {
+                if (_isSearching) {
+                  _isSearching = false;
+                  _searchQuery = '';
+                } else {
+                  _isSearching = true;
+                }
+              });
+            },
+          ),
           IconButton(
             icon: Icon(_showFavoritesOnly ? Icons.star : Icons.star_border),
             tooltip: _showFavoritesOnly ? 'Tüm Panoları Göster' : 'Sadece Favorileri Göster',
@@ -163,26 +302,76 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : filteredBoards.isEmpty
             ? Center(child: Text(_showFavoritesOnly ? 'Favori panonuz bulunmuyor.' : 'Henüz bir görev panosu bulunmuyor\nEkranın sağ altından Pano Oluştur butonuna tıklayabilirsiniz.', textAlign: TextAlign.center))
-            : ListView.builder(
+            : GridView.builder(
                 padding: const EdgeInsets.all(16.0),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16.0,
+                  mainAxisSpacing: 16.0,
+                  childAspectRatio: 1.0, 
+                ),
                 itemCount: filteredBoards.length,
                 itemBuilder: (context, index) {
                   final board = filteredBoards[index];
                   final isFav = _currentUserId != null && board.favoritedBy.contains(_currentUserId);
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      leading: IconButton(
-                        icon: Icon(isFav ? Icons.star : Icons.star_border, color: isFav ? Colors.amber : null),
-                        tooltip: isFav ? 'Favorilerden Çıkar' : 'Favorilere Ekle',
-                        onPressed: () => _toggleFavorite(board),
+                  final listCount = _boardListCounts[board.id] ?? 0;
+                  
+                  final colorIndex = board.id.codeUnitAt(0) % Colors.primaries.length;
+                  final boxColor = Colors.primaries[colorIndex].withOpacity(0.2);
+                  final borderColor = Colors.primaries[colorIndex].withOpacity(0.5);
+
+                  final favText = isFav ? "Favorilerinizde." : "Favorilerinizde değil.";
+                  final label = "${board.name} isimli pano, $favText İçerisinde $listCount adet liste mevcut. Panoya girmek için çift tıklayın, favori durumunu değiştirmek için uzun basın.";
+
+                  return Semantics(
+                    label: label,
+                    button: true,
+                    onLongPressHint: isFav ? "Favorilerden Çıkar" : "Favorilere Ekle",
+                    onTapHint: "Panoya Gir",
+                    customSemanticsActions: {
+                      const CustomSemanticsAction(label: 'Panoyu Sil'): () => _deleteBoardDialog(board),
+                      const CustomSemanticsAction(label: 'Adını Düzenle'): () => _editBoardDialog(board),
+                    },
+                    child: ExcludeSemantics(
+                      child: InkWell(
+                        onTap: () async {
+                          await Navigator.push(context, MaterialPageRoute(builder: (_) => TaskBoardDetailScreen(board: board)));
+                          _fetchBoards();
+                        },
+                        onLongPress: () => _toggleFavorite(board),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: boxColor,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: borderColor, width: 1.5),
+                          ),
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Icon(isFav ? Icons.star : Icons.star_border, color: isFav ? Colors.amber : Colors.white70),
+                                ],
+                              ),
+                              const Spacer(),
+                              Text(
+                                board.name,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "$listCount Liste",
+                                style: const TextStyle(fontSize: 14, color: Colors.white70),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      title: Text(board.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: board.description.isNotEmpty ? Text(board.description) : null,
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => TaskBoardDetailScreen(board: board)));
-                      },
                     ),
                   );
                 },

@@ -22,9 +22,15 @@
 - [x] Kartlara açıklama ve kullanıcıların oluşturup silebildiği renkli etiketler atanabilecek.
 - [x] Kartı "Başka Listeye Taşı" (Taşıma İşlemi) seçeneği eklenecek.
 - [x] Pano içerisinde etiket ve kart ismine göre çalışan arama/filtreleme özelliği yapılacak.
+- [x] Panolar listesinde panoları renklendirerek kare kutular halinde (GridView) gösterme.
+- [x] Panolar sayfasında pano içi arama yapabilme.
+- [x] Pano silme, güncelleme gibi özellikleri erişilebilirlik bağlamında Semantics action olarak entegre etme.
+- [x] Pano detay/içerik sayfasında görsel modernleştirme ve liste arka planlarını renklendirme.
+- [x] Pano içerisinde listelerin tümü açılışta kapalı (daraltılmış) gelecek. Listeler ve görevler arası gezinmede Semantics ve DoubleTap özellikleri geliştirilecek.
+- [x] Pano içi liste ve görev işlemleri için ekran okuyucu uyumlu "İşlemler Menüsü (CustomSemanticsAction)" yapısı entegre edilecek.
 
 ## 4. İşbirliği ve Paylaşım
-- [x] Panoya başka kullanıcıları davet etme (Ortak çalışma) altyapısı geliştirilecek.
+- [x] Panoya başka kullanıcıları davet etme işleminde artık E-Posta adresinin yanında Kullanıcı Adı girerek de arama desteklendi.
 - [x] Bir kartın içerisine panoya üye olan kişilerden sorumlular (assignees) atanabilecek.
 - [x] Kartı dışarıyla (`SharePlus` veya Deep Link ile) link olarak paylaşma butonu eklenecek.
 
