@@ -32,6 +32,7 @@ import 'favorite_messages_screen.dart';
 import 'archived_messages_screen.dart';
 import 'package:blind_social/features/campaigns/presentation/screens/campaigns_screen.dart';
 import '../../../radio/presentation/screens/radio_list_screen.dart';
+import 'package:blind_social/features/tools/presentation/screens/tools_screen.dart' as blind_social_tools;
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -1247,6 +1248,14 @@ Widget? _buildFAB() {
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (_) => const blind_social_games.GamesScreen()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.build_circle_outlined),
+            title: const Text('Araçlar'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const blind_social_tools.ToolsScreen()));
             },
           ),
           const Divider(),
