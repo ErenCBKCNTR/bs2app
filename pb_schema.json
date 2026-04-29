@@ -1796,7 +1796,9 @@
         "name": "labels",
         "type": "json",
         "required": false,
-        "options": {}
+        "options": {
+          "maxSize": 2000000
+        }
       }
     ],
     "listRule": "@request.auth.id != ''",
