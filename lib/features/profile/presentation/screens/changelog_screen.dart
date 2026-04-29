@@ -13,6 +13,20 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            version: '1.7.0',
+            date: '29 Nisan 2026',
+            changes: [
+              'Yeni: Ekiplerinizle uyum içinde çalışabileceğiniz, Trello benzeri gelişmiş Görev Panosu (Task Board) eklendi.',
+              'Yeni: Görev listelerine sürükle-bırak tadında "Taşıma", "Başa Tutturma (Pin)" ve "Daraltma" seçenekleri eklendi.',
+              'Yeni: Kartların içine adım adım ilerleyebileceğiniz kontrol listeleri (Checklist) oluşturabilirsiniz. Tamamlanma oranları ekran okuyucular tarafından anlık olarak söylenir.',
+              'Yeni: Kartlara istediğiniz renkte etiketler ekleyerek kategorize edebilir, bu etiketlerle panoda arama yapabilirsiniz.',
+              'Yeni: Görevleri diğer üyelere atayabilir veya sosyal medyada tek dokunuşla paylaşabilirsiniz.',
+              'İyileştirme: Görev Panosu erişilebilirlik standartlarına uygun hale getirildi; tüm ikon, buton ve alanlar ekran okuyucu uyumludur.',
+            ],
+            isLatest: true,
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
             version: '1.6.4',
             date: '26 Nisan 2026',
             changes: [
@@ -22,7 +36,7 @@ class ChangelogScreen extends StatelessWidget {
               'Yeni: Sunucu kurucuları artık istenmeyen üyeleri sunucudan "Yasaklama (Ban)" işlemiyle kalıcı olarak uzaklaştırabilir.',
               'Yeni: Sunucu ayarlarında "Yasaklılar" listesi oluşturuldu, dilediğiniz kullanıcının engeli yine bu sekmeden kaldırılabilir.',
             ],
-            isLatest: true,
+            isLatest: false,
           ),
           const SizedBox(height: 24),
           _buildVersionSection(

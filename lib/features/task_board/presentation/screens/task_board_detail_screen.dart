@@ -476,8 +476,9 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                                         ),
                                       ),
                                     ),
-                                  );
-                                }).toList(),
+                                  ),
+                                );
+                              }).toList(),
                               ),
                             )
                           ]
