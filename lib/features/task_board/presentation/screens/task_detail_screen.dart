@@ -109,14 +109,21 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     spacing: 8,
                     children: colors.map((c) {
                       final colorObj = _getColor(c);
-                      return ChoiceChip(
-                        label: Text(' '),
+                      final cTr = _getColorNameTr(c);
+                      return Semantics(
+                        label: '$cTr renk seçimi',
                         selected: selectedColor == c,
-                        selectedColor: colorObj.withOpacity(0.5),
-                        backgroundColor: colorObj,
-                        onSelected: (val) {
-                          setDialogState(() => selectedColor = c);
-                        },
+                        child: ExcludeSemantics(
+                          child: ChoiceChip(
+                            label: const Text(' '),
+                            selected: selectedColor == c,
+                            selectedColor: colorObj.withOpacity(0.5),
+                            backgroundColor: colorObj,
+                            onSelected: (val) {
+                              setDialogState(() => selectedColor = c);
+                            },
+                          ),
+                        ),
                       );
                     }).toList(),
                   )
@@ -223,6 +230,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
+  String _getColorNameTr(String c) {
+    switch (c) {
+      case 'red': return 'Kırmızı';
+      case 'green': return 'Yeşil';
+      case 'purple': return 'Mor';
+      case 'orange': return 'Turuncu';
+      case 'blue': return 'Mavi';
+      default: return 'Mavi';
+    }
+  }
+
   void _announceChecklistProgress() {
     if (_checklists.isEmpty) return;
     int completedCount = _checklists.where((c) => c.isCompleted).length;
@@ -247,7 +265,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
     if (isSaved == true && ctrl.text.isNotEmpty) {
       try {
-        final order = _checklists.isEmpty ? 0 : _checklists.last.order + 1;
+        final order = _checklists.isEmpty ? 1 : _checklists.last.order + 1;
         final newItem = await _service.createChecklistItem(_task.id, ctrl.text, order);
         setState(() {
           _checklists.add(newItem);
@@ -295,7 +313,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         appBar: AppBar(
           title: Focus(
             autofocus: true,
-            child: Text('#${_task.taskNumber} Detayları'),
+            child: Text('${_task.title} isimli görevin detayları'),
           ),
           actions: [
             IconButton(
@@ -327,11 +345,22 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   runSpacing: 8,
                   children: [
                     ..._task.labels.map((lbl) {
-                        return Chip(
-                          label: Text(lbl['text'] ?? '', style: const TextStyle(color: Colors.white)),
-                          backgroundColor: _getColor(lbl['color'] ?? 'blue'),
-                          onDeleted: () => _removeLabel(lbl),
-                          deleteIconColor: Colors.white,
+                        final colorName = lbl['color'] ?? 'blue';
+                        final cTr = _getColorNameTr(colorName);
+                        return Semantics(
+                          label: '${lbl['text']} isimli $cTr renkli etiket. Etiketi silmek için işlemler menüsünü açın ve özellikleri kullanın.',
+                          button: true,
+                          customSemanticsActions: {
+                            const CustomSemanticsAction(label: 'Etiketi Sil'): () => _removeLabel(lbl),
+                          },
+                          child: ExcludeSemantics(
+                            child: Chip(
+                              label: Text(lbl['text'] ?? '', style: const TextStyle(color: Colors.white)),
+                              backgroundColor: _getColor(colorName),
+                              onDeleted: () => _removeLabel(lbl),
+                              deleteIconColor: Colors.white,
+                            ),
+                          ),
                         );
                     }).toList(),
                     ActionChip(

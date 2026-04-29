@@ -112,7 +112,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
         _lists[targetIndex] = updatedTarget;
         _sortLists();
       });
-      SemanticsService.announce(moveUp ? "${list.name} isimli liste yukarı taşındı" : "${list.name} isimli liste aşağı taşındı", TextDirection.ltr);
+      SemanticsService.announce(moveUp ? "${listM.name} isimli liste yukarı taşındı" : "${listM.name} isimli liste aşağı taşındı", TextDirection.ltr);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
     }
