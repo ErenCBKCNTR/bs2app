@@ -9,6 +9,9 @@ import 'package:blind_social/features/task_board/data/services/task_board_servic
 import 'package:blind_social/features/task_board/presentation/widgets/task_stopwatch_widget.dart';
 import 'package:blind_social/features/task_board/presentation/widgets/task_voice_notes_widget.dart';
 
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+
 class TaskDetailScreen extends StatefulWidget {
   final TaskItem task;
   final List<TaskListM> allLists;
@@ -38,6 +41,46 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     super.initState();
     _task = widget.task;
     _fetchDataCombined();
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _announceRemainingDays();
+    });
+  }
+
+  void _announceRemainingDays() {
+    if (_task.dueDate != null) {
+      final diff = _task.dueDate!.difference(DateTime.now());
+      final d = diff.inDays;
+      if (d > 0) {
+        SemanticsService.announce('Bu görevin tamamlanması için $d gün kaldı.', TextDirection.ltr);
+      } else if (d == 0) {
+        SemanticsService.announce('Bu görevin tamamlanması için bugün son gün.', TextDirection.ltr);
+      } else {
+        SemanticsService.announce('Bu görevin süresi ${d.abs()} gün gecikti.', TextDirection.ltr);
+      }
+    }
+  }
+
+  Future<void> _selectDueDate() async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _task.dueDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (selected != null) {
+      setState(() => _isLoading = true);
+      try {
+        final updated = await _service.updateTaskDates(_task.id, _task.startDate, selected);
+        setState(() => _task = updated);
+        SemanticsService.announce('Bitiş tarihi başarıyla eklendi.', TextDirection.ltr);
+        _announceRemainingDays();
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -232,6 +275,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     final buffer = StringBuffer();
     buffer.writeln('Görev Adı: ${_task.title}');
     buffer.writeln('Durum: ${_task.isCompleted ? "Tamamlandı" : "Devam Ediyor"}');
+    
+    buffer.writeln('Oluşturulma Tarihi: ${_formatDt(_task.created)}');
+    if (_task.dueDate != null) {
+      buffer.writeln('Bitiş Tarihi (Hedef): ${_formatDt(_task.dueDate!)}');
+      final diff = _task.dueDate!.difference(DateTime.now());
+      final d = diff.inDays;
+      if (d > 0) {
+        buffer.writeln('Kalan Süre: $d gün kaldı.');
+      } else if (d == 0) {
+        buffer.writeln('Kalan Süre: Bugün bitiyor.');
+      } else {
+        buffer.writeln('Kalan Süre: Süresi ${d.abs()} gün geçti.');
+      }
+    }
     buffer.writeln();
 
     if (_task.description.isNotEmpty) {
@@ -425,6 +482,137 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
+  Future<void> _deleteTask() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Görevi Sil'),
+        content: const Text('Bu görevi silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve göreve ait tüm veriler (ses kayıtları, notlar vb.) silinir.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sil', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      )
+    );
+
+    if (confirm == true) {
+      setState(() => _isLoading = true);
+      try {
+        await _service.deleteTask(_task.id);
+        SemanticsService.announce('Görev başarıyla silindi', TextDirection.ltr);
+        if (mounted) Navigator.pop(context, true);
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<String?> _fetchPageTitle(String url) async {
+    try {
+      final uri = Uri.tryParse(url);
+      if (uri == null || !uri.isAbsolute) return null;
+      
+      final response = await http.get(uri).timeout(const Duration(seconds: 4));
+      if (response.statusCode == 200) {
+        final match = RegExp(r'<title[^>]*>([^<]+)</title>', caseSensitive: false).firstMatch(response.body);
+        if (match != null && match.groupCount > 0) {
+          final title = match.group(1)?.trim();
+          if (title != null && title.isNotEmpty) {
+            return title.replaceAll('&nbsp;', ' ')
+                        .replaceAll('&amp;', '&')
+                        .replaceAll('&lt;', '<')
+                        .replaceAll('&gt;', '>')
+                        .replaceAll('&quot;', '"')
+                        .replaceAll('&#39;', "'")
+                        .replaceAll('\n', '')
+                        .replaceAll('\r', '');
+          }
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> _addResource() async {
+    final ctrl = TextEditingController();
+    final isSaved = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Yeni URL/Kaynak Ekle'),
+        content: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: ctrl,
+                decoration: const InputDecoration(labelText: 'URL Adresi', hintText: 'https://...'),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.paste),
+              tooltip: 'Panodan Yapıştır',
+              onPressed: () async {
+                final data = await Clipboard.getData(Clipboard.kTextPlain);
+                if (data != null && data.text != null) {
+                  ctrl.text = data.text!;
+                }
+              },
+            )
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Ekle')),
+        ],
+      )
+    );
+
+    if (isSaved == true && ctrl.text.isNotEmpty) {
+      setState(() => _isLoading = true);
+      try {
+        final url = ctrl.text.trim();
+        final title = await _fetchPageTitle(url);
+        final resObj = {
+          'url': url,
+          'title': title
+        };
+        final newResources = List.from(_task.resources)..add(resObj);
+        final updated = await _service.updateTaskResources(_task.id, newResources);
+        setState(() {
+          _task = updated;
+        });
+        SemanticsService.announce('Kaynak eklendi', TextDirection.ltr);
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _removeResource(dynamic res) async {
+    try {
+      final newResources = List.from(_task.resources)..remove(res);
+      final updated = await _service.updateTaskResources(_task.id, newResources);
+      setState(() {
+        _task = updated;
+      });
+      SemanticsService.announce('Kaynak silindi', TextDirection.ltr);
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+    }
+  }
+
+  Future<void> _copyResource(String url) async {
+    await Clipboard.setData(ClipboardData(text: url));
+    SemanticsService.announce('URL panoya kopyalandı', TextDirection.ltr);
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('URL kopyalandı')));
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -448,6 +636,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               icon: const Icon(Icons.drive_file_move),
               tooltip: 'Listeyi Değiştir',
               onPressed: _moveList,
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              tooltip: 'Görevi Sil',
+              onPressed: _deleteTask,
             )
           ],
         ),
@@ -458,6 +651,19 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(_task.title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text('Oluşturulma: ${_formatDt(_task.created)}', style: const TextStyle(color: Colors.grey)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text(_task.dueDate != null ? 'Bitiş (Hedef): ${_formatDt(_task.dueDate!)}' : 'Bitiş tarihi eklenmemiş', style: const TextStyle(color: Colors.grey)),
+                    IconButton(
+                      icon: const Icon(Icons.edit_calendar),
+                      tooltip: 'Bitiş Tarihi Belirle',
+                      onPressed: _selectDueDate,
+                    )
+                  ]
+                ),
                 const SizedBox(height: 16),
                 
                 // Etiketler
@@ -538,6 +744,62 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 Text(
                   _task.description.isEmpty ? 'Açıklama eklenmemiş.' : _task.description,
                 ),
+                const SizedBox(height: 24),
+                const Divider(),
+
+                // Kaynaklar (Resources)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Kaynaklar (URL)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    IconButton(
+                      icon: const Icon(Icons.add),
+                      tooltip: 'URL Ekle',
+                      onPressed: _addResource,
+                    )
+                  ],
+                ),
+                if (_task.resources.isEmpty)
+                  const Text('Henüz kaynak eklenmemiş.')
+                else
+                  ..._task.resources.map((res) {
+                    final String urlString = res is Map ? (res['url']?.toString() ?? '') : res.toString();
+                    final String titleString = res is Map ? (res['title']?.toString() ?? urlString) : urlString;
+                    
+                    return Card(
+                      child: Semantics(
+                        label: titleString != urlString ? 'Kaynak Başlığı: $titleString' : 'Kaynak URL: $urlString',
+                        button: true,
+                        customSemanticsActions: {
+                          const CustomSemanticsAction(label: 'URL Kopyala'): () => _copyResource(urlString),
+                          const CustomSemanticsAction(label: 'URL Sil'): () => _removeResource(res),
+                        },
+                        child: ExcludeSemantics(
+                          child: ListTile(
+                            leading: const Icon(Icons.link),
+                            title: Text(titleString, maxLines: 2, overflow: TextOverflow.ellipsis),
+                            subtitle: titleString != urlString ? Text(urlString, maxLines: 1, overflow: TextOverflow.ellipsis) : null,
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.copy),
+                                  tooltip: 'Kopyala',
+                                  onPressed: () => _copyResource(urlString),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  tooltip: 'Sil',
+                                  onPressed: () => _removeResource(res),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+
                 const SizedBox(height: 24),
                 const Divider(),
 
@@ -627,5 +889,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         ),
       ),
     );
+  }
+
+  String _formatDt(DateTime dt) {
+    final now = DateTime.now();
+    final dLocal = dt.toLocal();
+    const months = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    if (now.year == dLocal.year) return "${dLocal.day} ${months[dLocal.month]}";
+    return "${dLocal.day} ${months[dLocal.month]} ${dLocal.year}";
   }
 }

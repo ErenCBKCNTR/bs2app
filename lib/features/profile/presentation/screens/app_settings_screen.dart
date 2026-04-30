@@ -6,6 +6,7 @@ import 'accessibility_settings_screen.dart';
 import 'privacy_settings_screen.dart';
 import 'changelog_screen.dart';
 import 'feedback_screen.dart';
+import '../../../../features/admin/data/services/admin_service.dart';
 
 class AppSettingsScreen extends StatefulWidget {
   const AppSettingsScreen({super.key});
@@ -76,19 +77,21 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               );
             },
           ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('Sürüm Bilgisi'),
-            subtitle: const Text('v1.4.0 - Neler yeni?'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ChangelogScreen()),
-              );
-            },
-          ),
+          if (AdminService().isAdmin()) ...[
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text('Sürüm Bilgisi'),
+              subtitle: const Text('v1.7.4 - Neler yeni?'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ChangelogScreen()),
+                );
+              },
+            ),
+          ],
           const Divider(),
           ListTile(
             leading: const Icon(Icons.feedback_outlined),

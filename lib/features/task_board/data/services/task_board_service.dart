@@ -259,6 +259,13 @@ class TaskBoardService {
     return TaskItem.fromRecord(record);
   }
 
+  Future<TaskItem> updateTaskResources(String taskId, List<dynamic> resources) async {
+    final record = await _pb.collection('task_items').update(taskId, body: {
+      'resources': resources,
+    });
+    return TaskItem.fromRecord(record);
+  }
+
   Future<TaskItem> toggleAssignee(String taskId, String userId) async {
     final taskRecord = await _pb.collection('task_items').getOne(taskId);
     final assignees = taskRecord.getListValue<String>('assignees');

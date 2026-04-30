@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import '../../../../features/admin/data/services/admin_service.dart';
 
 class ChangelogScreen extends StatelessWidget {
   const ChangelogScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    if (!AdminService().isAdmin()) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Erişim Engellendi')),
+        body: const Center(child: Text('Bu sayfayı görüntüleme yetkiniz yok.')),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sürüm Notları'),
@@ -12,6 +20,19 @@ class ChangelogScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _buildVersionSection(
+            version: '1.7.4',
+            date: '30 Nisan 2026',
+            changes: [
+              'Yeni: Görev silme ve bağlantı adresi (URL) ekleme özellikleri getirildi.',
+              'Yeni: Görevlere eklenen URL veya site bağlantılarının site başlıkları ekran okuyucu uyumlu bir şekilde otomatik çözümlenerek daha temiz okunması sağlandı.',
+              'Yeni: URL bağlantılarını kopyalama ve silme seçenekleri işlemler menüsüne yerleştirildi.',
+              'Yeni: Sürüm bilgisi (Changelog) sayfası gizliliği artırılarak standart kullanıcıların erişimine kapatıldı.',
+              'İyileştirme: Görevin oluşturulma ekranında atanmış hedef bitiş tarihi (kalan gün) anonsları ve okunabilir tarih bildirimleri etkinleştirildi.',
+            ],
+            isLatest: true,
+          ),
+          const SizedBox(height: 24),
           _buildVersionSection(
             version: '1.7.3',
             date: '30 Nisan 2026',
