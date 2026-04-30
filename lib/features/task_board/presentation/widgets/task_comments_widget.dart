@@ -141,7 +141,7 @@ class _TaskCommentsWidgetState extends State<TaskCommentsWidget> {
          return;
       }
       await _audioPlayer.stop();
-      final url = PocketBaseService.getFileUrl('task_comments', comment.id, comment.voiceNote);
+      final url = '${PocketBaseService.client.baseUrl}/api/files/task_comments/${comment.id}/${comment.voiceNote}';
       setState(() => _playingCommentId = comment.id);
       await _audioPlayer.setUrl(url);
       await _audioPlayer.play();
