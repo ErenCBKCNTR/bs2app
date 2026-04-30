@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 import '../../../../core/services/settings_service.dart';
@@ -33,11 +34,13 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   final SettingsService _settingsService = SettingsService();
 
   Future<void> _playSystemBeep({required bool isJoin}) async {
-    try {
-      await const MethodChannel('com.example.blind_social/lockscreen')
-          .invokeMethod('playTone', {'type': isJoin ? 'start' : 'end', 'duration': 150});
-    } catch (e) {
-      AppLogger.instance.warning('Sistem biplenirken hata: $e');
+    if (!kIsWeb) {
+      try {
+        await const MethodChannel('com.example.blind_social/lockscreen')
+            .invokeMethod('playTone', {'type': isJoin ? 'start' : 'end', 'duration': 150});
+      } catch (e) {
+        AppLogger.instance.warning('Sistem biplenirken hata: $e');
+      }
     }
   }
 
@@ -76,14 +79,16 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   }
 
   Future<void> _connectToRoom() async {
-    final status = await Permission.microphone.request();
-    if (status != PermissionStatus.granted) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Sohbete katılmak için mikrofon izni gereklidir.';
-        });
+    if (!kIsWeb) {
+      final status = await Permission.microphone.request();
+      if (status != PermissionStatus.granted) {
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'Sohbete katılmak için mikrofon izni gereklidir.';
+          });
+        }
+        return;
       }
-      return;
     }
 
     AppLogger.instance.info('Odaya bağlanılıyor: ${widget.roomName} (${widget.roomId})');

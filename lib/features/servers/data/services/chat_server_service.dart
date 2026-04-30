@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:blind_social/features/servers/data/models/chat_server.dart';
 import 'package:blind_social/features/servers/data/models/chat_server_room.dart';
 import 'package:blind_social/features/servers/data/models/server_message.dart';
@@ -180,7 +183,13 @@ class ChatServerService {
       'content': '[VOICE]',
     };
 
-    final file = await http.MultipartFile.fromPath('file', audioPath);
+    http.MultipartFile file;
+    if (kIsWeb) {
+      final res = await http.get(Uri.parse(audioPath));
+      file = http.MultipartFile.fromBytes('file', res.bodyBytes, filename: 'ses.m4a');
+    } else {
+      file = await http.MultipartFile.fromPath('file', audioPath);
+    }
 
     final record = await _pb.collection('server_messages').create(
       body: body,

@@ -3,6 +3,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart' hide SettingsService;
@@ -104,8 +105,10 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                 // Zaten görüşmede, arayan kişiye BUSY (meşgul) mesajı gönder
                 AppLogger.instance.info('Kullanıcı görüşmede, gelen arama meşgule atılıyor.');
                 try {
-                  const MethodChannel('com.example.blind_social/lockscreen')
-                      .invokeMethod('playTone', {'type': 'start', 'duration': 100}); // Arka planda gelen çağrı uyarı sisi
+                  if (!kIsWeb) {
+                    const MethodChannel('com.example.blind_social/lockscreen')
+                        .invokeMethod('playTone', {'type': 'start', 'duration': 100}); // Arka planda gelen çağrı uyarı sisi
+                  }
                   await PocketBaseService.client.collection('messages').create(body: {
                      'chat_id': chatId,
                      'sender_id': myId,
@@ -536,7 +539,15 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     );
 
     if (exitConfirmed == true && mounted) {
-      SystemNavigator.pop();
+      if (kIsWeb) {
+        // Web'de tamamen çıkış yapmak zor, o yüzden sadece root sayfaya yönlendiriyoruz veya kapatmaya çalışıyoruz
+        // Tarayıcı sekmesini kapat
+        // Eğer kapatamıyorsa google'a yolla
+        PocketBaseService.client.authStore.clear(); // Opsiyonel
+        Navigator.pop(context); // Bu da muhtemelen hiçbir işe yaramayacak ama kIsWeb kontrolü kalması iyi
+      } else {
+        SystemNavigator.pop();
+      }
     }
   }
 
@@ -1215,7 +1226,7 @@ Widget? _buildFAB() {
             title: const Text('Profilim'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen()));
+              Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/profile'), builder: (_) => const MyProfileScreen()));
             },
           ),
           ListTile(
@@ -1223,7 +1234,7 @@ Widget? _buildFAB() {
             title: const Text('Uygulama Ayarları'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const AppSettingsScreen()));
+              Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/settings'), builder: (_) => const AppSettingsScreen()));
             },
           ),
           ListTile(
@@ -1231,7 +1242,7 @@ Widget? _buildFAB() {
             title: const Text('Kampanyalar'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const CampaignsScreen()));
+              Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/campaigns'), builder: (_) => const CampaignsScreen()));
             },
           ),
           ListTile(
@@ -1239,7 +1250,7 @@ Widget? _buildFAB() {
             title: const Text('Canlı Radyo'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const RadioListScreen()));
+              Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/radio'), builder: (_) => const RadioListScreen()));
             },
           ),
           ListTile(
@@ -1247,7 +1258,7 @@ Widget? _buildFAB() {
             title: const Text('Oyun Alanı'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const blind_social_games.GamesScreen()));
+              Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/games'), builder: (_) => const blind_social_games.GamesScreen()));
             },
           ),
           ListTile(
@@ -1255,7 +1266,7 @@ Widget? _buildFAB() {
             title: const Text('Araçlar'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const blind_social_tools.ToolsScreen()));
+              Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/tools'), builder: (_) => const blind_social_tools.ToolsScreen()));
             },
           ),
           const Divider(),
@@ -1265,7 +1276,7 @@ Widget? _buildFAB() {
               title: const Text('Yönetici Paneli'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminPanelScreen()));
+                Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/admin'), builder: (_) => const AdminPanelScreen()));
               },
             ),
           if (AdminService().isAdmin())
@@ -1274,7 +1285,7 @@ Widget? _buildFAB() {
               title: const Text('Geliştirici Modu / Loglar'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperLogsScreen()));
+                Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/logs'), builder: (_) => const DeveloperLogsScreen()));
               },
             ),
           const Spacer(),

@@ -61,7 +61,7 @@ class NotificationService {
   }
 
   Future<void> init() async {
-    if (_isInitialized) return;
+    if (_isInitialized || kIsWeb) return;
     
     // Firebase Messaging altyapısını kur
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
@@ -81,19 +81,21 @@ class NotificationService {
     }
 
     // Pil optimizasyonunu devre dışı bırakmayı iste (Arka plan bildirimleri için önemli)
-    try {
-      if (await Permission.ignoreBatteryOptimizations.isDenied) {
-        // Doğrudan sistemi uyarmayı dene
-        await Permission.ignoreBatteryOptimizations.request();
-        
-        // Eğer hala reddedilmişse ayarları açması için kullanıcıyı uyarabiliriz ama 
-        // şu an için log atıp devam edelim.
+    if (!kIsWeb) {
+      try {
         if (await Permission.ignoreBatteryOptimizations.isDenied) {
-           AppLogger.instance.warning('Pil optimizasyon izni kullanıcı tarafından manuel reddedildi.');
+          // Doğrudan sistemi uyarmayı dene
+          await Permission.ignoreBatteryOptimizations.request();
+          
+          // Eğer hala reddedilmişse ayarları açması için kullanıcıyı uyarabiliriz ama 
+          // şu an için log atıp devam edelim.
+          if (await Permission.ignoreBatteryOptimizations.isDenied) {
+            AppLogger.instance.warning('Pil optimizasyon izni kullanıcı tarafından manuel reddedildi.');
+          }
         }
+      } catch (e) {
+        AppLogger.instance.warning('Pil optimizasyon izni istenemedi: $e');
       }
-    } catch (e) {
-      AppLogger.instance.warning('Pil optimizasyon izni istenemedi: $e');
     }
 
     // Android 13+ bildirim izni (permission_handler ile ek kontrol)
@@ -170,6 +172,7 @@ class NotificationService {
   }
 
   Future<void> _syncToken({String? token}) async {
+    if (kIsWeb) return; // Web için bildirim yapılandırmamız şu an yok
     try {
       final fcmToken = token ?? await FirebaseMessaging.instance.getToken();
       if (fcmToken == null) return;

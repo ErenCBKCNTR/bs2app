@@ -86,12 +86,17 @@ class _ChatInputFieldState extends State<ChatInputField> {
   Future<void> _startRecording() async {
     try {
       if (await _audioRecorder.hasPermission()) {
-        final directory = await getApplicationDocumentsDirectory();
-        final path = '${directory.path}/recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        String? path;
+        if (!foundation.kIsWeb) {
+          final directory = await getApplicationDocumentsDirectory();
+          path = '${directory.path}/recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        }
 
         await _audioRecorder.start(const RecordConfig(), path: path);
 
-        Vibration.vibrate(duration: 50);
+        if (!foundation.kIsWeb) {
+          try { Vibration.vibrate(duration: 50); } catch (_) {}
+        }
         setState(() {
           _isRecording = true;
           _isPaused = false;
@@ -127,7 +132,9 @@ class _ChatInputFieldState extends State<ChatInputField> {
         _isPaused = false;
         _recordDuration = 0;
       });
-      Vibration.vibrate(duration: 50);
+      if (!foundation.kIsWeb) {
+        try { Vibration.vibrate(duration: 50); } catch (_) {}
+      }
     } catch(e) {
       debugPrint('Cancel recording error: $e');
     }
@@ -143,7 +150,9 @@ class _ChatInputFieldState extends State<ChatInputField> {
 
     if (path != null && _recordDuration >= 1) {
       widget.onSendAudio(path);
-      Vibration.vibrate(duration: 100);
+      if (!foundation.kIsWeb) {
+        try { Vibration.vibrate(duration: 100); } catch (_) {}
+      }
     }
   }
 

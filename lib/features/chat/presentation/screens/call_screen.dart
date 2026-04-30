@@ -122,13 +122,15 @@ class _CallScreenState extends State<CallScreen> {
               });
               try {
                 // Meşgul sesi çal (ton generatör ile)
-                final channel = const MethodChannel('com.example.blind_social/lockscreen');
-                channel.invokeMethod('playTone', {'type': 'end', 'duration': 400});
-                await Future.delayed(const Duration(milliseconds: 600));
-                channel.invokeMethod('playTone', {'type': 'end', 'duration': 400});
-                await Future.delayed(const Duration(milliseconds: 600));
-                channel.invokeMethod('playTone', {'type': 'end', 'duration': 400});
-                await Future.delayed(const Duration(milliseconds: 800));
+                if (!kIsWeb) {
+                  final channel = const MethodChannel('com.example.blind_social/lockscreen');
+                  channel.invokeMethod('playTone', {'type': 'end', 'duration': 400});
+                  await Future.delayed(const Duration(milliseconds: 600));
+                  channel.invokeMethod('playTone', {'type': 'end', 'duration': 400});
+                  await Future.delayed(const Duration(milliseconds: 600));
+                  channel.invokeMethod('playTone', {'type': 'end', 'duration': 400});
+                  await Future.delayed(const Duration(milliseconds: 800));
+                }
               } catch (_) {}
               if (mounted) Navigator.pop(context);
             }
@@ -170,11 +172,13 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   Future<void> _playSystemBeep({required bool isEnd}) async {
-    try {
-      await const MethodChannel('com.example.blind_social/lockscreen')
-          .invokeMethod('playTone', {'type': isEnd ? 'end' : 'start', 'duration': isEnd ? 200 : 150});
-    } catch (e) {
-      AppLogger.instance.warning('Sistem biplenirken hata: $e');
+    if (!kIsWeb) {
+      try {
+        await const MethodChannel('com.example.blind_social/lockscreen')
+            .invokeMethod('playTone', {'type': isEnd ? 'end' : 'start', 'duration': isEnd ? 200 : 150});
+      } catch (e) {
+        AppLogger.instance.warning('Sistem biplenirken hata: $e');
+      }
     }
   }
 
@@ -232,26 +236,28 @@ class _CallScreenState extends State<CallScreen> {
 
   Future<void> _initCall() async {
     // Permission checks
-    final permissions = [
-      Permission.microphone,
-      if (widget.isVideo) Permission.camera,
-    ];
-    
-    Map<Permission, PermissionStatus> statuses = await permissions.request();
-    
-    bool allGranted = true;
-    statuses.forEach((permission, status) {
-      if (!status.isGranted) allGranted = false;
-    });
+    if (!kIsWeb) {
+      final permissions = [
+        Permission.microphone,
+        if (widget.isVideo) Permission.camera,
+      ];
+      
+      Map<Permission, PermissionStatus> statuses = await permissions.request();
+      
+      bool allGranted = true;
+      statuses.forEach((permission, status) {
+        if (!status.isGranted) allGranted = false;
+      });
 
-    if (!allGranted) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kilit özellikler için kamera ve mikrofon izni gereklidir.')),
-        );
-        Navigator.pop(context);
+      if (!allGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Kilit özellikler için kamera ve mikrofon izni gereklidir.')),
+          );
+          Navigator.pop(context);
+        }
+        return;
       }
-      return;
     }
 
     try {
@@ -763,7 +769,7 @@ class _CallScreenState extends State<CallScreen> {
     if (_room == null) return;
     
     // Kamera izni kontrol et
-    if (enable) {
+    if (enable && !kIsWeb) {
       final status = await Permission.camera.request();
       if (!status.isGranted) {
         ScaffoldMessenger.of(context).showSnackBar(

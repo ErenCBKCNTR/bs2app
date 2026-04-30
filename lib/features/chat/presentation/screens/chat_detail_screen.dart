@@ -13,6 +13,8 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:async';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import '../../../../core/utils/logger.dart';
 import 'package:http/http.dart' as http;
 import 'package:vibration/vibration.dart';
@@ -381,7 +383,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     });
 
     try {
-      final fileBytes = File(path).readAsBytesSync();
+      Uint8List fileBytes;
+      if (kIsWeb) {
+        final res = await http.get(Uri.parse(path));
+        fileBytes = res.bodyBytes;
+      } else {
+        fileBytes = File(path).readAsBytesSync();
+      }
       
       final record = await PocketBaseService.client.collection('messages').create(
         body: {

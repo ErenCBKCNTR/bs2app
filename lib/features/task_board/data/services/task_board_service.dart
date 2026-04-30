@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:http/http.dart' as http;
@@ -346,7 +349,14 @@ class TaskBoardService {
     final userId = _pb.authStore.model?.id;
     if (userId == null) throw Exception("Oturum bulunamadı");
 
-    final file = await http.MultipartFile.fromPath('voice_note', path);
+    http.MultipartFile file;
+    if (kIsWeb) {
+      final res = await http.get(Uri.parse(path));
+      file = http.MultipartFile.fromBytes('voice_note', res.bodyBytes, filename: 'ses.m4a');
+    } else {
+      file = await http.MultipartFile.fromPath('voice_note', path);
+    }
+    
     final record = await _pb.collection('task_comments').create(
       body: {
         'task_id': taskId,

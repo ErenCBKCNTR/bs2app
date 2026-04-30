@@ -1,5 +1,6 @@
 import 'dart:io' as io;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/services/notification_service.dart';
 import 'package:pocketbase/pocketbase.dart';
@@ -122,6 +123,39 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _authenticateWithGoogle() async {
     setState(() => _isLoading = true);
     try {
+      if (kIsWeb) {
+        final authData = await PocketBaseService.client.collection('users').authWithOAuth2(
+          'google',
+          (url) async {
+            // Web auth handled automatically by PocketBase dart sdk via window.open
+          },
+        );
+        
+        if (authData.meta != null && authData.record != null) {
+          final currentFullName = authData.record!.getStringValue('full_name');
+          if (currentFullName.isEmpty) {
+            String googleName = '';
+            if (authData.meta!['name'] != null) {
+              googleName = authData.meta!['name'] as String;
+            } else if (authData.meta!['rawUser'] != null) {
+              final raw = authData.meta!['rawUser'] as Map<String, dynamic>;
+              googleName = raw['name'] ?? raw['given_name'] ?? '';
+            }
+            if (googleName.isNotEmpty) {
+              await PocketBaseService.client.collection('users').update(
+                authData.record!.id,
+                body: {'full_name': googleName},
+              );
+            }
+          }
+        }
+        
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/');
+        }
+        return;
+      }
+
       // SDK içindeki versiyon uyumsuzlukları ve 'missing provider' hatalarını aşmak için,
       // auth methodlarını PocketBase API'sine doğrudan manual istek atarak çekiyoruz.
       final response = await PocketBaseService.client.send('/api/collections/users/auth-methods', method: 'GET');

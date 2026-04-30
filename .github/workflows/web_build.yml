@@ -35,7 +35,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Web
-        run: flutter build web --release --no-tree-shake-icons
+        run: flutter build web --release --no-tree-shake-icons --web-renderer html
 
       - name: Upload Web Artifact
         uses: actions/upload-artifact@v4

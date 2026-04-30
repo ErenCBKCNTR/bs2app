@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/semantics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blind_social/features/auth/presentation/screens/auth_wrapper.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -70,6 +72,10 @@ void main() async {
   };
 
   WidgetsFlutterBinding.ensureInitialized();
+  
+  if (kIsWeb) {
+    SemanticsBinding.instance.ensureSemantics();
+  }
   
   // Ekran korumasını başlat (Screenshot engelleme)
   await SecurityService().protectScreen();
