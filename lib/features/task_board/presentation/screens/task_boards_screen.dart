@@ -323,14 +323,16 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                   final favText = isFav ? "Favorilerinizde." : "Favorilerinizde değil.";
                   final label = "${board.name} isimli pano, $favText İçerisinde $listCount adet liste mevcut. Panoya girmek için çift tıklayın, favori durumunu değiştirmek için uzun basın.";
 
+                  final isOwner = _currentUserId == board.ownerId;
+
                   return Semantics(
                     label: label,
                     button: true,
                     onLongPressHint: isFav ? "Favorilerden Çıkar" : "Favorilere Ekle",
                     onTapHint: "Panoya Gir",
                     customSemanticsActions: {
-                      const CustomSemanticsAction(label: 'Panoyu Sil'): () => _deleteBoardDialog(board),
-                      const CustomSemanticsAction(label: 'Adını Düzenle'): () => _editBoardDialog(board),
+                      if (isOwner) const CustomSemanticsAction(label: 'Panoyu Sil'): () => _deleteBoardDialog(board),
+                      if (isOwner) const CustomSemanticsAction(label: 'Adını Düzenle'): () => _editBoardDialog(board),
                     },
                     child: ExcludeSemantics(
                       child: InkWell(

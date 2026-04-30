@@ -33,13 +33,15 @@
 - [x] Görev detay ekranındaki başlığın anlaşılır şekilde okunması ve etiketlerdeki renk/silme işlemlerinin ekran okuyucu uyumlu hale getirilmesi sağlandı.
 - [x] Kontrol listesi öğesi eklerken alınan "Missing required value" (sıfır değeri hatası) çözüldü.
 - [x] Görev detaylarındaki kontrol listesi erişilebilirliği sağlandı ve tamamlanma yüzdesi gösterildi.
-- [x] Kontrol listesi altına Voice Notes (Sesli Notlar) eklendi, maksimum 3 kayıt (max 5 dk) sınırı ile sınırlandırıldı.
-- [x] Görevlerin başlangıç ve bitiş tarihini belirlemek için Dates Widget eklendi. Otomatik süre hesaplamasıyla çalışma süresi hem detay hem pano ekranında ekran okuyuculara duyuruldu.
+- [x] Kontrol listesi altına Voice Notes (Sesli Notlar) eklendi, maksimum 3 kayıt (max 5 dk) sınırı ile sınırlandırıldı. Ses kaydedici hataları giderildi, Focus drop sorunu çözüldü. Kaydedici ui güncellenerek iptal ve duraklatma işlevleri eklendi, listelenen ses kayıtları için kaydı silme özellikleri ekran okuyucu uyumlu hale getirildi.
+- [x] Başlangıç ve bitiş tarihi atama yerine 'Görev Kronometresi' yapısı getirildi. Süre başladı/bitti mantığı ile zamanlama ayarlandı ve ekran okuyuculara okunması sağlandı.
 
 ## 4. İşbirliği ve Paylaşım
 - [x] Panoya başka kullanıcıları davet etme işleminde artık E-Posta adresinin yanında Kullanıcı Adı girerek de arama desteklendi.
-- [x] Bir kartın içerisine panoya üye olan kişilerden sorumlular (assignees) atanabilecek.
-- [x] Kartı dışarıyla (`SharePlus` veya Deep Link ile) link olarak paylaşma butonu eklenecek.
+- [x] Bir kartın içerisine panoya üye olan kişilerden sorumlular (assignees) atanabilecek. Oraya hangi kullanıcı basarsa altında kullanıcı adı yazacak ve virgül ile ayrılacak.
+- [x] Pano detayları sayfasına bağlı olan kullanıcıları listeleme bölümü eklenecek, sahibi düzenleme yetkisi tanımlayabilecek veya hesabı erişimden çıkarabilecek.
+- [x] Pano silme işlemleri pano sahiplerinde görünecek şekilde yetkilendirmeler sıkılaştırılacak.
+- [x] Kartı dışarıyla (SharePlus ile) paylaşırken artık link paylaşmak yerine, görevin tüm detaylarını, durumunu, sorumlularını ve kronometresini içeren erişilebilir bir "metin" formatında paylaşım yapma özelliği eklendi.
 
 ## 5. Arayüz (UI/UX) ve Erişilebilirlik
 - [x] Listeler alt alta dizilecek. Liste açıldığında, içerisindeki kartlar kütüphane raflarındaki kitaplar gibi yan yana (GridView / Wrap kullanılarak) dizilecek.

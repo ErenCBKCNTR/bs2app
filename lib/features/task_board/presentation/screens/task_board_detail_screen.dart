@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
+import 'package:blind_social/features/task_board/presentation/screens/board_members_screen.dart';
 import 'package:blind_social/features/task_board/data/models/task_board.dart';
 import 'package:blind_social/features/task_board/data/models/task_list_model.dart';
 import 'package:blind_social/features/task_board/data/models/task_item.dart';
@@ -314,6 +315,8 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    bool canEdit = widget.board.ownerId == _currentUserId || widget.board.editors.contains(_currentUserId);
+    
     return Scaffold(
       appBar: AppBar(
         title: _isSearching ? TextField(
@@ -345,6 +348,19 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
               });
             },
           ),
+          IconButton(
+            icon: const Icon(Icons.people),
+            tooltip: 'Bağlı Kullanıcılar',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BoardMembersScreen(board: widget.board, service: _service),
+                )
+              ).then((_) => _fetchData(showLoading: false));
+            },
+          ),
+          if (canEdit)
           IconButton(
             icon: const Icon(Icons.group_add),
             tooltip: 'Üye Davet Et',
@@ -379,11 +395,12 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
               }
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.add_card),
-            tooltip: 'Yeni Liste Ekle',
-            onPressed: _createListDialog,
-          )
+          if (canEdit)
+            IconButton(
+              icon: const Icon(Icons.add_card),
+              tooltip: 'Yeni Liste Ekle',
+              onPressed: _createListDialog,
+            )
         ],
       ),
       body: SafeArea(
@@ -436,10 +453,10 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                           customSemanticsActions: {
                             const CustomSemanticsAction(label: 'Listeyi Genişlet/Daralt'): () => _toggleCollapse(list),
                             CustomSemanticsAction(label: isPinned ? 'Başa Tutturmayı Kaldır' : 'Başa Tuttur'): () => _togglePin(list),
-                            if (index > 0) const CustomSemanticsAction(label: 'Yukarı Taşı'): () => _moveList(list, true),
-                            if (index < _lists.length - 1) const CustomSemanticsAction(label: 'Aşağı Taşı'): () => _moveList(list, false),
-                            const CustomSemanticsAction(label: 'Görev Ekle'): () => _createTaskDialog(list.id),
-                            const CustomSemanticsAction(label: 'Listeyi Sil'): () => _deleteListDialog(list),
+                            if (canEdit && index > 0) const CustomSemanticsAction(label: 'Yukarı Taşı'): () => _moveList(list, true),
+                            if (canEdit && index < _lists.length - 1) const CustomSemanticsAction(label: 'Aşağı Taşı'): () => _moveList(list, false),
+                            if (canEdit) const CustomSemanticsAction(label: 'Görev Ekle'): () => _createTaskDialog(list.id),
+                            if (canEdit) const CustomSemanticsAction(label: 'Listeyi Sil'): () => _deleteListDialog(list),
                           },
                           child: ExcludeSemantics(
                             child: InkWell(
@@ -517,13 +534,45 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                                   final taskColor = isTaskCompleted ? Colors.grey.withOpacity(0.1) : Colors.primaries[taskColorIndex].withOpacity(0.1);
                                   
                                   String timeSpentStr = "";
-                                  if (task.startDate != null && task.dueDate != null) {
-                                    final diff = task.dueDate!.difference(task.startDate!);
-                                    if (!diff.isNegative) {
-                                      int days = diff.inDays;
-                                      int hours = diff.inHours % 24;
-                                      int mins = diff.inMinutes % 60;
-                                      timeSpentStr = " Bu görevi $days gün $hours saat $mins dakikada tamamladınız.";
+                                  if (task.startDate != null) {
+                                    final now = DateTime.now();
+                                    final dtStart = task.startDate!;
+                                    final dtEnd = task.dueDate;
+                                    
+                                    String formatDt(DateTime dt) {
+                                      const months = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+                                      if (now.year == dt.year) return "${dt.day} ${months[dt.month]}";
+                                      return "${dt.day} ${months[dt.month]} ${dt.year}";
+                                    }
+
+                                    if (dtEnd != null) {
+                                      final diff = dtEnd.difference(dtStart);
+                                      if (!diff.isNegative) {
+                                        int days = diff.inDays;
+                                        int hours = diff.inHours % 24;
+                                        int mins = diff.inMinutes % 60;
+                                        
+                                        List<String> p = [];
+                                        if(days > 0) p.add("$days gün");
+                                        if(hours > 0) p.add("$hours saat");
+                                        if(mins > 0) p.add("$mins dakika");
+                                        if(p.isEmpty) p.add("1 dakikadan az");
+                                        
+                                        timeSpentStr = " Bu görev üzerinde ${p.join(" ")} çalıştınız. ${formatDt(dtStart)} tarihinde başladınız, ${formatDt(dtEnd)} tarihinde bitirdiniz.";
+                                      }
+                                    } else {
+                                      final diff = now.difference(dtStart);
+                                      if (!diff.isNegative) {
+                                        int days = diff.inDays;
+                                        int hours = diff.inHours % 24;
+                                        int mins = diff.inMinutes % 60;
+                                        List<String> p = [];
+                                        if(days > 0) p.add("$days gün");
+                                        if(hours > 0) p.add("$hours saat");
+                                        if(mins > 0) p.add("$mins dakika");
+                                        if(p.isEmpty) p.add("1 dakikadan az");
+                                        timeSpentStr = " Görev üzerinde şu ana kadar ${p.join(" ")} çalıştınız. Başlama tarihiniz: ${formatDt(dtStart)}.";
+                                      }
                                     }
                                   }
 
@@ -534,8 +583,8 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                                       button: true,
                                       onTapHint: 'Görevi Aç',
                                       customSemanticsActions: {
-                                        const CustomSemanticsAction(label: 'Görevi Sil'): () => _deleteTaskDialog(task),
-                                        CustomSemanticsAction(label: isTaskCompleted ? 'Tamamlanmadı Olarak İşaretle' : 'Tamamlandı Olarak İşaretle'): () => _toggleTaskState(task),
+                                        if (canEdit) const CustomSemanticsAction(label: 'Görevi Sil'): () => _deleteTaskDialog(task),
+                                        if (canEdit || task.assignees.contains(_currentUserId)) CustomSemanticsAction(label: isTaskCompleted ? 'Tamamlanmadı Olarak İşaretle' : 'Tamamlandı Olarak İşaretle'): () => _toggleTaskState(task),
                                       },
                                       child: ExcludeSemantics(
                                         child: Card(

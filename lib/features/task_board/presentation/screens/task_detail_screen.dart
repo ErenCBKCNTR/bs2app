@@ -6,7 +6,7 @@ import 'package:blind_social/features/task_board/data/models/task_item.dart';
 import 'package:blind_social/features/task_board/data/models/task_checklist.dart';
 import 'package:blind_social/features/task_board/data/models/task_list_model.dart';
 import 'package:blind_social/features/task_board/data/services/task_board_service.dart';
-import 'package:blind_social/features/task_board/presentation/widgets/task_dates_widget.dart';
+import 'package:blind_social/features/task_board/presentation/widgets/task_stopwatch_widget.dart';
 import 'package:blind_social/features/task_board/presentation/widgets/task_voice_notes_widget.dart';
 
 class TaskDetailScreen extends StatefulWidget {
@@ -28,12 +28,49 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   late TaskItem _task;
   List<TaskChecklist> _checklists = [];
   bool _isLoading = true;
+  List<Map<String, dynamic>> _assigneesData = [];
+
+  final FocusNode _addLabelBtnFocusNode = FocusNode();
+  final FocusNode _addChecklistBtnFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _task = widget.task;
-    _fetchChecklists();
+    _fetchDataCombined();
+  }
+
+  @override
+  void dispose() {
+    _addLabelBtnFocusNode.dispose();
+    _addChecklistBtnFocusNode.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchDataCombined() async {
+    setState(() => _isLoading = true);
+    await Future.wait([
+      _fetchChecklists(),
+      _fetchAssignees(),
+    ]);
+    if (mounted) setState(() => _isLoading = false);
+  }
+  
+  Future<void> _fetchAssignees() async {
+    List<Map<String, dynamic>> users = [];
+    for (String id in _task.assignees) {
+      try {
+        final rec = await PocketBaseService.client.collection('_pb_users_auth_').getOne(id);
+        users.add(rec.toJson());
+      } catch (e) {
+        // ignore
+      }
+    }
+    if (mounted) {
+      setState(() {
+        _assigneesData = users;
+      });
+    }
   }
 
   Future<void> _fetchChecklists() async {
@@ -41,7 +78,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       final items = await _service.getChecklist(_task.id);
       setState(() {
         _checklists = items;
-        _isLoading = false;
       });
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
@@ -54,6 +90,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       setState(() {
         _task = TaskItem.fromRecord(updatedTaskRecord);
       });
+      await _fetchAssignees();
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Görev yenilenemedi: $e')));
     }
@@ -182,10 +219,100 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       setState(() {
         _task = updated;
       });
-      SemanticsService.announce('Etiket silindi', TextDirection.ltr);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _addLabelBtnFocusNode.requestFocus();
+        SemanticsService.announce('Etiket silindi', TextDirection.ltr);
+      });
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
     }
+  }
+
+  void _shareTaskInformation() {
+    final buffer = StringBuffer();
+    buffer.writeln('Görev Adı: ${_task.title}');
+    buffer.writeln('Durum: ${_task.isCompleted ? "Tamamlandı" : "Devam Ediyor"}');
+    buffer.writeln();
+
+    if (_task.description.isNotEmpty) {
+      buffer.writeln('Açıklama:');
+      buffer.writeln(_task.description);
+      buffer.writeln();
+    }
+
+    if (_task.labels.isNotEmpty) {
+      buffer.writeln('Etiketler:');
+      for (var lbl in _task.labels) {
+        buffer.writeln('- ${lbl['text']}');
+      }
+      buffer.writeln();
+    }
+
+    if (_assigneesData.isNotEmpty) {
+      buffer.writeln('Sorumlular (Atananlar):');
+      final assigneesStr = _assigneesData.map((u) => (u['full_name'] as String? ?? '').isNotEmpty == true ? u['full_name'] : u['username']).join(', ');
+      buffer.writeln(assigneesStr);
+      buffer.writeln();
+    }
+
+    if (_checklists.isNotEmpty) {
+      buffer.writeln('Kontrol Listesi:');
+      for (var c in _checklists) {
+        buffer.writeln('- ${c.title} (${c.isCompleted ? "Tamamlandı" : "Tamamlanmadı"})');
+      }
+      buffer.writeln();
+    }
+
+    if (_task.voiceNotes.isNotEmpty) {
+      buffer.writeln('Sesli Notlar: ${_task.voiceNotes.length} adet sesli not mevcut.');
+      buffer.writeln();
+    }
+
+    if (_task.startDate != null) {
+      final now = DateTime.now();
+      final dtStart = _task.startDate!;
+      final dtEnd = _task.dueDate;
+
+      String formatDt(DateTime dt) {
+        const months = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+        if (now.year == dt.year) return "${dt.day} ${months[dt.month]}";
+        return "${dt.day} ${months[dt.month]} ${dt.year}";
+      }
+
+      if (dtEnd != null) {
+        final diff = dtEnd.difference(dtStart);
+        if (!diff.isNegative) {
+          int days = diff.inDays;
+          int hours = diff.inHours % 24;
+          int mins = diff.inMinutes % 60;
+          List<String> p = [];
+          if(days > 0) p.add("$days gün");
+          if(hours > 0) p.add("$hours saat");
+          if(mins > 0) p.add("$mins dakika");
+          if(p.isEmpty) p.add("1 dakikadan az");
+          buffer.writeln("Görev Kronometresi: Bu görev üzerinde ${p.join(" ")} çalışıldı. ${formatDt(dtStart)} tarihinde başlandı, ${formatDt(dtEnd)} tarihinde bitirildi.");
+        }
+      } else {
+        final diff = now.difference(dtStart);
+        if (!diff.isNegative) {
+          int days = diff.inDays;
+          int hours = diff.inHours % 24;
+          int mins = diff.inMinutes % 60;
+          List<String> p = [];
+          if(days > 0) p.add("$days gün");
+          if(hours > 0) p.add("$hours saat");
+          if(mins > 0) p.add("$mins dakika");
+          if(p.isEmpty) p.add("1 dakikadan az");
+          buffer.writeln("Görev Kronometresi: Görev üzerinde şu ana kadar ${p.join(" ")} çalışıldı. Başlama tarihi: ${formatDt(dtStart)}.");
+        }
+      }
+      buffer.writeln();
+    }
+
+    buffer.writeln('--------------------');
+    buffer.writeln('Blind Social - Görev Planlayıcısı ile oluşturulmuştur.');
+
+    Share.share(buffer.toString());
   }
 
   Future<void> _moveList() async {
@@ -310,6 +437,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         _checklists.removeWhere((c) => c.id == item.id);
       });
       _announceChecklistProgress();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _addChecklistBtnFocusNode.requestFocus();
+      });
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
     }
@@ -332,9 +462,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             IconButton(
               icon: const Icon(Icons.share),
               tooltip: 'Kartı Paylaş',
-              onPressed: () {
-                Share.share('Görev: ${_task.title}\nAçıklama: ${_task.description}\nDurum: ${_task.isCompleted ? "Tamamlandı" : "Devam Ediyor"}\nLink: https://api.cabukcan.com/task/${_task.id}');
-              },
+              onPressed: _shareTaskInformation,
             ),
             IconButton(
               icon: const Icon(Icons.drive_file_move),
@@ -377,6 +505,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         );
                     }).toList(),
                     ActionChip(
+                      focusNode: _addLabelBtnFocusNode,
                       label: const Text('Etiket Ekle'),
                       avatar: const Icon(Icons.add, size: 16),
                       onPressed: _addLabel,
@@ -399,6 +528,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           setState(() {
                             _task = updated;
                           });
+                          await _fetchAssignees();
                           SemanticsService.announce("Sorumluluk durumu güncellendi", TextDirection.ltr);
                         } catch (e) {
                           if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
@@ -407,7 +537,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     )
                   ],
                 ),
-                Text('Toplam ${_task.assignees.length} kişi bu görevden sorumlu.'),
+                if (_assigneesData.isEmpty)
+                  const Text('Bu göreve henüz kimse atanmadı.')
+                else
+                  Text('${_assigneesData.map((u) => (u['full_name'] as String? ?? '').isNotEmpty == true ? u['full_name'] : u['username']).join(', ')} isimli kullanıcılar bu görev için atandı.'),
                 const SizedBox(height: 24),
 
                 // Açıklama
@@ -451,6 +584,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       ],
                     ),
                     IconButton(
+                      focusNode: _addChecklistBtnFocusNode,
                       icon: const Icon(Icons.add),
                       tooltip: 'Madde Ekle',
                       onPressed: _addChecklistItem,
@@ -462,9 +596,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 else ..._checklists.map((c) {
                   return Card(
                     child: Semantics(
-                      label: '${c.title}. ${c.isCompleted ? "Tamamlandı" : "Tamamlanmadı"}. İşin ismini düzenlemek veya maddeyi silmek için işlemler menüsünü açın. Tamamlanma durumunu değiştirmek için çift tıklayın.',
+                      label: '${c.title}. ${c.isCompleted ? "Tamamlandı" : "Tamamlanmadı"}.',
                       button: true,
                       customSemanticsActions: {
+                        CustomSemanticsAction(label: c.isCompleted ? 'Tamamlanmadı Olarak İşaretle' : 'Tamamlandı Olarak İşaretle'): () => _toggleChecklist(c),
                         const CustomSemanticsAction(label: 'Maddeyi Sil'): () => _deleteChecklistItem(c),
                       },
                       child: ExcludeSemantics(
@@ -501,7 +636,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 
                 const SizedBox(height: 24),
                 const Divider(),
-                TaskDatesWidget(
+                TaskStopwatchWidget(
                   task: _task,
                   service: _service,
                   onChanged: () => _refreshTask(),

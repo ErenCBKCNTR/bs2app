@@ -18,7 +18,7 @@ class ToolsScreen extends StatelessWidget {
               child: ListTile(
                 leading: const Icon(Icons.assignment_outlined, size: 40, color: Colors.blueAccent),
                 title: const Text('Görev Panosu', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                subtitle: const Text('Trello benzeri, görevlerinizi ve listelerinizi yönetebileceğiniz çalışma alanı.'),
+                subtitle: const Text('Kişisel ve ekip görevlerinizi organize edin, listeler oluşturun ve ilerlemenizi takip edin.'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const TaskBoardsScreen()));

@@ -13,6 +13,22 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            version: '1.7.2',
+            date: '30 Nisan 2026',
+            changes: [
+              'Yeni: Görevleri paylaşırken salt URL yerine görevin açıklaması, durumu, etiketleri, sorumluları ve geçirdiği zaman gibi tüm detaylarını içeren, ekran okuyucu uyumlu düz metin ile paylaşma özelliği açıldı.',
+              'Yeni: Görev içerisindeki ses kayıtları artık duraklatılabiliyor ve kayıt aşamasında anında iptal edilebiliyor.',
+              'İyileştirme: Ses kayıtlarını silme özelliği kısayolu olarak ekran okuyucuların eylem menüsüne eklendi.',
+              'Yeni: Pano detay sayfasına "Bağlı Kullanıcılar" ekranı eklendi. Panodaki üyeleri, yetkilerini ve pano sahibini buradan yönetebilir veya görebilirsiniz.',
+              'Yeni: Pano yöneticisi artık kullanıcılara sadece panoyu görüntüleme veya düzenleme yetkisi verebilecek.',
+              'İyileştirme: Görev detaylarındaki sorumlular kısmında artık sadece sayı değil, atanan kullanıcıların adları açıkça yazıyor.',
+              'İyileştirme: Panoyu silme ve düzenleme seçenekleri sadece pano sahiplerinde görünecek şekilde değiştirildi.',
+              'İyileştirme: Kullanıcı listeleme ve yetki yönetimi tamamen ekran okuyucu uyumlu hale getirildi.',
+            ],
+            isLatest: true,
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
             version: '1.7.1',
             date: '30 Nisan 2026',
             changes: [
@@ -22,7 +38,7 @@ class ChangelogScreen extends StatelessWidget {
               'İyileştirme: Kontrol listesi tamamlanma oranları, ekran okuyucu uyumlu hale getirildi.',
               'Hata Düzeltmesi: Kontrol listesi eklerken yaşanan bazı hatalar giderildi.',
             ],
-            isLatest: true,
+            isLatest: false,
           ),
           const SizedBox(height: 24),
           _buildVersionSection(

@@ -1615,6 +1615,18 @@
       },
       {
         "system": false,
+        "id": "tbd_editors",
+        "name": "editors",
+        "type": "relation",
+        "required": false,
+        "options": {
+          "collectionId": "_pb_users_auth_",
+          "cascadeDelete": false,
+          "maxSelect": null
+        }
+      },
+      {
+        "system": false,
         "id": "tbd_fav",
         "name": "favorited_by",
         "type": "relation",
@@ -1820,15 +1832,7 @@
         "presentable": false,
         "unique": false,
         "options": {
-          "mimeTypes": [
-            "audio/mpeg",
-            "audio/mp3",
-            "audio/x-m4a",
-            "audio/mp4",
-            "audio/aac",
-            "audio/wav",
-            "audio/webm"
-          ],
+          "mimeTypes": [],
           "thumbs": [],
           "maxSelect": 3,
           "maxSize": 10485760,
