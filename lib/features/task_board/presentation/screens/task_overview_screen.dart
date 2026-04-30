@@ -71,23 +71,28 @@ class _TaskOverviewScreenState extends State<TaskOverviewScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Card(
-                color: Colors.blue.shade900,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      const Text('Genel İstatistikler', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              Semantics(
+                label: 'Genel İstatistikler. Toplam ${_tasks.length} görev içerisinde, ${completedTasks.length} adet tamamlanan ve ${pendingTasks.length} adet bekleyen görev bulunuyor',
+                child: ExcludeSemantics(
+                  child: Card(
+                    color: Colors.blue.shade900,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
                         children: [
-                          _buildStatItem('Toplam', _tasks.length.toString(), Colors.blue),
-                          _buildStatItem('Tamamlanan', completedTasks.length.toString(), Colors.green),
-                          _buildStatItem('Bekleyen', pendingTasks.length.toString(), Colors.orange),
+                          const Text('Genel İstatistikler', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _buildStatItem('Toplam', _tasks.length.toString(), Colors.blue),
+                              _buildStatItem('Tamamlanan', completedTasks.length.toString(), Colors.green),
+                              _buildStatItem('Bekleyen', pendingTasks.length.toString(), Colors.orange),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),

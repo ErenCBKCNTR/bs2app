@@ -89,6 +89,7 @@ Uygulamanın SDK kısıtlamalarına (`sdk: ">=3.0.0 <4.0.0"`) uygun en stabil ve
 - **Kimlik Görüntüleme Önceliği:** Tüm arayüz öğelerinde 'kullanıcı adlarını' gerçek 'tam adlara' veya belirgin profil resimlerine tercih edin. Arayüz kesinlikle işlevsel ve sade tasarlanmalıdır.
 
 ### Erişilebilirlik (Ekran Okuyucular)
+- **Sayısal Değerlerin Okunması:** Ekran okuyucuların (özellikle TalkBack/VoiceOver) sayıların sonundaki noktayı (örn: `3.`) sira sayısı (3'üncü) olarak okumasını engellemek için, istatistik ve metin birleştirme işlemlerinde virgül veya kelime tabanlı ayırıcılar kullanın (örn: `Toplam 3 görev içerisinde, 0 adet tamamlanan`). Nokta kalmak zorundaysa ekran okuyucu dostu `Semantics(label: ...)` etiketleriyle sarmalayın.
 - **Sayfa Açılışlarında Odaklanma:** Uygulamada yeni bir sayfa açıldığında (Screen), ekran okuyucu odağının o sayfanın veya menünün ana başlığına (veya karşılama metnine) geçmesi sağlanmalıdır. Bunu başarmak için sayfanın ana başlık `Text` widget'ını bir `Focus` widget'ına sarıp, `StatefulWidget` içerisinde oluşturulan bir `FocusNode`'a `WidgetsBinding.instance.addPostFrameCallback` tetiklemesinde `.requestFocus()` çağrılmalıdır.
 - Her etkileşimli öğe (`IconButton`, `InkWell`, `ElevatedButton`, vb.), "etiketsiz" olarak okunmasını önlemek için anlamlı bir `semanticsLabel` veya `tooltip` değerine sahip olmalıdır.
 - **Çift Etiketleme Yasağı:** Etkileşimli öğelerin gereksiz veya birden fazla semantik düğüme sahip olmadığından emin olun. Gerekirse alt widget'larda `ExcludeSemantics` kullanın.

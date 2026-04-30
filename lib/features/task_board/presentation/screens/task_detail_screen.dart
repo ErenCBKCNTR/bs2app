@@ -970,7 +970,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       MaterialPageRoute(
                         builder: (c) => Scaffold(
                           appBar: AppBar(
-                            title: const Text('Mesajlar'),
+                            title: Semantics(
+                              label: '${_task.title} isimli görev için mesajlaşmaktasınız',
+                              child: Text(
+                                '${_task.title} - Mesajlar',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ),
                           body: SafeArea(
                             child: TaskCommentsWidget(taskId: _task.id),

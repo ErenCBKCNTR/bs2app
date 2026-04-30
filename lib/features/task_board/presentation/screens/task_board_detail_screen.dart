@@ -332,7 +332,10 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
               _searchQuery = val.toLowerCase();
             });
           },
-        ) : Text(widget.board.name),
+        ) : Semantics(
+          label: "${widget.board.name} isimli pano içerisindesiniz.",
+          child: Text(widget.board.name),
+        ),
         actions: [
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),
