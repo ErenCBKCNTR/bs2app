@@ -92,7 +92,12 @@ class _ChatInputFieldState extends State<ChatInputField> {
           path = '${directory.path}/recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
         }
 
-        await _audioRecorder.start(const RecordConfig(), path: path);
+        final config = RecordConfig(encoder: foundation.kIsWeb ? AudioEncoder.opus : AudioEncoder.aacLc);
+        if (path != null) {
+          await _audioRecorder.start(config, path: path);
+        } else {
+          await _audioRecorder.start(config);
+        }
 
         if (!foundation.kIsWeb) {
           try { Vibration.vibrate(duration: 50); } catch (_) {}
@@ -103,9 +108,16 @@ class _ChatInputFieldState extends State<ChatInputField> {
           _recordDuration = 0;
         });
         _startTimer();
+      } else {
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mikrofon izni verilmedi.')));
+        }
       }
     } catch (e) {
       debugPrint('Recording error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ses kaydetme hatası: $e')));
+      }
     }
   }
 
