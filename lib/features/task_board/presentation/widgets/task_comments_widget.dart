@@ -134,9 +134,7 @@ class _TaskCommentsWidgetState extends State<TaskCommentsWidget> {
   Widget build(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
 
-    return CustomSemanticsAction(
-      overrides: const {},
-      child: Column(
+    return Column(
         children: [
           Expanded(
             child: _comments.isEmpty
@@ -218,8 +216,7 @@ class _TaskCommentsWidgetState extends State<TaskCommentsWidget> {
             onSendAudio: _sendVoice,
           ),
         ],
-      ),
-    );
+      );
   }
 }
 

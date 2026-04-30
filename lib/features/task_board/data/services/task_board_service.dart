@@ -358,4 +358,8 @@ class TaskBoardService {
     );
     return TaskComment.fromRecord(record);
   }
+
+  Future<void> deleteComment(String commentId) async {
+    await _pb.collection('task_comments').delete(commentId);
+  }
 }

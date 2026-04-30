@@ -567,7 +567,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                                             builder: (_) => TaskDetailScreen(task: task, allLists: _lists),
                                           ),
                                         );
-                                        if (refresh == true) _loadBoard();
+                                        if (refresh == true) _fetchData(showLoading: false);
                                       },
                                       customSemanticsActions: {
                                         if (canEdit) const CustomSemanticsAction(label: 'Görevi Sil'): () => _deleteTaskDialog(task),
