@@ -32,6 +32,9 @@
 - [x] Görev kartlarına odaklanıldığında ekran okuyucunun düzenleme/görüntüleme için çift tıklama ve işlemler menüsü bildirimlerini okuması sağlandı.
 - [x] Görev detay ekranındaki başlığın anlaşılır şekilde okunması ve etiketlerdeki renk/silme işlemlerinin ekran okuyucu uyumlu hale getirilmesi sağlandı.
 - [x] Kontrol listesi öğesi eklerken alınan "Missing required value" (sıfır değeri hatası) çözüldü.
+- [x] Görev detaylarındaki kontrol listesi erişilebilirliği sağlandı ve tamamlanma yüzdesi gösterildi.
+- [x] Kontrol listesi altına Voice Notes (Sesli Notlar) eklendi, maksimum 3 kayıt (max 5 dk) sınırı ile sınırlandırıldı.
+- [x] Görevlerin başlangıç ve bitiş tarihini belirlemek için Dates Widget eklendi. Otomatik süre hesaplamasıyla çalışma süresi hem detay hem pano ekranında ekran okuyuculara duyuruldu.
 
 ## 4. İşbirliği ve Paylaşım
 - [x] Panoya başka kullanıcıları davet etme işleminde artık E-Posta adresinin yanında Kullanıcı Adı girerek de arama desteklendi.

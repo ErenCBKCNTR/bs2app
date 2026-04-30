@@ -8,6 +8,8 @@ class TaskItem {
   final String createdBy;
   final List<String> assignees;
   final DateTime? dueDate;
+  final DateTime? startDate;
+  final List<String> voiceNotes;
   final int order;
   final bool isCompleted;
   final int taskNumber;
@@ -22,6 +24,8 @@ class TaskItem {
     required this.createdBy,
     required this.assignees,
     this.dueDate,
+    this.startDate,
+    required this.voiceNotes,
     required this.order,
     required this.isCompleted,
     required this.taskNumber,
@@ -40,6 +44,16 @@ class TaskItem {
       }
     }
 
+    DateTime? getStartDate() {
+      final dateStr = record.getStringValue('start_date');
+      if (dateStr.isEmpty) return null;
+      try {
+        return DateTime.parse(dateStr).toLocal();
+      } catch (e) {
+        return null;
+      }
+    }
+
     return TaskItem(
       id: record.id,
       listId: record.getStringValue('list_id'),
@@ -48,6 +62,8 @@ class TaskItem {
       createdBy: record.getStringValue('created_by'),
       assignees: record.getListValue<String>('assignees'),
       dueDate: getDueDate(),
+      startDate: getStartDate(),
+      voiceNotes: record.getListValue<String>('voice_notes'),
       order: record.getIntValue('order'),
       isCompleted: record.getBoolValue('is_completed'),
       taskNumber: record.getIntValue('task_number'),

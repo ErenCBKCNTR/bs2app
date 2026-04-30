@@ -6,6 +6,8 @@ import 'package:blind_social/features/task_board/data/models/task_item.dart';
 import 'package:blind_social/features/task_board/data/models/task_checklist.dart';
 import 'package:blind_social/features/task_board/data/models/task_list_model.dart';
 import 'package:blind_social/features/task_board/data/services/task_board_service.dart';
+import 'package:blind_social/features/task_board/presentation/widgets/task_dates_widget.dart';
+import 'package:blind_social/features/task_board/presentation/widgets/task_voice_notes_widget.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final TaskItem task;
@@ -43,6 +45,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       });
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+    }
+  }
+
+  Future<void> _refreshTask() async {
+    try {
+      final updatedTaskRecord = await PocketBaseService.client.collection('task_items').getOne(_task.id);
+      setState(() {
+        _task = TaskItem.fromRecord(updatedTaskRecord);
+      });
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Görev yenilenemedi: $e')));
     }
   }
 
@@ -419,7 +432,24 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Kontrol Listesi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Kontrol Listesi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        if (_checklists.isNotEmpty)
+                          Builder(
+                            builder: (context) {
+                              int completedCount = _checklists.where((c) => c.isCompleted).length;
+                              int total = _checklists.length;
+                              int percentage = ((completedCount / total) * 100).round();
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 4.0),
+                                child: Text('Yüzde $percentage Tamamlandı ($completedCount/$total)', style: const TextStyle(fontSize: 14, color: Colors.white70)),
+                              );
+                            }
+                          ),
+                      ],
+                    ),
                     IconButton(
                       icon: const Icon(Icons.add),
                       tooltip: 'Madde Ekle',
@@ -431,26 +461,51 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 else if (_checklists.isEmpty) const Text('Kontrol listesi boş.')
                 else ..._checklists.map((c) {
                   return Card(
-                    child: ListTile(
-                      leading: Checkbox(
-                        value: c.isCompleted,
-                        onChanged: (v) => _toggleChecklist(c),
-                      ),
-                      title: Text(
-                        c.title,
-                        style: TextStyle(
-                          decoration: c.isCompleted ? TextDecoration.lineThrough : null,
+                    child: Semantics(
+                      label: '${c.title}. ${c.isCompleted ? "Tamamlandı" : "Tamamlanmadı"}. İşin ismini düzenlemek veya maddeyi silmek için işlemler menüsünü açın. Tamamlanma durumunu değiştirmek için çift tıklayın.',
+                      button: true,
+                      customSemanticsActions: {
+                        const CustomSemanticsAction(label: 'Maddeyi Sil'): () => _deleteChecklistItem(c),
+                      },
+                      child: ExcludeSemantics(
+                        child: ListTile(
+                          leading: Checkbox(
+                            value: c.isCompleted,
+                            onChanged: (v) => _toggleChecklist(c),
+                          ),
+                          title: Text(
+                            c.title,
+                            style: TextStyle(
+                              decoration: c.isCompleted ? TextDecoration.lineThrough : null,
+                            ),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            tooltip: 'Sil',
+                            onPressed: () => _deleteChecklistItem(c),
+                          ),
+                          onTap: () => _toggleChecklist(c),
                         ),
                       ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        tooltip: 'Sil',
-                        onPressed: () => _deleteChecklistItem(c),
-                      ),
-                      onTap: () => _toggleChecklist(c),
                     ),
                   );
                 }).toList(),
+                
+                const SizedBox(height: 24),
+                const Divider(),
+                TaskVoiceNotesWidget(
+                  task: _task,
+                  service: _service,
+                  onChanged: () => _refreshTask(),
+                ),
+                
+                const SizedBox(height: 24),
+                const Divider(),
+                TaskDatesWidget(
+                  task: _task,
+                  service: _service,
+                  onChanged: () => _refreshTask(),
+                ),
               ],
             ),
           ),

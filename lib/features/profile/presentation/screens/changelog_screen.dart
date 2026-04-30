@@ -13,6 +13,19 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            version: '1.7.1',
+            date: '30 Nisan 2026',
+            changes: [
+              'Yeni: Görevler için Sesli Notlar (Voice Notes) özelliği eklendi.',
+              'Yeni: Görevlere başlangıç ve bitiş tarihi ekleme özelliği getirildi.',
+              'İyileştirme: Görevlerde harcanan süre artık otomatik hesaplanıyor ve sesli olarak okunuyor.',
+              'İyileştirme: Kontrol listesi tamamlanma oranları, ekran okuyucu uyumlu hale getirildi.',
+              'Hata Düzeltmesi: Kontrol listesi eklerken yaşanan bazı hatalar giderildi.',
+            ],
+            isLatest: true,
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
             version: '1.7.0',
             date: '29 Nisan 2026',
             changes: [
@@ -23,7 +36,7 @@ class ChangelogScreen extends StatelessWidget {
               'Yeni: Görevleri diğer üyelere atayabilir veya sosyal medyada tek dokunuşla paylaşabilirsiniz.',
               'İyileştirme: Görev Panosu erişilebilirlik standartlarına uygun hale getirildi; tüm ikon, buton ve alanlar ekran okuyucu uyumludur.',
             ],
-            isLatest: true,
+            isLatest: false,
           ),
           const SizedBox(height: 24),
           _buildVersionSection(

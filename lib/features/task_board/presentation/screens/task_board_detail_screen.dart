@@ -516,10 +516,21 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                                   final taskColorIndex = task.id.codeUnitAt(0) % Colors.primaries.length;
                                   final taskColor = isTaskCompleted ? Colors.grey.withOpacity(0.1) : Colors.primaries[taskColorIndex].withOpacity(0.1);
                                   
+                                  String timeSpentStr = "";
+                                  if (task.startDate != null && task.dueDate != null) {
+                                    final diff = task.dueDate!.difference(task.startDate!);
+                                    if (!diff.isNegative) {
+                                      int days = diff.inDays;
+                                      int hours = diff.inHours % 24;
+                                      int mins = diff.inMinutes % 60;
+                                      timeSpentStr = " Bu görevi $days gün $hours saat $mins dakikada tamamladınız.";
+                                    }
+                                  }
+
                                   return SizedBox(
                                     width: 160,
                                     child: Semantics(
-                                      label: 'Görev numarası ${task.taskNumber}: ${task.title}. ${isTaskCompleted ? "Tamamlandı" : "Devam ediyor"}. Düzenlemek veya görüntülemek için çift tıklayın. İşlem seçenekleri için parmağınızı yukarı veya aşağı kaydırın.',
+                                      label: 'Görev numarası ${task.taskNumber}: ${task.title}. ${isTaskCompleted ? "Tamamlandı" : "Devam ediyor"}.$timeSpentStr Düzenlemek veya görüntülemek için çift tıklayın. İşlem seçenekleri için parmağınızı yukarı veya aşağı kaydırın.',
                                       button: true,
                                       onTapHint: 'Görevi Aç',
                                       customSemanticsActions: {

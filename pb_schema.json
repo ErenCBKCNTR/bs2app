@@ -1799,6 +1799,41 @@
         "options": {
           "maxSize": 2000000
         }
+      },
+      {
+        "system": false,
+        "id": "tsi_start",
+        "name": "start_date",
+        "type": "date",
+        "required": false,
+        "options": {
+          "min": "",
+          "max": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "tsi_voices",
+        "name": "voice_notes",
+        "type": "file",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "mimeTypes": [
+            "audio/mpeg",
+            "audio/mp3",
+            "audio/x-m4a",
+            "audio/mp4",
+            "audio/aac",
+            "audio/wav",
+            "audio/webm"
+          ],
+          "thumbs": [],
+          "maxSelect": 3,
+          "maxSize": 10485760,
+          "protected": false
+        }
       }
     ],
     "listRule": "@request.auth.id != ''",

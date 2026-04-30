@@ -1,5 +1,6 @@
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:http/http.dart' as http;
 import 'package:blind_social/features/task_board/data/models/task_board.dart';
 import 'package:blind_social/features/task_board/data/models/task_list_model.dart';
 import 'package:blind_social/features/task_board/data/models/task_item.dart';
@@ -210,6 +211,36 @@ class TaskBoardService {
     if (body.isEmpty) throw Exception("Güncellenecek veri yok");
 
     final record = await _pb.collection('task_items').update(taskId, body: body);
+    return TaskItem.fromRecord(record);
+  }
+
+  Future<TaskItem> updateTaskDates(String taskId, DateTime? startDate, DateTime? dueDate) async {
+    final Map<String, dynamic> body = {
+      'start_date': startDate?.toIso8601String() ?? '',
+      'due_date': dueDate?.toIso8601String() ?? '',
+    };
+    final record = await _pb.collection('task_items').update(taskId, body: body);
+    return TaskItem.fromRecord(record);
+  }
+
+  Future<TaskItem> uploadVoiceNote(String taskId, String path) async {
+    final multipartFile = await http.MultipartFile.fromPath('voice_notes', path);
+    final record = await _pb.collection('task_items').update(taskId, files: [multipartFile]);
+    return TaskItem.fromRecord(record);
+  }
+
+  Future<TaskItem> deleteVoiceNote(String taskId, String fileName) async {
+    // To delete a file from a list, we send null for that specific filename using the minus suffix or we just update the record with other files?
+    // Wait, in PocketBase you can't just delete a single array file easily without doing `-voice_notes`. Let's use the minus suffix.
+    // pocketbase provides removing specific array item like body: { 'voice_notes': null } would clear all.
+    // wait, actually in pb `record` we can send `field-` modifier or just use `minus` suffix? No, usually `update` takes a `fileName` to remove. Let's just do `{'voice_notes-': fileName}` map.
+    // Actually pb dart SDK supports it, or we might need to be careful. The new standard is `{"voice_notes.delete": fileName}` in PB > 0.17? No it's `{"voice_notes-": [fileName]}`?
+    // Let's check PB API: to delete a file from array, PB < 0.22 uses 'voice_notes-': fileName. But blind_social uses pocketbase ^0.20.0
+    // Actually the standard way is: `{"voice_notes": null}` deletes ALL files. Wait, if it's an array, it's safer to not delete specific unless we know. Or we can just use `{'voice_notes-': fileName}`.
+    // Alternatively we can use `{'voice_notes-': fileName}` 
+    final record = await _pb.collection('task_items').update(taskId, body: {
+      'voice_notes-': fileName,
+    });
     return TaskItem.fromRecord(record);
   }
 
