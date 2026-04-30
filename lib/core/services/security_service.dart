@@ -40,7 +40,7 @@ class SecurityService {
   /// iOS tarafında sistem düzeyinde kısıtlama gerektiğinden genellikle sadece bilgi verilir.
   Future<void> protectScreen() async {
     try {
-      if (Platform.isAndroid) {
+      if (!kIsWeb && Platform.isAndroid) {
         await _channel.invokeMethod('toggleScreenProtection', {'enabled': true});
         AppLogger.instance.info('Ekran koruması aktif edildi (Screenshot protection).');
       }
@@ -52,7 +52,13 @@ class SecurityService {
   /// Cihaz hakkında benzersiz olmayan ancak ayırt edici bilgiler döndürür.
   Future<Map<String, String>> getDeviceMetadata() async {
     final deviceInfo = DeviceInfoPlugin();
-    if (Platform.isAndroid) {
+    if (kIsWeb) {
+      return {
+        'x-device-id': 'web',
+        'x-device-model': 'web browser',
+        'x-device-os': 'Web',
+      };
+    } else if (Platform.isAndroid) {
       final androidInfo = await deviceInfo.androidInfo;
       return {
         'x-device-id': androidInfo.id,
