@@ -105,7 +105,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
             ),
             const SizedBox(height: 32),
             _detailRow('İsim / Kullanıcı Adı:', username.isEmpty ? 'Belirtilmemiş' : username),
-            _detailRow('E-Posta Adresi:', email),
+            _detailRow('E-Posta Adresi:', email.isEmpty ? 'Gizli / İzin Verilmemiş' : email),
             _detailRow('Kayıt Tarihi:', created),
             _detailRow('Son IP Adresi:', lastIp.isEmpty ? 'Bilinmiyor' : lastIp),
             _detailRow('Son Konum:', lastLocation.isEmpty ? 'Bilinmiyor' : lastLocation),

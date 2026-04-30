@@ -21,6 +21,18 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            version: '1.7.5',
+            date: '30 Nisan 2026',
+            changes: [
+              'Yeni: Görev panoları oluştururken kullanabileceğiniz hazır şablonlar (Yazılım Geliştirme, Proje Yönetimi vb.) eklendi.',
+              'Yeni: Görev içine metin ve doğrudan sesli mesaj (mikrofon) bırakabileceğiniz yorumlar bölümü eklendi.',
+              'Yeni: Tüm görevlerinizin tamamlanma veya bekleme durumunu istatistikleriyle görebileceğiniz "Görev Özeti ve Geçmişi" sayfası eklendi.',
+              'Hata Giderme: Bazı şablonlarla pano oluşturulurken ortaya çıkan veritabanı "liste sırası" kaydetme hatası giderildi.',
+            ],
+            isLatest: true,
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
             version: '1.7.4',
             date: '30 Nisan 2026',
             changes: [
@@ -30,7 +42,7 @@ class ChangelogScreen extends StatelessWidget {
               'Yeni: Sürüm bilgisi (Changelog) sayfası gizliliği artırılarak standart kullanıcıların erişimine kapatıldı.',
               'İyileştirme: Görevin oluşturulma ekranında atanmış hedef bitiş tarihi (kalan gün) anonsları ve okunabilir tarih bildirimleri etkinleştirildi.',
             ],
-            isLatest: true,
+            isLatest: false,
           ),
           const SizedBox(height: 24),
           _buildVersionSection(

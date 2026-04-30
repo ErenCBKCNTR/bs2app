@@ -76,6 +76,7 @@ class _UserListScreenState extends State<UserListScreen> {
                         ? user.getStringValue('name') 
                         : user.getStringValue('username');
                     final email = user.getStringValue('email');
+                    final displayEmail = email.isNotEmpty ? email : 'Gizli / İzin Verilmemiş';
                     final created = DateFormat('dd.MM.yyyy HH:mm').format(DateTime.parse(user.created).toLocal());
                     final role = user.getStringValue('role') == '0' ? 'Yönetici' : 'Kullanıcı';
 
@@ -94,7 +95,7 @@ class _UserListScreenState extends State<UserListScreen> {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(email, style: const TextStyle(fontSize: 12)),
+                            Text(displayEmail, style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
                             Text('Kayıt: $created', style: const TextStyle(fontSize: 11, color: Colors.grey)),
                           ],
                         ),

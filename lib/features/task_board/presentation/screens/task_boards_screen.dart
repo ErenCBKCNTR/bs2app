@@ -157,7 +157,8 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                        // Create template lists
                        final listsToCreate = templates[selectedTemplate]!;
                        for (int i = 0; i < listsToCreate.length; i++) {
-                          await _service.createList(board.id, listsToCreate[i], i);
+                          // PocketBase considers 0 as an empty value for required numbers, so we start from 1
+                          await _service.createList(board.id, listsToCreate[i], i + 1);
                        }
                        
                        SemanticsService.announce("Görev panosu başarıyla oluşturuldu", TextDirection.ltr);

@@ -229,41 +229,44 @@ class _TaskCommentsWidgetState extends State<TaskCommentsWidget> {
                 },
               ),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          color: Theme.of(context).cardColor,
-          child: Row(
-            children: [
-              if (_isRecording) ...[
-                Text(_formatDuration(_recordDuration), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                IconButton(
-                  icon: const Icon(Icons.stop, color: Colors.red),
-                  tooltip: "Kaydı Bitir ve Gönder",
-                  onPressed: _stopRecording,
-                ),
-              ] else ...[
-                IconButton(
-                  icon: const Icon(Icons.mic),
-                  tooltip: "Sesli Mesaj Gönder",
-                  onPressed: _startRecording,
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _msgCtrl,
-                    decoration: const InputDecoration(
-                      hintText: 'Mesaj yaz...',
-                      border: InputBorder.none,
-                    ),
-                    onSubmitted: (_) => _sendText(),
+        SafeArea(
+          top: false,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            color: Theme.of(context).cardColor,
+            child: Row(
+              children: [
+                if (_isRecording) ...[
+                  Text(_formatDuration(_recordDuration), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                  IconButton(
+                    icon: const Icon(Icons.stop, color: Colors.red),
+                    tooltip: "Kaydı Bitir ve Gönder",
+                    onPressed: _stopRecording,
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  tooltip: "Gönder",
-                  onPressed: _sendText,
-                ),
-              ]
-            ],
+                ] else ...[
+                  IconButton(
+                    icon: const Icon(Icons.mic),
+                    tooltip: "Sesli Mesaj Gönder",
+                    onPressed: _startRecording,
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: _msgCtrl,
+                      decoration: const InputDecoration(
+                        hintText: 'Mesaj yaz...',
+                        border: InputBorder.none,
+                      ),
+                      onSubmitted: (_) => _sendText(),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.send),
+                    tooltip: "Gönder",
+                    onPressed: _sendText,
+                  ),
+                ]
+              ],
+            ),
           ),
         ),
       ],
