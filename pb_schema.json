@@ -1814,6 +1814,16 @@
       },
       {
         "system": false,
+        "id": "tsi_tlogs",
+        "name": "time_logs",
+        "type": "json",
+        "required": false,
+        "options": {
+          "maxSize": 2000000
+        }
+      },
+      {
+        "system": false,
         "id": "tsi_start",
         "name": "start_date",
         "type": "date",

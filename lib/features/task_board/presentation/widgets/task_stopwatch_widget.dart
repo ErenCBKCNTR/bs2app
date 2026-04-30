@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:blind_social/features/task_board/data/models/task_item.dart';
 import 'package:blind_social/features/task_board/data/services/task_board_service.dart';
+import 'package:flutter/semantics.dart';
 import 'dart:async';
 
 class TaskStopwatchWidget extends StatefulWidget {
@@ -38,7 +39,7 @@ class _TaskStopwatchWidgetState extends State<TaskStopwatchWidget> {
   }
 
   bool _isTimerActive() {
-    return widget.task.startDate != null && widget.task.dueDate == null;
+    return widget.task.timeLogs.isNotEmpty && widget.task.timeLogs.last['end'] == null;
   }
 
   void _startLocalTimer() {
@@ -51,13 +52,16 @@ class _TaskStopwatchWidgetState extends State<TaskStopwatchWidget> {
   Future<void> _startStopwatch() async {
     setState(() => _isLoading = true);
     try {
-      await widget.service.updateTaskDates(
-        widget.task.id,
-        DateTime.now().toUtc(),
-        null,
-      );
+      List<dynamic> logs = List.from(widget.task.timeLogs);
+      logs.add({
+        "id": DateTime.now().millisecondsSinceEpoch.toString(),
+        "start": DateTime.now().toUtc().toIso8601String(),
+        "end": null
+      });
+      await widget.service.updateTaskTimeLogs(widget.task.id, logs);
       widget.onChanged();
       _startLocalTimer();
+      SemanticsService.announce('Kronometre başlatıldı', TextDirection.ltr);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
     } finally {
@@ -68,13 +72,32 @@ class _TaskStopwatchWidgetState extends State<TaskStopwatchWidget> {
   Future<void> _stopStopwatch() async {
     setState(() => _isLoading = true);
     try {
-      await widget.service.updateTaskDates(
-        widget.task.id,
-        widget.task.startDate,
-        DateTime.now().toUtc(),
-      );
+      List<dynamic> logs = List.from(widget.task.timeLogs);
+      if (logs.isNotEmpty && logs.last['end'] == null) {
+        logs.last['end'] = DateTime.now().toUtc().toIso8601String();
+        await widget.service.updateTaskTimeLogs(widget.task.id, logs);
+      }
       widget.onChanged();
       _timer?.cancel();
+      SemanticsService.announce('Kronometre durduruldu', TextDirection.ltr);
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteLog(String id) async {
+    setState(() => _isLoading = true);
+    try {
+      List<dynamic> logs = List.from(widget.task.timeLogs);
+      logs.removeWhere((l) => l['id'] == id);
+      await widget.service.updateTaskTimeLogs(widget.task.id, logs);
+      widget.onChanged();
+      if (!_isTimerActive()) {
+        _timer?.cancel();
+      }
+      SemanticsService.announce('Çalışma süresi silindi', TextDirection.ltr);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
     } finally {
@@ -104,32 +127,31 @@ class _TaskStopwatchWidgetState extends State<TaskStopwatchWidget> {
 
   String _formatDate(DateTime dt) {
     final now = DateTime.now();
-    if (now.year == dt.year) {
-      return "${dt.day} ${_getMonthName(dt.month)}";
+    final dLocal = dt.toLocal();
+    if (now.year == dLocal.year && now.month == dLocal.month && now.day == dLocal.day) {
+      return "${dLocal.hour.toString().padLeft(2, '0')}:${dLocal.minute.toString().padLeft(2, '0')}";
     }
-    return "${dt.day} ${_getMonthName(dt.month)} ${dt.year}";
+    if (now.year == dLocal.year) {
+      return "${dLocal.day} ${_getMonthName(dLocal.month)} ${dLocal.hour.toString().padLeft(2, '0')}:${dLocal.minute.toString().padLeft(2, '0')}";
+    }
+    return "${dLocal.day} ${_getMonthName(dLocal.month)} ${dLocal.year}";
+  }
+
+  Duration _calculateTotalDuration() {
+    Duration total = Duration.zero;
+    for (var log in widget.task.timeLogs) {
+      final start = DateTime.parse(log['start']);
+      final end = log['end'] != null ? DateTime.parse(log['end']) : DateTime.now().toUtc();
+      total += end.difference(start);
+    }
+    return total;
   }
 
   @override
   Widget build(BuildContext context) {
     final bool active = _isTimerActive();
-    Duration currentDiff = Duration.zero;
-
-    if (active) {
-      currentDiff = DateTime.now().difference(widget.task.startDate!);
-    } else if (widget.task.startDate != null && widget.task.dueDate != null) {
-      currentDiff = widget.task.dueDate!.difference(widget.task.startDate!);
-    }
-
-    String timeSpentText = "";
-    if (widget.task.startDate != null && widget.task.dueDate != null) {
-       timeSpentText = "Bu görev üzerinde ${_formatTimeSpent(currentDiff)} çalıştınız.\n"
-                       "${_formatDate(widget.task.startDate!)} tarihinde başladınız, "
-                       "${_formatDate(widget.task.dueDate!)} tarihinde bitirdiniz.";
-    } else if (active) {
-       timeSpentText = "Görev üzerinde şu ana kadar ${_formatTimeSpent(currentDiff)} çalıştınız.";
-    }
-
+    final Duration totalDuration = _calculateTotalDuration();
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -145,10 +167,10 @@ class _TaskStopwatchWidgetState extends State<TaskStopwatchWidget> {
         ),
         const SizedBox(height: 16),
         
-        if (timeSpentText.isNotEmpty)
+        if (totalDuration.inSeconds > 0)
           Padding(
             padding: const EdgeInsets.only(bottom: 16.0),
-            child: Text(timeSpentText, style: const TextStyle(fontSize: 16)),
+            child: Text("Bu görev üzerinde toplam ${_formatTimeSpent(totalDuration)} çalıştınız.", style: const TextStyle(fontSize: 16)),
           ),
           
         if (active)
@@ -163,8 +185,47 @@ class _TaskStopwatchWidgetState extends State<TaskStopwatchWidget> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
             onPressed: _isLoading ? null : _startStopwatch,
             icon: const Icon(Icons.play_arrow),
-            label: Text(widget.task.startDate == null ? 'Kronometreyi Başlat' : 'Yeni Kronometre Başlat', style: const TextStyle(color: Colors.white)),
+            label: Text(widget.task.timeLogs.isEmpty ? 'Kronometreyi Başlat' : 'Yeni Kronometre Başlat', style: const TextStyle(color: Colors.white)),
           ),
+          
+        if (widget.task.timeLogs.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          const Text('Çalışma Geçmişi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ...widget.task.timeLogs.reversed.map((log) {
+            final start = DateTime.parse(log['start']);
+            final endStr = log['end'];
+            final end = endStr != null ? DateTime.parse(endStr) : null;
+            final isRunning = end == null;
+            final diff = (end ?? DateTime.now().toUtc()).difference(start);
+            
+            final semanticsLabel = isRunning 
+              ? 'Devam eden çalışma. Başlangıç: ${_formatDate(start)}. Geçen süre: ${_formatTimeSpent(diff)}. Kaydı silmek için eylem menüsünü kullanın.'
+              : 'Tamamlanan çalışma. Başlangıç: ${_formatDate(start)}, Bitiş: ${_formatDate(end!)}. Süre: ${_formatTimeSpent(diff)}. Kaydı silmek için eylem menüsünü kullanın.';
+
+            return Card(
+              child: Semantics(
+                label: semanticsLabel,
+                button: true,
+                customSemanticsActions: {
+                  const CustomSemanticsAction(label: 'Çalışma Süresini Sil'): () => _deleteLog(log['id']),
+                },
+                child: ExcludeSemantics(
+                  child: ListTile(
+                    leading: Icon(isRunning ? Icons.timer : Icons.timer_off, color: isRunning ? Colors.green : Colors.grey),
+                    title: Text(isRunning ? "Devam Ediyor..." : "Tamamlandı"),
+                    subtitle: Text("${_formatDate(start)} - ${end != null ? _formatDate(end) : 'Şimdi'}\nSüre: ${_formatTimeSpent(diff)}"),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => _deleteLog(log['id']),
+                      tooltip: 'Sil',
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ]
       ],
     );
   }

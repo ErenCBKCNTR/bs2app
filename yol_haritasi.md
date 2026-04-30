@@ -34,7 +34,7 @@
 - [x] Kontrol listesi öğesi eklerken alınan "Missing required value" (sıfır değeri hatası) çözüldü.
 - [x] Görev detaylarındaki kontrol listesi erişilebilirliği sağlandı ve tamamlanma yüzdesi gösterildi.
 - [x] Kontrol listesi altına Voice Notes (Sesli Notlar) eklendi, maksimum 3 kayıt (max 5 dk) sınırı ile sınırlandırıldı. Ses kaydedici hataları giderildi, Focus drop sorunu çözüldü. Kaydedici ui güncellenerek iptal ve duraklatma işlevleri eklendi, listelenen ses kayıtları için kaydı silme özellikleri ekran okuyucu uyumlu hale getirildi.
-- [x] Başlangıç ve bitiş tarihi atama yerine 'Görev Kronometresi' yapısı getirildi. Süre başladı/bitti mantığı ile zamanlama ayarlandı ve ekran okuyuculara okunması sağlandı.
+- [x] Başlangıç ve bitiş tarihi atama yerine 'Görev Kronometresi' yapısı getirildi. Süre başladı/bitti mantığı ile zamanlama ayarlandı ve ekran okuyuculara okunması sağlandı. Kronometre yapısında kullanıcıların çalışma süreleri de bir "oturumu (session)" temsil edecek liste formatına çevrildi. Seçilen oturum, silinebilir arayüze oturtuldu.
 
 ## 4. İşbirliği ve Paylaşım
 - [x] Panoya başka kullanıcıları davet etme işleminde artık E-Posta adresinin yanında Kullanıcı Adı girerek de arama desteklendi.

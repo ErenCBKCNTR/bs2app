@@ -13,6 +13,15 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            version: '1.7.3',
+            date: '30 Nisan 2026',
+            changes: [
+              'Yeni: Görev kronometresi tamamen yenilendi. Artık tıpkı sesli notlar gibi kronometre ile çalışılan tüm sürelerinizi tarih/saat belirtecek şekilde liste olarak görebilir ve silebilirsiniz.',
+              'İyileştirme: Sesli not kaydetme, silme ve kronometre başlatıp durdurma işlemlerine ekran okuyucular için başarılı/başarısız bildirim sesli anonsları eklendi.',
+              'İyileştirme: Kontrol listesinde dolaşırken ekran okuyucunun düzenleme seçenekleri bulunduğunu belirtmesi için anons sistemi iyileştirildi.',
+            ],
+          ),
+          _buildVersionSection(
             version: '1.7.2',
             date: '30 Nisan 2026',
             changes: [

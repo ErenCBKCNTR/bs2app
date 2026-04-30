@@ -214,6 +214,14 @@ class TaskBoardService {
     return TaskItem.fromRecord(record);
   }
 
+  Future<TaskItem> updateTaskTimeLogs(String taskId, List<dynamic> timeLogs) async {
+    final Map<String, dynamic> body = {
+      'time_logs': timeLogs,
+    };
+    final record = await _pb.collection('task_items').update(taskId, body: body);
+    return TaskItem.fromRecord(record);
+  }
+
   Future<TaskItem> updateTaskDates(String taskId, DateTime? startDate, DateTime? dueDate) async {
     final Map<String, dynamic> body = {
       'start_date': startDate?.toIso8601String() ?? '',

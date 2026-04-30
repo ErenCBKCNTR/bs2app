@@ -534,38 +534,23 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                                   final taskColor = isTaskCompleted ? Colors.grey.withOpacity(0.1) : Colors.primaries[taskColorIndex].withOpacity(0.1);
                                   
                                   String timeSpentStr = "";
-                                  if (task.startDate != null) {
-                                    final dtStart = task.startDate!;
-                                    final dtEnd = task.dueDate;
-                                    
-                                    if (dtEnd != null) {
-                                      final diff = dtEnd.difference(dtStart);
-                                      if (!diff.isNegative) {
-                                        int days = diff.inDays;
-                                        int hours = diff.inHours % 24;
-                                        int mins = diff.inMinutes % 60;
-                                        
-                                        List<String> p = [];
-                                        if(days > 0) p.add("$days gün");
-                                        if(hours > 0) p.add("$hours saat");
-                                        if(mins > 0) p.add("$mins dakika");
-                                        if(p.isEmpty) p.add("1 dakikadan az");
-                                        
-                                        timeSpentStr = " Bu görev üzerinde ${p.join(" ")} çalıştınız. ${_formatDt(dtStart)} tarihinde başladınız, ${_formatDt(dtEnd)} tarihinde bitirdiniz.";
-                                      }
-                                    } else {
-                                      final diff = DateTime.now().difference(dtStart);
-                                      if (!diff.isNegative) {
-                                        int days = diff.inDays;
-                                        int hours = diff.inHours % 24;
-                                        int mins = diff.inMinutes % 60;
-                                        List<String> p = [];
-                                        if(days > 0) p.add("$days gün");
-                                        if(hours > 0) p.add("$hours saat");
-                                        if(mins > 0) p.add("$mins dakika");
-                                        if(p.isEmpty) p.add("1 dakikadan az");
-                                        timeSpentStr = " Görev üzerinde şu ana kadar ${p.join(" ")} çalıştınız. Başlama tarihiniz: ${_formatDt(dtStart)}.";
-                                      }
+                                  if (task.timeLogs.isNotEmpty) {
+                                    Duration total = Duration.zero;
+                                    for (var log in task.timeLogs) {
+                                      final start = DateTime.parse(log['start']);
+                                      final end = log['end'] != null ? DateTime.parse(log['end']) : DateTime.now().toUtc();
+                                      total += end.difference(start);
+                                    }
+                                    if (total.inSeconds > 0) {
+                                      int days = total.inDays;
+                                      int hours = total.inHours % 24;
+                                      int mins = total.inMinutes % 60;
+                                      List<String> p = [];
+                                      if(days > 0) p.add("$days gün");
+                                      if(hours > 0) p.add("$hours saat");
+                                      if(mins > 0) p.add("$mins dakika");
+                                      if(p.isEmpty) p.add("1 dakikadan az");
+                                      timeSpentStr = " Görev üzerinde toplam ${p.join(" ")} çalışıldı.";
                                     }
                                   }
 

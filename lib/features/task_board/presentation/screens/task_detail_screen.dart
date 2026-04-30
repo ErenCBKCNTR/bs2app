@@ -268,45 +268,25 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       buffer.writeln();
     }
 
-    if (_task.startDate != null) {
-      final now = DateTime.now();
-      final dtStart = _task.startDate!;
-      final dtEnd = _task.dueDate;
-
-      String formatDt(DateTime dt) {
-        const months = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-        if (now.year == dt.year) return "${dt.day} ${months[dt.month]}";
-        return "${dt.day} ${months[dt.month]} ${dt.year}";
+    if (_task.timeLogs.isNotEmpty) {
+      Duration total = Duration.zero;
+      for (var log in _task.timeLogs) {
+        final start = DateTime.parse(log['start']);
+        final end = log['end'] != null ? DateTime.parse(log['end']) : DateTime.now().toUtc();
+        total += end.difference(start);
       }
-
-      if (dtEnd != null) {
-        final diff = dtEnd.difference(dtStart);
-        if (!diff.isNegative) {
-          int days = diff.inDays;
-          int hours = diff.inHours % 24;
-          int mins = diff.inMinutes % 60;
-          List<String> p = [];
-          if(days > 0) p.add("$days gün");
-          if(hours > 0) p.add("$hours saat");
-          if(mins > 0) p.add("$mins dakika");
-          if(p.isEmpty) p.add("1 dakikadan az");
-          buffer.writeln("Görev Kronometresi: Bu görev üzerinde ${p.join(" ")} çalışıldı. ${formatDt(dtStart)} tarihinde başlandı, ${formatDt(dtEnd)} tarihinde bitirildi.");
-        }
-      } else {
-        final diff = now.difference(dtStart);
-        if (!diff.isNegative) {
-          int days = diff.inDays;
-          int hours = diff.inHours % 24;
-          int mins = diff.inMinutes % 60;
-          List<String> p = [];
-          if(days > 0) p.add("$days gün");
-          if(hours > 0) p.add("$hours saat");
-          if(mins > 0) p.add("$mins dakika");
-          if(p.isEmpty) p.add("1 dakikadan az");
-          buffer.writeln("Görev Kronometresi: Görev üzerinde şu ana kadar ${p.join(" ")} çalışıldı. Başlama tarihi: ${formatDt(dtStart)}.");
-        }
+      if (total.inSeconds > 0) {
+        int days = total.inDays;
+        int hours = total.inHours % 24;
+        int mins = total.inMinutes % 60;
+        List<String> p = [];
+        if(days > 0) p.add("$days gün");
+        if(hours > 0) p.add("$hours saat");
+        if(mins > 0) p.add("$mins dakika");
+        if(p.isEmpty) p.add("1 dakikadan az");
+        buffer.writeln("Görev Kronometresi: Bu görev üzerinde toplam ${p.join(" ")} çalışıldı.");
+        buffer.writeln();
       }
-      buffer.writeln();
     }
 
     buffer.writeln('--------------------');
@@ -596,7 +576,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 else ..._checklists.map((c) {
                   return Card(
                     child: Semantics(
-                      label: '${c.title}. ${c.isCompleted ? "Tamamlandı" : "Tamamlanmadı"}.',
+                      label: '${c.title}. ${c.isCompleted ? "Tamamlandı" : "Tamamlanmadı"}. İşlem seçenekleri için parmağınızı yukarı veya aşağı kaydırın.',
                       button: true,
                       customSemanticsActions: {
                         CustomSemanticsAction(label: c.isCompleted ? 'Tamamlanmadı Olarak İşaretle' : 'Tamamlandı Olarak İşaretle'): () => _toggleChecklist(c),

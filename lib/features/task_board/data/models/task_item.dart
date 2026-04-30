@@ -14,6 +14,7 @@ class TaskItem {
   final bool isCompleted;
   final int taskNumber;
   final List<dynamic> labels;
+  final List<dynamic> timeLogs;
   final DateTime created;
 
   TaskItem({
@@ -30,6 +31,7 @@ class TaskItem {
     required this.isCompleted,
     required this.taskNumber,
     required this.labels,
+    required this.timeLogs,
     required this.created,
   });
 
@@ -68,6 +70,7 @@ class TaskItem {
       isCompleted: record.getBoolValue('is_completed'),
       taskNumber: record.getIntValue('task_number'),
       labels: record.getListValue<dynamic>('labels'),
+      timeLogs: record.getListValue<dynamic>('time_logs'),
       created: DateTime.parse(record.created).toLocal(),
     );
   }

@@ -159,6 +159,7 @@ class _TaskVoiceNotesWidgetState extends State<TaskVoiceNotesWidget> {
     try {
       await widget.service.uploadVoiceNote(widget.task.id, path);
       widget.onChanged();
+      SemanticsService.announce('Sesli not başarıyla kaydedildi.', TextDirection.ltr);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ses notu yüklenemedi: $e')));
     } finally {
@@ -171,6 +172,7 @@ class _TaskVoiceNotesWidgetState extends State<TaskVoiceNotesWidget> {
     try {
       await widget.service.deleteVoiceNote(widget.task.id, fileName);
       widget.onChanged();
+      SemanticsService.announce('Sesli not silindi.', TextDirection.ltr);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ses notu silinemedi: $e')));
     } finally {
