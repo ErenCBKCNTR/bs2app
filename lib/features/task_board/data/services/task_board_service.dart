@@ -5,6 +5,7 @@ import 'package:blind_social/features/task_board/data/models/task_board.dart';
 import 'package:blind_social/features/task_board/data/models/task_list_model.dart';
 import 'package:blind_social/features/task_board/data/models/task_item.dart';
 import 'package:blind_social/features/task_board/data/models/task_checklist.dart';
+import 'package:blind_social/features/task_board/data/models/task_comment.dart';
 
 class TaskBoardService {
   final PocketBase _pb = PocketBaseService.client;
@@ -314,5 +315,47 @@ class TaskBoardService {
 
   Future<void> deleteChecklistItem(String itemId) async {
     await _pb.collection('task_checklists').delete(itemId);
+  }
+
+  // COMMENTS
+  Future<List<TaskComment>> getComments(String taskId) async {
+    final records = await _pb.collection('task_comments').getFullList(
+      filter: 'task_id = "$taskId"',
+      sort: '-created', // En yeniler en üstte veya +created eski aşağıda? Thumbs up to user.
+      expand: 'user_id',
+    );
+    return records.map((e) => TaskComment.fromRecord(e)).toList();
+  }
+
+  Future<TaskComment> createComment(String taskId, String content) async {
+    final userId = _pb.authStore.model?.id;
+    if (userId == null) throw Exception("Oturum bulunamadı");
+    
+    final record = await _pb.collection('task_comments').create(
+      body: {
+        'task_id': taskId,
+        'user_id': userId,
+        'content': content,
+      },
+      expand: 'user_id',
+    );
+    return TaskComment.fromRecord(record);
+  }
+
+  Future<TaskComment> createVoiceComment(String taskId, String path) async {
+    final userId = _pb.authStore.model?.id;
+    if (userId == null) throw Exception("Oturum bulunamadı");
+
+    final file = await http.MultipartFile.fromPath('voice_note', path);
+    final record = await _pb.collection('task_comments').create(
+      body: {
+        'task_id': taskId,
+        'user_id': userId,
+        'content': '', // Sesli mesaj metni yok
+      },
+      files: [file],
+      expand: 'user_id',
+    );
+    return TaskComment.fromRecord(record);
   }
 }

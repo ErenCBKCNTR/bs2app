@@ -4,6 +4,7 @@ import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/features/task_board/data/models/task_board.dart';
 import 'package:blind_social/features/task_board/data/services/task_board_service.dart';
 import 'package:blind_social/features/task_board/presentation/screens/task_board_detail_screen.dart';
+import 'package:blind_social/features/task_board/presentation/screens/task_overview_screen.dart';
 
 class TaskBoardsScreen extends StatefulWidget {
   const TaskBoardsScreen({super.key});
@@ -80,6 +81,14 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
     final descCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
     bool isSaving = false;
+    
+    final Map<String, List<String>> templates = {
+      'Boş Şablon': [],
+      'Yazılım Geliştirme': ['İncelenecekler', 'Yapılacaklar', 'Sürüyor', 'Test Bekleyen', 'Tamamlananlar'],
+      'Günlük İşler': ['Yapılacak', 'Hafta İçi', 'Hafta Sonu', 'Bitenler'],
+      'Proje Yönetimi': ['Fikirler', 'Planlama', 'Uygulama', 'Değerlendirme', 'Tamamlananlar'],
+    };
+    String selectedTemplate = 'Boş Şablon';
 
     await showDialog(
       context: context,
@@ -111,6 +120,24 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                         maxLines: 2,
                         decoration: const InputDecoration(labelText: 'Açıklama (İsteğe Bağlı)'),
                       ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: selectedTemplate,
+                        decoration: const InputDecoration(labelText: 'Pano Şablonu Seçin', border: OutlineInputBorder()),
+                        items: templates.keys.map((String key) {
+                          return DropdownMenuItem<String>(
+                            value: key,
+                            child: Text(key),
+                          );
+                        }).toList(),
+                        onChanged: isSaving ? null : (val) {
+                          if (val != null) setStateDialog(() => selectedTemplate = val);
+                        },
+                      ),
+                      if (templates[selectedTemplate]!.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text('Bu şablon ile şunlar eklenecek:\n${templates[selectedTemplate]!.join(', ')}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      ]
                     ],
                   ),
                 ),
@@ -125,7 +152,14 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                     if (!formKey.currentState!.validate()) return;
                     setStateDialog(() => isSaving = true);
                     try {
-                       await _service.createBoard(nameCtrl.text.trim(), descCtrl.text.trim());
+                       final board = await _service.createBoard(nameCtrl.text.trim(), descCtrl.text.trim());
+                       
+                       // Create template lists
+                       final listsToCreate = templates[selectedTemplate]!;
+                       for (int i = 0; i < listsToCreate.length; i++) {
+                          await _service.createList(board.id, listsToCreate[i], i);
+                       }
+                       
                        SemanticsService.announce("Görev panosu başarıyla oluşturuldu", TextDirection.ltr);
                        if (context.mounted) {
                          Navigator.pop(context);
@@ -262,6 +296,13 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
           },
         ) : const Text('Görev Panoları'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.analytics),
+            tooltip: 'Görev Geçmişi ve Özeti',
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const TaskOverviewScreen()));
+            },
+          ),
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),
             tooltip: _isSearching ? 'Aramayı Kapat' : 'Panolarda Ara',

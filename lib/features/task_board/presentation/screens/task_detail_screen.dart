@@ -8,6 +8,7 @@ import 'package:blind_social/features/task_board/data/models/task_list_model.dar
 import 'package:blind_social/features/task_board/data/services/task_board_service.dart';
 import 'package:blind_social/features/task_board/presentation/widgets/task_stopwatch_widget.dart';
 import 'package:blind_social/features/task_board/presentation/widgets/task_voice_notes_widget.dart';
+import 'package:blind_social/features/task_board/presentation/widgets/task_comments_widget.dart';
 
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -62,19 +63,92 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   Future<void> _selectDueDate() async {
-    final selected = await showDatePicker(
+    final ctrl = TextEditingController();
+    
+    if (_task.dueDate != null) {
+      final dt = _task.dueDate!.toLocal();
+      final day = dt.day.toString().padLeft(2, '0');
+      final month = dt.month.toString().padLeft(2, '0');
+      ctrl.text = '$day/$month/${dt.year}';
+    }
+
+    final result = await showDialog<String>(
       context: context,
-      initialDate: _task.dueDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Bitiş Tarihini Belirle'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Semantics(
+                label: 'Bitiş tarihini gün, ay ve yıl olarak araya eğik çizgi ekleyerek giriniz. Eğik çizgi koymazsanız sistem otomatik olarak ekleyecektir. Örneğin 15082026.',
+                child: TextField(
+                  controller: ctrl,
+                  keyboardType: TextInputType.datetime,
+                  decoration: const InputDecoration(
+                    labelText: 'Bitiş Tarihi (GG/AA/YYYY)',
+                    hintText: 'Örn: 30/12/2026 veya 30122026',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.calendar_today),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text('Silmek için alanı boş bırakarak "Kaydet"e basabilirsiniz.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context), 
+              child: const Text('İptal')
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, ctrl.text.trim());
+              }, 
+              child: const Text('Kaydet')
+            ),
+          ],
+        );
+      }
     );
-    if (selected != null) {
+
+    if (result != null) {
+      DateTime? selectedDate;
+      String dob = result;
+      if (dob.isNotEmpty) {
+        if (dob.length == 8 && !dob.contains('/')) {
+          dob = '${dob.substring(0, 2)}/${dob.substring(2, 4)}/${dob.substring(4, 8)}';
+        }
+        final dateRegExp = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$');
+        final match = dateRegExp.firstMatch(dob);
+        if (match != null) {
+          final int? day = int.tryParse(match.group(1)!);
+          final int? month = int.tryParse(match.group(2)!);
+          final int? year = int.tryParse(match.group(3)!);
+          if (day != null && month != null && year != null) {
+            try {
+              selectedDate = DateTime(year, month, day);
+            } catch (_) {}
+          }
+        }
+        
+        if (selectedDate == null) {
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Geçersiz tarih formatı. Lütfen GG/AA/YYYY formatında giriniz.')));
+          return;
+        }
+      }
+
       setState(() => _isLoading = true);
       try {
-        final updated = await _service.updateTaskDates(_task.id, _task.startDate, selected);
+        final updated = await _service.updateTaskDates(_task.id, _task.startDate, selectedDate);
         setState(() => _task = updated);
-        SemanticsService.announce('Bitiş tarihi başarıyla eklendi.', TextDirection.ltr);
-        _announceRemainingDays();
+        if (selectedDate != null) {
+          SemanticsService.announce('Bitiş tarihi başarıyla eklendi.', TextDirection.ltr);
+          _announceRemainingDays();
+        } else {
+          SemanticsService.announce('Bitiş tarihi silindi.', TextDirection.ltr);
+        }
       } catch (e) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
       } finally {
@@ -316,6 +390,21 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       buffer.writeln('Kontrol Listesi:');
       for (var c in _checklists) {
         buffer.writeln('- ${c.title} (${c.isCompleted ? "Tamamlandı" : "Tamamlanmadı"})');
+      }
+      buffer.writeln();
+    }
+
+    if (_task.resources.isNotEmpty) {
+      buffer.writeln('Kaynaklar:');
+      for (var res in _task.resources) {
+        final urlString = res is Map ? (res['url']?.toString() ?? '') : res.toString();
+        final titleString = res is Map ? (res['title']?.toString() ?? urlString) : urlString;
+        
+        if (titleString != urlString) {
+          buffer.writeln('- $titleString: $urlString');
+        } else {
+          buffer.writeln('- $urlString');
+        }
       }
       buffer.writeln();
     }
@@ -867,6 +956,42 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     ),
                   );
                 }).toList(),
+                
+                const SizedBox(height: 24),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.chat),
+                  title: const Text('Bu Görevdeki Mesajlar', style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: const Text('Diğer üyelerle sohbet edin veya sesli mesaj bırakın.'),
+                  trailing: const Icon(Icons.arrow_forward_ios),
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      useSafeArea: true,
+                      builder: (c) {
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: MediaQuery.of(c).viewInsets.bottom),
+                          child: FractionallySizedBox(
+                            heightFactor: 0.8,
+                            child: Column(
+                              children: [
+                                AppBar(
+                                  title: const Text('Mesajlar'),
+                                  leading: IconButton(
+                                    icon: const Icon(Icons.close),
+                                    onPressed: () => Navigator.pop(c),
+                                  ),
+                                ),
+                                Expanded(child: TaskCommentsWidget(taskId: _task.id)),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                    );
+                  },
+                ),
                 
                 const SizedBox(height: 24),
                 const Divider(),
