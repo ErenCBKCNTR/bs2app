@@ -93,11 +93,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
         }
 
         final config = RecordConfig(encoder: foundation.kIsWeb ? AudioEncoder.opus : AudioEncoder.aacLc);
-        if (path != null) {
-          await _audioRecorder.start(config, path: path);
-        } else {
-          await _audioRecorder.start(config);
-        }
+        await _audioRecorder.start(config, path: path ?? '');
 
         if (!foundation.kIsWeb) {
           try { Vibration.vibrate(duration: 50); } catch (_) {}
