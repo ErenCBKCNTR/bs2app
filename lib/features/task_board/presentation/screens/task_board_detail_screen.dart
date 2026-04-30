@@ -535,16 +535,9 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                                   
                                   String timeSpentStr = "";
                                   if (task.startDate != null) {
-                                    final now = DateTime.now();
                                     final dtStart = task.startDate!;
                                     final dtEnd = task.dueDate;
                                     
-                                    String formatDt(DateTime dt) {
-                                      const months = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-                                      if (now.year == dt.year) return "${dt.day} ${months[dt.month]}";
-                                      return "${dt.day} ${months[dt.month]} ${dt.year}";
-                                    }
-
                                     if (dtEnd != null) {
                                       final diff = dtEnd.difference(dtStart);
                                       if (!diff.isNegative) {
@@ -558,10 +551,10 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                                         if(mins > 0) p.add("$mins dakika");
                                         if(p.isEmpty) p.add("1 dakikadan az");
                                         
-                                        timeSpentStr = " Bu görev üzerinde ${p.join(" ")} çalıştınız. ${formatDt(dtStart)} tarihinde başladınız, ${formatDt(dtEnd)} tarihinde bitirdiniz.";
+                                        timeSpentStr = " Bu görev üzerinde ${p.join(" ")} çalıştınız. ${_formatDt(dtStart)} tarihinde başladınız, ${_formatDt(dtEnd)} tarihinde bitirdiniz.";
                                       }
                                     } else {
-                                      final diff = now.difference(dtStart);
+                                      final diff = DateTime.now().difference(dtStart);
                                       if (!diff.isNegative) {
                                         int days = diff.inDays;
                                         int hours = diff.inHours % 24;
@@ -571,7 +564,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                                         if(hours > 0) p.add("$hours saat");
                                         if(mins > 0) p.add("$mins dakika");
                                         if(p.isEmpty) p.add("1 dakikadan az");
-                                        timeSpentStr = " Görev üzerinde şu ana kadar ${p.join(" ")} çalıştınız. Başlama tarihiniz: ${formatDt(dtStart)}.";
+                                        timeSpentStr = " Görev üzerinde şu ana kadar ${p.join(" ")} çalıştınız. Başlama tarihiniz: ${_formatDt(dtStart)}.";
                                       }
                                     }
                                   }
@@ -689,5 +682,12 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
     String hex = colorStr.toUpperCase().replaceAll("#", "");
     if (hex.length == 6) hex = "FF$hex";
     return Color(int.tryParse(hex, radix: 16) ?? 0xFF000000);
+  }
+
+  String _formatDt(DateTime dt) {
+    final now = DateTime.now();
+    const months = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    if (now.year == dt.year) return "${dt.day} ${months[dt.month]}";
+    return "${dt.day} ${months[dt.month]} ${dt.year}";
   }
 }
