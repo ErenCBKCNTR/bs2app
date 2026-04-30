@@ -965,30 +965,18 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   subtitle: const Text('Diğer üyelerle sohbet edin veya sesli mesaj bırakın.'),
                   trailing: const Icon(Icons.arrow_forward_ios),
                   onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      useSafeArea: true,
-                      builder: (c) {
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: MediaQuery.of(c).viewInsets.bottom),
-                          child: FractionallySizedBox(
-                            heightFactor: 0.8,
-                            child: Column(
-                              children: [
-                                AppBar(
-                                  title: const Text('Mesajlar'),
-                                  leading: IconButton(
-                                    icon: const Icon(Icons.close),
-                                    onPressed: () => Navigator.pop(c),
-                                  ),
-                                ),
-                                Expanded(child: TaskCommentsWidget(taskId: _task.id)),
-                              ],
-                            ),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (c) => Scaffold(
+                          appBar: AppBar(
+                            title: const Text('Mesajlar'),
                           ),
-                        );
-                      }
+                          body: SafeArea(
+                            child: TaskCommentsWidget(taskId: _task.id),
+                          ),
+                        ),
+                      ),
                     );
                   },
                 ),

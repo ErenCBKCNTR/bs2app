@@ -398,6 +398,14 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Icon(isFav ? Icons.star : Icons.star_border, color: isFav ? Colors.amber : Colors.white70),
+                                  if (isOwner)
+                                    GestureDetector(
+                                      onTap: () => _deleteBoardDialog(board),
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(4.0),
+                                        child: Icon(Icons.delete, color: Colors.white70, size: 20),
+                                      ),
+                                    ),
                                 ],
                               ),
                               const Spacer(),

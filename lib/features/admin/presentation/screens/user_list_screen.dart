@@ -72,11 +72,12 @@ class _UserListScreenState extends State<UserListScreen> {
                   itemCount: _users.length,
                   itemBuilder: (context, index) {
                     final user = _users[index];
-                    final username = user.getStringValue('username').isEmpty 
+                    final pbName = user.getStringValue('full_name').isEmpty 
                         ? user.getStringValue('name') 
-                        : user.getStringValue('username');
+                        : user.getStringValue('full_name');
+                    final username = pbName.isNotEmpty ? pbName : (user.getStringValue('username').isEmpty ? 'İsimsiz Kullanıcı' : user.getStringValue('username'));
                     final email = user.getStringValue('email');
-                    final displayEmail = email.isNotEmpty ? email : 'Gizli / İzin Verilmemiş';
+                    final displayEmail = email.isNotEmpty ? email : 'Gizli (PocketBase)';
                     final created = DateFormat('dd.MM.yyyy HH:mm').format(DateTime.parse(user.created).toLocal());
                     final role = user.getStringValue('role') == '0' ? 'Yönetici' : 'Kullanıcı';
 

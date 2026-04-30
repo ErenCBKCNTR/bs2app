@@ -351,7 +351,7 @@ class TaskBoardService {
       body: {
         'task_id': taskId,
         'user_id': userId,
-        'content': '', // Sesli mesaj metni yok
+        'content': '🎤 Sesli Mesaj', // Content required to pass Pocketbase validation
       },
       files: [file],
       expand: 'user_id',

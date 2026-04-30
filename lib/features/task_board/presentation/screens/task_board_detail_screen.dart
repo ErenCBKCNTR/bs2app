@@ -450,6 +450,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                           label: '${list.name} isimli liste içerisinde $totalTasks adet görev mevcut. Yüzde $percentage tamamlandı. Liste ile alakalı işlem yapmak için parmağınızı yukarı ya da aşağı kaydırın.',
                           button: true,
                           onTapHint: isCollapsed ? "Genişlet" : "Daralt",
+                          onTap: () => _toggleCollapse(list),
                           customSemanticsActions: {
                             const CustomSemanticsAction(label: 'Listeyi Genişlet/Daralt'): () => _toggleCollapse(list),
                             CustomSemanticsAction(label: isPinned ? 'Başa Tutturmayı Kaldır' : 'Başa Tuttur'): () => _togglePin(list),
@@ -460,7 +461,6 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                           },
                           child: ExcludeSemantics(
                             child: InkWell(
-                              onDoubleTap: () => _toggleCollapse(list),
                               onTap: () => _toggleCollapse(list),
                               borderRadius: isCollapsed ? BorderRadius.circular(16) : const BorderRadius.vertical(top: Radius.circular(16)),
                               child: Padding(
@@ -560,6 +560,15 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                                       label: 'Görev numarası ${task.taskNumber}: ${task.title}. ${isTaskCompleted ? "Tamamlandı" : "Devam ediyor"}.$timeSpentStr Düzenlemek veya görüntülemek için çift tıklayın. İşlem seçenekleri için parmağınızı yukarı veya aşağı kaydırın.',
                                       button: true,
                                       onTapHint: 'Görevi Aç',
+                                      onTap: () async {
+                                        final refresh = await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => TaskDetailScreen(task: task, allLists: _lists),
+                                          ),
+                                        );
+                                        if (refresh == true) _loadBoard();
+                                      },
                                       customSemanticsActions: {
                                         if (canEdit) const CustomSemanticsAction(label: 'Görevi Sil'): () => _deleteTaskDialog(task),
                                         if (canEdit || task.assignees.contains(_currentUserId)) CustomSemanticsAction(label: isTaskCompleted ? 'Tamamlanmadı Olarak İşaretle' : 'Tamamlandı Olarak İşaretle'): () => _toggleTaskState(task),

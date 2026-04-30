@@ -76,9 +76,14 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
       );
     }
 
-    final username = widget.user.getStringValue('username').isEmpty 
+    final pbName = widget.user.getStringValue('full_name').isEmpty 
         ? widget.user.getStringValue('name') 
+        : widget.user.getStringValue('full_name');
+    final actualUsername = widget.user.getStringValue('username').isEmpty 
+        ? 'Belirtilmemiş'
         : widget.user.getStringValue('username');
+    final displayName = pbName.isNotEmpty ? pbName : (actualUsername != 'Belirtilmemiş' ? actualUsername : 'Bilinmeyen Kullanıcı');
+    
     final email = widget.user.getStringValue('email');
     final created = DateFormat('dd.MM.yyyy HH:mm').format(DateTime.parse(widget.user.created).toLocal());
     final lastIp = widget.user.getStringValue('last_ip');
@@ -98,14 +103,14 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           children: [
             const Icon(Icons.account_circle, size: 80, color: Colors.grey),
             const SizedBox(height: 16),
-            const Text(
-              'Kullanıcı Bilgileri', 
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold), 
+            Text(
+              displayName, 
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold), 
               textAlign: TextAlign.center
             ),
             const SizedBox(height: 32),
-            _detailRow('İsim / Kullanıcı Adı:', username.isEmpty ? 'Belirtilmemiş' : username),
-            _detailRow('E-Posta Adresi:', email.isEmpty ? 'Gizli / İzin Verilmemiş' : email),
+            _detailRow('Kullanıcı Adı:', actualUsername),
+            _detailRow('E-Posta Adresi:', email.isEmpty ? 'Gizli (PocketBase Güvenlik Kuralları)' : email),
             _detailRow('Kayıt Tarihi:', created),
             _detailRow('Son IP Adresi:', lastIp.isEmpty ? 'Bilinmiyor' : lastIp),
             _detailRow('Son Konum:', lastLocation.isEmpty ? 'Bilinmiyor' : lastLocation),
