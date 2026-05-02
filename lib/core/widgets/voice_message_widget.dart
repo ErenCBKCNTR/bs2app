@@ -55,6 +55,15 @@ class _VoiceMessageWidgetState extends State<VoiceMessageWidget> {
         });
       }
     });
+
+    // Ses kaynağını önceden yükle, böylece süre (duration) 00:00 yerine hemen güncellenir
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await _audioPlayer.setSource(UrlSource(widget.url));
+      } catch (e) {
+        debugPrint('Ses metaverisi yüklenemedi: $e');
+      }
+    });
   }
 
   @override
@@ -107,7 +116,11 @@ class _VoiceMessageWidgetState extends State<VoiceMessageWidget> {
                 if (_isPlaying) {
                   await _audioPlayer.pause();
                 } else {
-                  await _audioPlayer.play(UrlSource(widget.url));
+                  if (_audioPlayer.source == null) {
+                    await _audioPlayer.play(UrlSource(widget.url));
+                  } else {
+                    await _audioPlayer.resume();
+                  }
                 }
               },
             ),

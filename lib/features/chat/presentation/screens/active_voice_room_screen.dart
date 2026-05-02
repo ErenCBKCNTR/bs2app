@@ -48,7 +48,7 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   @override
   void initState() {
     super.initState();
-    _connectToRoom();
+    // Do not connect automatically, wait for user interaction to avoid minified DOMException on Web
   }
 
   void _onRoomDidUpdate() {
@@ -136,17 +136,20 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
         AppLogger.instance.warning('User bilgisi alınırken hata: $e');
       }
       
+      AppLogger.instance.info('User bilgisi tamam.');
       AppLogger.instance.info('Token oluşturuluyor...');
       final String livekitToken = _generateToken(apiKey, apiSecret, widget.roomId, userId, userName);
-      AppLogger.instance.info('Token oluşturuldu, odaya bağlanılıyor...');
-
+      AppLogger.instance.info('Token oluşturuldu: ${livekitToken.substring(0, 5)}...');
+      
       _room = Room();
       _listener = _room!.createListener();
 
+      AppLogger.instance.info('Room connect çağrılıyor...');
       await _room!.connect(livekitUrl, livekitToken);
-      AppLogger.instance.info('Odaya bağlanıldı. Dinleyiciler ayarlanıyor...');
+      AppLogger.instance.info('Room connect bitti.');
       
       _listener
+      //...
         ..on<ParticipantConnectedEvent>((event) {
           _onRoomDidUpdate();
           _notifyParticipantStatus(event.participant, true);
@@ -238,10 +241,29 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
         elevation: 0,
       ),
       body: _errorMessage != null 
-        ? Center(child: Padding(padding: const EdgeInsets.all(16.0), child: Text('Bağlantı hatası: $_errorMessage\nLütfen tekrar deneyin.', textAlign: TextAlign.center, style: const TextStyle(color: Colors.red))))
-        : _isConnected 
-          ? _buildParticipantGrid()
-          : const Center(child: CircularProgressIndicator()),
+        ? Center(child: Padding(padding: const EdgeInsets.all(16.0), child: Text('Bağlantı hatası: $_errorMessage\nLütfen sayfayı yenileyip tekrar deneyin.', textAlign: TextAlign.center, style: const TextStyle(color: Colors.red))))
+        : !_isConnected && _room == null
+            ? Center(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.mic, size: 28),
+                  label: const Text("Odaya Katıl (Mikrofona İzin Ver)", style: TextStyle(fontSize: 16)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _errorMessage = null;
+                    });
+                    _connectToRoom();
+                  },
+                ),
+              )
+            : _isConnected 
+              ? _buildParticipantGrid()
+              : const Center(child: CircularProgressIndicator()),
       bottomNavigationBar: _isConnected ? _buildBottomControls() : null,
     );
   }

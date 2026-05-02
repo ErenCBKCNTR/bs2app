@@ -393,6 +393,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       if (kIsWeb) {
         final res = await http.get(Uri.parse(path));
         fileBytes = res.bodyBytes;
+        AppLogger.instance.info('Web voice upload: fetched ${fileBytes.length} bytes from $path');
       } else {
         fileBytes = File(path).readAsBytesSync();
       }
@@ -838,7 +839,8 @@ addRepaintBoundaries: true,
                           final baseUrl = PocketBaseService.client.baseUrl;
                           final recordId = message['id'];
                           final collectionId = message['collectionId'];
-                          voiceUrl = '$baseUrl/api/files/$collectionId/$recordId/$filename';
+                          final fileToken = PocketBaseService.client.authStore.token;
+                          voiceUrl = '$baseUrl/api/files/$collectionId/$recordId/$filename?token=$fileToken';
                         }
                       }
 
