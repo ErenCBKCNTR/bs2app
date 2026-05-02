@@ -141,18 +141,43 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
       String livekitToken = '';
       try {
         livekitToken = _generateToken(apiKey, apiSecret, widget.roomId, userId, userName);
-        AppLogger.instance.info('Token oluşturuldu: ${livekitToken.substring(0, 5)}...');
+        AppLogger.instance.info('Token oluşturuldu.');
       } catch (e, st) {
         AppLogger.instance.error('Token oluşturma hatası: $e\n$st');
         throw Exception('Token Error: $e');
       }
-      
-      _room = Room();
-      _listener = _room!.createListener();
 
-      AppLogger.instance.info('Room connect çağrılıyor...');
+      if (kIsWeb) {
+        try {
+          AppLogger.instance.info('Web için ön mikrofon izni kontrol ediliyor...');
+          // Tarayıcının mikrofon iznini almasını zorunlu kılıyoruz, böylece NotAllowedError (minified:abO) almayı önleriz.
+          final stream = await webrtc.navigator.mediaDevices.getUserMedia({'audio': true});
+          for (var track in stream.getTracks()) {
+            track.stop();
+          }
+          AppLogger.instance.info('Web mikrofon izni başarıyla alındı.');
+        } catch (e) {
+          AppLogger.instance.warning('Web mikrofon izni alınamadı, bağlanmaya devam edilecek: $e');
+          // Sadece dinleyici modunda da katılabilir.
+        }
+      }
+      
       try {
-        await _room!.connect(livekitUrl, livekitToken);
+        _room = Room();
+        _listener = _room!.createListener();
+
+        AppLogger.instance.info('Room connect çağrılıyor...');
+        await _room!.connect(
+          livekitUrl, 
+          livekitToken,
+          connectOptions: const ConnectOptions(
+            autoSubscribe: true,
+          ),
+          roomOptions: const RoomOptions(
+            adaptiveStream: false,
+            dynacast: false,
+          ),
+        );
         AppLogger.instance.info('Room connect bitti.');
       } catch (e, st) {
         String deepError = e.toString();
@@ -161,8 +186,7 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
                final jsObj = e as dynamic;
                final name = jsObj.name != null ? 'Name: ${jsObj.name}' : '';
                final message = jsObj.message != null ? 'Msg: ${jsObj.message}' : '';
-               final code = jsObj.code != null ? 'Code: ${jsObj.code}' : '';
-               deepError += '\nJS Data: $name $message $code';
+               deepError += ' | JS Data: $name $message';
             } catch (_) {}
         }
         AppLogger.instance.error('Room.connect sırasında hata: $deepError\n$st');
