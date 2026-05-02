@@ -138,15 +138,36 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
       
       AppLogger.instance.info('User bilgisi tamam.');
       AppLogger.instance.info('Token oluşturuluyor...');
-      final String livekitToken = _generateToken(apiKey, apiSecret, widget.roomId, userId, userName);
-      AppLogger.instance.info('Token oluşturuldu: ${livekitToken.substring(0, 5)}...');
+      String livekitToken = '';
+      try {
+        livekitToken = _generateToken(apiKey, apiSecret, widget.roomId, userId, userName);
+        AppLogger.instance.info('Token oluşturuldu: ${livekitToken.substring(0, 5)}...');
+      } catch (e, st) {
+        AppLogger.instance.error('Token oluşturma hatası: $e\n$st');
+        throw Exception('Token Error: $e');
+      }
       
       _room = Room();
       _listener = _room!.createListener();
 
       AppLogger.instance.info('Room connect çağrılıyor...');
-      await _room!.connect(livekitUrl, livekitToken);
-      AppLogger.instance.info('Room connect bitti.');
+      try {
+        await _room!.connect(livekitUrl, livekitToken);
+        AppLogger.instance.info('Room connect bitti.');
+      } catch (e, st) {
+        String deepError = e.toString();
+        if (kIsWeb) {
+            try {
+               final jsObj = e as dynamic;
+               final name = jsObj.name != null ? 'Name: ${jsObj.name}' : '';
+               final message = jsObj.message != null ? 'Msg: ${jsObj.message}' : '';
+               final code = jsObj.code != null ? 'Code: ${jsObj.code}' : '';
+               deepError += '\nJS Data: $name $message $code';
+            } catch (_) {}
+        }
+        AppLogger.instance.error('Room.connect sırasında hata: $deepError\n$st');
+        throw Exception('Connect Error: $deepError');
+      }
       
       _listener
       //...
@@ -173,7 +194,20 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
         });
       }
 
-      await _room!.localParticipant?.setMicrophoneEnabled(true);
+      try {
+        await _room!.localParticipant?.setMicrophoneEnabled(true);
+      } catch (micError, micSt) {
+        AppLogger.instance.warning('Mikrofon açılamadı, konuşmadan sadece dinleyici olarak kalıyorsunuz: $micError');
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Mikrofona erişilemedi, sadece dinleyici olarak katıldınız.')),
+           );
+           setState(() {
+             _isMuted = true;
+           });
+        }
+      }
+      
       AppLogger.instance.info('LiveKit odaya başarıyla bağlanıldı: ${widget.roomName}');
       _playSystemBeep(isJoin: true);
 

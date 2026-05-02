@@ -169,7 +169,6 @@ class _ChatInputFieldState extends State<ChatInputField> {
     if (text.isNotEmpty) {
       widget.onSendText(text);
       _controller.clear();
-      FocusScope.of(context).unfocus();
     }
   }
 

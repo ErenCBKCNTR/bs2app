@@ -21,6 +21,17 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            version: '1.7.7',
+            date: '2 Mayıs 2026',
+            changes: [
+              'Hata Giderme: Web tarayıcılarında sesli ortamlara bağlanırken "minified" olarak görünen hata tespit edilip, daha güvenli bir bağlantı mekanizmasıyla değiştirildi. Olası mikrofon erişim reddinde odaya dinleyici olarak katılma izni eklendi.',
+              'Hata Giderme: Mesaj gönderirken klavyenin zorla kapatılması sebebiyle ekranda arta kalan "yarım sayfa" sorunu klavye doğal davranışına bırakılarak çözüldü.',
+              'İyileştirme: Canlı sesli iletişim için detaylı hata analizi alt yapısı genişletildi.'
+            ],
+            isLatest: true,
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
             version: '1.7.6',
             date: '2 Mayıs 2026',
             changes: [
@@ -29,7 +40,7 @@ class ChangelogScreen extends StatelessWidget {
               'İyileştirme: Web tarafındaki gereksiz emoji klavyesi uyarıları kaldırılarak arayüz sadeleştirildi.',
               'İyileştirme: Web tarayıcılarında sesli ortamlara bağlanırken yaşanan gecikmeler ve bağlantı engelleri yeniden yapılandırıldı.'
             ],
-            isLatest: true,
+            isLatest: false,
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
