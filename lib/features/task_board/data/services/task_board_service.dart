@@ -352,7 +352,7 @@ class TaskBoardService {
     http.MultipartFile file;
     if (kIsWeb) {
       final res = await http.get(Uri.parse(path));
-      file = http.MultipartFile.fromBytes('voice_note', res.bodyBytes, filename: kIsWeb ? 'ses.wav' : 'ses.m4a');
+      file = http.MultipartFile.fromBytes('voice_note', res.bodyBytes, filename: kIsWeb ? 'ses.webm' : 'ses.m4a');
     } else {
       file = await http.MultipartFile.fromPath('voice_note', path);
     }

@@ -186,7 +186,7 @@ class ChatServerService {
     http.MultipartFile file;
     if (kIsWeb) {
       final res = await http.get(Uri.parse(audioPath));
-      file = http.MultipartFile.fromBytes('file', res.bodyBytes, filename: kIsWeb ? 'ses.wav' : 'ses.m4a');
+      file = http.MultipartFile.fromBytes('file', res.bodyBytes, filename: kIsWeb ? 'ses.webm' : 'ses.m4a');
     } else {
       file = await http.MultipartFile.fromPath('file', audioPath);
     }

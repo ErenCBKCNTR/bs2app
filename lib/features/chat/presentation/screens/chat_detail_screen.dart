@@ -404,7 +404,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           'content': '[VOICE]',
         },
         files: [
-          http.MultipartFile.fromBytes('file', fileBytes, filename: kIsWeb ? 'ses.wav' : 'ses.m4a')
+          http.MultipartFile.fromBytes('file', fileBytes, filename: kIsWeb ? 'ses.webm' : 'ses.m4a')
         ],
       );
       

@@ -21,6 +21,18 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            version: '1.7.6',
+            date: '2 Mayıs 2026',
+            changes: [
+              'Hata Giderme: Web üzerinden sesli mesaj gönderiminde yaşanan "0 saniye" sorunu giderildi.',
+              'Hata Giderme: Web ortamında klavye kapatılınca ekranın altında oluşan beyaz kutu hatası çözüldü.',
+              'İyileştirme: Web tarafındaki gereksiz emoji klavyesi uyarıları kaldırılarak arayüz sadeleştirildi.',
+              'İyileştirme: Web tarayıcılarında sesli ortamlara bağlanırken yaşanan gecikmeler ve bağlantı engelleri yeniden yapılandırıldı.'
+            ],
+            isLatest: true,
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
             version: '1.7.5',
             date: '30 Nisan 2026',
             changes: [
@@ -29,7 +41,7 @@ class ChangelogScreen extends StatelessWidget {
               'Yeni: Tüm görevlerinizin tamamlanma veya bekleme durumunu istatistikleriyle görebileceğiniz "Görev Özeti ve Geçmişi" sayfası eklendi.',
               'Hata Giderme: Bazı şablonlarla pano oluşturulurken ortaya çıkan veritabanı "liste sırası" kaydetme hatası giderildi.',
             ],
-            isLatest: true,
+            isLatest: false,
           ),
           const SizedBox(height: 24),
           _buildVersionSection(

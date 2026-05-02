@@ -92,7 +92,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
           path = '${directory.path}/recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
         }
 
-        final config = RecordConfig(encoder: foundation.kIsWeb ? AudioEncoder.pcm16bits : AudioEncoder.aacLc);
+        final config = RecordConfig(encoder: foundation.kIsWeb ? AudioEncoder.opus : AudioEncoder.aacLc);
         await _audioRecorder.start(config, path: path ?? '');
 
         if (!foundation.kIsWeb) {
@@ -293,12 +293,10 @@ class _ChatInputFieldState extends State<ChatInputField> {
               ],
             ),
           ),
-          if (_showEmojiPicker)
+          if (_showEmojiPicker && !foundation.kIsWeb)
             SizedBox(
               height: 250,
-              child: foundation.kIsWeb
-                  ? const Center(child: Text('Web sürümünde emoji seçici desteklenmiyor.'))
-                  : EmojiPicker(
+              child: EmojiPicker(
                       textEditingController: _controller,
                       config: Config(
                         emojiViewConfig: EmojiViewConfig(
