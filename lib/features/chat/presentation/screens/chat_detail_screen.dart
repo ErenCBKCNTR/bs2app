@@ -160,13 +160,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
       // İnternet kontrolü yap (Kullanıcı talebi)
       bool hasInternet = true;
-      try {
-        final result = await InternetAddress.lookup('api.cabukcan.com').timeout(const Duration(seconds: 3));
-        if (result.isEmpty || result[0].rawAddress.isEmpty) {
+      if (!kIsWeb) {
+        try {
+          final result = await InternetAddress.lookup('api.cabukcan.com').timeout(const Duration(seconds: 3));
+          if (result.isEmpty || result[0].rawAddress.isEmpty) {
+            hasInternet = false;
+          }
+        } catch (_) {
           hasInternet = false;
         }
-      } catch (_) {
-        hasInternet = false;
       }
 
       if (!hasInternet && _messages.isNotEmpty) {
@@ -400,7 +402,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           'content': '[VOICE]',
         },
         files: [
-          http.MultipartFile.fromBytes('file', fileBytes, filename: 'ses.m4a')
+          http.MultipartFile.fromBytes('file', fileBytes, filename: kIsWeb ? 'ses.webm' : 'ses.m4a')
         ],
       );
       

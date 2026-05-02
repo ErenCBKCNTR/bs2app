@@ -172,6 +172,9 @@ Projede kullanılan kritik `pubspec.yaml` paket listesi:
 <h2 id="7-proje-yol-haritasi-ve-yapilacaklar">7. PROJE YOL HARİTASI VE YAPILACAKLAR</h2>
 
 **✅ Yakın Zamanda Tamamlananlar (Özet)**
+*   Web ortamında dar:io kütüphanesinden kaynaklanan sahte 'İnternet bağlantısı yok' hataları ve bu yüzden yeni gönderilerin/sohbetlerin çekilemeyip sürekli önbellekte takılı kalması sorunu giderildi.
+*   Web üzerinden gönderilen sesli mesajların uzantısı format uyuşmazlığını gidermek için .webm olarak güncellendi, böylece mesajların 1. saniyede kesilmesi sorunu çözüldü.
+*   Web tarafındaki LiveKit "minified:abj" hatası ve mikrofon izinlerinin odaya bağlanmayı tamamen engellemesi sorununu çözmek için `getUserMedia()` adımı hata toleranslı (try-catch) hale getirildi ve hata izleme (debug) eklendi.
 *   PocketBase veritabanında (`pb_schema.json`) bulunan güvenlik açıkları kapatıldı. Tüm mesajlaşma, görev ve yorum listeleme (list/view) ile oluşturma (create/update) kurallarına katı sahip/katılımcı doğrulama kuralları eklendi.
 *   Web ve Mobil platformlarda oluşan performans takılmalarını önlemek amacıyla tüm uygulamadaki ListView'lere `addAutomaticKeepAlives` ve `addRepaintBoundaries` optimizasyonları yapıldı.
 *   Web ortamında sesli odaya bağlanırken mikrofon izni sorma mantığı eksikleri düzeltilerek sürekli yüklenme (spinner) hataları çözüldü.

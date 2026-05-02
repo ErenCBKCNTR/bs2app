@@ -93,10 +93,13 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
         }
       } else {
         // Web ortamı için tarayıcı mikrofon izni isteme
-        final stream = await webrtc.navigator.mediaDevices.getUserMedia({'audio': true});
-        // İzinleri kontrol etmek için açtığımız stream'i hemen kapatıyoruz (bunu livekit kendi yönetecek)
-        for (var track in stream.getTracks()) {
-          track.stop();
+        try {
+          final stream = await webrtc.navigator.mediaDevices.getUserMedia({'audio': true});
+          for (var track in stream.getTracks()) {
+            track.stop();
+          }
+        } catch (e) {
+          AppLogger.instance.warning('WebRTC getUserMedia hatası: $e');
         }
       }
 
@@ -123,7 +126,9 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
           ? '@${user!.getStringValue('username')}' 
           : 'Misafir';
       
+      AppLogger.instance.info('Token oluşturuluyor...');
       final String livekitToken = _generateToken(apiKey, apiSecret, widget.roomId, userId, userName);
+      AppLogger.instance.info('Token oluşturuldu, odaya bağlanılıyor...');
 
       _room = Room();
       _listener = _room!.createListener();
@@ -134,6 +139,7 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
       );
 
       await _room!.connect(livekitUrl, livekitToken, roomOptions: roomOptions);
+      AppLogger.instance.info('Odaya bağlanıldı. Dinleyiciler ayarlanıyor...');
       
       _listener
         ..on<ParticipantConnectedEvent>((event) {

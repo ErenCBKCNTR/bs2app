@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/semantics.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/json_utils.dart';
@@ -82,13 +83,15 @@ class _BlogScreenState extends State<BlogScreen> {
     // İnternet kontrolü (önbellek varsa boşa ağ isteği atma)
     if (_posts.isNotEmpty) {
       bool hasInternet = true;
-      try {
-        final result = await InternetAddress.lookup('api.cabukcan.com').timeout(const Duration(seconds: 3));
-        if (result.isEmpty || result[0].rawAddress.isEmpty) {
+      if (!kIsWeb) {
+        try {
+          final result = await InternetAddress.lookup('api.cabukcan.com').timeout(const Duration(seconds: 3));
+          if (result.isEmpty || result[0].rawAddress.isEmpty) {
+            hasInternet = false;
+          }
+        } catch (_) {
           hasInternet = false;
         }
-      } catch (_) {
-        hasInternet = false;
       }
       
       if (!hasInternet) {

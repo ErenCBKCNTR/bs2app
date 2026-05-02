@@ -289,13 +289,15 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       
       // İnternet kontrolü yap (Kullanıcı talebi: İnternetsiz açıldığında API denemesin)
       bool hasInternet = true;
-      try {
-        final result = await InternetAddress.lookup('api.cabukcan.com').timeout(const Duration(seconds: 3));
-        if (result.isEmpty || result[0].rawAddress.isEmpty) {
+      if (!kIsWeb) {
+        try {
+          final result = await InternetAddress.lookup('api.cabukcan.com').timeout(const Duration(seconds: 3));
+          if (result.isEmpty || result[0].rawAddress.isEmpty) {
+            hasInternet = false;
+          }
+        } catch (_) {
           hasInternet = false;
         }
-      } catch (_) {
-        hasInternet = false;
       }
 
       if (!hasInternet && loadedFromCache) {
