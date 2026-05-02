@@ -172,6 +172,7 @@ Projede kullanılan kritik `pubspec.yaml` paket listesi:
 <h2 id="7-proje-yol-haritasi-ve-yapilacaklar">7. PROJE YOL HARİTASI VE YAPILACAKLAR</h2>
 
 **✅ Yakın Zamanda Tamamlananlar (Özet)**
+*   Web tarafında Google ile Giriş yaparken oluşan `missing provider google` ve `Unsupported operation` hataları, özel manuel bir OAuth2 Web Authorization Code yönlendirme akışıyla çözüldü. Bu işlem web tarafında URL tabanlı bir redirect kullanır (`https://cabukcan.com.tr/`). Bu sayede SDK'nın eksik provider hatası veren açıkları bypass edilmiş olur.
 *   Web ortamında dar:io kütüphanesinden kaynaklanan sahte 'İnternet bağlantısı yok' hataları ve bu yüzden yeni gönderilerin/sohbetlerin çekilemeyip sürekli önbellekte takılı kalması sorunu giderildi.
 *   Web üzerinden gönderilen sesli mesajların uzantısı format uyuşmazlığını gidermek için .webm olarak güncellendi, böylece mesajların 1. saniyede kesilmesi sorunu çözüldü.
 *   Web tarafındaki LiveKit "minified:abj" hatası ve mikrofon izinlerinin odaya bağlanmayı tamamen engellemesi sorununu çözmek için `getUserMedia()` adımı hata toleranslı (try-catch) hale getirildi ve hata izleme (debug) eklendi.
