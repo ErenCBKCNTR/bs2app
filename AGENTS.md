@@ -173,7 +173,6 @@ Projede kullanılan kritik `pubspec.yaml` paket listesi:
 
 **✅ Yakın Zamanda Tamamlananlar (Özet)**
 *   Web ortamında dar:io kütüphanesinden kaynaklanan sahte 'İnternet bağlantısı yok' hataları ve bu yüzden yeni gönderilerin/sohbetlerin çekilemeyip sürekli önbellekte takılı kalması sorunu giderildi.
-*   Web tarafındaki Google ile Giriş Yap özelliğinin 'InternetAddress.loopbackIPv4' (Unsupported operation) hatası verip çökmesi sorunu, PocketBase web manuel OAuth2 yönlendirme akışı (kendi URL'ine redirect) kurularak çözüldü.
 *   Web üzerinden gönderilen sesli mesajların uzantısı format uyuşmazlığını gidermek için .webm olarak güncellendi, böylece mesajların 1. saniyede kesilmesi sorunu çözüldü.
 *   Web tarafındaki LiveKit "minified:abj" hatası ve mikrofon izinlerinin odaya bağlanmayı tamamen engellemesi sorununu çözmek için `getUserMedia()` adımı hata toleranslı (try-catch) hale getirildi ve hata izleme (debug) eklendi.
 *   PocketBase veritabanında (`pb_schema.json`) bulunan güvenlik açıkları kapatıldı. Tüm mesajlaşma, görev ve yorum listeleme (list/view) ile oluşturma (create/update) kurallarına katı sahip/katılımcı doğrulama kuralları eklendi.
