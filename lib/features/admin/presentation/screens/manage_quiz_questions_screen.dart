@@ -103,6 +103,8 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
             : _questions.isEmpty
                 ? const Center(child: Text('Henüz soru yüklenmemiş.'))
                 : ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                     itemCount: _questions.length,
                     itemBuilder: (context, index) {
                       final q = _questions[index];

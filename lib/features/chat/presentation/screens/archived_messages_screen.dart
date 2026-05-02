@@ -120,6 +120,8 @@ class _ArchivedMessagesScreenState extends State<ArchivedMessagesScreen> {
             : _chats.isEmpty
                 ? const Center(child: Text('Arşivlenmiş sohbet yok.'))
                 : ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                     itemCount: _chats.length,
                     itemBuilder: (context, index) {
                       final chat = _chats[index];

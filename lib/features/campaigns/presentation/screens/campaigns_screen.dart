@@ -191,6 +191,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
               SizedBox(
                 height: 48,
                 child: ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   itemCount: _categories.length,

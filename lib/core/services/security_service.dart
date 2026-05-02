@@ -58,14 +58,14 @@ class SecurityService {
         'x-device-model': 'web browser',
         'x-device-os': 'Web',
       };
-    } else if (Platform.isAndroid) {
+    } else if (!kIsWeb && Platform.isAndroid) {
       final androidInfo = await deviceInfo.androidInfo;
       return {
         'x-device-id': androidInfo.id,
         'x-device-model': androidInfo.model,
         'x-device-os': 'Android ${androidInfo.version.release}',
       };
-    } else if (Platform.isIOS) {
+    } else if (!kIsWeb && Platform.isIOS) {
       final iosInfo = await deviceInfo.iosInfo;
       return {
         'x-device-id': iosInfo.identifierForVendor ?? 'unknown',

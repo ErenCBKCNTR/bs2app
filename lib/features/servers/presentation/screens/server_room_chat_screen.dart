@@ -42,7 +42,7 @@ class _ServerRoomChatScreenState extends State<ServerRoomChatScreen> {
   }
 
   void _setupSubscription() async {
-    _unsub = await ChatServerService().subscribeToRoomMessages(widget.room.id, (RecordSubscriptionEvent e) {
+    final sub = await ChatServerService().subscribeToRoomMessages(widget.room.id, (RecordSubscriptionEvent e) {
       if (e.action == 'create') {
         final newMessage = ServerMessage.fromRecord(e.record!);
         if (mounted) {
@@ -62,6 +62,11 @@ class _ServerRoomChatScreenState extends State<ServerRoomChatScreen> {
         }
       }
     });
+    if (!mounted) {
+      sub.call();
+      return;
+    }
+    _unsub = sub;
   }
 
   Future<void> _fetchMessages() async {
@@ -101,6 +106,8 @@ class _ServerRoomChatScreenState extends State<ServerRoomChatScreen> {
               : _messages.isEmpty
                   ? const Center(child: Text('Henüz mesaj yok.'))
                   : ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                       controller: _scrollController,
                       padding: const EdgeInsets.all(8),
                       itemCount: _messages.length,

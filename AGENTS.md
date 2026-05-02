@@ -172,6 +172,10 @@ Projede kullanılan kritik `pubspec.yaml` paket listesi:
 <h2 id="7-proje-yol-haritasi-ve-yapilacaklar">7. PROJE YOL HARİTASI VE YAPILACAKLAR</h2>
 
 **✅ Yakın Zamanda Tamamlananlar (Özet)**
+*   PocketBase veritabanında (`pb_schema.json`) bulunan güvenlik açıkları kapatıldı. Tüm mesajlaşma, görev ve yorum listeleme (list/view) ile oluşturma (create/update) kurallarına katı sahip/katılımcı doğrulama kuralları eklendi.
+*   Web ve Mobil platformlarda oluşan performans takılmalarını önlemek amacıyla tüm uygulamadaki ListView'lere `addAutomaticKeepAlives` ve `addRepaintBoundaries` optimizasyonları yapıldı.
+*   Web ortamında sesli odaya bağlanırken mikrofon izni sorma mantığı eksikleri düzeltilerek sürekli yüklenme (spinner) hataları çözüldü.
+*   Bütün `subscribe` servis aboneliklerinin memory-leak yapmaması için `dispose` içinden ve güvenli şekilde kapatılması sağlandı.
 *   Tasarımsal genişletilebilir ve çok üyeli **Görev Panosu (Task Board)** modülü eklendi. Listeler, kartlar, etiketlemeler ve checklist yapısı %100 erişilebilirlik standartlarına uygun hale getirildi (v1.7.0).
 *   Bot, "Web sayfasında görüntüle" mantığını bankaların orijinal sayfalarıyla entegrasyonlayarak v1.6.0 haline getirdi.
 *   Kampanya listesinde 12 Saatlik `SharedPreferences` önbelleği kurularak veritabanı okuma maliyetleri düşürüldü (v1.6.1).

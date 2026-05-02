@@ -939,6 +939,8 @@ Widget? _buildFAB() {
 
     return SafeArea(
       child: ListView.separated(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
         controller: _chatListScrollController,
         physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         itemCount: filteredChats.length + 1,

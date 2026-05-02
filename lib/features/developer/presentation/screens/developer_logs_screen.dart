@@ -57,6 +57,8 @@ class DeveloperLogsScreen extends StatelessWidget {
           }
 
           return ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
             itemCount: logs.length,
             itemBuilder: (context, index) {
               final log = logs[index];

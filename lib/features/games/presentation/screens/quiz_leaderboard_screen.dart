@@ -87,6 +87,8 @@ class _QuizLeaderboardScreenState extends State<QuizLeaderboardScreen> {
                         ),
                       Expanded(
                         child: ListView.separated(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                           itemCount: _users.length,
                           separatorBuilder: (_, __) => const Divider(),
                           itemBuilder: (context, index) {

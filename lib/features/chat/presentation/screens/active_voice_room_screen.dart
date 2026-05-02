@@ -6,6 +6,7 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart' as webrtc;
 
 import 'package:permission_handler/permission_handler.dart';
 import '../../../../core/services/settings_service.dart';
@@ -79,35 +80,43 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   }
 
   Future<void> _connectToRoom() async {
-    if (!kIsWeb) {
-      final status = await Permission.microphone.request();
-      if (status != PermissionStatus.granted) {
+    try {
+      if (!kIsWeb) {
+        final status = await Permission.microphone.request();
+        if (status != PermissionStatus.granted) {
+          if (mounted) {
+            setState(() {
+              _errorMessage = 'Sohbete katılmak için mikrofon izni gereklidir.';
+            });
+          }
+          return;
+        }
+      } else {
+        // Web ortamı için tarayıcı mikrofon izni isteme
+        final stream = await webrtc.navigator.mediaDevices.getUserMedia({'audio': true});
+        // İzinleri kontrol etmek için açtığımız stream'i hemen kapatıyoruz (bunu livekit kendi yönetecek)
+        for (var track in stream.getTracks()) {
+          track.stop();
+        }
+      }
+
+      AppLogger.instance.info('Odaya bağlanılıyor: ${widget.roomName} (${widget.roomId})');
+      
+      final String livekitUrl = dotenv.env['LIVEKIT_URL'] ?? '';
+      final String apiKey = dotenv.env['LIVEKIT_API_KEY'] ?? '';
+      final String apiSecret = dotenv.env['LIVEKIT_API_SECRET'] ?? '';
+
+      if (livekitUrl.isEmpty || apiKey.isEmpty || apiSecret.isEmpty) {
+        AppLogger.instance.warning('LiveKit URL, Key veya Secret bulunamadı.');
         if (mounted) {
           setState(() {
-            _errorMessage = 'Sohbete katılmak için mikrofon izni gereklidir.';
+            _errorMessage = 'LiveKit sunucu ayarları yapılandırılmadığı için sohbet odasına bağlanılamıyor.';
+            _isConnected = false;
           });
         }
         return;
       }
-    }
 
-    AppLogger.instance.info('Odaya bağlanılıyor: ${widget.roomName} (${widget.roomId})');
-    
-    final String livekitUrl = dotenv.env['LIVEKIT_URL'] ?? '';
-    final String apiKey = dotenv.env['LIVEKIT_API_KEY'] ?? '';
-    final String apiSecret = dotenv.env['LIVEKIT_API_SECRET'] ?? '';
-
-    if (livekitUrl.isEmpty || apiKey.isEmpty || apiSecret.isEmpty) {
-      AppLogger.instance.warning('LiveKit URL, Key veya Secret bulunamadı.');
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'LiveKit sunucu ayarları yapılandırılmadığı için sohbet odasına bağlanılamıyor. Lütfen .env dosyanızı kontrol edin.';
-        });
-      }
-      return;
-    }
-
-    try {
       final user = PocketBaseService.client.authStore.model;
       final userId = user?.id ?? 'anonymous_${DateTime.now().millisecondsSinceEpoch}';
       final userName = user?.getStringValue('username').isNotEmpty == true 
@@ -155,10 +164,11 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
       _playSystemBeep(isJoin: true);
 
     } catch (e) {
-      AppLogger.instance.error('LiveKit bağlantı hatası: $e');
+      AppLogger.instance.error('LiveKit bağlantı hatası veya mikrofon izni verilmedi: $e');
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
+          _isConnected = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Bağlantı hatası: $e')),

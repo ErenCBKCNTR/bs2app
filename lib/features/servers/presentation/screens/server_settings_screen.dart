@@ -466,6 +466,8 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
     return Semantics(
       label: imCreator ? 'Odalar sekmesi. Odaları silmek için ilgili odanın üzerindeyken işlemler menüsünden odayı sil seçeneğini kullanabilirsiniz (tek parmakla yukarı ve aşağı kaydırarak).' : 'Odalar sekmesi',
       child: ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
         itemCount: _rooms.length,
         itemBuilder: (context, index) {
           final room = _rooms[index];
@@ -500,6 +502,8 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
     if (_members.isEmpty) return const Center(child: Text('Üye bulunamadı.'));
 
     return ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
       itemCount: _members.length,
       itemBuilder: (context, index) {
         final membership = _members[index];
@@ -592,6 +596,8 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
     final imCreator = ChatServerService().currentUserId == widget.server.creatorId;
 
     return ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
       itemCount: _bans.length,
       itemBuilder: (context, index) {
         final ban = _bans[index];

@@ -161,6 +161,8 @@ class _RadioListScreenState extends State<RadioListScreen> {
             const Divider(height: 1, color: Colors.white10),
             Expanded(
               child: ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                 padding: EdgeInsets.only(
                   bottom: MediaQuery.of(context).padding.bottom + 16,
                 ),

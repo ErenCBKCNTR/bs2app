@@ -467,10 +467,10 @@
       }
     ],
     "indexes": [],
-    "listRule": "@request.auth.id != \"\"",
-    "viewRule": "@request.auth.id != \"\"",
+    "listRule": "@collection.chat_participants.chat_id ?= id && @collection.chat_participants.user_id ?= @request.auth.id || created_by = @request.auth.id",
+    "viewRule": "@collection.chat_participants.chat_id ?= id && @collection.chat_participants.user_id ?= @request.auth.id || created_by = @request.auth.id",
     "createRule": "@request.auth.id != \"\"",
-    "updateRule": "@request.auth.id != \"\"",
+    "updateRule": "created_by = @request.auth.id",
     "deleteRule": "@request.auth.id != \"\"",
     "options": {}
   },
@@ -602,8 +602,8 @@
       }
     ],
     "indexes": [],
-    "listRule": "@request.auth.id != \"\"",
-    "viewRule": "@request.auth.id != \"\"",
+    "listRule": "@collection.chat_participants.chat_id ?= chat_id && @collection.chat_participants.user_id ?= @request.auth.id || sender_id = @request.auth.id",
+    "viewRule": "@collection.chat_participants.chat_id ?= chat_id && @collection.chat_participants.user_id ?= @request.auth.id || sender_id = @request.auth.id",
     "createRule": "@request.auth.id = sender_id",
     "updateRule": "@request.auth.id = sender_id",
     "deleteRule": "@request.auth.id = sender_id",
@@ -708,11 +708,11 @@
       }
     ],
     "indexes": [],
-    "listRule": "@request.auth.id != ''",
-    "viewRule": "@request.auth.id != ''",
+    "listRule": "user_id = @request.auth.id || @collection.chat_participants.chat_id ?= chat_id && @collection.chat_participants.user_id ?= @request.auth.id",
+    "viewRule": "user_id = @request.auth.id || @collection.chat_participants.chat_id ?= chat_id && @collection.chat_participants.user_id ?= @request.auth.id",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "@request.auth.id != ''",
-    "deleteRule": "@request.auth.id != ''",
+    "updateRule": "user_id = @request.auth.id",
+    "deleteRule": "user_id = @request.auth.id",
     "options": {}
   },
   {
@@ -753,8 +753,8 @@
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "@request.auth.id != ''",
-    "deleteRule": "@request.auth.id != ''"
+    "updateRule": "user_id = @request.auth.id",
+    "deleteRule": "user_id = @request.auth.id"
   },
   {
     "id": "collection_comments",
@@ -798,8 +798,8 @@
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "@request.auth.id != ''",
-    "deleteRule": "@request.auth.id != ''"
+    "updateRule": "user_id = @request.auth.id",
+    "deleteRule": "user_id = @request.auth.id || post_id.user_id = @request.auth.id"
   },
   {
     "id": "col_post_likes",
@@ -835,8 +835,8 @@
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "@request.auth.id != ''",
-    "deleteRule": "@request.auth.id != ''"
+    "updateRule": "user_id = @request.auth.id",
+    "deleteRule": "user_id = @request.auth.id || post_id.user_id = @request.auth.id"
   },
   {
     "id": "col_voice_rooms",
@@ -1158,8 +1158,8 @@
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "@request.auth.id != ''",
-    "deleteRule": "@request.auth.id != ''",
+    "updateRule": "user_id = @request.auth.id",
+    "deleteRule": "user_id = @request.auth.id",
     "options": {}
   },
   {
@@ -1232,11 +1232,11 @@
       }
     ],
     "indexes": [],
-    "listRule": "@request.auth.id != ''",
-    "viewRule": "@request.auth.id != ''",
-    "createRule": "@request.auth.id != ''",
-    "updateRule": "@request.auth.id != ''",
-    "deleteRule": "@request.auth.id != ''",
+    "listRule": "@request.auth.id != '' && @collection.server_memberships.server_id ?= room_id.server_id && @collection.server_memberships.user_id ?= @request.auth.id",
+    "viewRule": "@request.auth.id != '' && @collection.server_memberships.server_id ?= room_id.server_id && @collection.server_memberships.user_id ?= @request.auth.id",
+    "createRule": "@request.auth.id = sender_id",
+    "updateRule": "@request.auth.id = sender_id",
+    "deleteRule": "@request.auth.id = sender_id",
     "options": {}
   },
   {
@@ -1638,11 +1638,11 @@
         }
       }
     ],
-    "listRule": "@request.auth.id != '' && (owner_id = @request.auth.id || members ~ @request.auth.id)",
-    "viewRule": "@request.auth.id != '' && (owner_id = @request.auth.id || members ~ @request.auth.id)",
+    "listRule": "owner_id = @request.auth.id || members ~ @request.auth.id",
+    "viewRule": "owner_id = @request.auth.id || members ~ @request.auth.id",
     "createRule": "@request.auth.id != '' && owner_id = @request.auth.id",
-    "updateRule": "@request.auth.id != '' && (owner_id = @request.auth.id || members ~ @request.auth.id)",
-    "deleteRule": "@request.auth.id != '' && owner_id = @request.auth.id"
+    "updateRule": "owner_id = @request.auth.id || members ~ @request.auth.id",
+    "deleteRule": "owner_id = @request.auth.id"
   },
   {
     "id": "col_task_lists",
@@ -1971,7 +1971,7 @@
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "@request.auth.id != ''",
-    "deleteRule": "@request.auth.id != ''"
+    "updateRule": "user_id = @request.auth.id",
+    "deleteRule": "user_id = @request.auth.id"
   }
 ]

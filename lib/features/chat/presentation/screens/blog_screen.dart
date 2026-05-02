@@ -463,6 +463,8 @@ class _BlogScreenState extends State<BlogScreen> {
                 : _posts.isEmpty 
                   ? const Center(child: Text("Henüz hiç gönderi paylaşılmamış."))
                   : ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                       padding: const EdgeInsets.all(16),
                       itemCount: _posts.length,
                       itemBuilder: (context, index) {

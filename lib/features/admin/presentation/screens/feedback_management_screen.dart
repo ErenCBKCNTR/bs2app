@@ -71,6 +71,8 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
           : _feedbacks.isEmpty
               ? const Center(child: Text('Henüz geri bildirim bulunmuyor.'))
               : ListView.separated(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                   padding: const EdgeInsets.all(16),
                   itemCount: _feedbacks.length,
                   separatorBuilder: (context, index) => const Divider(),

@@ -156,6 +156,8 @@ class _SourceManagementScreenState extends State<SourceManagementScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
               itemCount: _sources.length,
               itemBuilder: (context, index) {
                 final source = _sources[index];

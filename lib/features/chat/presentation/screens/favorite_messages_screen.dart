@@ -171,6 +171,8 @@ class _FavoriteMessagesScreenState extends State<FavoriteMessagesScreen> {
                         : 'Favoriye eklenmiş mesaj bulunamadı.'),
                   )
                 : ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                     padding: const EdgeInsets.all(8),
                     itemCount: _filteredMessages.length,
                     itemBuilder: (context, index) {

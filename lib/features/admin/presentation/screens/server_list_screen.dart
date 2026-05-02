@@ -57,6 +57,8 @@ class _ServerListScreenState extends State<ServerListScreen> {
           : _servers.isEmpty
               ? const Center(child: Text('Hiç sunucu bulunamadı.'))
               : ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                   padding: const EdgeInsets.all(8),
                   itemCount: _servers.length,
                   itemBuilder: (context, index) {

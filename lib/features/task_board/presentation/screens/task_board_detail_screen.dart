@@ -412,6 +412,8 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
           : _lists.isEmpty
             ? const Center(child: Text('Bu panoda henüz bir liste yok.\nSağ üst köşeden liste ekleyebilirsiniz.', textAlign: TextAlign.center))
             : ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                 padding: const EdgeInsets.all(16.0),
                 itemCount: _lists.length,
                 itemBuilder: (context, index) {

@@ -86,12 +86,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   void _setupRealtime() async {
     final chatId = widget.chat['id'];
-    _unsub = await PocketBaseService.client.collection('messages').subscribe('*', (RecordSubscriptionEvent e) {
+    final sub = await PocketBaseService.client.collection('messages').subscribe('*', (RecordSubscriptionEvent e) {
       if (e.action == 'create') {
         if (e.record!.getStringValue('chat_id') == chatId) {
-          // Yeni mesaj geldiğinde tam listeyi yenilemek bazen daha güvenlidir (sıralama vs için)
-          // Ama performans için sadece listeye ekleyebiliriz.
-          // Mevcut handleMessagesResponse fonksiyonunu kullanarak tutarlılığı koruyalım.
           _fetchMessages(isBackground: true);
         }
       } else if (e.action == 'update' || e.action == 'delete') {
@@ -100,6 +97,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         }
       }
     });
+    if (!mounted) {
+      sub.call();
+      return;
+    }
+    _unsub = sub;
   }
 
   @override
@@ -754,6 +756,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 : _messages.isEmpty 
                   ? const Center(child: Text('Henüz mesaj yok.'))
                   : ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                       controller: _scrollController,
                       itemCount: _messages.length,
                       itemBuilder: (context, index) {

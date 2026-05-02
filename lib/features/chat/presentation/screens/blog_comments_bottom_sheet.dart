@@ -127,6 +127,8 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
                 : _comments.isEmpty
                     ? const Center(child: Text("Henüz yorum yapılmamış."))
                     : ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                         shrinkWrap: true,
                         itemCount: _comments.length,
                         itemBuilder: (context, index) {

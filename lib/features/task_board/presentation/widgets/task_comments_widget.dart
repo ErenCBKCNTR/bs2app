@@ -140,6 +140,8 @@ class _TaskCommentsWidgetState extends State<TaskCommentsWidget> {
             child: _comments.isEmpty
               ? const Center(child: Text('Henüz mesaj yok. İlk mesajı siz gönderin.', style: TextStyle(color: Colors.grey)))
               : ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                   controller: _scrollController,
                   reverse: true,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

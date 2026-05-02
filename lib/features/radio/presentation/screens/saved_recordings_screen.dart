@@ -157,6 +157,8 @@ class _SavedRecordingsScreenState extends State<SavedRecordingsScreen> {
                     ),
                   )
                 : ListView.separated(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                     padding: EdgeInsets.only(
                       top: 8,
                       bottom: MediaQuery.of(context).padding.bottom + 24,

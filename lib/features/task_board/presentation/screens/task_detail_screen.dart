@@ -450,6 +450,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
               shrinkWrap: true,
               itemCount: widget.allLists.length,
               itemBuilder: (context, index) {

@@ -68,6 +68,8 @@ class _UserListScreenState extends State<UserListScreen> {
           : _users.isEmpty
               ? const Center(child: Text('Hiç kullanıcı bulunamadı.'))
               : ListView.builder(
+addAutomaticKeepAlives: false,
+addRepaintBoundaries: true,
                   padding: const EdgeInsets.all(8),
                   itemCount: _users.length,
                   itemBuilder: (context, index) {

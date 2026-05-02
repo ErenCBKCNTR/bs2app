@@ -95,7 +95,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
 
   Future<void> _subscribeToGame() async {
     try {
-      _unsub = await PocketBaseService.client.collection('quiz_games').subscribe(widget.gameId, (e) {
+      final sub = await PocketBaseService.client.collection('quiz_games').subscribe(widget.gameId, (e) {
         if (mounted) {
           setState(() {
             _game = e.record;
@@ -114,6 +114,11 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
           }
         }
       });
+      if (!mounted) {
+        sub.call();
+        return;
+      }
+      _unsub = sub;
     } catch (e) {
       AppLogger.instance.error('Abonelik hatası: $e');
     }
