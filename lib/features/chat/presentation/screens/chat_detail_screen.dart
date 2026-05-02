@@ -721,6 +721,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final chatName = ProfanityFilter.filter(widget.chat['name'] ?? 'Sohbet');
 
     return Scaffold(
+      backgroundColor: const Color(0xFF101820),
       appBar: AppBar(
         title: Text(chatName),
         actions: [

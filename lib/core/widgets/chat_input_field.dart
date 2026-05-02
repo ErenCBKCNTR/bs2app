@@ -221,7 +221,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
                       maxLength: 4000,
                       style: const TextStyle(fontSize: 14),
                       decoration: InputDecoration(
-                        prefixIcon: IconButton(
+                        prefixIcon: foundation.kIsWeb ? null : IconButton(
                           tooltip: "Emoji klavyesini aç veya kapat",
                           icon: Icon(
                             _showEmojiPicker ? Icons.keyboard : Icons.emoji_emotions_outlined,
@@ -304,10 +304,10 @@ class _ChatInputFieldState extends State<ChatInputField> {
                         emojiViewConfig: EmojiViewConfig(
                           columns: 7,
                           emojiSizeMax: 32,
-                          backgroundColor: isDarkMode ? const Color(0xFF222222) : const Color(0xFFF2F2F2),
+                          backgroundColor: Theme.of(context).colorScheme.surface,
                         ),
                         categoryViewConfig: CategoryViewConfig(
-                          backgroundColor: isDarkMode ? const Color(0xFF222222) : const Color(0xFFF2F2F2),
+                          backgroundColor: Theme.of(context).colorScheme.surface,
                           indicatorColor: Theme.of(context).colorScheme.primary,
                           iconColorSelected: Theme.of(context).colorScheme.primary,
                           iconColor: Colors.grey,

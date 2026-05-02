@@ -67,6 +67,7 @@ class _ChatRoomDetailScreenState extends State<ChatRoomDetailScreen> with Single
     final roomName = ProfanityFilter.filter(widget.room.name);
     
     return Scaffold(
+      backgroundColor: const Color(0xFF101820),
       appBar: AppBar(
         title: Text(roomName),
         bottom: _tabs.length > 1 

@@ -143,14 +143,7 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
       _room = Room();
       _listener = _room!.createListener();
 
-      await _room!.connect(livekitUrl, livekitToken, 
-        roomOptions: const RoomOptions(
-          defaultAudioCaptureOptions: AudioCaptureOptions(
-            echoCancellation: true,
-            noiseSuppression: true,
-          ),
-        )
-      );
+      await _room!.connect(livekitUrl, livekitToken);
       AppLogger.instance.info('Odaya bağlanıldı. Dinleyiciler ayarlanıyor...');
       
       _listener
