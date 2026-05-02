@@ -1,6 +1,7 @@
 import 'dart:io' as io;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/services/notification_service.dart';
 import 'package:pocketbase/pocketbase.dart';
@@ -17,6 +18,90 @@ class _AuthScreenState extends State<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (kIsWeb) {
+      _checkWebOAuthRedirect();
+    }
+  }
+
+  Future<void> _checkWebOAuthRedirect() async {
+    final uri = Uri.base;
+    if (uri.queryParameters.containsKey('code')) {
+      final code = uri.queryParameters['code']!;
+      
+      final prefs = await SharedPreferences.getInstance();
+      final verifier = prefs.getString('pb_oauth_code_verifier');
+      final provider = prefs.getString('pb_oauth_provider');
+      final redirectUri = prefs.getString('pb_oauth_redirect_uri') ?? (uri.origin + (uri.path.isEmpty ? '/' : uri.path));
+
+      if (verifier != null && provider != null) {
+        setState(() => _isLoading = true);
+        try {
+          final authData = await PocketBaseService.client.collection('users').authWithOAuth2Code(
+            provider,
+            code,
+            verifier,
+            redirectUri,
+          );
+          
+          if (authData.meta != null && authData.record != null) {
+            final currentFullName = authData.record!.getStringValue('full_name');
+            if (currentFullName.isEmpty || authData.meta!['isNew'] == true) {
+              String googleName = '';
+              if (authData.meta!['name'] != null) {
+                googleName = authData.meta!['name'] as String;
+              } else if (authData.meta!['rawUser'] != null) {
+                final raw = authData.meta!['rawUser'] as Map<String, dynamic>;
+                googleName = raw['name'] ?? raw['given_name'] ?? '';
+              }
+              
+              final userEmail = authData.record!.getStringValue('email').toLowerCase();
+              final isDeveloperEmail = userEmail == 'erencs87@gmail.com';
+              await PocketBaseService.client.collection('users').update(authData.record!.id, body: {
+                'role': isDeveloperEmail ? 0 : 1,
+                'full_name': googleName,
+              });
+              await PocketBaseService.client.collection('users').authRefresh();
+            }
+          }
+          await NotificationService().syncWithServer();
+          
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/');
+          }
+        } catch (e, stackTrace) {
+          if (mounted) {
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Teknik Hata Detayı'),
+                content: SingleChildScrollView(
+                  child: Text(
+                    'Hata:\\n$e\\n\\nStackTrace:\\n$stackTrace',
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Kapat'),
+                  ),
+                ],
+              ),
+            );
+          }
+        } finally {
+          await prefs.remove('pb_oauth_code_verifier');
+          await prefs.remove('pb_oauth_provider');
+          await prefs.remove('pb_oauth_redirect_uri');
+          if (mounted) setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
 
   Future<void> _authenticate() async {
     final email = _emailController.text.trim();
@@ -124,35 +209,32 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() => _isLoading = true);
     try {
       if (kIsWeb) {
-        final authData = await PocketBaseService.client.collection('users').authWithOAuth2(
-          'google',
-          (url) async {
-            // Web auth handled automatically by PocketBase dart sdk via window.open
-          },
+        final response = await PocketBaseService.client.send('/api/collections/users/auth-methods', method: 'GET');
+        final authProviders = response['authProviders'] as List<dynamic>? ?? [];
+        final googleMap = authProviders.firstWhere(
+          (p) => p['name'] == 'google',
+          orElse: () => null,
         );
-        
-        if (authData.meta != null && authData.record != null) {
-          final currentFullName = authData.record!.getStringValue('full_name');
-          if (currentFullName.isEmpty) {
-            String googleName = '';
-            if (authData.meta!['name'] != null) {
-              googleName = authData.meta!['name'] as String;
-            } else if (authData.meta!['rawUser'] != null) {
-              final raw = authData.meta!['rawUser'] as Map<String, dynamic>;
-              googleName = raw['name'] ?? raw['given_name'] ?? '';
-            }
-            if (googleName.isNotEmpty) {
-              await PocketBaseService.client.collection('users').update(
-                authData.record!.id,
-                body: {'full_name': googleName},
-              );
-            }
-          }
+
+        if (googleMap == null) {
+          throw Exception("Google auth provider'ı API'de bulunamadı. Lütfen PocketBase konsolunu kontrol edin.");
         }
-        
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/');
-        }
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('pb_oauth_code_verifier', googleMap['codeVerifier'].toString());
+        await prefs.setString('pb_oauth_provider', 'google');
+
+        final uri = Uri.base;
+        final redirectUri = uri.origin + (uri.path.isEmpty ? '/' : uri.path);
+        await prefs.setString('pb_oauth_redirect_uri', redirectUri);
+
+        var rawAuthUrl = Uri.parse(googleMap['authUrl'].toString());
+        final authUrl = rawAuthUrl.replace(queryParameters: {
+          ...rawAuthUrl.queryParameters,
+          'redirect_uri': redirectUri,
+        });
+
+        await launchUrl(authUrl, webOnlyWindowName: '_self');
         return;
       }
 

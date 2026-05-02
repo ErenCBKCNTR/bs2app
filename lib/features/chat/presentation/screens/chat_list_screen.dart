@@ -308,7 +308,8 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       // PocketBase'de önce kullanıcının katılımcı olduğu chat ID'lerini bulalım.
       final myParticipants = await PocketBaseService.client.collection('chat_participants').getFullList(
          filter: 'user_id = "$userId"',
-         expand: 'chat_id,chat_id.chat_participants_via_chat_id,chat_id.chat_participants_via_chat_id.user_id,chat_id.messages_via_chat_id'
+         expand: 'chat_id,chat_id.chat_participants_via_chat_id,chat_id.chat_participants_via_chat_id.user_id,chat_id.messages_via_chat_id',
+         headers: kIsWeb ? {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'} : const {},
       ).timeout(const Duration(seconds: 15));
       
       List<RecordModel> chatRecords = [];

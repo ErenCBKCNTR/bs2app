@@ -103,7 +103,8 @@ class _BlogScreenState extends State<BlogScreen> {
     try {
       final response = await PocketBaseService.client.collection('posts').getFullList(
           sort: '-created',
-          expand: 'user_id,post_likes_via_post_id,post_comments_via_post_id'
+          expand: 'user_id,post_likes_via_post_id,post_comments_via_post_id',
+          headers: kIsWeb ? {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'} : const {},
       ).timeout(const Duration(seconds: 15));
           
       if (mounted) {

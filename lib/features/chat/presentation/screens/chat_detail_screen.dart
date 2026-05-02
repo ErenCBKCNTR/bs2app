@@ -195,14 +195,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       try {
         response = await PocketBaseService.client.collection('messages').getFullList(
             filter: currentFilter,
-            sort: 'created'
+            sort: 'created',
+            headers: kIsWeb ? {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'} : const {}
         );
       } catch (e) {
         // Eğer 400 hatası (deleted_for alanı yoksa) yedek filtre ile çek
         if (e.toString().contains('400') || e.toString().contains('deleted_for')) {
           response = await PocketBaseService.client.collection('messages').getFullList(
               filter: filter,
-              sort: 'created'
+              sort: 'created',
+              headers: kIsWeb ? {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'} : const {}
           );
         } else {
           rethrow;
@@ -402,7 +404,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           'content': '[VOICE]',
         },
         files: [
-          http.MultipartFile.fromBytes('file', fileBytes, filename: kIsWeb ? 'ses.webm' : 'ses.m4a')
+          http.MultipartFile.fromBytes('file', fileBytes, filename: kIsWeb ? 'ses.wav' : 'ses.m4a')
         ],
       );
       
