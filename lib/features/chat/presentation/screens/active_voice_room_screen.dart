@@ -147,6 +147,29 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
         throw Exception('Token Error: $e');
       }
 
+      // PRE-FLIGHT MICROPHONE CHECK FOR WEB
+      bool micPreGranted = true;
+      if (kIsWeb) {
+        try {
+          AppLogger.instance.info('Web: Tarayıcı mikrofon izni alınıyor (bağlantı öncesi)...');
+          final stream = await webrtc.navigator.mediaDevices.getUserMedia({'audio': true});
+          for (var track in stream.getTracks()) {
+            track.stop();
+          }
+          AppLogger.instance.info('Web: Mikrofon izni başarılı.');
+        } catch (e) {
+          micPreGranted = false;
+          String errorCause = e.toString();
+          try {
+             final jsObj = e as dynamic;
+             final name = jsObj.name != null ? '${jsObj.name}' : '';
+             final message = jsObj.message != null ? '${jsObj.message}' : '';
+             errorCause = '$name: $message';
+          } catch (_) {}
+          AppLogger.instance.warning('Web: Mikrofon izni REDDEDİLDİ veya kullanılamıyor ($errorCause). Sadece dinleyici olarak devam edilecek.');
+        }
+      }
+
       try {
         _room = Room();
         _listener = _room!.createListener();
@@ -175,6 +198,9 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
             } catch (_) {}
         }
         AppLogger.instance.error('Room.connect sırasında hata: $deepError\n$st');
+        
+        // CATCH BUBBLER: DO NOT throw here if we failed because of mic on connect.
+        // Actually, if connect fails completely, we have to abort.
         throw Exception('Connect Error: $deepError');
       }
       
@@ -203,17 +229,40 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
         });
       }
 
-      try {
-        await _room!.localParticipant?.setMicrophoneEnabled(true);
-      } catch (micError, micSt) {
-        AppLogger.instance.warning('Mikrofon açılamadı, konuşmadan sadece dinleyici olarak kalıyorsunuz: $micError');
+      // ONLY ATTEMPT TO ENABLE MIC IF PRE-FLIGHT WAS OK (OR IF MOBILE)
+      if (micPreGranted) {
+        try {
+          await _room!.localParticipant?.setMicrophoneEnabled(true);
+          if (mounted) {
+            setState(() {
+              _isMuted = false;
+            });
+          }
+        } catch (micError) {
+          String cause = micError.toString();
+          try {
+            final jsObj = micError as dynamic;
+            if (jsObj.name != null) cause = '${jsObj.name}: ${jsObj.message}';
+          } catch (_) {}
+          AppLogger.instance.warning('Bağlantı sonrası mikrofon açılamadı (\'$cause\'). Sadece dinleyici modundasınız.');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Mikrofona erişilemedi, sadece dinleyici olarak katıldınız.')),
+            );
+            setState(() {
+              _isMuted = true;
+            });
+          }
+        }
+      } else {
+        // Pre-flight failed, enforce listener mode immediately
         if (mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Mikrofona erişilemedi, sadece dinleyici olarak katıldınız.')),
-           );
-           setState(() {
-             _isMuted = true;
-           });
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Tarayıcı mikrofonu engelledi veya kullanımda. Dinleyici modundasınız.')),
+          );
+          setState(() {
+            _isMuted = true;
+          });
         }
       }
       
@@ -221,23 +270,21 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
       _playSystemBeep(isJoin: true);
 
     } catch (e, st) {
-      AppLogger.instance.error('LiveKit bağlantı hatası veya mikrofon izni verilmedi: $e\n$st');
-      
-      String errorMsg = e.toString();
+      String finalErrorOut = e.toString();
       try {
-        final dynamicError = e as dynamic;
-        if (dynamicError.message != null) {
-          errorMsg = '${dynamicError.message} ($errorMsg)\n$st';
-        }
+        final jsObj = e as dynamic;
+        if (jsObj.name != null) finalErrorOut = '${jsObj.name}: ${jsObj.message}';
       } catch (_) {}
-
+      
+      AppLogger.instance.error('LiveKit bağlantı hatası: $finalErrorOut\n$st');
+      
       if (mounted) {
         setState(() {
-          _errorMessage = errorMsg;
+          _errorMessage = finalErrorOut;
           _isConnected = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Bağlantı hatası: $errorMsg')),
+          SnackBar(content: Text('Bağlantı hatası: $finalErrorOut')),
         );
       }
     }

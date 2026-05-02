@@ -38,7 +38,7 @@
     var serviceWorkerVersion = null;
   </script>
   <!-- This script adds the flutter initialization JS code -->
-  <script src="flutter.js" defer></script>
+  <script>document.write('<script src="flutter.js?v=' + new Date().getTime() + '" defer></scr' + 'ipt>');</script>
   <style>
     body {
       background-color: #101820;
@@ -49,7 +49,7 @@
 </head>
 <body>
   <script>
-    window.addEventListener('load', function(ev) {
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistrations().then(function(regs) { for(let reg of regs) { reg.unregister(); } }); } window.addEventListener('load', function(ev) {
       // Bust cache to ensure the user gets the latest main.dart.js
       _flutter.loader.loadEntrypoint({
         onEntrypointLoaded: function(engineInitializer) {
