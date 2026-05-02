@@ -110,11 +110,31 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
         return;
       }
 
-      final user = PocketBaseService.client.authStore.model;
-      final userId = user?.id ?? 'anonymous_${DateTime.now().millisecondsSinceEpoch}';
-      final userName = user?.getStringValue('username').isNotEmpty == true 
-          ? '@${user!.getStringValue('username')}' 
-          : 'Misafir';
+      String userId = 'anonymous_${DateTime.now().millisecondsSinceEpoch}';
+      String userName = 'Misafir';
+      
+      try {
+        final user = PocketBaseService.client.authStore.model;
+        if (user != null) {
+          userId = user.id ?? userId;
+          
+          bool hasUsername = false;
+          try {
+            hasUsername = user.getStringValue('username').isNotEmpty;
+            if (hasUsername) {
+              userName = '@${user.getStringValue('username')}';
+            }
+          } catch (_) {
+            if (user is Map) {
+              userName = user['username'] != null && user['username'].toString().isNotEmpty 
+                  ? '@${user['username']}' 
+                  : 'Misafir';
+            }
+          }
+        }
+      } catch (e) {
+        AppLogger.instance.warning('User bilgisi alınırken hata: $e');
+      }
       
       AppLogger.instance.info('Token oluşturuluyor...');
       final String livekitToken = _generateToken(apiKey, apiSecret, widget.roomId, userId, userName);
@@ -162,13 +182,13 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
       _playSystemBeep(isJoin: true);
 
     } catch (e, st) {
-      AppLogger.instance.error('LiveKit bağlantı hatası veya mikrofon izni verilmedi: $e');
+      AppLogger.instance.error('LiveKit bağlantı hatası veya mikrofon izni verilmedi: $e\n$st');
       
       String errorMsg = e.toString();
       try {
         final dynamicError = e as dynamic;
         if (dynamicError.message != null) {
-          errorMsg = '${dynamicError.message} ($errorMsg)';
+          errorMsg = '${dynamicError.message} ($errorMsg)\n$st';
         }
       } catch (_) {}
 
