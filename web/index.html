@@ -50,11 +50,8 @@
 <body>
   <script>
     window.addEventListener('load', function(ev) {
-      // Download main.dart.js
+      // Bust cache to ensure the user gets the latest main.dart.js
       _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
         onEntrypointLoaded: function(engineInitializer) {
           engineInitializer.initializeEngine().then(function(appRunner) {
             appRunner.runApp();

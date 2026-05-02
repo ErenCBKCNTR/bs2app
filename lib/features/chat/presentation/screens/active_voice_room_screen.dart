@@ -147,21 +147,6 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
         throw Exception('Token Error: $e');
       }
 
-      if (kIsWeb) {
-        try {
-          AppLogger.instance.info('Web için ön mikrofon izni kontrol ediliyor...');
-          // Tarayıcının mikrofon iznini almasını zorunlu kılıyoruz, böylece NotAllowedError (minified:abO) almayı önleriz.
-          final stream = await webrtc.navigator.mediaDevices.getUserMedia({'audio': true});
-          for (var track in stream.getTracks()) {
-            track.stop();
-          }
-          AppLogger.instance.info('Web mikrofon izni başarıyla alındı.');
-        } catch (e) {
-          AppLogger.instance.warning('Web mikrofon izni alınamadı, bağlanmaya devam edilecek: $e');
-          // Sadece dinleyici modunda da katılabilir.
-        }
-      }
-      
       try {
         _room = Room();
         _listener = _room!.createListener();
