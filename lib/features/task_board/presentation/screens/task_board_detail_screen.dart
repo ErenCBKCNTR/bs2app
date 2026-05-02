@@ -136,7 +136,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
     );
   }
 
-  void _showTaskOptionsBottomSheet(BuildContext context, TaskItemModel task, bool canEdit, bool isTaskCompleted) {
+  void _showTaskOptionsBottomSheet(BuildContext context, TaskItem task, bool canEdit, bool isTaskCompleted) {
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
