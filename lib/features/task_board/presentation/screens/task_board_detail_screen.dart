@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/features/task_board/presentation/screens/board_members_screen.dart';
 import 'package:blind_social/features/task_board/data/models/task_board.dart';
@@ -92,6 +93,71 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
         SemanticsService.announce("${listM.name} isimli liste genişletildi", TextDirection.ltr);
       }
     });
+  }
+
+  void _showListOptionsBottomSheet(BuildContext context, TaskListM list, int index, bool canEdit, bool isPinned) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            if (canEdit)
+              ListTile(
+                leading: const Icon(Icons.add),
+                title: const Text('Görev Ekle'),
+                onTap: () { Navigator.pop(ctx); _createTaskDialog(list.id); },
+              ),
+            ListTile(
+              leading: const Icon(Icons.push_pin),
+              title: Text(isPinned ? 'Başa Tutturmayı Kaldır' : 'Başa Tuttur'),
+              onTap: () { Navigator.pop(ctx); _togglePin(list); },
+            ),
+            if (canEdit && index > 0)
+              ListTile(
+                leading: const Icon(Icons.arrow_upward),
+                title: const Text('Yukarı Taşı'),
+                onTap: () { Navigator.pop(ctx); _moveList(list, true); },
+              ),
+            if (canEdit && index < _lists.length - 1)
+              ListTile(
+                leading: const Icon(Icons.arrow_downward),
+                title: const Text('Aşağı Taşı'),
+                onTap: () { Navigator.pop(ctx); _moveList(list, false); },
+              ),
+            if (canEdit)
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Listeyi Sil', style: TextStyle(color: Colors.red)),
+                onTap: () { Navigator.pop(ctx); _deleteListDialog(list); },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showTaskOptionsBottomSheet(BuildContext context, TaskItemModel task, bool canEdit, bool isTaskCompleted) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            if (canEdit || task.assignees.contains(_currentUserId))
+              ListTile(
+                leading: Icon(isTaskCompleted ? Icons.close : Icons.check),
+                title: Text(isTaskCompleted ? 'Tamamlanmadı Olarak İşaretle' : 'Tamamlandı Olarak İşaretle'),
+                onTap: () { Navigator.pop(ctx); _toggleTaskState(task); },
+              ),
+            if (canEdit)
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Görevi Sil', style: TextStyle(color: Colors.red)),
+                onTap: () { Navigator.pop(ctx); _deleteTaskDialog(task); },
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _moveList(TaskListM listM, bool moveUp) async {
@@ -452,10 +518,12 @@ addRepaintBoundaries: true,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Semantics(
-                          label: '${list.name} isimli liste içerisinde $totalTasks adet görev mevcut. Yüzde $percentage tamamlandı. Liste ile alakalı işlem yapmak için parmağınızı yukarı ya da aşağı kaydırın.',
+                          label: '${list.name} isimli liste içerisinde $totalTasks adet görev mevcut. Yüzde $percentage tamamlandı. ${kIsWeb ? "Seçenekleri açmak için uzun basılı tutun." : "Liste ile alakalı işlem yapmak için parmağınızı yukarı ya da aşağı kaydırın."}',
                           button: true,
                           onTapHint: isCollapsed ? "Genişlet" : "Daralt",
                           onTap: () => _toggleCollapse(list),
+                          onLongPressHint: "Seçenekleri Göster",
+                          onLongPress: () => _showListOptionsBottomSheet(context, list, index, canEdit, isPinned),
                           customSemanticsActions: {
                             const CustomSemanticsAction(label: 'Listeyi Genişlet/Daralt'): () => _toggleCollapse(list),
                             CustomSemanticsAction(label: isPinned ? 'Başa Tutturmayı Kaldır' : 'Başa Tuttur'): () => _togglePin(list),
@@ -467,6 +535,7 @@ addRepaintBoundaries: true,
                           child: ExcludeSemantics(
                             child: InkWell(
                               onTap: () => _toggleCollapse(list),
+                              onLongPress: () => _showListOptionsBottomSheet(context, list, index, canEdit, isPinned),
                               borderRadius: isCollapsed ? BorderRadius.circular(16) : const BorderRadius.vertical(top: Radius.circular(16)),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
@@ -562,9 +631,10 @@ addRepaintBoundaries: true,
                                   return SizedBox(
                                     width: 160,
                                     child: Semantics(
-                                      label: 'Görev numarası ${task.taskNumber}: ${task.title}. ${isTaskCompleted ? "Tamamlandı" : "Devam ediyor"}.$timeSpentStr Düzenlemek veya görüntülemek için çift tıklayın. İşlem seçenekleri için parmağınızı yukarı veya aşağı kaydırın.',
+                                      label: 'Görev numarası ${task.taskNumber}: ${task.title}. ${isTaskCompleted ? "Tamamlandı" : "Devam ediyor"}.$timeSpentStr Düzenlemek veya görüntülemek için çift tıklayın. ${kIsWeb ? "Seçenekleri açmak için uzun basılı tutun." : "İşlem seçenekleri için parmağınızı yukarı veya aşağı kaydırın."}',
                                       button: true,
                                       onTapHint: 'Görevi Aç',
+                                      onLongPressHint: 'Seçenekleri Göster',
                                       onTap: () async {
                                         final refresh = await Navigator.push(
                                           context,
@@ -574,6 +644,7 @@ addRepaintBoundaries: true,
                                         );
                                         if (refresh == true) _fetchData(showLoading: false);
                                       },
+                                      onLongPress: () => _showTaskOptionsBottomSheet(context, task, canEdit, isTaskCompleted),
                                       customSemanticsActions: {
                                         if (canEdit) const CustomSemanticsAction(label: 'Görevi Sil'): () => _deleteTaskDialog(task),
                                         if (canEdit || task.assignees.contains(_currentUserId)) CustomSemanticsAction(label: isTaskCompleted ? 'Tamamlanmadı Olarak İşaretle' : 'Tamamlandı Olarak İşaretle'): () => _toggleTaskState(task),
@@ -585,6 +656,7 @@ addRepaintBoundaries: true,
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                           child: InkWell(
                                             borderRadius: BorderRadius.circular(12),
+                                            onLongPress: () => _showTaskOptionsBottomSheet(context, task, canEdit, isTaskCompleted),
                                             onTap: () async {
                                               final refresh = await Navigator.push(
                                                 context,

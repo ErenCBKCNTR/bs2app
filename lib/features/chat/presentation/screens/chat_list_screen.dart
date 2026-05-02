@@ -1025,13 +1025,16 @@ addRepaintBoundaries: true,
         final semanticSubtitle = lastMessage != null ? "Son mesaj: $subtitleText." : "";
         
         final bool isPinned = myPart?.getBoolValue('is_pinned') == true;
+        final platformActionHint = kIsWeb ? "İşlem menüsü için uzun basın." : "İşlem seçenekleri için parmağınızı yukarı ya da aşağı kaydırın.";
         
         return Semantics(
           key: ValueKey('${chat.id}_${isArchived}_$isPinned'),
-          label: "$displayChatName. $semanticSubtitle $semanticUnreadSuffix",
+          label: "$displayChatName. $semanticSubtitle $semanticUnreadSuffix $platformActionHint",
           button: true,
           excludeSemantics: true,
           onTapHint: "Sohbeti açmak için çift dokunun",
+          onLongPressHint: "Seçenekleri Göster",
+          onLongPress: () => _showChatOptions(chat),
           customSemanticsActions: {
             CustomSemanticsAction(label: isArchived ? 'Arşivden Çıkar' : 'Arşivle'): () {
               _toggleArchive(chat.id, isArchived);
