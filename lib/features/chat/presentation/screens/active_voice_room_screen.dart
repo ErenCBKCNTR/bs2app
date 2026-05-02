@@ -91,16 +91,6 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
           }
           return;
         }
-      } else {
-        // Web ortamı için tarayıcı mikrofon izni isteme
-        try {
-          final stream = await webrtc.navigator.mediaDevices.getUserMedia({'audio': true});
-          for (var track in stream.getTracks()) {
-            track.stop();
-          }
-        } catch (e) {
-          AppLogger.instance.warning('WebRTC getUserMedia hatası: $e');
-        }
       }
 
       AppLogger.instance.info('Odaya bağlanılıyor: ${widget.roomName} (${widget.roomId})');
@@ -133,12 +123,14 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
       _room = Room();
       _listener = _room!.createListener();
 
-      const roomOptions = RoomOptions(
-        adaptiveStream: true,
-        dynacast: true,
+      await _room!.connect(livekitUrl, livekitToken, 
+        roomOptions: const RoomOptions(
+          defaultAudioCaptureOptions: AudioCaptureOptions(
+            echoCancellation: true,
+            noiseSuppression: true,
+          ),
+        )
       );
-
-      await _room!.connect(livekitUrl, livekitToken, roomOptions: roomOptions);
       AppLogger.instance.info('Odaya bağlanıldı. Dinleyiciler ayarlanıyor...');
       
       _listener
@@ -169,15 +161,24 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
       AppLogger.instance.info('LiveKit odaya başarıyla bağlanıldı: ${widget.roomName}');
       _playSystemBeep(isJoin: true);
 
-    } catch (e) {
+    } catch (e, st) {
       AppLogger.instance.error('LiveKit bağlantı hatası veya mikrofon izni verilmedi: $e');
+      
+      String errorMsg = e.toString();
+      try {
+        final dynamicError = e as dynamic;
+        if (dynamicError.message != null) {
+          errorMsg = '${dynamicError.message} ($errorMsg)';
+        }
+      } catch (_) {}
+
       if (mounted) {
         setState(() {
-          _errorMessage = e.toString();
+          _errorMessage = errorMsg;
           _isConnected = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Bağlantı hatası: $e')),
+          SnackBar(content: Text('Bağlantı hatası: $errorMsg')),
         );
       }
     }
