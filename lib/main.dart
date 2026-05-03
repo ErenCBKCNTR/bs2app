@@ -89,7 +89,7 @@ void main() async {
 
   // Çevre değişkenlerini yükle
   try {
-    await dotenv.load(fileName: ".env");
+    await dotenv.load(fileName: "env.txt");
   } catch (e) {
     debugPrint(".env dosyası yüklenemedi: $e");
   }

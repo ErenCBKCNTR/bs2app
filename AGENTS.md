@@ -159,7 +159,7 @@ Projede kullanılan kritik `pubspec.yaml` paket listesi:
 - **Veritabanı (PocketBase):** Yönetici erişimi mevcuttur. Şema güncellemeleri *import* yöntemi ile yapılabilir.
 - **İşletim Sistemi:** Ubuntu 24.04 LTS (Sunucu erişimi mevcuttur).
 - **LiveKit:** Canlı sesli iletişim için LiveKit sunucusu aktif ve kuruludur.
-- **GitHub Actions (CI/CD):** `.github/workflows/android_build.yml` veya benzeri build pipeline dosyaları güncellendiğinde, `.env` oluşturma aşaması **KESİNLİKLE** aşağıdaki değişkenleri de içermelidir (bu değişkenler silinmemeli veya dokunulmamalıdır):
+- **GitHub Actions (CI/CD):** `.github/workflows/android_build.yml` veya benzeri build pipeline dosyaları güncellendiğinde, `env.txt` oluşturma aşaması **KESİNLİKLE** aşağıdaki değişkenleri de içermelidir (bu değişkenler silinmemeli veya dokunulmamalıdır):
   - `LIVEKIT_URL=${{ secrets.LIVEKIT_URL }}`
   - `LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }}`
   - `LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}`

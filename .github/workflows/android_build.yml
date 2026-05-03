@@ -26,13 +26,13 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Create .env file
+      - name: Create env.txt file
         run: |
-          touch .env
-          echo "PB_URL=https://api.cabukcan.com" >> .env
-          echo "LIVEKIT_URL=${{ secrets.LIVEKIT_URL }}" >> .env
-          echo "LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }}" >> .env
-          echo "LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}" >> .env
+          touch env.txt
+          echo "PB_URL=https://api.cabukcan.com" >> env.txt
+          echo "LIVEKIT_URL=${{ secrets.LIVEKIT_URL }}" >> env.txt
+          echo "LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }}" >> env.txt
+          echo "LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}" >> env.txt
 
       - name: Install dependencies
         run: flutter pub get
