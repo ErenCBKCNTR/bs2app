@@ -95,9 +95,17 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
 
       AppLogger.instance.info('Odaya bağlanılıyor: ${widget.roomName} (${widget.roomId})');
       
-      final String livekitUrl = dotenv.env['LIVEKIT_URL'] ?? '';
+      String livekitUrl = dotenv.env['LIVEKIT_URL'] ?? '';
       final String apiKey = dotenv.env['LIVEKIT_API_KEY'] ?? '';
       final String apiSecret = dotenv.env['LIVEKIT_API_SECRET'] ?? '';
+
+      // Web platform needs https instead of wss
+      if (kIsWeb && livekitUrl.startsWith('wss://')) {
+        livekitUrl = livekitUrl.replaceFirst('wss://', 'https://');
+      }
+      if (kIsWeb && livekitUrl.startsWith('ws://')) {
+        livekitUrl = livekitUrl.replaceFirst('ws://', 'http://');
+      }
 
       if (livekitUrl.isEmpty || apiKey.isEmpty || apiSecret.isEmpty) {
         AppLogger.instance.warning('LiveKit URL, Key veya Secret bulunamadı.');

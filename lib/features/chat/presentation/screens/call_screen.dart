@@ -298,9 +298,17 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   Future<void> _connectToLiveKitRoom() async {
-    final String livekitUrl = dotenv.env['LIVEKIT_URL'] ?? 'wss://live.cabukcan.com';
+    String livekitUrl = dotenv.env['LIVEKIT_URL'] ?? 'wss://live.cabukcan.com';
     final String apiKey = dotenv.env['LIVEKIT_API_KEY'] ?? '';
     final String apiSecret = dotenv.env['LIVEKIT_API_SECRET'] ?? '';
+
+    // Web platformunda LiveKit için wss yerine https kullanılması önerilir.
+    if (kIsWeb && livekitUrl.startsWith('wss://')) {
+      livekitUrl = livekitUrl.replaceFirst('wss://', 'https://');
+    }
+    if (kIsWeb && livekitUrl.startsWith('ws://')) {
+      livekitUrl = livekitUrl.replaceFirst('ws://', 'http://');
+    }
 
     if (apiKey.isEmpty || apiSecret.isEmpty) {
       AppLogger.instance.warning('LiveKit API key/secret eksik. Medya bağlantısı kurulamayabilir.');
