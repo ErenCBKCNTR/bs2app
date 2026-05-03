@@ -13,12 +13,15 @@ class TaskBoardsScreen extends StatefulWidget {
   State<TaskBoardsScreen> createState() => _TaskBoardsScreenState();
 }
 
+enum BoardFilter { all, myBoards, sharedWithMe }
+
 class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
   final TaskBoardService _service = TaskBoardService();
   List<TaskBoard> _boards = [];
   Map<String, int> _boardListCounts = {};
   bool _isLoading = true;
   bool _showFavoritesOnly = false;
+  BoardFilter _currentFilter = BoardFilter.all;
   bool _isSearching = false;
   String _searchQuery = '';
   String? _currentUserId;
@@ -276,6 +279,12 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
         ? _boards.where((b) => _currentUserId != null && b.favoritedBy.contains(_currentUserId)).toList()
         : _boards;
 
+    if (_currentFilter == BoardFilter.myBoards) {
+      filteredBoards = filteredBoards.where((b) => _currentUserId == b.ownerId).toList();
+    } else if (_currentFilter == BoardFilter.sharedWithMe) {
+      filteredBoards = filteredBoards.where((b) => _currentUserId != b.ownerId).toList();
+    }
+
     if (_searchQuery.isNotEmpty) {
       filteredBoards = filteredBoards.where((b) => b.name.toLowerCase().contains(_searchQuery)).toList();
     }
@@ -297,6 +306,34 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
           },
         ) : const Text('Görev Panoları'),
         actions: [
+          PopupMenuButton<BoardFilter>(
+            icon: const Icon(Icons.filter_list),
+            tooltip: 'Panoları Filtrele',
+            onSelected: (BoardFilter result) {
+              setState(() {
+                _currentFilter = result;
+              });
+              String anno = "";
+              if (result == BoardFilter.all) anno = "Tüm panolar listeleniyor";
+              if (result == BoardFilter.myBoards) anno = "Sadece kendi panolarınız listeleniyor";
+              if (result == BoardFilter.sharedWithMe) anno = "Sadece sizinle paylaşılan panolar listeleniyor";
+              SemanticsService.announce(anno, TextDirection.ltr);
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<BoardFilter>>[
+              const PopupMenuItem<BoardFilter>(
+                value: BoardFilter.all,
+                child: Text('Tümü'),
+              ),
+              const PopupMenuItem<BoardFilter>(
+                value: BoardFilter.myBoards,
+                child: Text('Kendi Panolarım'),
+              ),
+              const PopupMenuItem<BoardFilter>(
+                value: BoardFilter.sharedWithMe,
+                child: Text('Benimle Paylaşılan Panolar'),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.analytics),
             tooltip: 'Görev Geçmişi ve Özeti',
@@ -362,10 +399,14 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                   final boxColor = Colors.primaries[colorIndex].withOpacity(0.2);
                   final borderColor = Colors.primaries[colorIndex].withOpacity(0.5);
 
-                  final favText = isFav ? "Favorilerinizde." : "Favorilerinizde değil.";
-                  final label = "${board.name} isimli pano, $favText İçerisinde $listCount adet liste mevcut. Panoya girmek için çift tıklayın, favori durumunu değiştirmek için uzun basın.";
-
                   final isOwner = _currentUserId == board.ownerId;
+                  final favText = isFav ? "Favorilerinizde." : "Favorilerinizde değil.";
+                  String label = "";
+                  if (!isOwner) {
+                    label = "Sizinle paylaşılmış ${board.name} isimli pano, $favText İçerisinde $listCount adet liste mevcut. Panoya girmek için çift tıklayın, favori durumunu değiştirmek için uzun basın.";
+                  } else {
+                    label = "${board.name} isimli pano, $favText İçerisinde $listCount adet liste mevcut. Panoya girmek için çift tıklayın, favori durumunu değiştirmek için uzun basın.";
+                  }
 
                   return Semantics(
                     label: label,

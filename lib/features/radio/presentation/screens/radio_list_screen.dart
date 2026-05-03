@@ -90,23 +90,23 @@ class _RadioListScreenState extends State<RadioListScreen> {
                   children: [
                     Expanded(
                       flex: 1,
-                      child: Semantics(
-                        label: "Kaydedilen Canlı Yayınlar",
-                        button: true,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const SavedRecordingsScreen()),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 2,
-                          ),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const SavedRecordingsScreen()),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 2,
+                        ),
+                        child: Semantics(
+                          label: "Kaydedilen Canlı Yayınlar",
+                          excludeSemantics: true,
                           child: const Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -125,18 +125,18 @@ class _RadioListScreenState extends State<RadioListScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       flex: 1,
-                      child: Semantics(
-                        label: _isFavoritesView ? "Tüm Kanallar" : "Favori Kanallar",
-                        button: true,
-                        child: ElevatedButton(
-                          onPressed: _toggleFavoritesView,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _isFavoritesView ? Colors.teal : Colors.deepOrange,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 2,
-                          ),
+                      child: ElevatedButton(
+                        onPressed: _toggleFavoritesView,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isFavoritesView ? Colors.teal : Colors.deepOrange,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 2,
+                        ),
+                        child: Semantics(
+                          label: _isFavoritesView ? "Tüm Kanallar" : "Favori Kanallar",
+                          excludeSemantics: true,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
