@@ -147,8 +147,11 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
         throw Exception('Token Error: $e');
       }
 
-      // Pre-flight check removed as it causes DOMException on web.
-      // We entrust microphone permission request entirely to LiveKit localParticipant
+      if (!kIsWeb) {
+        try {
+          await Hardware.instance.setSpeakerphoneOn(true);
+        } catch (_) {}
+      }
 
       try {
         _room = Room();
@@ -160,10 +163,6 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
           livekitToken,
           connectOptions: const ConnectOptions(
             autoSubscribe: true,
-          ),
-          roomOptions: const RoomOptions(
-            adaptiveStream: false,
-            dynacast: false,
           ),
         );
         AppLogger.instance.info('Room connect bitti.');
@@ -276,7 +275,9 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
     if (_isConnected) {
       _playSystemBeep(isJoin: false);
     }
-    _room?.disconnect();
+    try {
+      _room?.disconnect();
+    } catch (_) {}
     super.dispose();
   }
 
