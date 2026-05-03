@@ -34,16 +34,16 @@ schema.forEach(col => {
         col.deleteRule = "user_id = @request.auth.id";
     }
     else if (cname === "posts") {
-        col.updateRule = "user_id = @request.auth.id";
-        col.deleteRule = "user_id = @request.auth.id";
+        col.updateRule = "user_id = @request.auth.id || (@request.auth.id != '' && @request.auth.role = 0)";
+        col.deleteRule = "user_id = @request.auth.id || (@request.auth.id != '' && @request.auth.role = 0)";
     }
     else if (cname === "post_comments") {
-        col.updateRule = "user_id = @request.auth.id";
-        col.deleteRule = "user_id = @request.auth.id || post_id.user_id = @request.auth.id";
+        col.updateRule = "user_id = @request.auth.id || (@request.auth.id != '' && @request.auth.role = 0)";
+        col.deleteRule = "user_id = @request.auth.id || post_id.user_id = @request.auth.id || (@request.auth.id != '' && @request.auth.role = 0)";
     }
     else if (cname === "post_likes") {
-        col.updateRule = "user_id = @request.auth.id";
-        col.deleteRule = "user_id = @request.auth.id || post_id.user_id = @request.auth.id";
+        col.updateRule = "user_id = @request.auth.id || (@request.auth.id != '' && @request.auth.role = 0)";
+        col.deleteRule = "user_id = @request.auth.id || post_id.user_id = @request.auth.id || (@request.auth.id != '' && @request.auth.role = 0)";
     }
     else if (cname === "server_memberships") {
         col.updateRule = "user_id = @request.auth.id";

@@ -44,7 +44,7 @@ class MainActivity: FlutterActivity() {
 
     private fun playTone(type: String, durationMs: Int) {
         try {
-            val volume = if (type == "start") 60 else 100
+            val volume = if (type == "start") 30 else 50
             val toneGen = ToneGenerator(AudioManager.STREAM_DTMF, volume)
             val toneParam = if (type == "end") ToneGenerator.TONE_PROP_PROMPT else ToneGenerator.TONE_PROP_BEEP
             toneGen.startTone(toneParam, durationMs)

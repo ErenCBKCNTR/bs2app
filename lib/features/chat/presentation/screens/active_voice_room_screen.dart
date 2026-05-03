@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:livekit_client/livekit_client.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
@@ -34,6 +36,9 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   List<Participant> _participants = [];
   final SettingsService _settingsService = SettingsService();
 
+  bool _isLoadingParticipants = true;
+  List<Map<String, dynamic>> _previewParticipants = [];
+
   Future<void> _playSystemBeep({required bool isJoin}) async {
     if (!kIsWeb) {
       try {
@@ -49,6 +54,65 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   void initState() {
     super.initState();
     // Do not connect automatically, wait for user interaction to avoid minified DOMException on Web
+    _fetchParticipants();
+  }
+
+  Future<void> _fetchParticipants() async {
+    try {
+      String livekitUrl = dotenv.env['LIVEKIT_URL'] ?? '';
+      final String apiKey = dotenv.env['LIVEKIT_API_KEY'] ?? '';
+      final String apiSecret = dotenv.env['LIVEKIT_API_SECRET'] ?? '';
+
+      if (livekitUrl.isEmpty || apiKey.isEmpty || apiSecret.isEmpty) {
+        if (mounted) setState(() => _isLoadingParticipants = false);
+        return;
+      }
+
+      final jwt = JWT({
+        'iss': apiKey,
+        'nbf': 0,
+        'exp': (DateTime.now().millisecondsSinceEpoch / 1000).round() + 60,
+        'video': {
+          'roomAdmin': true,
+          'room': widget.roomId,
+        }
+      });
+      final token = jwt.sign(SecretKey(apiSecret));
+
+      final httpUrl = livekitUrl.replaceFirst('wss://', 'https://').replaceFirst('ws://', 'http://');
+
+      final response = await http.post(
+        Uri.parse('$httpUrl/twirp/livekit.RoomService/ListParticipants'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({"room": widget.roomId}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final list = data['participants'] as List? ?? [];
+        if (mounted) {
+          setState(() {
+            _previewParticipants = list.map((e) => e as Map<String, dynamic>).toList();
+            _isLoadingParticipants = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoadingParticipants = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingParticipants = false;
+        });
+      }
+    }
   }
 
   void _onRoomDidUpdate() {
@@ -309,28 +373,110 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
       body: _errorMessage != null 
         ? Center(child: Padding(padding: const EdgeInsets.all(16.0), child: Text('Bağlantı hatası: $_errorMessage\nLütfen sayfayı yenileyip tekrar deneyin.', textAlign: TextAlign.center, style: const TextStyle(color: Colors.red))))
         : !_isConnected && _room == null
-            ? Center(
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.mic, size: 28),
-                  label: const Text("Odaya Katıl (Mikrofona İzin Ver)", style: TextStyle(fontSize: 16)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade700,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ? Column(
+                children: [
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.shade700,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _errorMessage = null;
+                      });
+                      _connectToRoom();
+                    },
+                    child: Semantics(
+                      label: "Sohbete Katıl",
+                      child: const Text("Sohbete Katıl", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _errorMessage = null;
-                    });
-                    _connectToRoom();
-                  },
-                ),
+                  const SizedBox(height: 32),
+                  if (_isLoadingParticipants)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    Expanded(
+                      child: _previewParticipants.isEmpty
+                          ? const Center(
+                              child: Text(
+                                "Oda şu an boş.\nİlk katılan siz olun!",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.white54, fontSize: 16),
+                              ),
+                            )
+                          : _buildPreviewParticipantsTable(),
+                    ),
+                ],
               )
             : _isConnected 
               ? _buildParticipantGrid()
               : const Center(child: CircularProgressIndicator()),
       bottomNavigationBar: _isConnected ? _buildBottomControls() : null,
+    );
+  }
+
+  Widget _buildPreviewParticipantsTable() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            child: Semantics(
+              header: true,
+              child: Text(
+                "Odada ${_previewParticipants.length} aktif kişi var",
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF1B2838),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: ListView.separated(
+                itemCount: _previewParticipants.length,
+                separatorBuilder: (context, index) => const Divider(color: Colors.white12, height: 1),
+                itemBuilder: (context, index) {
+                  final p = _previewParticipants[index];
+                  final String identity = p['identity']?.toString() ?? 'Bilinmeyen';
+                  final String rawName = p['name']?.toString() ?? identity;
+                  final String displayName = rawName.isNotEmpty ? rawName : identity;
+                  final String name = displayName.startsWith('anonymous_') ? 'Misafir' : displayName;
+
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.blueGrey,
+                      child: Text(
+                        name.isNotEmpty ? name[0].toUpperCase() : '?',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    title: Text(
+                      name,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                    ),
+                    trailing: const Icon(Icons.record_voice_over, color: Colors.green, size: 20),
+                  );
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+        ],
+      ),
     );
   }
 

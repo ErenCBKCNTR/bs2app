@@ -753,8 +753,8 @@
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "user_id = @request.auth.id",
-    "deleteRule": "user_id = @request.auth.id"
+    "updateRule": "user_id = @request.auth.id || (@request.auth.id != '' && @request.auth.role = 0)",
+    "deleteRule": "user_id = @request.auth.id || (@request.auth.id != '' && @request.auth.role = 0)"
   },
   {
     "id": "collection_comments",
@@ -798,8 +798,8 @@
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "user_id = @request.auth.id",
-    "deleteRule": "user_id = @request.auth.id || post_id.user_id = @request.auth.id"
+    "updateRule": "user_id = @request.auth.id || (@request.auth.id != '' && @request.auth.role = 0)",
+    "deleteRule": "user_id = @request.auth.id || post_id.user_id = @request.auth.id || (@request.auth.id != '' && @request.auth.role = 0)"
   },
   {
     "id": "col_post_likes",
@@ -835,8 +835,8 @@
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "user_id = @request.auth.id",
-    "deleteRule": "user_id = @request.auth.id || post_id.user_id = @request.auth.id"
+    "updateRule": "user_id = @request.auth.id || (@request.auth.id != '' && @request.auth.role = 0)",
+    "deleteRule": "user_id = @request.auth.id || post_id.user_id = @request.auth.id || (@request.auth.id != '' && @request.auth.role = 0)"
   },
   {
     "id": "col_voice_rooms",

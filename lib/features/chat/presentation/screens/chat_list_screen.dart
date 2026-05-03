@@ -68,12 +68,41 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     });
     
     _fetchChats();
+    _checkPendingGameInvites();
     _setupRealtime();
     _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       _fetchChats(isBackground: true);
     });
     
     _chatListScrollController.addListener(_scrollListener);
+  }
+
+  Future<void> _checkPendingGameInvites() async {
+    try {
+      final myId = PocketBaseService.client.authStore.model?.id;
+      if (myId == null) return;
+      final pendingGames = await PocketBaseService.client.collection('quiz_games').getList(
+        filter: 'player2_id = "$myId" && status = "waiting"',
+      );
+      for (var game in pendingGames.items) {
+        String inviterName = "Bir kullanıcı";
+        try {
+          final player1Id = game.getStringValue('player1_id');
+          if (player1Id.isNotEmpty) {
+            final user = await PocketBaseService.client.collection('users').getOne(player1Id);
+            final name = user.getStringValue('username');
+            if (name.isNotEmpty) {
+              inviterName = name;
+            }
+          }
+        } catch (_) {}
+        if (mounted) {
+          _showGameInviteDialog(game, inviterName);
+        }
+      }
+    } catch (e) {
+      AppLogger.instance.warning('Bekleyen oyunlar alınamadı: $e');
+    }
   }
 
   void _setupRealtime() async {
@@ -162,29 +191,40 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
        _fetchChats(isBackground: true);
     });
 
-    _realtimeGamesUnsub = await PocketBaseService.client.collection('quiz_games').subscribe('*', (e) {
+    _realtimeGamesUnsub = await PocketBaseService.client.collection('quiz_games').subscribe('*', (e) async {
       if (e.action == 'create' && e.record != null) {
         final r = e.record!;
         if (r.getStringValue('player2_id') == myId && r.getStringValue('status') == 'waiting') {
-           _showGameInviteDialog(r);
+           String inviterName = "Bir kullanıcı";
+           try {
+             final player1Id = r.getStringValue('player1_id');
+             if (player1Id.isNotEmpty) {
+               final user = await PocketBaseService.client.collection('users').getOne(player1Id);
+               final name = user.getStringValue('username');
+               if (name.isNotEmpty) {
+                 inviterName = name;
+               }
+             }
+           } catch (_) {}
+           _showGameInviteDialog(r, inviterName);
         }
       }
     });
   }
 
-  void _showGameInviteDialog(RecordModel game) {
+  void _showGameInviteDialog(RecordModel game, String inviterName) {
     if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Oyun İsteği'),
-          content: const Text('Biri sizi Bilgi Yarışması oynamaya davet etti! Katılmak ister misiniz?'),
+          content: Text('$inviterName isimli kullanıcı size bilgi yarışması için oyun daveti gönderdi.'),
           actions: [
             TextButton(
               onPressed: () async {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 try {
                   await PocketBaseService.client.collection('quiz_games').update(game.id, body: {
                     'status': 'finished'
@@ -195,7 +235,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
             ),
             ElevatedButton(
               onPressed: () async {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 try {
                   await PocketBaseService.client.collection('quiz_games').update(game.id, body: {
                     'status': 'active'
@@ -1211,97 +1251,179 @@ addRepaintBoundaries: true,
     );
   }
 
+  Widget _buildDrawerItem(BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool isActive = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFFBCE1C0) : Colors.white,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: ListTile(
+        leading: Icon(icon, color: isActive ? const Color(0xFF1A5D1A) : Colors.black87),
+        title: Text(
+           title,
+           style: TextStyle(
+             color: isActive ? const Color(0xFF1A5D1A) : Colors.black87,
+             fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+             fontSize: 16,
+           ),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        onTap: onTap,
+      ),
+    );
+  }
+
   Widget _buildDrawer(BuildContext context) {
     final user = PocketBaseService.client.authStore.model;
     final email = user?.getStringValue('email') ?? 'Hesap Bilgisi Yok';
     
     return Drawer(
+      backgroundColor: const Color(0xFF1A232A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(32)),
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          UserAccountsDrawerHeader(
-            accountName: const Text('Blind Social'),
-            accountEmail: Text(email),
-            currentAccountPicture: const CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Color(0xFF075E54), size: 40),
+          Container(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 24,
+              left: 24,
+              right: 24,
+              bottom: 24,
             ),
             decoration: const BoxDecoration(
-              color: Color(0xFF075E54),
+              gradient: LinearGradient(
+                colors: [Color(0xFF384A50), Color(0xFF263439)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomRight: Radius.circular(32),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF81C784), width: 2),
+                  ),
+                  child: const CircleAvatar(
+                    radius: 36,
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.person, color: Color(0xFF263439), size: 48),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text('Blind Social', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(email, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+              ],
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.person_outline),
-            title: const Text('Profilim'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/profile'), builder: (_) => const MyProfileScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings_outlined),
-            title: const Text('Uygulama Ayarları'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/settings'), builder: (_) => const AppSettingsScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.campaign_outlined),
-            title: const Text('Kampanyalar'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/campaigns'), builder: (_) => const CampaignsScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.radio_outlined),
-            title: const Text('Canlı Radyo'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/radio'), builder: (_) => const RadioListScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.games_outlined),
-            title: const Text('Oyun Alanı'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/games'), builder: (_) => const blind_social_games.GamesScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.build_circle_outlined),
-            title: const Text('Araçlar'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/tools'), builder: (_) => const blind_social_tools.ToolsScreen()));
-            },
-          ),
-          const Divider(),
-          if (AdminService().isAdmin())
-            ListTile(
-              leading: const Icon(Icons.admin_panel_settings_outlined, color: Colors.blueAccent),
-              title: const Text('Yönetici Paneli'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/admin'), builder: (_) => const AdminPanelScreen()));
-              },
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.person_outline,
+                  title: 'Profilim',
+                  isActive: true,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/profile'), builder: (_) => const MyProfileScreen()));
+                  },
+                ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.settings_outlined,
+                  title: 'Uygulama Ayarları',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/settings'), builder: (_) => const AppSettingsScreen()));
+                  },
+                ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.campaign_outlined,
+                  title: 'Kampanyalar',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/campaigns'), builder: (_) => const CampaignsScreen()));
+                  },
+                ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.radio_outlined,
+                  title: 'Canlı Radyo',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/radio'), builder: (_) => const RadioListScreen()));
+                  },
+                ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.games_outlined,
+                  title: 'Oyun Alanı',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/games'), builder: (_) => const blind_social_games.GamesScreen()));
+                  },
+                ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.build_circle_outlined,
+                  title: 'Araçlar',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/tools'), builder: (_) => const blind_social_tools.ToolsScreen()));
+                  },
+                ),
+                if (AdminService().isAdmin()) ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: Divider(color: Colors.white24, indent: 32, endIndent: 32, height: 1),
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.admin_panel_settings_outlined,
+                    title: 'Yönetici Paneli',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/admin'), builder: (_) => const AdminPanelScreen()));
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.bug_report_outlined,
+                    title: 'Geliştirici Modu / Loglar',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/logs'), builder: (_) => const DeveloperLogsScreen()));
+                    },
+                  ),
+                ],
+                const SizedBox(height: 16),
+              ],
             ),
-          if (AdminService().isAdmin())
-            ListTile(
-              leading: const Icon(Icons.bug_report_outlined),
-              title: const Text('Geliştirici Modu / Loglar'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/logs'), builder: (_) => const DeveloperLogsScreen()));
-              },
-            ),
-          const Spacer(),
+          ),
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: Text(
               'Versiyon 1.0.0',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white54, fontSize: 13),
             ),
           ),
         ],
