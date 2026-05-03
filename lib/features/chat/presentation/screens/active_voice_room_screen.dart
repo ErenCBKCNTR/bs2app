@@ -30,7 +30,7 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   bool _isConnected = false;
   String? _errorMessage;
   Room? _room;
-  late final EventsListener<RoomEvent> _listener;
+  EventsListener<RoomEvent>? _listener;
   List<Participant> _participants = [];
   final SettingsService _settingsService = SettingsService();
 
@@ -182,7 +182,7 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
       
       _listener
       //...
-        ..on<ParticipantConnectedEvent>((event) {
+        ?..on<ParticipantConnectedEvent>((event) {
           _onRoomDidUpdate();
           _notifyParticipantStatus(event.participant, true);
         })
@@ -275,6 +275,9 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
     if (_isConnected) {
       _playSystemBeep(isJoin: false);
     }
+    try {
+      _listener?.dispose();
+    } catch (_) {}
     try {
       _room?.disconnect();
     } catch (_) {}
