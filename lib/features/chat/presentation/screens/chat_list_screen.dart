@@ -1257,18 +1257,27 @@ addRepaintBoundaries: true,
     required VoidCallback onTap,
     bool isActive = false,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    final activeBgColor = isDark ? Colors.teal.withOpacity(0.3) : const Color(0xFFBCE1C0);
+    final activeFgColor = isDark ? Colors.tealAccent : const Color(0xFF1A5D1A);
+    
+    final inactiveBgColor = Colors.transparent;
+    final inactiveFgColor = isDark ? Colors.white70 : Colors.black87;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFFBCE1C0) : Colors.white,
+        color: isActive ? activeBgColor : inactiveBgColor,
         borderRadius: BorderRadius.circular(30),
       ),
       child: ListTile(
-        leading: Icon(icon, color: isActive ? const Color(0xFF1A5D1A) : Colors.black87),
+        leading: Icon(icon, color: isActive ? activeFgColor : inactiveFgColor),
         title: Text(
            title,
            style: TextStyle(
-             color: isActive ? const Color(0xFF1A5D1A) : Colors.black87,
+             color: isActive ? activeFgColor : inactiveFgColor,
              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
              fontSize: 16,
            ),
@@ -1282,9 +1291,11 @@ addRepaintBoundaries: true,
   Widget _buildDrawer(BuildContext context) {
     final user = PocketBaseService.client.authStore.model;
     final email = user?.getStringValue('email') ?? 'Hesap Bilgisi Yok';
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     
     return Drawer(
-      backgroundColor: const Color(0xFF1A232A),
+      backgroundColor: isDark ? const Color(0xFF1A232A) : theme.colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(right: Radius.circular(32)),
       ),
@@ -1298,13 +1309,15 @@ addRepaintBoundaries: true,
               right: 24,
               bottom: 24,
             ),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF384A50), Color(0xFF263439)],
+                colors: isDark 
+                  ? const [Color(0xFF384A50), Color(0xFF263439)]
+                  : [theme.primaryColor, theme.primaryColorDark],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 bottomRight: Radius.circular(32),
               ),
             ),
@@ -1317,10 +1330,10 @@ addRepaintBoundaries: true,
                     shape: BoxShape.circle,
                     border: Border.all(color: const Color(0xFF81C784), width: 2),
                   ),
-                  child: const CircleAvatar(
+                  child: CircleAvatar(
                     radius: 36,
                     backgroundColor: Colors.white,
-                    child: Icon(Icons.person, color: Color(0xFF263439), size: 48),
+                    child: Icon(Icons.person, color: isDark ? const Color(0xFF263439) : theme.primaryColor, size: 48),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1418,12 +1431,12 @@ addRepaintBoundaries: true,
               ],
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.all(16.0),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Text(
               'Versiyon 1.0.0',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54, fontSize: 13),
+              style: TextStyle(color: isDark ? Colors.white54 : Colors.black54, fontSize: 13),
             ),
           ),
         ],

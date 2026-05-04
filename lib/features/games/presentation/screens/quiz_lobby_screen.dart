@@ -95,36 +95,65 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
 
   void _showMultiplayerInviteDialog() {
     final controller = TextEditingController();
+    int selectedQuestionCount = 10;
+    
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Arkadaşını Davet Et'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: 'Kullanıcı adı veya tam ad',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('İptal'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _inviteMultiplayer(controller.text);
-              },
-              child: const Text('Davet Et'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text('Arkadaşını Davet Et'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      hintText: 'Kullanıcı adı veya tam ad',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<int>(
+                    value: selectedQuestionCount,
+                    decoration: const InputDecoration(
+                      labelText: 'Soru Sayısı',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 10, child: Text('10 Soru')),
+                      DropdownMenuItem(value: 20, child: Text('20 Soru')),
+                      DropdownMenuItem(value: 30, child: Text('30 Soru')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setStateDialog(() => selectedQuestionCount = val);
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('İptal'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _inviteMultiplayer(controller.text, selectedQuestionCount);
+                  },
+                  child: const Text('Davet Et'),
+                ),
+              ],
+            );
+          }
         );
       },
     );
   }
   
-  Future<void> _inviteMultiplayer(String query) async {
+  Future<void> _inviteMultiplayer(String query, int questionCount) async {
     if (query.isEmpty) return;
     setState(() => _isLoading = true);
     
@@ -165,7 +194,7 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
       );
       final List<RecordModel> allQuestions = questionsResult.items;
       allQuestions.shuffle();
-      final selectedQuestions = allQuestions.take(15).toList();
+      final selectedQuestions = allQuestions.take(questionCount).toList();
       final questionsJson = selectedQuestions.map((q) => q.toJson()).toList();
 
       final game = await PocketBaseService.client.collection('quiz_games').create(body: {

@@ -184,26 +184,27 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       String nextStatus = _game!.getStringValue('status');
       String nextTurnId = _game!.getStringValue('current_turn_id');
       
-      if (!isCorrect) {
-        nextStatus = 'finished';
-      } else {
-        if (widget.isSinglePlayer) {
+      if (widget.isSinglePlayer) {
+        if (!isCorrect) {
+          nextStatus = 'finished';
+        } else {
           currentIndex++;
           if (currentIndex >= _game!.getDataValue<List>('questions_json').length) {
             nextStatus = 'finished';
           }
+        }
+      } else {
+        // Multiplayer alternating logic
+        if (isPlayer1) {
+          nextTurnId = _game!.getStringValue('player2_id');
         } else {
-          // Multiplayer alternating logic
-          if (isPlayer1) {
-            nextTurnId = _game!.getStringValue('player2_id');
-          } else {
-            nextTurnId = _game!.getStringValue('player1_id');
-            currentIndex++; // Both players answered this question
-          }
-          
-          if (currentIndex >= _game!.getDataValue<List>('questions_json').length) {
-            nextStatus = 'finished';
-          }
+          nextTurnId = _game!.getStringValue('player1_id');
+          currentIndex++; // Both players answered this question
+        }
+        
+        // Let's use the explicit length from the list
+        if (currentIndex >= _game!.getDataValue<List>('questions_json').length) {
+          nextStatus = 'finished';
         }
       }
 
@@ -257,6 +258,22 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     if (status == 'finished') {
       final p1Score = _game!.getIntValue('player1_score');
       final p2Score = _game!.getIntValue('player2_score');
+      final myId = PocketBaseService.client.authStore.model?.id;
+      final isPlayer1 = _game!.getStringValue('player1_id') == myId;
+      
+      final myScore = isPlayer1 ? p1Score : p2Score;
+      final opponentScore = isPlayer1 ? p2Score : p1Score;
+      
+      String resultText = '';
+      if (!widget.isSinglePlayer) {
+        if (myScore > opponentScore) {
+          resultText = 'Tebrikler, Kazandınız!';
+        } else if (opponentScore > myScore) {
+          resultText = 'Rakip Kazandı!';
+        } else {
+          resultText = 'Berabere!';
+        }
+      }
       
       return Scaffold(
         appBar: AppBar(title: const Text('Oyun Bitti')),
@@ -269,14 +286,14 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
               children: [
                 const Icon(Icons.emoji_events, size: 80, color: Colors.amber),
                 const SizedBox(height: 24),
-                const Text(
-                  'Skor Tablosu',
+                Text(
+                  widget.isSinglePlayer ? 'Oyun Bitti' : resultText,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  widget.isSinglePlayer ? 'Puanınız: $p1Score' : 'Siz: $p1Score - Rakip: $p2Score',
+                  widget.isSinglePlayer ? 'Kazandığınız Puan: $p1Score' : 'Siz: $myScore - Rakip: $opponentScore',
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 20),
                 ),
@@ -318,6 +335,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
 
     final currentQ = questions[currentIndex] as Map<String, dynamic>;
     final isMyTurn = currentTurnId == myId;
+    final isPlayer1 = _game!.getStringValue('player1_id') == myId;
 
     return Scaffold(
       appBar: AppBar(
@@ -333,8 +351,9 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Puan: ${_game!.getIntValue("player1_score")}'),
-                  if (!widget.isSinglePlayer) Text('Rakip Puan: ${_game!.getIntValue("player2_score")}'),
+                  Text('Puanım: ${isPlayer1 ? _game!.getIntValue("player1_score") : _game!.getIntValue("player2_score")}'),
+                  if (!widget.isSinglePlayer)
+                    Text('Rakip Puan: ${isPlayer1 ? _game!.getIntValue("player2_score") : _game!.getIntValue("player1_score")}'),
                 ],
               ),
               const SizedBox(height: 24),
