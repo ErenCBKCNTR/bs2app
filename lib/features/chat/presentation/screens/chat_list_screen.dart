@@ -51,6 +51,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   bool _isDeleting = false;
   bool _showArchived = false;
   final Set<String> _pendingOperations = {}; 
+  final Map<String, String> _userNameCache = {};
   Timer? _pollingTimer;
   UnsubscribeFunc? _realtimeMessagesUnsub;
   UnsubscribeFunc? _realtimeChatsUnsub;
@@ -509,6 +510,23 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     }
   }
 
+
+  Future<void> _fetchUserAndCache(String userId) async {
+    if (_userNameCache.containsKey(userId)) return;
+    try {
+      final user = await PocketBaseService.client.collection('users').getOne(userId);
+      final fullName = user.getStringValue('full_name');
+      final username = user.getStringValue('username');
+      final finalName = fullName.isNotEmpty ? fullName : username;
+      if (mounted) {
+        setState(() {
+          _userNameCache[userId] = finalName;
+        });
+      }
+    } catch (e) {
+      AppLogger.instance.error('Kullanıcı bilgisi alınamadı: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1013,8 +1031,16 @@ addRepaintBoundaries: true,
             final uid = p.getStringValue('user_id');
             if (uid != currentUserId) {
               targetUserId = uid;
-              if (p.expand['user_id'] != null) {
-                 displayChatName = p.expand['user_id']!.first.getStringValue('username');
+              if (p.expand['user_id'] != null && p.expand['user_id']!.isNotEmpty) {
+                 final targetUserRec = p.expand['user_id']!.first;
+                 displayChatName = targetUserRec.getStringValue('full_name');
+                 if (displayChatName.isEmpty) displayChatName = targetUserRec.getStringValue('username');
+              } else {
+                 if (_userNameCache.containsKey(uid)) {
+                   displayChatName = _userNameCache[uid]!;
+                 } else {
+                   _fetchUserAndCache(uid);
+                 }
               }
             } else {
               lastReadId = p.getStringValue('last_read_message_id');
