@@ -605,7 +605,7 @@
     "listRule": "@collection.chat_participants.chat_id ?= chat_id && @collection.chat_participants.user_id ?= @request.auth.id || sender_id = @request.auth.id",
     "viewRule": "@collection.chat_participants.chat_id ?= chat_id && @collection.chat_participants.user_id ?= @request.auth.id || sender_id = @request.auth.id",
     "createRule": "@request.auth.id = sender_id",
-    "updateRule": "@request.auth.id = sender_id",
+    "updateRule": "@request.auth.id = sender_id || (@collection.chat_participants.chat_id ?= chat_id && @collection.chat_participants.user_id ?= @request.auth.id && content ~ 'CALL_')",
     "deleteRule": "@request.auth.id = sender_id",
     "options": {}
   },

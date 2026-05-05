@@ -21,6 +21,7 @@ class CallScreen extends StatefulWidget {
   final String targetUsername;
   final bool isVideo;
   final bool isIncoming;
+  final String? messageId;
 
   static bool isInCall = false;
 
@@ -31,6 +32,7 @@ class CallScreen extends StatefulWidget {
     required this.targetUsername,
     this.isVideo = false,
     this.isIncoming = false,
+    this.messageId,
   });
 
   @override
@@ -50,7 +52,8 @@ class _CallScreenState extends State<CallScreen> {
   bool _showVideoRequest = false;
   String _videoRequesterName = '';
   String _connectionStatus = 'Başlatılıyor...';
-  
+  String? _callMessageId;
+
   // Video tracks
   lk.VideoTrack? _localVideoTrack;
   lk.VideoTrack? _remoteVideoTrack;
@@ -73,6 +76,7 @@ class _CallScreenState extends State<CallScreen> {
     CallScreen.isInCall = true;
     _myId = PocketBaseService.client.authStore.model!.id;
     _isVideoCall = widget.isVideo;
+    _callMessageId = widget.messageId;
     
     // Sesli görüşmedeyse varsayılan ahize (speaker off)
     // Görüntülü görüşmedeyse varsayılan hoparlör (isteğe bağlı ama kullanıcı "varsayılan ahize" dedi)
@@ -101,7 +105,7 @@ class _CallScreenState extends State<CallScreen> {
 
   void _listenToCallEndEvents() async {
     _messagesUnsub = await PocketBaseService.client.collection('messages').subscribe('*', (e) async {
-      if (e.action == 'create') {
+      if (e.action == 'create' || e.action == 'update') {
         final msg = e.record;
         if (msg != null && msg.getStringValue('chat_id') == widget.chatId && msg.getStringValue('sender_id') != _myId) {
           final content = msg.getStringValue('content');
@@ -263,11 +267,7 @@ class _CallScreenState extends State<CallScreen> {
     try {
       if (!widget.isIncoming) {
         // Arama başlatılıyorsa karşı tarafa bildirim gönder (signaling)
-        await PocketBaseService.client.collection('messages').create(body: {
-          'chat_id': widget.chatId,
-          'sender_id': _myId,
-          'content': widget.isVideo ? '[VIDEO_CALL_STARTED]' : '[VOICE_CALL_STARTED]',
-        });
+        await _updateOrCreateCallMessage(widget.isVideo ? '[VIDEO_CALL_STARTED]' : '[VOICE_CALL_STARTED]');
       }
     } catch (e) {
       AppLogger.instance.error('Arama başlatma hatası: $e');
@@ -484,6 +484,25 @@ class _CallScreenState extends State<CallScreen> {
     });
   }
 
+  Future<void> _updateOrCreateCallMessage(String content) async {
+    try {
+      if (_callMessageId != null) {
+        await PocketBaseService.client.collection('messages').update(_callMessageId!, body: {
+          'content': content,
+        });
+      } else {
+        final record = await PocketBaseService.client.collection('messages').create(body: {
+          'chat_id': widget.chatId,
+          'sender_id': _myId,
+          'content': content,
+        });
+        _callMessageId = record.id;
+      }
+    } catch (e) {
+      AppLogger.instance.error('Arama mesajı güncelleme hatası: $e');
+    }
+  }
+
   void _handleAccept() async {
     _stopRingtone();
     _callTimeoutTimer?.cancel();
@@ -493,11 +512,7 @@ class _CallScreenState extends State<CallScreen> {
     
     // Kabul edildi mesajı gönder (Arayanı uyarmak için)
     try {
-      await PocketBaseService.client.collection('messages').create(body: {
-        'chat_id': widget.chatId,
-        'sender_id': _myId,
-        'content': '[CALL_ACCEPTED]',
-      });
+      await _updateOrCreateCallMessage('[CALL_ACCEPTED]');
     } catch (e) {
       AppLogger.instance.error('Arama kabul mesajı gönderilemedi: $e');
     }
@@ -547,11 +562,7 @@ class _CallScreenState extends State<CallScreen> {
     final status = _secondsElapsed > 0 ? "TAMAMLANDI" : "CEVAPLANMADI";
        
     try {
-      await PocketBaseService.client.collection('messages').create(body: {
-         'chat_id': widget.chatId,
-         'sender_id': _myId,
-         'content': _isVideoCall ? '[VIDEO_CALL_ENDED]$status$durationText' : '[VOICE_CALL_ENDED]$status$durationText',
-      });
+      await _updateOrCreateCallMessage(_isVideoCall ? '[VIDEO_CALL_ENDED]$status$durationText' : '[VOICE_CALL_ENDED]$status$durationText');
     } catch (e) {
       AppLogger.instance.error('Arama kapanış mesajı hatası: $e');
     }
@@ -729,11 +740,7 @@ class _CallScreenState extends State<CallScreen> {
 
   void _requestVideoTransition() async {
     try {
-      await PocketBaseService.client.collection('messages').create(body: {
-        'chat_id': widget.chatId,
-        'sender_id': _myId,
-        'content': '[VIDEO_REQUEST]',
-      });
+      await _updateOrCreateCallMessage('[VIDEO_REQUEST]');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Görüntülü görüşme isteği gönderildi...')),
       );
@@ -747,11 +754,7 @@ class _CallScreenState extends State<CallScreen> {
       _showVideoRequest = false;
     });
     try {
-      await PocketBaseService.client.collection('messages').create(body: {
-        'chat_id': widget.chatId,
-        'sender_id': _myId,
-        'content': '[VIDEO_ACCEPTED]',
-      });
+      await _updateOrCreateCallMessage('[VIDEO_ACCEPTED]');
       _enableVideo(true);
     } catch (e) {
       AppLogger.instance.error('Video kabul hatası: $e');
@@ -763,11 +766,7 @@ class _CallScreenState extends State<CallScreen> {
       _showVideoRequest = false;
     });
     try {
-      await PocketBaseService.client.collection('messages').create(body: {
-        'chat_id': widget.chatId,
-        'sender_id': _myId,
-        'content': '[VIDEO_REJECTED]',
-      });
+      await _updateOrCreateCallMessage('[VIDEO_REJECTED]');
     } catch (e) {
       AppLogger.instance.error('Video reddetme hatası: $e');
     }
@@ -1119,11 +1118,7 @@ class _CallScreenState extends State<CallScreen> {
     _stopRingtone();
     _playEndSound();
     try {
-      await PocketBaseService.client.collection('messages').create(body: {
-         'chat_id': widget.chatId,
-         'sender_id': _myId,
-         'content': '[CALL_CANCELLED]',
-      });
+      await _updateOrCreateCallMessage('[CALL_CANCELLED]');
     } catch (e) {
       AppLogger.instance.error('Arama iptal mesajı hatası: $e');
     }
@@ -1134,11 +1129,7 @@ class _CallScreenState extends State<CallScreen> {
     _stopRingtone();
     _playEndSound();
     try {
-      await PocketBaseService.client.collection('messages').create(body: {
-         'chat_id': widget.chatId,
-         'sender_id': _myId,
-         'content': '[CALL_REJECTED]',
-      });
+      await _updateOrCreateCallMessage('[CALL_REJECTED]');
     } catch (e) {
       AppLogger.instance.error('Arama reddetme mesajı hatası: $e');
     }

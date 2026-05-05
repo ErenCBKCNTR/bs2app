@@ -139,9 +139,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                     const MethodChannel('com.example.blind_social/lockscreen')
                         .invokeMethod('playTone', {'type': 'start', 'duration': 100}); // Arka planda gelen çağrı uyarı sisi
                   }
-                  await PocketBaseService.client.collection('messages').create(body: {
-                     'chat_id': chatId,
-                     'sender_id': myId,
+                  await PocketBaseService.client.collection('messages').update(msg.id, body: {
                      'content': '[CALL_BUSY]',
                   });
                 } catch (e) {
@@ -162,6 +160,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                       targetUsername: senderName,
                       isVideo: content == '[VIDEO_CALL_STARTED]',
                       isIncoming: true,
+                      messageId: msg.id,
                     )
                   ));
                 }
@@ -362,6 +361,28 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
             chatData.data['my_participant'] = p;
             chatRecords.add(chatData);
          }
+      }
+
+      // Fetch missing side participants for 1-1 chats (If expand was blocked by rule limit)
+      for (var chat in chatRecords) {
+        if (chat.getBoolValue('is_group') == false) {
+           final participants = (chat.expand['chat_participants_via_chat_id'] as List<dynamic>?)?.cast<RecordModel>() ?? [];
+           bool hasOther = participants.any((p) => p.getStringValue('user_id') != userId);
+           if (!hasOther) {
+              try {
+                final otherParts = await PocketBaseService.client.collection('chat_participants').getFullList(
+                  filter: 'chat_id = "${chat.id}" && user_id != "$userId"',
+                  expand: 'user_id'
+                );
+                if (otherParts.isNotEmpty) {
+                   participants.addAll(otherParts);
+                   chat.expand['chat_participants_via_chat_id'] = participants;
+                }
+              } catch (e) {
+                 AppLogger.instance.error('Diğer katılımcıyı çekerken hata: $e');
+              }
+           }
+        }
       }
       
       // Chatleri sabitlemeye ve güncellenme tarihine göre sırala

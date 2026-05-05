@@ -773,7 +773,7 @@ addRepaintBoundaries: true,
                       final createdAt = DateTime.parse(message['created'] ?? DateTime.now().toIso8601String()).toLocal();
                       final timeString = DateFormat('HH:mm').format(createdAt);
                       
-                      final isCallMessage = content.toString().contains('CALL_');
+                      final isCallMessage = content.toString().contains('CALL_') || content.toString().contains('[VIDEO_');
                       final isVoiceMessage = content.toString().startsWith('[VOICE]');
                       final bool isFavorite = message['is_favorite'] == true;
                       
@@ -782,7 +782,7 @@ addRepaintBoundaries: true,
                       final updatedStr = message['updated']?.toString() ?? createdStr;
                       final created = DateTime.parse(createdStr).toUtc();
                       final updated = DateTime.parse(updatedStr).toUtc();
-                      final bool isEdited = updated.difference(created).inSeconds > 1 || message['is_edited'] == true;
+                      final bool isEdited = !isCallMessage && (updated.difference(created).inSeconds > 1 || message['is_edited'] == true);
 
                       
                       String displayContent = content.toString();
@@ -791,18 +791,23 @@ addRepaintBoundaries: true,
                       if (isCallMessage) {
                         final rawContent = content.toString();
                         final isCallEnded = rawContent.contains('CALL_ENDED');
-                        final isCallRejected = rawContent.contains('CALL_REJECTED');
+                        final isCallBusy = rawContent.contains('CALL_BUSY');
+                        final isCallRejected = rawContent.contains('CALL_REJECTED') || rawContent.contains('VIDEO_REJECTED') || isCallBusy;
                         final isCallCancelled = rawContent.contains('CALL_CANCELLED');
-                        final isCallAccepted = rawContent.contains('CALL_ACCEPTED');
+                        final isCallAccepted = rawContent.contains('CALL_ACCEPTED') || rawContent.contains('VIDEO_ACCEPTED');
                         final isVideo = rawContent.contains('VIDEO');
                         final duration = rawContent.contains('(') ? rawContent.split('(').last.replaceAll(')', '') : '';
                         final isUnanswered = rawContent.contains('CEVAPLANMADI') || isCallCancelled || isCallRejected;
+                        final isVideoReq = rawContent.contains('VIDEO_REQUEST');
 
                         if (rawContent.contains('CALL_STARTED')) {
                           displayContent = isMyMessage 
                             ? (isVideo ? "Giden Görüntülü Arama" : "Giden Sesli Arama")
                             : (isVideo ? "Gelen Görüntülü Arama" : "Gelen Sesli Arama");
                           callIcon = isVideo ? Icons.videocam : Icons.call;
+                        } else if (isVideoReq) {
+                          displayContent = isMyMessage ? "Görüntülü Arama İsteği Gönderildi" : "Görüntülü Arama İsteği";
+                          callIcon = Icons.video_call;
                         } else if (isCallAccepted) {
                           displayContent = isMyMessage ? "Aramayı Kabul Ettiniz" : "Arama Kabul Edildi";
                           callIcon = Icons.call_made;
@@ -812,7 +817,9 @@ addRepaintBoundaries: true,
                               ? (isVideo ? "Giden Arama Cevaplanmadı" : "Giden Arama Cevaplanmadı")
                               : (isVideo ? "Cevapsız Görüntülü Arama" : "Cevapsız Gelen Arama");
                             
-                            if (isCallRejected) {
+                            if (isCallBusy) {
+                               displayContent = isMyMessage ? "Hat Meşgul" : "Arama Meşgule Alındı";
+                            } else if (isCallRejected) {
                                displayContent = isMyMessage ? "Aramayı Reddetiniz" : "Arama Reddedildi";
                             } else if (isCallCancelled) {
                                displayContent = isMyMessage ? "Aramayı İptal Ettiniz" : "Arama İptal Edildi";
