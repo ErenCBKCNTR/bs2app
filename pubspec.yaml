@@ -57,6 +57,17 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   build_runner: ^2.4.8
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
+  web:
+    generate: true
+    image_path: "assets/images/app_icon.png"
+    background_color: "#18181A"
+    theme_color: "#18181A"
 
 flutter:
   uses-material-design: true
