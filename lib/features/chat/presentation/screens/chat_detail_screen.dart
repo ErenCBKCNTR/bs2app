@@ -845,6 +845,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final chatName = ProfanityFilter.filter(widget.chat['name'] ?? 'Sohbet');
+    final isSystemChat = chatName == 'Blind Social Ekibi';
 
     return Scaffold(
       backgroundColor: const Color(0xFF101820),
@@ -854,7 +855,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(chatName),
+              Row(
+                children: [
+                   Text(chatName),
+                   if (isSystemChat)
+                     const Padding(
+                       padding: EdgeInsets.only(left: 4.0),
+                       child: Icon(Icons.verified, color: Colors.blue, size: 18),
+                     ),
+                ]
+              ),
               if (_showUserStatus && _targetUserStatus != null)
                 Text(_targetUserStatus!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal, color: Colors.greenAccent)),
             ],
@@ -1155,7 +1165,15 @@ addRepaintBoundaries: true,
                     },
                   ),
           ),
-          _buildMessageInput(),
+          if (isSystemChat)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              alignment: Alignment.center,
+              color: const Color(0xFF1B2530),
+              child: const Text('Sadece Blind Social Ekibi mesaj gönderebilir', style: TextStyle(color: Colors.grey, fontSize: 13)),
+            )
+          else
+            _buildMessageInput(),
         ],
       ),
     ),

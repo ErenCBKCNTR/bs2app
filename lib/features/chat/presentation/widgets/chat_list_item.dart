@@ -64,14 +64,20 @@ class ChatListItem extends StatelessWidget {
           ),
         ),
         title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
+            Flexible(
               child: Text(
                 displayChatName,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            if (displayChatName == 'Blind Social Ekibi')
+              const Padding(
+                padding: EdgeInsets.only(left: 4.0),
+                child: Icon(Icons.verified, color: Colors.blue, size: 16),
+              ),
             if (isPinned)
               const Padding(
                 padding: EdgeInsets.only(left: 8.0),

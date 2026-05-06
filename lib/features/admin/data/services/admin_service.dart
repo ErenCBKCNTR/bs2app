@@ -65,36 +65,24 @@ class AdminService {
       final fifteenMinsAgo = now.subtract(const Duration(minutes: 15));
       final fifteenMinsAgoStr = fifteenMinsAgo.toIso8601String().replaceFirst('T', ' ');
 
-      // We execute 'users' collection queries sequentially or separately to avoid PocketBase SDK auto-cancellation
-      // which cancels previous queries on the same collection by default.
-      
-      final activeUsersFuture = PocketBaseService.client.collection('users').getList(
-        page: 1,
-        perPage: 1,
-        filter: 'last_seen >= "$fifteenMinsAgoStr"',
-      );
-      
       final otherStatsFutures = Future.wait([
-        // 1. Total Users (We will run this AFTER active users to prevent cancellation)
-        // Actually, let's just make the totalUsers call separately.
-        
-        // 2. Recent Blog Posts (last 15 mins)
+        // 1. Recent Blog Posts (last 15 mins)
         PocketBaseService.client.collection('posts').getList(
           page: 1,
           perPage: 1,
           filter: 'created >= "$fifteenMinsAgoStr"',
         ),
-        // 3. Total Servers
+        // 2. Total Servers
         PocketBaseService.client.collection('chat_servers').getList(
           page: 1,
           perPage: 1,
         ),
-        // 4. Total Feedback
+        // 3. Total Feedback
         PocketBaseService.client.collection('feedback').getList(
           page: 1,
           perPage: 1,
         ),
-        // 5. Total Sources
+        // 4. Total Sources
         PocketBaseService.client.collection('campaign_sources').getList(
           page: 1,
           perPage: 1,
@@ -102,8 +90,6 @@ class AdminService {
       ]);
 
       // Wait for both independent batches
-      final activeUsersResponse = await activeUsersFuture;
-      
       final totalUsersResponse = await PocketBaseService.client.collection('users').getList(
         page: 1,
         perPage: 1,
@@ -112,7 +98,6 @@ class AdminService {
       final results = await otherStatsFutures;
 
       return {
-        'activeUsers': activeUsersResponse.totalItems,
         'totalUsers': totalUsersResponse.totalItems,
         'recentPosts': results[0].totalItems,
         'totalServers': results[1].totalItems,
@@ -122,7 +107,6 @@ class AdminService {
     } catch (e) {
       AppLogger.instance.error('Admin istatistikleri alınamadı: $e');
       return {
-        'activeUsers': 0,
         'totalUsers': 0,
         'recentPosts': 0,
         'totalServers': 0,
