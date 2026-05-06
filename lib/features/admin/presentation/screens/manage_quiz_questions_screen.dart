@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
 import 'package:blind_social/features/admin/data/services/admin_service.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
@@ -14,6 +16,11 @@ class ManageQuizQuestionsScreen extends StatefulWidget {
 class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
   List<RecordModel> _questions = [];
   bool _isLoading = true;
+  
+  int _totalQuestions = 0;
+  int _diff1Questions = 0;
+  int _diff2Questions = 0;
+  int _diff3Questions = 0;
 
   @override
   void initState() {
@@ -30,6 +37,10 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
       if (mounted) {
         setState(() {
           _questions = res;
+          _totalQuestions = res.length;
+          _diff1Questions = res.where((q) => q.getIntValue('difficulty') == 1).length;
+          _diff2Questions = res.where((q) => q.getIntValue('difficulty') == 2).length;
+          _diff3Questions = res.where((q) => q.getIntValue('difficulty') == 3).length;
           _isLoading = false;
         });
       }
@@ -78,6 +89,77 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
     }
   }
 
+  Future<void> _uploadAudioForQuestion(String questionId) async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.audio,
+    );
+
+    if (result != null && result.files.single.bytes != null) {
+      final fileBytes = result.files.single.bytes!;
+      final fileName = result.files.single.name;
+
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses dosyası yükleniyor...')));
+
+      try {
+        await PocketBaseService.client.collection('quiz_questions').update(
+          questionId,
+          files: [
+            http.MultipartFile.fromBytes(
+              'audio_file',
+              fileBytes,
+              filename: fileName,
+            ),
+          ],
+        );
+        _fetchQuestions(); // Refresh
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses dosyası başarıyla yüklendi.')));
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ses dosyası yüklenirken hata: $e')));
+        }
+      }
+    }
+  }
+
+  Widget _buildStatCard(String title, int count, Color color) {
+    return Expanded(
+      child: Card(
+        color: color.withOpacity(0.1),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: color.withOpacity(0.5), width: 1),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12.0),
+          child: Column(
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!AdminService().isAdmin()) {
@@ -98,44 +180,114 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
         ],
       ),
       body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _questions.isEmpty
-                ? const Center(child: Text('Henüz soru yüklenmemiş.'))
-                : ListView.builder(
-addAutomaticKeepAlives: false,
-addRepaintBoundaries: true,
-                    itemCount: _questions.length,
-                    itemBuilder: (context, index) {
-                      final q = _questions[index];
-                      final correctAnswer = q.getStringValue('correct_answer');
-                      
-                      return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        child: ExpansionTile(
-                          title: Text(q.getStringValue('question'), style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('Zorluk: ${q.getIntValue('difficulty')}'),
-                          childrenPadding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Stats section
+            if (!_isLoading)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Card(
+                      color: Colors.blue.withOpacity(0.1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.blue.withOpacity(0.5), width: 1),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildOption('A', q.getStringValue('option_a'), correctAnswer == 'a'),
-                            _buildOption('B', q.getStringValue('option_b'), correctAnswer == 'b'),
-                            _buildOption('C', q.getStringValue('option_c'), correctAnswer == 'c'),
-                            _buildOption('D', q.getStringValue('option_d'), correctAnswer == 'd'),
-                            const SizedBox(height: 16),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-                                onPressed: () => _deleteQuestion(q.id),
-                                icon: const Icon(Icons.delete),
-                                label: const Text('Soruyu Sil'),
+                            const Icon(Icons.quiz, color: Colors.blue),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Toplam Soru: $_totalQuestions',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
                               ),
-                            )
+                            ),
                           ],
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _buildStatCard('Zorluk 1', _diff1Questions, Colors.green),
+                        const SizedBox(width: 8),
+                        _buildStatCard('Zorluk 2', _diff2Questions, Colors.orange),
+                        const SizedBox(width: 8),
+                        _buildStatCard('Zorluk 3', _diff3Questions, Colors.red),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            
+            Expanded(
+              child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _questions.isEmpty
+                    ? const Center(child: Text('Henüz soru yüklenmemiş.'))
+                    : ListView.builder(
+                        addAutomaticKeepAlives: false,
+                        addRepaintBoundaries: true,
+                        itemCount: _questions.length,
+                        itemBuilder: (context, index) {
+                          final q = _questions[index];
+                          final correctAnswer = q.getStringValue('correct_answer');
+                          final hasAudio = q.getStringValue('audio_file').isNotEmpty;
+                          
+                          return Card(
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: ExpansionTile(
+                              title: Text(q.getStringValue('question'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                              subtitle: Row(
+                                children: [
+                                  Text('Zorluk: ${q.getIntValue('difficulty')}'),
+                                  if (hasAudio) ...[
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.audiotrack, size: 16, color: Colors.green),
+                                    const Text(' Ses Yüklü', style: TextStyle(color: Colors.green, fontSize: 12)),
+                                  ]
+                                ],
+                              ),
+                              childrenPadding: const EdgeInsets.all(16),
+                              children: [
+                                _buildOption('A', q.getStringValue('option_a'), correctAnswer == 'a'),
+                                _buildOption('B', q.getStringValue('option_b'), correctAnswer == 'b'),
+                                _buildOption('C', q.getStringValue('option_c'), correctAnswer == 'c'),
+                                _buildOption('D', q.getStringValue('option_d'), correctAnswer == 'd'),
+                                const SizedBox(height: 16),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                                      onPressed: () => _uploadAudioForQuestion(q.id),
+                                      icon: const Icon(Icons.upload_file),
+                                      label: const Text('Ses Yükle'),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                      onPressed: () => _deleteQuestion(q.id),
+                                      icon: const Icon(Icons.delete),
+                                      label: const Text('Sil'),
+                                    ),
+                                  ],
+                                )
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+            ),
+          ],
+        ),
       ),
     );
   }

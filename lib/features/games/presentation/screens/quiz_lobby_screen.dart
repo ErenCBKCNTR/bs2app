@@ -15,6 +15,7 @@ class QuizLobbyScreen extends StatefulWidget {
 class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
   bool _isLoading = false;
   int _myScore = 0;
+  bool _serverReadsQuestions = false;
 
   @override
   void initState() {
@@ -49,13 +50,16 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
       );
       
       final List<RecordModel> allQuestions = questionsResult.items;
+      if (_serverReadsQuestions) {
+        allQuestions.retainWhere((q) => q.getStringValue('audio_file').isNotEmpty);
+      }
       allQuestions.shuffle();
       final selectedQuestions = allQuestions.take(15).toList();
       
       if (selectedQuestions.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Veri tabanında hiç soru bulunamadı!')),
+            const SnackBar(content: Text('Veri tabanında uygun soru bulunamadı!')),
           );
         }
         setState(() => _isLoading = false);
@@ -76,10 +80,35 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
       });
 
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => QuizGameScreen(gameId: game.id, isSinglePlayer: true)),
-        );
+        if (_serverReadsQuestions) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Önemli Uyarı', style: TextStyle(color: Colors.red)),
+              content: const Text(
+                'Lütfen ekran okuyucunuzu kapatın. Sorular sistem tarafından otomatik okunacaktır. Ekran 4\'e bölünecektir. Sadece gerekli alana dokunarak cevap verebilirsiniz.'
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => QuizGameScreen(gameId: game.id, isSinglePlayer: true, serverReadsQuestions: _serverReadsQuestions)),
+                    );
+                  },
+                  child: const Text('Anladım, Başla'),
+                )
+              ],
+            ),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => QuizGameScreen(gameId: game.id, isSinglePlayer: true, serverReadsQuestions: _serverReadsQuestions)),
+          );
+        }
       }
     } catch (e) {
       AppLogger.instance.error('Tek kişilik oyun başlatılamadı: $e');
@@ -193,8 +222,22 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
         perPage: 100,
       );
       final List<RecordModel> allQuestions = questionsResult.items;
+      if (_serverReadsQuestions) {
+        allQuestions.retainWhere((q) => q.getStringValue('audio_file').isNotEmpty);
+      }
       allQuestions.shuffle();
       final selectedQuestions = allQuestions.take(questionCount).toList();
+      
+      if (selectedQuestions.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Veri tabanında uygun soru bulunamadı!')),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+      
       final questionsJson = selectedQuestions.map((q) => q.toJson()).toList();
 
       final game = await PocketBaseService.client.collection('quiz_games').create(body: {
@@ -211,10 +254,35 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
 
       if (mounted) {
         // We go to the game screen as waiting.
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => QuizGameScreen(gameId: game.id, isSinglePlayer: false, isWaiting: true)),
-        );
+        if (_serverReadsQuestions) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Önemli Uyarı', style: TextStyle(color: Colors.red)),
+              content: const Text(
+                'Lütfen ekran okuyucunuzu kapatın. Sorular sistem tarafından otomatik okunacaktır. Ekran 4\'e bölünecektir. Sadece gerekli alana dokunarak cevap verebilirsiniz.'
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => QuizGameScreen(gameId: game.id, isSinglePlayer: false, isWaiting: true, serverReadsQuestions: _serverReadsQuestions)),
+                    );
+                  },
+                  child: const Text('Anladım, Başla'),
+                )
+              ],
+            ),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => QuizGameScreen(gameId: game.id, isSinglePlayer: false, isWaiting: true, serverReadsQuestions: _serverReadsQuestions)),
+          );
+        }
       }
       
     } catch (e) {
@@ -297,6 +365,19 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
                       },
                       icon: const Icon(Icons.leaderboard, size: 32),
                       label: const Text('Puan Tablosu', style: TextStyle(fontSize: 20)),
+                    ),
+                    const SizedBox(height: 24),
+                    CheckboxListTile(
+                      title: const Text('Soruları Sunucu Okusun', style: TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: const Text('Bu mod seçildiğinde sadece sesi yüklenmiş sorular gelir, özel bölünmüş ekran açılır.'),
+                      value: _serverReadsQuestions,
+                      onChanged: (val) {
+                        setState(() {
+                          _serverReadsQuestions = val ?? false;
+                        });
+                      },
+                      activeColor: Colors.blueAccent,
+                      checkColor: Colors.white,
                     ),
                   ],
                 ),

@@ -1368,6 +1368,23 @@
           "min": 1,
           "max": 3
         }
+      },
+      {
+        "system": false,
+        "id": "qq_audio",
+        "name": "audio_file",
+        "type": "file",
+        "required": false,
+        "options": {
+          "maxSelect": 1,
+          "maxSize": 5242880,
+          "mimeTypes": [
+            "audio/mpeg",
+            "audio/ogg",
+            "audio/wav",
+            "audio/mp4"
+          ]
+        }
       }
     ],
     "listRule": "@request.auth.id != ''",

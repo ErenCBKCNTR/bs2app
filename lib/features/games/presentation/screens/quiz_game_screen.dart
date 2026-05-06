@@ -10,12 +10,14 @@ class QuizGameScreen extends StatefulWidget {
   final String gameId;
   final bool isSinglePlayer;
   final bool isWaiting;
+  final bool serverReadsQuestions;
 
   const QuizGameScreen({
     super.key,
     required this.gameId,
     required this.isSinglePlayer,
     this.isWaiting = false,
+    this.serverReadsQuestions = false,
   });
 
   @override
@@ -128,6 +130,26 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     // We can play a simple system tone or an online sound if we have one.
     // For now we'll just vibrate briefly.
     Vibration.vibrate(duration: 100);
+
+    if (widget.serverReadsQuestions && _game != null) {
+      final questions = _game!.getListValue<Map<String, dynamic>>('questions_json');
+      final currentIndex = _game!.getIntValue('current_question_index');
+      if (currentIndex < questions.length) {
+        final currentQuestion = questions[currentIndex];
+        final audioFile = currentQuestion['audio_file'];
+        final questionId = currentQuestion['id'];
+        
+        if (audioFile != null && audioFile.toString().isNotEmpty) {
+          final uri = '${PocketBaseService.client.baseURL}/api/files/quiz_questions/$questionId/$audioFile';
+          try {
+            player.setVolume(1.0);
+            player.play(UrlSource(uri));
+          } catch(e) {
+            AppLogger.instance.error('Soru sesi çalınırken hata: $e');
+          }
+        }
+      }
+    }
   }
 
   void _playEndSound() {
@@ -337,6 +359,37 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     final isMyTurn = currentTurnId == myId;
     final isPlayer1 = _game!.getStringValue('player1_id') == myId;
 
+    if (widget.serverReadsQuestions && isMyTurn) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Soru ${currentIndex + 1} / ${questions.length}'),
+          centerTitle: true,
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    _buildQuadrant('a', currentQ['option_a'], currentQ, Colors.blue),
+                    _buildQuadrant('b', currentQ['option_b'], currentQ, Colors.red),
+                  ]
+                ),
+              ),
+              Expanded(
+                child: Row(
+                  children: [
+                    _buildQuadrant('c', currentQ['option_c'], currentQ, Colors.green),
+                    _buildQuadrant('d', currentQ['option_d'], currentQ, Colors.orange),
+                  ]
+                )
+              ),
+            ]
+          )
+        )
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Soru ${currentIndex + 1} / ${questions.length}'),
@@ -391,6 +444,43 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
                 _buildOptionButton('d', currentQ['option_d'], currentQ),
               ],
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuadrant(String optionKey, String? text, Map<String, dynamic> currentQ, Color defaultColor) {
+    final isSelected = _selectedOption == optionKey;
+    final isCorrect = currentQ['correct_answer'] == optionKey;
+    
+    Color bgColor = defaultColor.withOpacity(0.8);
+    if (_answering && isSelected) {
+      bgColor = isCorrect ? Colors.green : Colors.red;
+    }
+
+    return Expanded(
+      child: Semantics(
+        button: true,
+        label: '${optionKey.toUpperCase()}',
+        child: GestureDetector(
+          onTap: () => _submitAnswer(optionKey, currentQ),
+          child: Container(
+            margin: const EdgeInsets.all(4.0),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Text(
+                optionKey.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 72,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           ),
         ),
       ),
