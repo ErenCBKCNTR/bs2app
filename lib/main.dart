@@ -73,6 +73,12 @@ void main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Uygulamanın her zaman dikey modda çalışmasını sağlar
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  
   if (kIsWeb) {
     SemanticsBinding.instance.ensureSemantics();
   }
