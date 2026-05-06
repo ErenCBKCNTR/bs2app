@@ -7,6 +7,7 @@ import 'package:blind_social/features/admin/presentation/screens/server_list_scr
 import 'package:blind_social/features/admin/presentation/screens/feedback_management_screen.dart';
 import 'package:blind_social/features/admin/presentation/screens/source_management_screen.dart';
 import 'package:blind_social/features/admin/presentation/screens/game_management_screen.dart';
+import 'package:blind_social/features/admin/presentation/screens/active_users_list_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
   const AdminPanelScreen({super.key});
@@ -71,6 +72,65 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
+                      InkWell(
+                        onTap: () {
+                           Navigator.push(
+                             context,
+                             MaterialPageRoute(builder: (context) => const ActiveUsersListScreen()),
+                           );
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.purple.withOpacity(0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.history, color: Colors.white, size: 32),
+                              SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Son 24 Saatte Aktif Olanlar',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      'Giriş yapan kullanıcıları listele',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       GridView.count(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),

@@ -71,9 +71,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final username = _userProfile!.getStringValue('username');
     final displayName = ProfanityFilter.filter(username.isNotEmpty ? username : 'İsimsiz');
     final dobRaw = _userProfile!.getStringValue('dob');
+    final hideBirthday = _userProfile!.getBoolValue('hide_birthday');
+    final hideLastSeen = _userProfile!.getBoolValue('hide_last_seen');
+    final isOnline = _userProfile!.getBoolValue('is_online');
     
     String formattedDob = "Belirtilmemiş";
-    if (dobRaw.isNotEmpty) {
+    if (hideBirthday) {
+      formattedDob = "Gizli";
+    } else if (dobRaw.isNotEmpty) {
       try {
         final date = DateTime.parse(dobRaw);
         formattedDob = DateFormat('dd.MM.yyyy').format(date);
@@ -84,9 +89,31 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     String formattedJoined = "Bilinmiyor";
     if (createdAtRaw.isNotEmpty) {
       try {
-        final date = DateTime.parse(createdAtRaw);
+        final date = DateTime.parse(createdAtRaw).toLocal();
         formattedJoined = DateFormat('dd.MM.yyyy').format(date);
       } catch (_) {}
+    }
+
+    String statusText = "Son görülme bilinmiyor";
+    Color statusColor = Colors.grey;
+    if (hideLastSeen) {
+       statusText = "Son görülme gizli";
+       statusColor = Colors.grey;
+    } else if (isOnline) {
+       statusText = "Şu an aktif";
+       statusColor = Colors.green;
+    } else {
+       final lastSeenRaw = _userProfile!.getStringValue('last_seen');
+       final targetRaw = lastSeenRaw.isNotEmpty ? lastSeenRaw : _userProfile!.updated;
+       if (targetRaw.isNotEmpty) {
+           final lastSeenDate = DateTime.parse(targetRaw).toLocal();
+           final now = DateTime.now();
+           if (lastSeenDate.year == now.year && lastSeenDate.month == now.month && lastSeenDate.day == now.day) {
+               statusText = "Son görülme bugün ${DateFormat('HH:mm').format(lastSeenDate)}";
+           } else {
+               statusText = "Son görülme ${DateFormat('dd.MM.yyyy HH:mm').format(lastSeenDate)}";
+           }
+       }
     }
 
     return SingleChildScrollView(
@@ -114,13 +141,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
+            Semantics(
+              label: statusText,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(statusText, style: TextStyle(color: statusColor, fontWeight: FontWeight.w600)),
               ),
-              child: const Text('Aktif Kullanıcı', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
             ),
             const SizedBox(height: 40),
             _buildInfoCard(
@@ -141,19 +171,21 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   Widget _buildInfoCard({required IconData icon, required String title, required String value}) {
     return Semantics(
-      label: "$title: $value",
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        color: Theme.of(context).colorScheme.surface,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.white.withOpacity(0.1)),
-        ),
-        child: ListTile(
-          leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
-          title: Text(title, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-          subtitle: Text(value, style: const TextStyle(fontSize: 18, color: Colors.white)),
+      label: "$title. $value",
+      child: ExcludeSemantics(
+        child: Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          color: Theme.of(context).colorScheme.surface,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.white.withOpacity(0.1)),
+          ),
+          child: ListTile(
+            leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
+            title: Text(title, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+            subtitle: Text(value, style: const TextStyle(fontSize: 18, color: Colors.white)),
+          ),
         ),
       ),
     );

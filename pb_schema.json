@@ -132,6 +132,26 @@
           "max": null,
           "noDecimal": true
         }
+      },
+      {
+        "system": false,
+        "id": "hide_last_seen_field",
+        "name": "hide_last_seen",
+        "type": "bool",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {}
+      },
+      {
+        "system": false,
+        "id": "hide_birthday_field",
+        "name": "hide_birthday",
+        "type": "bool",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {}
       }
     ],
     "indexes": [],
@@ -605,7 +625,7 @@
     "listRule": "@collection.chat_participants.chat_id ?= chat_id && @collection.chat_participants.user_id ?= @request.auth.id || sender_id = @request.auth.id",
     "viewRule": "@collection.chat_participants.chat_id ?= chat_id && @collection.chat_participants.user_id ?= @request.auth.id || sender_id = @request.auth.id",
     "createRule": "@request.auth.id = sender_id",
-    "updateRule": "@request.auth.id = sender_id || (@collection.chat_participants.chat_id ?= chat_id && @collection.chat_participants.user_id ?= @request.auth.id && content ~ 'CALL_')",
+    "updateRule": "@request.auth.id = sender_id || (@collection.chat_participants.chat_id ?= chat_id && @collection.chat_participants.user_id ?= @request.auth.id && (content ~ 'CALL_' || content ~ 'VIDEO_'))",
     "deleteRule": "@request.auth.id = sender_id",
     "options": {}
   },

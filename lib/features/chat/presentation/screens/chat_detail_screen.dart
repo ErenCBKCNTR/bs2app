@@ -46,6 +46,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey _unreadDividerKey = GlobalKey();
   
   late Map<String, dynamic> _chat;
   List<Map<String, dynamic>> _messages = [];
@@ -55,6 +56,75 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   Map<String, dynamic>? _replyingTo;
 
   bool _isInitialLoad = true;
+  String? _targetUserStatus;
+  bool _showUserStatus = false;
+
+  void _toggleUserStatus() async {
+    if (_showUserStatus) {
+      if (mounted) setState(() => _showUserStatus = false);
+      return;
+    }
+    
+    // fetch target user id
+    String? targetId;
+    final participants = _chat['chat_participants'] as List<dynamic>? ?? [];
+    for (var p in participants) {
+      if (p['user_id'] != _myUserId) {
+        targetId = p['user_id'];
+        break;
+      }
+    }
+    
+    if (targetId == null) {
+      // try fetching details first
+      await _fetchChatDetails();
+      final updatedParticipants = _chat['chat_participants'] as List<dynamic>? ?? [];
+      for (var p in updatedParticipants) {
+        if (p['user_id'] != _myUserId) {
+          targetId = p['user_id'];
+          break;
+        }
+      }
+    }
+
+    if (targetId != null) {
+      try {
+        final record = await PocketBaseService.client.collection('users').getOne(targetId);
+        final isOnline = record.getBoolValue('is_online');
+        final hideLastSeen = record.getBoolValue('hide_last_seen');
+
+        String status = "Bilinmiyor";
+        if (hideLastSeen) {
+          status = "Son görülme gizli";
+        } else if (isOnline) {
+          status = "Şu an aktif";
+        } else {
+          final lastSeenRaw = record.getStringValue('last_seen');
+          final targetRaw = lastSeenRaw.isNotEmpty ? lastSeenRaw : record.updated;
+          if (targetRaw.isNotEmpty) {
+            final date = DateTime.parse(targetRaw).toLocal();
+            final now = DateTime.now();
+            if (date.year == now.year && date.month == now.month && date.day == now.day) {
+               status = "Son görülme bugün ${DateFormat('HH:mm').format(date)}";
+            } else {
+               status = "Son görülme ${DateFormat('dd.MM.yyyy HH:mm').format(date)}";
+            }
+          }
+        }
+        
+        if (mounted) {
+          setState(() {
+            _targetUserStatus = status;
+            _showUserStatus = true;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Durum alınamadı')));
+        }
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -237,8 +307,36 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
        isNewMessageArrived = true;
     }
 
+    List<Map<String, dynamic>> parsedMessages = response.map((e) => JsonUtils.deeplySerializeRecord(e)).toList();
+
+    int firstUnreadIndex = -1;
+    bool hasUnreadDivider = false;
+
+    if (_isInitialLoad && response.isNotEmpty) {
+      try {
+        final myPart = participantsResponse.firstWhere((p) => p.getStringValue('user_id') == _myUserId);
+        final lastReadId = myPart.getStringValue('last_read_message_id');
+        int readIndex = lastReadId.isEmpty ? -1 : parsedMessages.indexWhere((m) => m['id'] == lastReadId);
+
+        if (readIndex < parsedMessages.length - 1) { // There are unread messages
+           final unreadCount = parsedMessages.length - 1 - readIndex;
+           firstUnreadIndex = readIndex + 1;
+           hasUnreadDivider = true;
+           
+           parsedMessages.insert(firstUnreadIndex, {
+              'id': 'temp_divider_unread',
+              'chat_id': chatId,
+              'sender_id': 'system',
+              'is_divider': true,
+              'unread_count': unreadCount,
+              'created': parsedMessages[firstUnreadIndex]['created'],
+           });
+        }
+      } catch (_) {}
+    }
+
     setState(() {
-      _messages = response.map((e) => JsonUtils.deeplySerializeRecord(e)).toList();
+      _messages = parsedMessages;
       _messageCache[chatId] = _messages; // Cache güncelle
       _chat = {
         ..._chat,
@@ -263,15 +361,42 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         } catch (_) {}
     }
 
-    // Yeni mesaj geldiyse kaydır
-    if (isNewMessageArrived) {
+    // Scroll
+    if (_isInitialLoad) {
+      _isInitialLoad = false;
+      if (hasUnreadDivider) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (_scrollController.hasClients) {
+             final double estimatedOffset = firstUnreadIndex * 80.0;
+             _scrollController.jumpTo(estimatedOffset.clamp(0.0, _scrollController.position.maxScrollExtent));
+             
+             Future.delayed(const Duration(milliseconds: 100), () {
+               if (_unreadDividerKey.currentContext != null) {
+                 Scrollable.ensureVisible(
+                   _unreadDividerKey.currentContext!,
+                   duration: const Duration(milliseconds: 300),
+                   alignment: 0.1,
+                   curve: Curves.easeOut,
+                 );
+               }
+             });
+          }
+        });
+      } else {
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (_scrollController.hasClients) {
+             _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+          }
+        });
+      }
+    } else if (isNewMessageArrived) {
        final lastMsg = response.last;
        if (lastMsg.getStringValue('sender_id') != _myUserId) {
           final settings = SettingsService();
-          if (settings.messageVibrationEnabled && !_isInitialLoad) {
+          if (settings.messageVibrationEnabled) {
             Vibration.vibrate(duration: 100);
           }
-          if (settings.messageSoundEnabled && !_isInitialLoad) {
+          if (settings.messageSoundEnabled) {
             final player = AudioPlayer();
             player.play(AssetSource('sounds/message_received.mp3')).catchError((e) => null);
           }
@@ -280,7 +405,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
        Future.delayed(const Duration(milliseconds: 100), () {
          if (_scrollController.hasClients) {
             _scrollController.animateTo(
-              _scrollController.position.maxScrollExtent + 200,
+              _scrollController.position.maxScrollExtent + 300,
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOut,
             );
@@ -724,7 +849,17 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF101820),
       appBar: AppBar(
-        title: Text(chatName),
+        title: InkWell(
+          onTap: _toggleUserStatus,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(chatName),
+              if (_showUserStatus && _targetUserStatus != null)
+                Text(_targetUserStatus!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal, color: Colors.greenAccent)),
+            ],
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.star_outline),
@@ -768,6 +903,24 @@ addRepaintBoundaries: true,
                       itemCount: _messages.length,
                       itemBuilder: (context, index) {
                         final message = _messages[index];
+                      if (message['is_divider'] == true) {
+                        return Container(
+                          key: _unreadDividerKey,
+                          margin: const EdgeInsets.symmetric(vertical: 24),
+                          alignment: Alignment.center,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2C3E50),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              '${message['unread_count']} Okunmamış Mesaj',
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                          ),
+                        );
+                      }
                       final isMyMessage = message['sender_id'] == _myUserId;
                       final content = message['content'];
                       final createdAt = DateTime.parse(message['created'] ?? DateTime.now().toIso8601String()).toLocal();
