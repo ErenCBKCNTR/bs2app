@@ -886,16 +886,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.videocam),
-            tooltip: 'Görüntülü Arama',
-            onPressed: () => _startCall(isVideo: true),
-          ),
-          IconButton(
-            icon: const Icon(Icons.call),
-            tooltip: 'Sesli Arama',
-            onPressed: () => _startCall(isVideo: false),
-          ),
+          if (!isSystemChat) ...[
+            IconButton(
+              icon: const Icon(Icons.videocam),
+              tooltip: 'Görüntülü Arama',
+              onPressed: () => _startCall(isVideo: true),
+            ),
+            IconButton(
+              icon: const Icon(Icons.call),
+              tooltip: 'Sesli Arama',
+              onPressed: () => _startCall(isVideo: false),
+            ),
+          ],
         ],
       ),
       body: SafeArea(
@@ -931,7 +933,7 @@ addRepaintBoundaries: true,
                           ),
                         );
                       }
-                      final isMyMessage = message['sender_id'] == _myUserId;
+                      final isMyMessage = isSystemChat ? false : message['sender_id'] == _myUserId;
                       final content = message['content'];
                       final createdAt = DateTime.parse(message['created'] ?? DateTime.now().toIso8601String()).toLocal();
                       final timeString = DateFormat('HH:mm').format(createdAt);

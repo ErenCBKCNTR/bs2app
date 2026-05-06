@@ -81,6 +81,9 @@ class UserMetadataService {
       final body = <String, dynamic>{};
       if (lastIp.isNotEmpty) body['last_ip'] = lastIp;
       if (lastLocation.isNotEmpty) body['last_location'] = lastLocation;
+      
+      // Update last_seen
+      body['last_seen'] = DateTime.now().toUtc().toIso8601String().replaceFirst('T', ' ');
 
       if (body.isNotEmpty) {
         await PocketBaseService.client.collection('users').update(userId, body: body);
