@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 enum LogLevel { info, warning, error }
 
@@ -8,15 +10,57 @@ class LogEntry {
   final LogLevel level;
 
   LogEntry({required this.timestamp, required this.message, required this.level});
+
+  Map<String, dynamic> toJson() => {
+    'timestamp': timestamp.toIso8601String(),
+    'message': message,
+    'level': level.index,
+  };
+
+  factory LogEntry.fromJson(Map<String, dynamic> json) => LogEntry(
+    timestamp: DateTime.parse(json['timestamp']),
+    message: json['message'] ?? '',
+    level: LogLevel.values[json['level'] ?? 0],
+  );
 }
 
 class AppLogger extends ChangeNotifier {
   static final AppLogger instance = AppLogger._internal();
-  AppLogger._internal();
+  AppLogger._internal() {
+    _loadLogs();
+  }
 
   final List<LogEntry> _logs = [];
 
   List<LogEntry> get logs => List.unmodifiable(_logs);
+
+  Future<void> _loadLogs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final logsString = prefs.getString('developer_logs_v2');
+      if (logsString != null) {
+        final List<dynamic> jsonList = jsonDecode(logsString);
+        _logs.addAll(jsonList.map((e) => LogEntry.fromJson(e)).toList());
+        notifyListeners();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Log yüklenirken hata: ${e}');
+      }
+    }
+  }
+
+  Future<void> _saveLogs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonList = _logs.map((e) => e.toJson()).toList();
+      await prefs.setString('developer_logs_v2', jsonEncode(jsonList));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Log kaydedilirken hata: ${e}');
+      }
+    }
+  }
 
   void log(String message, {LogLevel level = LogLevel.info}) {
     _logs.add(LogEntry(
@@ -31,9 +75,10 @@ class AppLogger extends ChangeNotifier {
     }
     
     if (kDebugMode) {
-      print('[${level.name.toUpperCase()}] $message');
+      print('[${level.name.toUpperCase()}] ${message}');
     }
     
+    _saveLogs();
     notifyListeners();
   }
 
@@ -41,8 +86,10 @@ class AppLogger extends ChangeNotifier {
   void warning(String message) => log(message, level: LogLevel.warning);
   void error(String message) => log(message, level: LogLevel.error);
 
-  void clear() {
+  void clear() async {
     _logs.clear();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('developer_logs_v2');
     notifyListeners();
   }
 }
