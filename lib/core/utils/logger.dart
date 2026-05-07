@@ -26,6 +26,9 @@ class LogEntry {
 
 class AppLogger extends ChangeNotifier {
   static final AppLogger instance = AppLogger._internal();
+  bool _isLoaded = false;
+  final List<LogEntry> _pendingLogs = [];
+
   AppLogger._internal() {
     _loadLogs();
   }
@@ -41,16 +44,30 @@ class AppLogger extends ChangeNotifier {
       if (logsString != null) {
         final List<dynamic> jsonList = jsonDecode(logsString);
         _logs.addAll(jsonList.map((e) => LogEntry.fromJson(e)).toList());
-        notifyListeners();
       }
+      
+      if (_pendingLogs.isNotEmpty) {
+        _logs.addAll(_pendingLogs);
+        _pendingLogs.clear();
+      }
+
+      if (_logs.length > 500) {
+        _logs.removeRange(0, _logs.length - 500);
+      }
+
+      _isLoaded = true;
+      _saveLogs();
+      notifyListeners();
     } catch (e) {
       if (kDebugMode) {
         print('Log yüklenirken hata: ${e}');
       }
+      _isLoaded = true;
     }
   }
 
   Future<void> _saveLogs() async {
+    if (!_isLoaded) return;
     try {
       final prefs = await SharedPreferences.getInstance();
       final jsonList = _logs.map((e) => e.toJson()).toList();
@@ -63,23 +80,26 @@ class AppLogger extends ChangeNotifier {
   }
 
   void log(String message, {LogLevel level = LogLevel.info}) {
-    _logs.add(LogEntry(
+    final entry = LogEntry(
       timestamp: DateTime.now(),
       message: message,
       level: level,
-    ));
-    
-    // Yüksek bellek kullanımını önlemek için son 500 kaydı tut
-    if (_logs.length > 500) {
-      _logs.removeAt(0); 
+    );
+
+    if (!_isLoaded) {
+      _pendingLogs.add(entry);
+    } else {
+      _logs.add(entry);
+      if (_logs.length > 500) {
+        _logs.removeAt(0); 
+      }
+      _saveLogs();
+      notifyListeners();
     }
     
     if (kDebugMode) {
       print('[${level.name.toUpperCase()}] ${message}');
     }
-    
-    _saveLogs();
-    notifyListeners();
   }
 
   void info(String message) => log(message, level: LogLevel.info);

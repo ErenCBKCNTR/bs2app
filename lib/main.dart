@@ -25,11 +25,19 @@ void main() async {
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
     debugPrint("Flutter Error: ${details.exception}");
-    AppLogger.instance.error("Flutter Error: ${details.exception}");
+    AppLogger.instance.error("Flutter Error: ${details.exception}\n${details.stack}");
+  };
+
+  // Asenkron ve platform hataları (Dart thread)
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint("Platform Error: $error");
+    AppLogger.instance.error("Platform Error: $error\n$stack");
+    return true;
   };
 
   // UI Hata yakalayıcı (Kırmızı ekran yerine)
   ErrorWidget.builder = (FlutterErrorDetails details) {
+    AppLogger.instance.error("UI Build Error: ${details.exception}\n${details.stack}");
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:blind_social/features/admin/data/services/admin_service.dart';
@@ -345,9 +346,21 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
                           
                           return Card(
                             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: ExpansionTile(
-                              title: Text(q.getStringValue('question'), style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Row(
+                            child: GestureDetector(
+                              onLongPress: () {
+                                final textToCopy = '${q.getStringValue('question')}\n\n'
+                                    'A, ${q.getStringValue('option_a')}.\n'
+                                    'B, ${q.getStringValue('option_b')}.\n'
+                                    'C, ${q.getStringValue('option_c')}.\n'
+                                    'D, ${q.getStringValue('option_d')}.';
+                                Clipboard.setData(ClipboardData(text: textToCopy));
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Soru metni panoya kopyalandı')));
+                                }
+                              },
+                              child: ExpansionTile(
+                                title: Text(q.getStringValue('question'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: Row(
                                 children: [
                                   Text('Zorluk: ${q.getIntValue('difficulty')}'),
                                   if (hasAudio) ...[
@@ -400,6 +413,7 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
                                 )
                               ],
                             ),
+                           ),
                           );
                         },
                       ),
