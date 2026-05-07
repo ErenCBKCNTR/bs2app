@@ -5,6 +5,7 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:vibration/vibration.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 class QuizGameScreen extends StatefulWidget {
   final String gameId;
@@ -35,6 +36,8 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   final FocusNode _questionFocusNode = FocusNode();
 
   final player = AudioPlayer();
+  final FlutterTts _flutterTts = FlutterTts();
+  bool _hasSpokenGameOver = false;
 
   @override
   void initState() {
@@ -51,6 +54,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   void dispose() {
     _unsub?.call();
     player.dispose();
+    _flutterTts.stop();
     _questionFocusNode.dispose();
     super.dispose();
   }
@@ -321,6 +325,20 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
         } else {
           resultText = 'Berabere!';
         }
+      }
+      
+      if (widget.serverReadsQuestions && !_hasSpokenGameOver) {
+        _hasSpokenGameOver = true;
+        final String speechText = widget.isSinglePlayer 
+            ? 'Oyun Bitti! Kazandığınız Puan: $p1Score'
+            : 'Oyun Bitti! $resultText Siz $myScore, Rakibiniz ise $opponentScore puan aldı.';
+        
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          await _flutterTts.setLanguage("tr-TR");
+          await _flutterTts.setSpeechRate(0.5);
+          await _flutterTts.setPitch(0.85); // Make it slightly deeper
+          await _flutterTts.speak(speechText);
+        });
       }
       
       return Scaffold(

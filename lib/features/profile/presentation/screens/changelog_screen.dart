@@ -24,6 +24,7 @@ class ChangelogScreen extends StatelessWidget {
             version: '1.7.8',
             date: '8 Mayıs 2026',
             changes: [
+              'Yeni Özellik: Bilgi yarışmasında "Soruları Sunucu Okusun" seçeneği açıkken, Oyun Bitti ekranı (Sizin Puanınız, Maç Sonucu vb.) sistemin yapay zeka/TTS arayüzü kullanılarak kibar ve kalın bir erkek sesi tonuyla otomatik olarak seslendirilecektir.',
               'Hata Giderme: Uygulamanın ağ istek limitlerini (DDOS koruma) aşarak bazı modem/router cihazlarında internet erişimini kesmesine neden olan ve sürekli tekrarlayan oturum denetimi hatası çözüldü.',
               'İyileştirme: Quiz (Bilgi Yarışması) oyununda doğru/yanlış seslerinden sonra sıradaki soruya geçiş süresi 2 saniye daha uzatılarak ekran okuyucular için daha rahat bir bekleme deneyimi sağlandı.',
               'İyileştirme: Yönetici panelinde sorular panoya kopyalanırken A, B, C, D şık etiketleri kaldırılarak metin okuma programları (TTS) için daha doğal ve akıcı bir format elde edildi.',
