@@ -426,16 +426,17 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
                 child: GestureDetector(
                   onDoubleTap: replayQuestion,
                   child: Card(
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Center(
-                      child: Focus(
-                        focusNode: _questionFocusNode,
-                        child: Text(
-                          currentQ['question'] ?? '',
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Center(
+                        child: Focus(
+                          focusNode: _questionFocusNode,
+                          child: Text(
+                            currentQ['question'] ?? '',
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       ),
                     ),
@@ -461,9 +462,8 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildQuadrant(String optionKey, String? text, Map<String, dynamic> currentQ, Color defaultColor, VoidCallback onDoubleTap) {
     final isSelected = _selectedOption == optionKey;
