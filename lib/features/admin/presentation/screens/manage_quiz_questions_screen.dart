@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:audioplayers/audioplayers.dart';
 import 'package:blind_social/features/admin/data/services/admin_service.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
@@ -22,10 +23,19 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
   int _diff2Questions = 0;
   int _diff3Questions = 0;
 
+  int? _selectedDifficulty;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   @override
   void initState() {
     super.initState();
     _fetchQuestions();
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchQuestions() async {
@@ -123,37 +133,102 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
     }
   }
 
-  Widget _buildStatCard(String title, int count, Color color) {
+  Future<void> _deleteAudioForQuestion(String questionId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sesi Sil'),
+        content: const Text('Bu soruya ait ses dosyasını silmek istediğinize emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await PocketBaseService.client.collection('quiz_questions').update(
+        questionId,
+        body: {'audio_file': ''},
+      );
+      _fetchQuestions(); // Refresh list automatically
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses dosyası silindi.')));
+      }
+    } catch (e) {
+      AppLogger.instance.error('Ses silinirken hata: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ses silinirken hata: $e')));
+      }
+    }
+  }
+
+  Future<void> _playAudio(RecordModel record) async {
+    try {
+      final url = PocketBaseService.client.getFileUrl(record, record.getStringValue('audio_file')).toString();
+      await _audioPlayer.play(UrlSource(url));
+    } catch (e) {
+      AppLogger.instance.error('Ses çalınırken hata: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ses çalınırken hata: $e')));
+      }
+    }
+  }
+
+  Widget _buildStatCard(String title, int count, Color color, int difficultyLevel) {
+    final isSelected = _selectedDifficulty == difficultyLevel;
+    final isFiltered = _selectedDifficulty != null;
+    final opacity = (!isFiltered || isSelected) ? 1.0 : 0.4;
+
     return Expanded(
-      child: Card(
-        color: color.withOpacity(0.1),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: color.withOpacity(0.5), width: 1),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12.0),
-          child: Column(
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-                textAlign: TextAlign.center,
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedDifficulty = isSelected ? null : difficultyLevel;
+          });
+        },
+        child: Opacity(
+          opacity: opacity,
+          child: Card(
+            color: color.withOpacity(0.1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: color.withOpacity(isSelected ? 1.0 : 0.5), width: isSelected ? 2 : 1),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              child: Column(
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$count',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                '$count',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -168,6 +243,10 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
         body: const Center(child: Text('Bu sayfayı görüntülemek için yetkiniz yok.')),
       );
     }
+
+    final filteredQuestions = _selectedDifficulty == null 
+        ? _questions 
+        : _questions.where((q) => q.getIntValue('difficulty') == _selectedDifficulty).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -216,11 +295,11 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        _buildStatCard('Zorluk 1', _diff1Questions, Colors.green),
+                        _buildStatCard('Zorluk 1', _diff1Questions, Colors.green, 1),
                         const SizedBox(width: 8),
-                        _buildStatCard('Zorluk 2', _diff2Questions, Colors.orange),
+                        _buildStatCard('Zorluk 2', _diff2Questions, Colors.orange, 2),
                         const SizedBox(width: 8),
-                        _buildStatCard('Zorluk 3', _diff3Questions, Colors.red),
+                        _buildStatCard('Zorluk 3', _diff3Questions, Colors.red, 3),
                       ],
                     ),
                   ],
@@ -230,14 +309,14 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
             Expanded(
               child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _questions.isEmpty
-                    ? const Center(child: Text('Henüz soru yüklenmemiş.'))
+                : filteredQuestions.isEmpty
+                    ? const Center(child: Text('Bu kritere uygun soru bulunamadı.'))
                     : ListView.builder(
                         addAutomaticKeepAlives: false,
                         addRepaintBoundaries: true,
-                        itemCount: _questions.length,
+                        itemCount: filteredQuestions.length,
                         itemBuilder: (context, index) {
-                          final q = _questions[index];
+                          final q = filteredQuestions[index];
                           final correctAnswer = q.getStringValue('correct_answer');
                           final hasAudio = q.getStringValue('audio_file').isNotEmpty;
                           
@@ -262,16 +341,32 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
                                 _buildOption('C', q.getStringValue('option_c'), correctAnswer == 'c'),
                                 _buildOption('D', q.getStringValue('option_d'), correctAnswer == 'd'),
                                 const SizedBox(height: 16),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  alignment: WrapAlignment.end,
                                   children: [
-                                    ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
-                                      onPressed: () => _uploadAudioForQuestion(q.id),
-                                      icon: const Icon(Icons.upload_file),
-                                      label: const Text('Ses Yükle'),
-                                    ),
-                                    const SizedBox(width: 8),
+                                    if (hasAudio) ...[
+                                      ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                        onPressed: () => _playAudio(q),
+                                        icon: const Icon(Icons.play_arrow),
+                                        label: const Text('Sesi Çal'),
+                                      ),
+                                      ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
+                                        onPressed: () => _deleteAudioForQuestion(q.id),
+                                        icon: const Icon(Icons.volume_off),
+                                        label: const Text('Sesi Sil'),
+                                      ),
+                                    ],
+                                    if (!hasAudio)
+                                      ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                                        onPressed: () => _uploadAudioForQuestion(q.id),
+                                        icon: const Icon(Icons.upload_file),
+                                        label: const Text('Ses Yükle'),
+                                      ),
                                     ElevatedButton.icon(
                                       style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
                                       onPressed: () => _deleteQuestion(q.id),
@@ -312,3 +407,4 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
     );
   }
 }
+
