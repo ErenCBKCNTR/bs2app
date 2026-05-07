@@ -115,6 +115,10 @@ Uygulamanın SDK kısıtlamalarına (`sdk: ">=3.0.0 <4.0.0"`) uygun en stabil ve
 - **PocketBase Değerleri:** `RecordModel` verilerine `.email` veya `.data['field']` yerine `getStringValue`, `getBoolValue`, `getDataValue` ile erişin.
 - **WebView ve Linkler:** Çoğu sistemde (Ajan güvenlik kilitleri, Iframe platformları, Android > 13 CustomTabs) `canLaunchUrl` metodu `false` döner. Bu yüzden `canLaunchUrl` yerine doğrudan bypass ederek `launchUrl` kullanın. İşlem catch'e düşerse `PlatformDefault` parametresiyle deneyin.
 
+### Merkezi Hata Yönetimi (ErrorHandler)
+- **Kural:** Uygulama genelinde Exception ve Catch bloklarındaki hataları UI'da göstermek için `ScaffoldMessenger.of(context).showSnackBar` YERİNE `ErrorHandler.handleError(context, e)` kullanılmalıdır. (Dosya: `lib/core/utils/error_handler.dart`).
+- **Neden?:** Bu servis, oluşan hatayı normal kullanıcılardan gizleyip "Lütfen tekrar deneyiniz." der, sadece yöneticilere hata detayını gösterir. Ayrıca arkada `AppLogger` kullanılarak hatayı hafızaya alır ki kullanıcı Şikayet/Öneri formunu gönderdiğinde bu loglar otomatik olarak eklenip iletilsin. Her SnackBar otomatik olarak uzun basıldığında panoya kopyalanabilir haldedir.
+
 ### 🐍 Python ve Bot Geliştirme Notları (Ubuntu 24.04)
 - **Sunucu Mimari Notu:** Sistem Ubuntu 24.04 üzerinde Terminal/CLI (Headless) olarak çalışmaktadır.
 - **Python Pip Kısıtlamaları:** Ubuntu 24.04'te sistem paketlerini korumak için `pip install` komutları kilitlidir. DAİMA `--break-system-packages` ve `--ignore-installed` argümanları kullanılmalıdır.

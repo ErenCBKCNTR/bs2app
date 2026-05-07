@@ -2,6 +2,7 @@ import 'package:blind_social/core/services/notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/utils/logger.dart';
 
 class DeveloperLogsScreen extends StatelessWidget {
@@ -75,11 +76,19 @@ addRepaintBoundaries: true,
                 iconData = Icons.warning_amber_outlined;
               }
 
-              return ListTile(
-                leading: Icon(iconData, color: textColor, size: 20),
-                title: Text(log.message, style: TextStyle(color: textColor, fontSize: 13)),
-                subtitle: Text(timeStr, style: const TextStyle(color: Colors.grey, fontSize: 10)),
-                dense: true,
+              return InkWell(
+                onLongPress: () {
+                  Clipboard.setData(ClipboardData(text: log.message));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Hata kaydı panoya kopyalandı')),
+                  );
+                },
+                child: ListTile(
+                  leading: Icon(iconData, color: textColor, size: 20),
+                  title: Text(log.message, style: TextStyle(color: textColor, fontSize: 13)),
+                  subtitle: Text(timeStr, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                  dense: true,
+                ),
               );
             },
           );

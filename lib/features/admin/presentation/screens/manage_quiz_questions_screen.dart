@@ -6,6 +6,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:blind_social/features/admin/data/services/admin_service.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
+import '../../../../core/utils/error_handler.dart';
 
 class ManageQuizQuestionsScreen extends StatefulWidget {
   const ManageQuizQuestionsScreen({super.key});
@@ -149,7 +150,7 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
       } catch (e) {
         AppLogger.instance.error('Ses dosyası yüklenirken hata: $e');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ses dosyası yüklenirken hata: $e')));
+          ErrorHandler.handleError(context, e);
         }
       }
     }

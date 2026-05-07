@@ -1382,7 +1382,12 @@
             "audio/mpeg",
             "audio/ogg",
             "audio/wav",
-            "audio/mp4"
+            "audio/mp4",
+            "audio/x-m4a",
+            "audio/aac",
+            "audio/flac",
+            "audio/webm",
+            "video/mp4"
           ]
         }
       }
