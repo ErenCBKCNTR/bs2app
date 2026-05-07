@@ -20,18 +20,9 @@
     <application
         android:label="Blind Social"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@android:drawable/sym_def_app_icon"
         android:usesCleartextTraffic="true">
         
-        <!-- Background Notification Support -->
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="high_importance_channel" />
-
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/ic_notification" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
