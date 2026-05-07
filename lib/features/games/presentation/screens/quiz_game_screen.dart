@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
+import 'package:blind_social/core/services/tts_service.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:vibration/vibration.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 
 class QuizGameScreen extends StatefulWidget {
   final String gameId;
@@ -36,7 +36,6 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   final FocusNode _questionFocusNode = FocusNode();
 
   final player = AudioPlayer();
-  final FlutterTts _flutterTts = FlutterTts();
   bool _hasSpokenGameOver = false;
 
   @override
@@ -54,7 +53,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   void dispose() {
     _unsub?.call();
     player.dispose();
-    _flutterTts.stop();
+    TtsService().stop();
     _questionFocusNode.dispose();
     super.dispose();
   }
@@ -334,10 +333,9 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
             : 'Oyun Bitti! $resultText Siz $myScore, Rakibiniz ise $opponentScore puan aldı.';
         
         WidgetsBinding.instance.addPostFrameCallback((_) async {
-          await _flutterTts.setLanguage("tr-TR");
-          await _flutterTts.setSpeechRate(0.5);
-          await _flutterTts.setPitch(0.85); // Make it slightly deeper
-          await _flutterTts.speak(speechText);
+          // Yanlış veya doğru cevap sesinin bitmesini bekleyelim (yaklaşık 2.5 sn daha iyi bir bekleme süresi)
+          await Future.delayed(const Duration(milliseconds: 2500));
+          await TtsService().speak(speechText);
         });
       }
       
@@ -487,18 +485,25 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
               Expanded(
                 child: GestureDetector(
                   onDoubleTap: replayQuestion,
-                  child: Card(
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Center(
-                        child: Focus(
-                          focusNode: _questionFocusNode,
-                          child: Text(
-                            currentQ['question'] ?? '',
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                            textAlign: TextAlign.center,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))],
+                    ),
+                    padding: const EdgeInsets.all(24.0),
+                    child: Center(
+                      child: Focus(
+                        focusNode: _questionFocusNode,
+                        child: Text(
+                          currentQ['question'] ?? '',
+                          style: TextStyle(
+                            fontSize: 22, 
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            height: 1.3,
                           ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),
@@ -512,13 +517,13 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
                   child: Text('Sıra rakipte, bekleniyor...', textAlign: TextAlign.center, style: TextStyle(fontSize: 16)),
                 )
               else ...[
-                _buildOptionButton('a', currentQ['option_a'], currentQ),
+                _buildOptionButton('a', currentQ['option_a'], currentQ, Colors.blue),
                 const SizedBox(height: 12),
-                _buildOptionButton('b', currentQ['option_b'], currentQ),
+                _buildOptionButton('b', currentQ['option_b'], currentQ, Colors.red),
                 const SizedBox(height: 12),
-                _buildOptionButton('c', currentQ['option_c'], currentQ),
+                _buildOptionButton('c', currentQ['option_c'], currentQ, Colors.green),
                 const SizedBox(height: 12),
-                _buildOptionButton('d', currentQ['option_d'], currentQ),
+                _buildOptionButton('d', currentQ['option_d'], currentQ, Colors.orange),
               ],
             ],
           ),
@@ -564,25 +569,42 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     );
   }
 
-  Widget _buildOptionButton(String optionKey, String? text, Map<String, dynamic> currentQ) {
+  Widget _buildOptionButton(String optionKey, String? text, Map<String, dynamic> currentQ, Color defaultColor) {
     final isSelected = _selectedOption == optionKey;
     final isCorrect = currentQ['correct_answer'] == optionKey;
     
-    Color bgColor = Theme.of(context).cardColor;
+    Color bgColor = defaultColor;
     if (_answering && isSelected) {
-      bgColor = isCorrect ? Colors.green : Colors.red;
+      bgColor = isCorrect ? Colors.green[700]! : Colors.red[700]!;
     }
 
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        backgroundColor: bgColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      onPressed: _answering ? null : () => _submitAnswer(optionKey, currentQ),
-      child: Text(
-        text ?? '',
-        style: const TextStyle(fontSize: 16),
+    return Semantics(
+      button: true,
+      label: '${optionKey.toUpperCase()} Şıkkı: $text',
+      child: GestureDetector(
+         onTap: _answering ? null : () => _submitAnswer(optionKey, currentQ),
+         child: Container(
+           width: double.infinity,
+           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+           decoration: BoxDecoration(
+             color: bgColor,
+             borderRadius: BorderRadius.circular(16),
+             boxShadow: const [
+               BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+             ],
+           ),
+           child: Center(
+             child: Text(
+               '${optionKey.toUpperCase()}) ${text ?? ''}',
+               style: const TextStyle(
+                 fontSize: 18,
+                 fontWeight: FontWeight.bold,
+                 color: Colors.white,
+               ),
+               textAlign: TextAlign.center,
+             ),
+           ),
+         ),
       ),
     );
   }
