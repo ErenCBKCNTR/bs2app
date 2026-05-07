@@ -45,6 +45,8 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     }
   }
 
+  Offset? _lastTapPosition;
+
   @override
   void dispose() {
     _unsub?.call();
@@ -123,14 +125,14 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     }
   }
   
-  void _playTurnSound() {
+  Future<void> _playTurnSound() async {
     Vibration.vibrate(duration: 100);
 
     if (widget.serverReadsQuestions && _game != null) {
-      final questions = _game!.getListValue<Map<String, dynamic>>('questions_json');
+      final questions = _game!.getDataValue<List>('questions_json');
       final currentIndex = _game!.getIntValue('current_question_index');
       if (currentIndex < questions.length) {
-        final currentQuestion = questions[currentIndex];
+        final currentQuestion = questions[currentIndex] as Map<String, dynamic>;
         final audioFile = currentQuestion['audio_file'];
         
         if (audioFile != null && audioFile.toString().isNotEmpty) {
@@ -138,8 +140,9 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
             final questionId = currentQuestion['id'];
             final uri = '${PocketBaseService.client.baseURL}/api/files/quiz_questions/$questionId/$audioFile';
             AppLogger.instance.info('Soru sesi çalınmak isteniyor: $uri');
-            player.setVolume(1.0);
-            player.play(UrlSource(uri));
+            await player.stop();
+            await player.setVolume(1.0);
+            await player.play(UrlSource(uri));
           } catch(e) {
             AppLogger.instance.error('Soru sesi çalınırken hata: $e');
           }
@@ -150,6 +153,33 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
 
   void _playEndSound() {
     Vibration.vibrate(pattern: [0, 500, 200, 500, 200, 1000]);
+  }
+
+  int _lastTapTime = 0;
+  String? _pendingOption;
+  Map<String, dynamic>? _pendingQuestion;
+
+  void _handleQuadrantTap(String option, Map<String, dynamic> currentQuestion, VoidCallback replayQuestion) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastTapTime < 500) {
+      // It's a double tap
+      _lastTapTime = now;
+      _pendingOption = null;
+      replayQuestion();
+      return;
+    }
+    
+    _lastTapTime = now;
+    _pendingOption = option;
+    _pendingQuestion = currentQuestion;
+    
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      if (_pendingOption == option && _pendingQuestion == currentQuestion) {
+        _submitAnswer(_pendingOption!, _pendingQuestion!);
+        _pendingOption = null;
+      }
+    });
   }
 
   Future<void> _submitAnswer(String option, Map<String, dynamic> currentQuestion) async {
@@ -376,6 +406,13 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
         appBar: AppBar(
           title: Text('Soru ${currentIndex + 1} / ${questions.length}'),
           centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.replay),
+              tooltip: 'Soruyu Tekrar Dinle',
+              onPressed: replayQuestion,
+            ),
+          ],
         ),
         body: SafeArea(
           child: Column(
@@ -406,6 +443,13 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       appBar: AppBar(
         title: Text('Soru ${currentIndex + 1} / ${questions.length}'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.replay),
+            tooltip: 'Soruyu Tekrar Dinle',
+            onPressed: replayQuestion,
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -479,8 +523,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
         button: true,
         label: '${optionKey.toUpperCase()}',
         child: GestureDetector(
-          onTap: () => _submitAnswer(optionKey, currentQ),
-          onDoubleTap: onDoubleTap,
+          onTap: () => _handleQuadrantTap(optionKey, currentQ, onDoubleTap),
           child: Container(
             margin: const EdgeInsets.all(4.0),
             decoration: BoxDecoration(
