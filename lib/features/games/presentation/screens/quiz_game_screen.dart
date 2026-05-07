@@ -124,8 +124,6 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   }
   
   void _playTurnSound() {
-    // We can play a simple system tone or an online sound if we have one.
-    // For now we'll just vibrate briefly.
     Vibration.vibrate(duration: 100);
 
     if (widget.serverReadsQuestions && _game != null) {
@@ -134,11 +132,11 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       if (currentIndex < questions.length) {
         final currentQuestion = questions[currentIndex];
         final audioFile = currentQuestion['audio_file'];
-        final questionId = currentQuestion['id'];
         
         if (audioFile != null && audioFile.toString().isNotEmpty) {
-          final uri = '${PocketBaseService.client.baseURL}/api/files/quiz_questions/$questionId/$audioFile';
           try {
+            final record = RecordModel.fromJson(Map<String, dynamic>.from(currentQuestion));
+            final uri = PocketBaseService.client.getFileUrl(record, audioFile.toString()).toString();
             player.setVolume(1.0);
             player.play(UrlSource(uri));
           } catch(e) {
@@ -462,8 +460,9 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildQuadrant(String optionKey, String? text, Map<String, dynamic> currentQ, Color defaultColor) {
     final isSelected = _selectedOption == optionKey;
