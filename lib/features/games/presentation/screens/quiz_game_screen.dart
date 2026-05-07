@@ -110,9 +110,6 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
           
           if (e.record!.getStringValue('status') == 'finished') {
              _playEndSound();
-          } else {
-             // Play turn sound
-             _playTurnSound();
           }
         }
       });
@@ -346,7 +343,10 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
         }
         if (mounted && _questionFocusNode.canRequestFocus) {
           _questionFocusNode.requestFocus();
-          SemanticsService.announce(questions[currentIndex]['question'] ?? '', TextDirection.ltr);
+          final currentQLocal = questions[currentIndex] as Map<String, dynamic>;
+          final textToAnnounce = "${currentQLocal['question']} A şıkkı: ${currentQLocal['option_a']}, B şıkkı: ${currentQLocal['option_b']}, C şıkkı: ${currentQLocal['option_c']}, D şıkkı: ${currentQLocal['option_d']} ";
+          SemanticsService.announce(textToAnnounce, TextDirection.ltr);
+          _playTurnSound();
         }
       });
     }
@@ -359,33 +359,45 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     final isMyTurn = currentTurnId == myId;
     final isPlayer1 = _game!.getStringValue('player1_id') == myId;
 
+    void replayQuestion() {
+      _playTurnSound();
+      if (mounted && _questionFocusNode.canRequestFocus) {
+        final textToAnnounce = "${currentQ['question']} A şıkkı: ${currentQ['option_a']}, B şıkkı: ${currentQ['option_b']}, C şıkkı: ${currentQ['option_c']}, D şıkkı: ${currentQ['option_d']} ";
+        SemanticsService.announce(textToAnnounce, TextDirection.ltr);
+      }
+    }
+
     if (widget.serverReadsQuestions && isMyTurn) {
       return Scaffold(
         appBar: AppBar(
           title: Text('Soru ${currentIndex + 1} / ${questions.length}'),
           centerTitle: true,
         ),
-        body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    _buildQuadrant('a', currentQ['option_a'], currentQ, Colors.blue),
-                    _buildQuadrant('b', currentQ['option_b'], currentQ, Colors.red),
-                  ]
+        body: GestureDetector(
+          onDoubleTap: replayQuestion,
+          behavior: HitTestBehavior.opaque,
+          child: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      _buildQuadrant('a', currentQ['option_a'], currentQ, Colors.blue),
+                      _buildQuadrant('b', currentQ['option_b'], currentQ, Colors.red),
+                    ]
+                  ),
                 ),
-              ),
-              Expanded(
-                child: Row(
-                  children: [
-                    _buildQuadrant('c', currentQ['option_c'], currentQ, Colors.green),
-                    _buildQuadrant('d', currentQ['option_d'], currentQ, Colors.orange),
-                  ]
-                )
-              ),
-            ]
-          )
+                Expanded(
+                  child: Row(
+                    children: [
+                      _buildQuadrant('c', currentQ['option_c'], currentQ, Colors.green),
+                      _buildQuadrant('d', currentQ['option_d'], currentQ, Colors.orange),
+                    ]
+                  )
+                ),
+              ]
+            )
+          ),
         )
       );
     }
@@ -395,21 +407,24 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
         title: Text('Soru ${currentIndex + 1} / ${questions.length}'),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Puanım: ${isPlayer1 ? _game!.getIntValue("player1_score") : _game!.getIntValue("player2_score")}'),
-                  if (!widget.isSinglePlayer)
-                    Text('Rakip Puan: ${isPlayer1 ? _game!.getIntValue("player2_score") : _game!.getIntValue("player1_score")}'),
-                ],
-              ),
-              const SizedBox(height: 24),
+      body: GestureDetector(
+        onDoubleTap: replayQuestion,
+        behavior: HitTestBehavior.opaque,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Puanım: ${isPlayer1 ? _game!.getIntValue("player1_score") : _game!.getIntValue("player2_score")}'),
+                    if (!widget.isSinglePlayer)
+                      Text('Rakip Puan: ${isPlayer1 ? _game!.getIntValue("player2_score") : _game!.getIntValue("player1_score")}'),
+                  ],
+                ),
+                const SizedBox(height: 24),
               Expanded(
                 child: Card(
                   elevation: 2,

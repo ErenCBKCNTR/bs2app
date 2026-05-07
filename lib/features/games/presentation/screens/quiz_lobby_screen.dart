@@ -86,7 +86,7 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
             builder: (ctx) => AlertDialog(
               title: const Text('Önemli Uyarı', style: TextStyle(color: Colors.red)),
               content: const Text(
-                'Lütfen ekran okuyucunuzu kapatın. Sorular sistem tarafından otomatik okunacaktır. Ekran 4\'e bölünecektir. Sadece gerekli alana dokunarak cevap verebilirsiniz.'
+                'Lütfen ekran okuyucunuzu kapatın. Sorular sistem tarafından otomatik okunacaktır. Ekran 4\'e bölünecektir. A şıkkı sol üstte, B şıkkı sağ üstte, C şıkkı sol altta, D şıkkı sağ altta. Ekrana çift tıklayarak soruyu ve şıkları tekrar okutabilirsiniz.'
               ),
               actions: [
                 TextButton(
@@ -259,7 +259,7 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
             builder: (ctx) => AlertDialog(
               title: const Text('Önemli Uyarı', style: TextStyle(color: Colors.red)),
               content: const Text(
-                'Lütfen ekran okuyucunuzu kapatın. Sorular sistem tarafından otomatik okunacaktır. Ekran 4\'e bölünecektir. Sadece gerekli alana dokunarak cevap verebilirsiniz.'
+                'Lütfen ekran okuyucunuzu kapatın. Sorular sistem tarafından otomatik okunacaktır. Ekran 4\'e bölünecektir. A şıkkı sol üstte, B şıkkı sağ üstte, C şıkkı sol altta, D şıkkı sağ altta. Ekrana çift tıklayarak soruyu ve şıkları tekrar okutabilirsiniz.'
               ),
               actions: [
                 TextButton(
