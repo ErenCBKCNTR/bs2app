@@ -44,15 +44,14 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
       
       // Get 15 random questions.
       // Since PocketBase doesn't have native "random", we can just fetch some and shuffle in Dart.
+      final filterStr = _serverReadsQuestions ? 'audio_file != ""' : '';
       final questionsResult = await PocketBaseService.client.collection('quiz_questions').getList(
         page: 1,
-        perPage: 100, // Fetch up to 100
+        perPage: 500,
+        filter: filterStr.isNotEmpty ? filterStr : null,
       );
       
-      final List<RecordModel> allQuestions = questionsResult.items;
-      if (_serverReadsQuestions) {
-        allQuestions.retainWhere((q) => q.getStringValue('audio_file').isNotEmpty);
-      }
+      final List<RecordModel> allQuestions = List.from(questionsResult.items);
       allQuestions.shuffle();
       final selectedQuestions = allQuestions.take(15).toList();
       
@@ -217,14 +216,13 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
         return;
       }
 
+      final filterStr = _serverReadsQuestions ? 'audio_file != ""' : '';
       final questionsResult = await PocketBaseService.client.collection('quiz_questions').getList(
         page: 1,
-        perPage: 100,
+        perPage: 500,
+        filter: filterStr.isNotEmpty ? filterStr : null,
       );
-      final List<RecordModel> allQuestions = questionsResult.items;
-      if (_serverReadsQuestions) {
-        allQuestions.retainWhere((q) => q.getStringValue('audio_file').isNotEmpty);
-      }
+      final List<RecordModel> allQuestions = List.from(questionsResult.items);
       allQuestions.shuffle();
       final selectedQuestions = allQuestions.take(questionCount).toList();
       

@@ -102,12 +102,17 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
   Future<void> _uploadAudioForQuestion(String questionId) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.audio,
+      withData: true,
     );
 
     if (result != null) {
       final file = result.files.single;
       
       if (file.bytes == null && file.path == null) {
+        AppLogger.instance.error('FilePicker: Dosya verisi(bytes) de yolu(path) da null geldi.');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dosya okunamadı. Lütfen tekrar deneyin.')));
+        }
         return;
       }
 
@@ -142,6 +147,7 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses dosyası başarıyla yüklendi.')));
         }
       } catch (e) {
+        AppLogger.instance.error('Ses dosyası yüklenirken hata: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ses dosyası yüklenirken hata: $e')));
         }
