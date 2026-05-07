@@ -52,7 +52,7 @@ class NotificationService {
   Future<void> _initForBackground() async {
     if (_isInitialized) return;
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@drawable/ic_notification');
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
     );
@@ -119,7 +119,7 @@ class NotificationService {
     // Android tarafında ic_launcher ikonu genelde varsayılan olarak bulunur. 
     // Eğer @mipmap/ic_launcher hata veriyorsa @drawable/ic_notification veya ic_launcher denenebilir.
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('ic_launcher');
+        AndroidInitializationSettings('@drawable/ic_notification');
     
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
