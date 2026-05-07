@@ -21,6 +21,18 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            version: '1.7.8',
+            date: '8 Mayıs 2026',
+            changes: [
+              'Hata Giderme: Uygulamanın ağ istek limitlerini (DDOS koruma) aşarak bazı modem/router cihazlarında internet erişimini kesmesine neden olan ve sürekli tekrarlayan oturum denetimi hatası çözüldü.',
+              'İyileştirme: Quiz (Bilgi Yarışması) oyununda doğru/yanlış seslerinden sonra sıradaki soruya geçiş süresi 2 saniye daha uzatılarak ekran okuyucular için daha rahat bir bekleme deneyimi sağlandı.',
+              'İyileştirme: Yönetici panelinde sorular panoya kopyalanırken A, B, C, D şık etiketleri kaldırılarak metin okuma programları (TTS) için daha doğal ve akıcı bir format elde edildi.',
+              'İyileştirme: Detaylı hata günlüğü sistemi eklendi.'
+            ],
+            isLatest: true,
+          ),
+          const SizedBox(height: 24),
+          _buildVersionSection(
             version: '1.7.7',
             date: '2 Mayıs 2026',
             changes: [
@@ -28,7 +40,7 @@ class ChangelogScreen extends StatelessWidget {
               'Hata Giderme: Mesaj gönderirken klavyenin zorla kapatılması sebebiyle ekranda arta kalan "yarım sayfa" sorunu klavye doğal davranışına bırakılarak çözüldü.',
               'İyileştirme: Canlı sesli iletişim için detaylı hata analizi alt yapısı genişletildi.'
             ],
-            isLatest: true,
+            isLatest: false,
           ),
           const SizedBox(height: 24),
           _buildVersionSection(

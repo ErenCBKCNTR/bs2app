@@ -65,6 +65,19 @@ class _AuthWrapperState extends State<AuthWrapper> {
     try {
       PocketBaseService.client.authStore.onChange.listen((e) {
         if (e.model != null && e.token.isNotEmpty) {
+          // INFINITE LOOP FIX: Don't re-check if already authenticated with the same user ID
+          if (_isAuthenticated) {
+            final dob = e.model.getStringValue('dob');
+            bool isDobFilled = dob.isNotEmpty && 
+                               dob != '0001-01-01 00:00:00Z' && 
+                               dob != '0001-01-01 00:00:00';
+            if (mounted) {
+              setState(() {
+                _isProfileComplete = isDobFilled;
+              });
+            }
+            return;
+          }
           _checkProfile(e.model.id);
         } else {
           if (mounted) {
