@@ -135,8 +135,9 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
         
         if (audioFile != null && audioFile.toString().isNotEmpty) {
           try {
-            final record = RecordModel.fromJson(Map<String, dynamic>.from(currentQuestion));
-            final uri = PocketBaseService.client.getFileUrl(record, audioFile.toString()).toString();
+            final questionId = currentQuestion['id'];
+            final uri = '${PocketBaseService.client.baseURL}/api/files/quiz_questions/$questionId/$audioFile';
+            AppLogger.instance.info('Soru sesi çalınmak isteniyor: $uri');
             player.setVolume(1.0);
             player.play(UrlSource(uri));
           } catch(e) {
@@ -339,8 +340,10 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
         if (prevIndex != -1) {
           await Future.delayed(const Duration(seconds: 4));
         }
-        if (mounted && _questionFocusNode.canRequestFocus) {
-          _questionFocusNode.requestFocus();
+        if (mounted) {
+          if (_questionFocusNode.canRequestFocus) {
+             _questionFocusNode.requestFocus();
+          }
           final currentQLocal = questions[currentIndex] as Map<String, dynamic>;
           final textToAnnounce = "${currentQLocal['question']} A şıkkı: ${currentQLocal['option_a']}, B şıkkı: ${currentQLocal['option_b']}, C şıkkı: ${currentQLocal['option_c']}, D şıkkı: ${currentQLocal['option_d']} ";
           SemanticsService.announce(textToAnnounce, TextDirection.ltr);
@@ -359,7 +362,10 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
 
     void replayQuestion() {
       _playTurnSound();
-      if (mounted && _questionFocusNode.canRequestFocus) {
+      if (mounted) {
+        if (_questionFocusNode.canRequestFocus) {
+           _questionFocusNode.requestFocus();
+        }
         final textToAnnounce = "${currentQ['question']} A şıkkı: ${currentQ['option_a']}, B şıkkı: ${currentQ['option_b']}, C şıkkı: ${currentQ['option_c']}, D şıkkı: ${currentQ['option_d']} ";
         SemanticsService.announce(textToAnnounce, TextDirection.ltr);
       }
@@ -371,31 +377,27 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
           title: Text('Soru ${currentIndex + 1} / ${questions.length}'),
           centerTitle: true,
         ),
-        body: GestureDetector(
-          onDoubleTap: replayQuestion,
-          behavior: HitTestBehavior.opaque,
-          child: SafeArea(
-            child: Column(
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      _buildQuadrant('a', currentQ['option_a'], currentQ, Colors.blue),
-                      _buildQuadrant('b', currentQ['option_b'], currentQ, Colors.red),
-                    ]
-                  ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    _buildQuadrant('a', currentQ['option_a'], currentQ, Colors.blue, replayQuestion),
+                    _buildQuadrant('b', currentQ['option_b'], currentQ, Colors.red, replayQuestion),
+                  ]
                 ),
-                Expanded(
-                  child: Row(
-                    children: [
-                      _buildQuadrant('c', currentQ['option_c'], currentQ, Colors.green),
-                      _buildQuadrant('d', currentQ['option_d'], currentQ, Colors.orange),
-                    ]
-                  )
-                ),
-              ]
-            )
-          ),
+              ),
+              Expanded(
+                child: Row(
+                  children: [
+                    _buildQuadrant('c', currentQ['option_c'], currentQ, Colors.green, replayQuestion),
+                    _buildQuadrant('d', currentQ['option_d'], currentQ, Colors.orange, replayQuestion),
+                  ]
+                )
+              ),
+            ]
+          )
         )
       );
     }
@@ -405,26 +407,25 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
         title: Text('Soru ${currentIndex + 1} / ${questions.length}'),
         centerTitle: true,
       ),
-      body: GestureDetector(
-        onDoubleTap: replayQuestion,
-        behavior: HitTestBehavior.opaque,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Puanım: ${isPlayer1 ? _game!.getIntValue("player1_score") : _game!.getIntValue("player2_score")}'),
-                    if (!widget.isSinglePlayer)
-                      Text('Rakip Puan: ${isPlayer1 ? _game!.getIntValue("player2_score") : _game!.getIntValue("player1_score")}'),
-                  ],
-                ),
-                const SizedBox(height: 24),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Puanım: ${isPlayer1 ? _game!.getIntValue("player1_score") : _game!.getIntValue("player2_score")}'),
+                  if (!widget.isSinglePlayer)
+                    Text('Rakip Puan: ${isPlayer1 ? _game!.getIntValue("player2_score") : _game!.getIntValue("player1_score")}'),
+                ],
+              ),
+              const SizedBox(height: 24),
               Expanded(
-                child: Card(
+                child: GestureDetector(
+                  onDoubleTap: replayQuestion,
+                  child: Card(
                   elevation: 2,
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -464,7 +465,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   );
 }
 
-  Widget _buildQuadrant(String optionKey, String? text, Map<String, dynamic> currentQ, Color defaultColor) {
+  Widget _buildQuadrant(String optionKey, String? text, Map<String, dynamic> currentQ, Color defaultColor, VoidCallback onDoubleTap) {
     final isSelected = _selectedOption == optionKey;
     final isCorrect = currentQ['correct_answer'] == optionKey;
     
@@ -479,6 +480,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
         label: '${optionKey.toUpperCase()}',
         child: GestureDetector(
           onTap: () => _submitAnswer(optionKey, currentQ),
+          onDoubleTap: onDoubleTap,
           child: Container(
             margin: const EdgeInsets.all(4.0),
             decoration: BoxDecoration(
