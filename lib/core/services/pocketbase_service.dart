@@ -2,9 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:blind_social/core/services/security_service.dart';
+import 'package:blind_social/core/network/custom_http_client.dart';
 
 class PocketBaseService {
-  static PocketBase client = PocketBase('https://api.cabukcan.com');
+  static PocketBase client = PocketBase('https://api.cabukcan.com', httpClientFactory: () => CustomHttpClient());
   static const _secureStorage = FlutterSecureStorage();
   static const _authKey = 'pb_auth_secure';
 
@@ -25,7 +26,11 @@ class PocketBaseService {
         clear: () async => await _secureStorage.delete(key: _authKey),
       );
 
-      client = PocketBase('https://api.cabukcan.com', authStore: authStore);
+      client = PocketBase(
+        'https://api.cabukcan.com', 
+        authStore: authStore,
+        httpClientFactory: () => CustomHttpClient(),
+      );
     } catch (e) {
       debugPrint("PocketBase initialization failed: $e");
     }

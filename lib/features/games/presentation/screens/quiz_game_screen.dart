@@ -368,7 +368,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       _currentQuestionIndex = currentIndex;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (prevIndex != -1) {
-          await Future.delayed(const Duration(seconds: 4));
+          await Future.delayed(const Duration(seconds: 6));
         }
         if (mounted) {
           if (_questionFocusNode.canRequestFocus) {

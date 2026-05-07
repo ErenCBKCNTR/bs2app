@@ -349,10 +349,10 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
                             child: GestureDetector(
                               onLongPress: () {
                                 final textToCopy = '${q.getStringValue('question')}\n\n'
-                                    'A, ${q.getStringValue('option_a')}.\n'
-                                    'B, ${q.getStringValue('option_b')}.\n'
-                                    'C, ${q.getStringValue('option_c')}.\n'
-                                    'D, ${q.getStringValue('option_d')}.';
+                                    '${q.getStringValue('option_a')}.\n'
+                                    '${q.getStringValue('option_b')}.\n'
+                                    '${q.getStringValue('option_c')}.\n'
+                                    '${q.getStringValue('option_d')}.';
                                 Clipboard.setData(ClipboardData(text: textToCopy));
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Soru metni panoya kopyalandı')));
