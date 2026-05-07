@@ -8,6 +8,7 @@
     "dev": "echo 'Starting dev server...'"
   },
   "dependencies": {
+    "canvas": "^3.2.3",
     "pngjs": "^7.0.0",
     "selenium": "^2.20.0",
     "sharp": "^0.34.5",
