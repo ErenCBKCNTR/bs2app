@@ -104,22 +104,38 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
       type: FileType.audio,
     );
 
-    if (result != null && result.files.single.bytes != null) {
-      final fileBytes = result.files.single.bytes!;
-      final fileName = result.files.single.name;
+    if (result != null) {
+      final file = result.files.single;
+      
+      if (file.bytes == null && file.path == null) {
+        return;
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses dosyası yükleniyor...')));
+      final fileName = file.name;
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses dosyası yükleniyor...')));
+      }
 
       try {
+        List<http.MultipartFile> files = [];
+        if (file.bytes != null) {
+          files.add(http.MultipartFile.fromBytes(
+            'audio_file',
+            file.bytes!,
+            filename: fileName,
+          ));
+        } else if (file.path != null) {
+          files.add(await http.MultipartFile.fromPath(
+            'audio_file',
+            file.path!,
+            filename: fileName,
+          ));
+        }
+
         await PocketBaseService.client.collection('quiz_questions').update(
           questionId,
-          files: [
-            http.MultipartFile.fromBytes(
-              'audio_file',
-              fileBytes,
-              filename: fileName,
-            ),
-          ],
+          files: files,
         );
         _fetchQuestions(); // Refresh
         if (mounted) {
