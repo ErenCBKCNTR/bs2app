@@ -41,7 +41,7 @@ class _BlogScreenState extends State<BlogScreen> {
     super.initState();
     _loadCachedPosts();
     _fetchPosts();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+    _pollingTimer = Timer.periodic(const Duration(seconds: 60), (_) {
       _fetchPosts(isBackground: true);
     });
   }

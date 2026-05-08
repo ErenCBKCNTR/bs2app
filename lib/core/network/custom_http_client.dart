@@ -15,6 +15,10 @@ class CustomHttpClient extends http.BaseClient {
   // Detaylı endpoint analiz logu
   static final Map<String, int> _endpointRequestCounts = {};
   
+  // Performans takibi
+  static final Map<String, List<int>> _endpointLatencies = {};
+  static int slowRequestCount = 0;
+  
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     requestCount++;
@@ -23,6 +27,8 @@ class CustomHttpClient extends http.BaseClient {
     // Endpoint analizi
     String path = request.url.path;
     _endpointRequestCounts[path] = (_endpointRequestCounts[path] ?? 0) + 1;
+    
+    final stopwatch = Stopwatch()..start();
     
     // Ağ isteklerini biraz yavaşlatmak, DDOS / Router engellemelerini önlemek için.
     int delayMs = 150;
@@ -35,17 +41,34 @@ class CustomHttpClient extends http.BaseClient {
       final response = await _inner.send(request);
       return response;
     } finally {
+      stopwatch.stop();
       _activeRequests--;
+      
+      final latency = stopwatch.elapsedMilliseconds;
+      _endpointLatencies.putIfAbsent(path, () => []).add(latency);
+      
+      if (latency > 1500) {
+        slowRequestCount++;
+        AppLogger.instance.warning(
+          'Yavaş İstek Uyarısı (Performans)',
+          details: '$path endpointine yapılan istek $latency ms sürdü. Bu gecikme uygulamanızı yavaşlatabilir.'
+        );
+      }
+
       if (requestCount % 50 == 0) {
         String details = "Dağılım:\n";
         _endpointRequestCounts.entries.toList()
           ..sort((a, b) => b.value.compareTo(a.value))
           ..forEach((entry) {
-            details += "${entry.value} istek: ${entry.key}\n";
+            final latencies = _endpointLatencies[entry.key] ?? [];
+            final avgLatency = latencies.isNotEmpty 
+                ? (latencies.reduce((a, b) => a + b) / latencies.length).round() 
+                : 0;
+            details += "${entry.value} istek (Ort.$avgLatency ms): ${entry.key}\n";
           });
           
         AppLogger.instance.warning(
-           'Ağ İstek Limit Uyarısı: Uygulama şu ana kadar $requestCount API isteği başlattı. Aşırı yoğunluk olabilir.',
+           'Ağ İstek Limit Uyarısı: Uygulama şu ana kadar $requestCount API isteği başlattı.',
            details: details
         );
       }

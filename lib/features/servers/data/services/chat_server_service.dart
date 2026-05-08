@@ -292,9 +292,26 @@ class ChatServerService {
   // PRESENCE & CAPACITY
   Timer? _heartbeatTimer;
 
+  Future<Map<String, int>> getAllOnlineCounts() async {
+    try {
+      final nowStr = DateTime.now().toUtc().subtract(const Duration(seconds: 90)).toIso8601String().replaceAll('T', ' ');
+      final records = await _pb.collection('server_memberships').getFullList(
+        filter: 'last_active >= "$nowStr"',
+      );
+      final Map<String, int> counts = {};
+      for (var r in records) {
+        final sid = r.getStringValue('server_id');
+        counts[sid] = (counts[sid] ?? 0) + 1;
+      }
+      return counts;
+    } catch (_) {
+      return {};
+    }
+  }
+
   Future<int> getOnlineMemberCount(String serverId) async {
     try {
-      final nowStr = DateTime.now().toUtc().subtract(const Duration(seconds: 45)).toIso8601String().replaceAll('T', ' ');
+      final nowStr = DateTime.now().toUtc().subtract(const Duration(seconds: 90)).toIso8601String().replaceAll('T', ' ');
       final records = await _pb.collection('server_memberships').getFullList(
         filter: 'server_id = "$serverId" && last_active >= "$nowStr"',
       );
@@ -307,7 +324,7 @@ class ChatServerService {
   void startHeartbeat(String serverId) {
     _heartbeatTimer?.cancel();
     _pingPresence(serverId);
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 20), (timer) {
+    _heartbeatTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
       _pingPresence(serverId);
     });
   }
@@ -330,7 +347,7 @@ class ChatServerService {
 
   Future<void> cleanupGhostUsers() async {
     try {
-      final nowStr = DateTime.now().toUtc().subtract(const Duration(seconds: 45)).toIso8601String().replaceAll('T', ' ');
+      final nowStr = DateTime.now().toUtc().subtract(const Duration(seconds: 90)).toIso8601String().replaceAll('T', ' ');
       final records = await _pb.collection('server_memberships').getFullList(
         filter: 'last_active < "$nowStr"',
       );

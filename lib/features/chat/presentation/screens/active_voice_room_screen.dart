@@ -361,16 +361,6 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF101820), // Koyu arka plan
-      appBar: AppBar(
-        title: Semantics(
-          label: "${widget.roomName} isimli sesli odadasınız",
-          header: true,
-          child: ExcludeSemantics(child: Text(widget.roomName)),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
       body: _errorMessage != null 
         ? Center(child: Padding(padding: const EdgeInsets.all(16.0), child: Text('Bağlantı hatası: $_errorMessage\nLütfen sayfayı yenileyip tekrar deneyin.', textAlign: TextAlign.center, style: const TextStyle(color: Colors.red))))
         : !_isConnected && _room == null

@@ -20,6 +20,7 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
   static List<ChatServer>? _cachedServers;
   
   List<ChatServer> _servers = _cachedServers ?? [];
+  Map<String, int> _onlineCounts = {};
   bool _isLoading = _cachedServers == null;
   UnsubscribeFunc? _unsub;
 
@@ -93,11 +94,13 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
       }
 
       final servers = await ChatServerService().getServers().timeout(const Duration(seconds: 15));
+      final counts = await ChatServerService().getAllOnlineCounts();
       
       if (mounted) {
         setState(() {
           _servers = servers;
           _cachedServers = servers;
+          _onlineCounts = counts;
           _isLoading = false;
         });
         try {
@@ -157,13 +160,10 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
           final capacityStr = '${server.capacity}';
           final encryptedText = hasPassword ? 'şifreli ' : '';
 
-          return FutureBuilder<int>(
-            future: ChatServerService().getOnlineMemberCount(server.id),
-            builder: (context, snapshot) {
-              final onlineCount = snapshot.data ?? 0;
-              final semanticLabel = 'Sunucu adı $serverName. Sunucu açıklaması $description. $capacityStr kişilik $encryptedText sunucu. Şu anda sunucuda $onlineCount kişi var.';
+          final onlineCount = _onlineCounts[server.id] ?? 0;
+          final semanticLabel = 'Sunucu adı $serverName. Sunucu açıklaması $description. $capacityStr kişilik $encryptedText sunucu. Şu anda sunucuda $onlineCount kişi var.';
 
-              return Semantics(
+          return Semantics(
                 label: semanticLabel,
                 onTapHint: 'Sunucuya katılmak için çift tıklayın',
                 excludeSemantics: true,
@@ -275,8 +275,6 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
                     ),
                   ),
                 ),
-              );
-            },
           );
         },
       ),
