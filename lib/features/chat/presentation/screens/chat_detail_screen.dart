@@ -2,6 +2,7 @@ import 'package:blind_social/features/chat/presentation/screens/call_screen.dart
 import 'package:blind_social/features/chat/presentation/screens/favorite_messages_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:blind_social/features/profile/presentation/screens/user_profile_screen.dart' as blind_social_profile;
 import 'package:blind_social/core/utils/json_utils.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -851,7 +852,30 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       backgroundColor: const Color(0xFF101820),
       appBar: AppBar(
         title: InkWell(
-          onTap: _toggleUserStatus,
+          onTap: () {
+            _toggleUserStatus();
+            if (!_isGroup) {
+               // Hedef kullanıcı ID'sini bulmalıyız
+               final currentUserId = PocketBaseService.client.authStore.model?.id;
+               final participants = widget.chat.expand['chat_participants_via_chat_id'] ?? [];
+               String? targetUserId;
+               for (var p in participants) {
+                 final uid = p.getStringValue('user_id');
+                 if (uid != currentUserId) {
+                   targetUserId = uid;
+                   break;
+                 }
+               }
+               if (targetUserId != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => blind_social_profile.UserProfileScreen(userId: targetUserId!),
+                    ),
+                  );
+               }
+            }
+          },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

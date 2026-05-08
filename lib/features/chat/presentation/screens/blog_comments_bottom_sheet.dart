@@ -3,6 +3,7 @@ import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:intl/intl.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
+import 'package:blind_social/features/profile/presentation/screens/user_profile_screen.dart' as blind_social_profile;
 
 class BlogCommentsBottomSheet extends StatefulWidget {
   final String postId;
@@ -141,13 +142,27 @@ addRepaintBoundaries: true,
                           return ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: Semantics(
-                              excludeSemantics: true,
-                              child: CircleAvatar(
-                                radius: 16,
-                                backgroundColor: Colors.green.shade700,
-                                child: Text(
-                                  username.isNotEmpty ? username[0].toUpperCase() : '?',
-                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                              label: "$username adlı kullanıcının profili",
+                              button: true,
+                              onTapHint: "Profil detaylarını görüntüle",
+                              child: GestureDetector(
+                                onTap: () {
+                                  if (user != null && user['id'] != null) {
+                                     Navigator.push(
+                                       context,
+                                       MaterialPageRoute(
+                                         builder: (_) => blind_social_profile.UserProfileScreen(userId: user['id']),
+                                       ),
+                                     );
+                                  }
+                                },
+                                child: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: Colors.green.shade700,
+                                  child: Text(
+                                    username.isNotEmpty ? username[0].toUpperCase() : '?',
+                                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                                  ),
                                 ),
                               ),
                             ),

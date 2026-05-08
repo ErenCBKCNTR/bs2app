@@ -94,20 +94,6 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
               setState(() {});
             },
           ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('Bildirim Testi'),
-            subtitle: const Text('Ayarların çalışıp çalışmadığını test etmek için buraya dokunun'),
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Bildirim ayarları kaydedildi.'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-          ),
         ],
       ),
     );

@@ -163,10 +163,85 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               title: "Katılma Tarihi",
               value: formattedJoined,
             ),
+            const SizedBox(height: 40),
+            _buildFriendButton(),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildFriendButton() {
+    final currentUserId = PocketBaseService.client.authStore.model?.id;
+    if (currentUserId == null || currentUserId == widget.userId) {
+      return const SizedBox.shrink();
+    }
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ElevatedButton.icon(
+        onPressed: _sendFriendRequest,
+        icon: const Icon(Icons.person_add),
+        label: const Text('Arkadaş Olarak Ekle', style: TextStyle(fontSize: 16)),
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size.fromHeight(50),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Colors.black,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _sendFriendRequest() async {
+    try {
+      final currentUserId = PocketBaseService.client.authStore.model!.id;
+      
+      // İlk önce istek atılmış mı kontrol edelim
+      final existingRequests = await PocketBaseService.client.collection('friend_requests').getFullList(
+        filter: '(from_user = "$currentUserId" && to_user = "${widget.userId}") || (from_user = "${widget.userId}" && to_user = "$currentUserId")',
+      );
+
+      if (existingRequests.isNotEmpty) {
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+             const SnackBar(content: Text('Zaten bir arkadaşlık isteği gönderilmiş veya alınmış.')),
+           );
+        }
+        return;
+      }
+
+      // Ayrıca zaten arkadaşlar mı
+      final existingFriends = await PocketBaseService.client.collection('friendships').getFullList(
+        filter: '(user1 = "$currentUserId" && user2 = "${widget.userId}") || (user1 = "${widget.userId}" && user2 = "$currentUserId")',
+      );
+
+      if (existingFriends.isNotEmpty) {
+         if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+             const SnackBar(content: Text('Bu kullanıcı ile zaten arkadaşsınız.')),
+           );
+        }
+        return;
+      }
+
+      // İstek oluştur
+      await PocketBaseService.client.collection('friend_requests').create(body: {
+        'from_user': currentUserId,
+        'to_user': widget.userId,
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Arkadaşlık isteği gönderildi!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata oluştu: $e')),
+        );
+      }
+    }
   }
 
   Widget _buildInfoCard({required IconData icon, required String title, required String value}) {

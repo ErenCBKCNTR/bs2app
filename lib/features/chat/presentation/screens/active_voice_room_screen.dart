@@ -9,7 +9,7 @@ import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart' as webrtc;
-
+import 'package:blind_social/features/profile/presentation/screens/user_profile_screen.dart' as blind_social_profile;
 import 'package:permission_handler/permission_handler.dart';
 import '../../../../core/services/settings_service.dart';
 
@@ -29,6 +29,7 @@ class ActiveVoiceRoomScreen extends StatefulWidget {
 
 class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   bool _isMuted = false;
+  bool _isSpeakerOn = true;
   bool _isConnected = false;
   String? _errorMessage;
   Room? _room;
@@ -457,11 +458,28 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
                   final String name = displayName.startsWith('anonymous_') ? 'Misafir' : displayName;
 
                   return ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.blueGrey,
-                      child: Text(
-                        name.isNotEmpty ? name[0].toUpperCase() : '?',
-                        style: const TextStyle(color: Colors.white),
+                    leading: Semantics(
+                      label: "$name adlı kullanıcının profili",
+                      button: true,
+                      onTapHint: "Profil detaylarını görüntüle",
+                      child: GestureDetector(
+                        onTap: () {
+                           if (identity.isNotEmpty && !identity.startsWith('anonymous_')) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => blind_social_profile.UserProfileScreen(userId: identity),
+                                ),
+                              );
+                           }
+                        },
+                        child: CircleAvatar(
+                          backgroundColor: Colors.blueGrey,
+                          child: Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : '?',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
                       ),
                     ),
                     title: Text(
@@ -515,6 +533,55 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
     );
   }
 
+  Future<void> _showAudioRouteMenu() async {
+    final route = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('Ses Çıkışı', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+              ListTile(
+                leading: const Icon(Icons.volume_up),
+                title: const Text('Hoparlör'),
+                onTap: () => Navigator.pop(context, 'speaker'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.phone_in_talk),
+                title: const Text('Ahize'),
+                onTap: () => Navigator.pop(context, 'earpiece'),
+              ),
+              // Eğer kulaklık takılıysa kullanıcı bunu manuel de seçebilmeli
+              ListTile(
+                leading: const Icon(Icons.headset),
+                title: const Text('Kulaklık / Bluetooth'),
+                onTap: () => Navigator.pop(context, 'headset'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (route != null) {
+      if (route == 'speaker') {
+        setState(() => _isSpeakerOn = true);
+        if (!kIsWeb) {
+          Hardware.instance.setSpeakerphoneOn(true);
+        }
+      } else {
+        setState(() => _isSpeakerOn = false);
+        if (!kIsWeb) {
+          Hardware.instance.setSpeakerphoneOn(false);
+        }
+      }
+    }
+  }
+
   Widget _buildBottomControls() {
     return SafeArea(
       child: Container(
@@ -523,17 +590,12 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            // Ayarlar butonu
+            // Hoparlör/Ahize/Kulaklık Geçiş बटonu
             _ControlButton(
-              icon: Icons.settings_outlined,
-              label: "Mikrofon Ayarları",
-              hint: "Mikrofon giriş ve çıkış ayarlarını düzenle",
-              onPressed: () {
-                // Gelecekte eklenecek
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Ayarlar yakında eklenecek')),
-                );
-              },
+              icon: _isSpeakerOn ? Icons.volume_up : Icons.phone_in_talk,
+              label: "Ses Yönlendirme",
+              hint: "Hoparlör, ahize veya kulaklık seçimi",
+              onPressed: _showAudioRouteMenu,
               backgroundColor: Colors.grey.withOpacity(0.2),
             ),
             // Odadan Ayrıl (Kırmızı)
@@ -604,12 +666,29 @@ class _ParticipantTile extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.blueGrey,
-                    child: Text(
-                      name.isNotEmpty ? name[0].toUpperCase() : '?',
-                      style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
+                  Semantics(
+                    label: "$name adlı kullanıcının profili",
+                    button: true,
+                    onTapHint: "Profil detaylarını görüntüle",
+                    child: GestureDetector(
+                      onTap: () {
+                         if (identity.isNotEmpty && !identity.startsWith('anonymous_')) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => blind_social_profile.UserProfileScreen(userId: identity),
+                              ),
+                            );
+                         }
+                      },
+                      child: CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Colors.blueGrey,
+                        child: Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : '?',
+                          style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),

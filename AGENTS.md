@@ -149,6 +149,7 @@ Projede kullanılan kritik `pubspec.yaml` paket listesi:
 
 *   **PocketBaseService:** (`lib/core/services/pocketbase_service.dart`) Ana veritabanı istemcisi.
 *   **SecurityService:** (`lib/core/services/security_service.dart`) Cihaz bütünlüğü, ekran koruma.
+*   **TtsService:** (`lib/core/services/tts_service.dart`) Merkezi metin-ses (Text-to-Speech) motoru servisi. Uygulama genelinde sesli okuma yaptırmak istendiğinde mikro servis olarak kullanılmalıdır. Kullanımı: `TtsService().speak('Okunacak metin');` ve durdurmak için `TtsService().stop();`.
 *   **ExpandableText:** (`lib/core/widgets/expandable_text.dart`) Uzun metin ("daha fazla oku") yönetimi.
 *   **Admin Özelliği:** (`lib/features/admin/`) Sistem yöneticileri için yönetim araçları ve Log ekranı.
 *   **Campaigns Özelliği:** (`lib/features/campaigns/`) Güncel Kampanyaların çekildiği merkez. Performansı artırmak için PocketBase listesi `SharedPreferences` ile önbelleklenmiş (`12 Saat`) yerel bir arama sistemine sahiptir.

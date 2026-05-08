@@ -5,6 +5,7 @@ import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/json_utils.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:intl/intl.dart';
+import 'package:blind_social/features/profile/presentation/screens/user_profile_screen.dart' as blind_social_profile;
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:blind_social/features/chat/presentation/screens/blog_comments_bottom_sheet.dart';
 import 'package:blind_social/features/chat/presentation/screens/my_blog_posts_screen.dart';
@@ -547,12 +548,27 @@ addRepaintBoundaries: true,
                                         children: [
                                           Row(
                                             children: [
-                                              CircleAvatar(
-                                                radius: 20,
-                                                backgroundColor: Colors.green.shade700,
-                                                child: Text(
-                                                  username.isNotEmpty ? username[0].toUpperCase() : '?',
-                                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                              Semantics(
+                                                label: "$username adlı kullanıcının profili",
+                                                button: true,
+                                                onTapHint: "Profil detaylarını görüntüle",
+                                                child: GestureDetector(
+                                                  onTap: () {
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (_) => blind_social_profile.UserProfileScreen(userId: userId),
+                                                      ),
+                                                    );
+                                                  },
+                                                  child: CircleAvatar(
+                                                    radius: 20,
+                                                    backgroundColor: Colors.green.shade700,
+                                                    child: Text(
+                                                      username.isNotEmpty ? username[0].toUpperCase() : '?',
+                                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
                                               const SizedBox(width: 12),

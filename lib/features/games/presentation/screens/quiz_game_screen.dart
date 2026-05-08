@@ -136,19 +136,19 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       final currentIndex = _game!.getIntValue('current_question_index');
       if (currentIndex < questions.length) {
         final currentQuestion = questions[currentIndex] as Map<String, dynamic>;
-        final audioFile = currentQuestion['audio_file'];
+        final String qText = currentQuestion['question'] ?? '';
+        final String optA = currentQuestion['option_a'] ?? '';
+        final String optB = currentQuestion['option_b'] ?? '';
+        final String optC = currentQuestion['option_c'] ?? '';
+        final String optD = currentQuestion['option_d'] ?? '';
         
-        if (audioFile != null && audioFile.toString().isNotEmpty) {
-          try {
-            final questionId = currentQuestion['id'];
-            final uri = '${PocketBaseService.client.baseURL}/api/files/quiz_questions/$questionId/$audioFile';
-            AppLogger.instance.info('Soru sesi çalınmak isteniyor: $uri');
-            await player.stop();
-            await player.setVolume(1.0);
-            await player.play(UrlSource(uri));
-          } catch(e) {
-            AppLogger.instance.error('Soru sesi çalınırken hata: $e');
-          }
+        final String textToRead = "$qText ... A şıkkı: $optA ... B şıkkı: $optB ... C şıkkı: $optC ... D şıkkı: $optD.";
+        
+        try {
+          await TtsService().stop();
+          await TtsService().speak(textToRead);
+        } catch (e) {
+          AppLogger.instance.error('TTS Okuma hatası: $e');
         }
       }
     }
@@ -229,6 +229,9 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
           p2Score += 10;
         }
       }
+
+      // Wait for sound to play before transition
+      await Future.delayed(const Duration(milliseconds: 3000));
 
       int currentIndex = _game!.getIntValue('current_question_index');
       
@@ -384,16 +387,20 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       _currentQuestionIndex = currentIndex;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (prevIndex != -1) {
-          await Future.delayed(const Duration(seconds: 8));
+          await Future.delayed(const Duration(milliseconds: 500));
         }
         if (mounted) {
           if (_questionFocusNode.canRequestFocus) {
              _questionFocusNode.requestFocus();
           }
-          final currentQLocal = questions[currentIndex] as Map<String, dynamic>;
-          final textToAnnounce = "${currentQLocal['question']} A şıkkı: ${currentQLocal['option_a']}, B şıkkı: ${currentQLocal['option_b']}, C şıkkı: ${currentQLocal['option_c']}, D şıkkı: ${currentQLocal['option_d']} ";
-          SemanticsService.announce(textToAnnounce, TextDirection.ltr);
-          _playTurnSound();
+          if (widget.serverReadsQuestions) {
+             _playTurnSound();
+          } else {
+             final currentQLocal = questions[currentIndex] as Map<String, dynamic>;
+             final textToAnnounce = "${currentQLocal['question']} A şıkkı: ${currentQLocal['option_a']}, B şıkkı: ${currentQLocal['option_b']}, C şıkkı: ${currentQLocal['option_c']}, D şıkkı: ${currentQLocal['option_d']} ";
+             SemanticsService.announce(textToAnnounce, TextDirection.ltr);
+             _playTurnSound();
+          }
         }
       });
     }
@@ -487,7 +494,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
                   onDoubleTap: replayQuestion,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))],
                     ),
@@ -497,10 +504,10 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
                         focusNode: _questionFocusNode,
                         child: Text(
                           currentQ['question'] ?? '',
-                          style: TextStyle(
-                            fontSize: 22, 
+                          style: const TextStyle(
+                            fontSize: 26, 
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            color: Colors.black,
                             height: 1.3,
                           ),
                           textAlign: TextAlign.center,
@@ -580,7 +587,8 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
 
     return Semantics(
       button: true,
-      label: '${optionKey.toUpperCase()} Şıkkı: $text',
+      label: text ?? '',
+      excludeSemantics: true,
       child: GestureDetector(
          onTap: _answering ? null : () => _submitAnswer(optionKey, currentQ),
          child: Container(
@@ -595,7 +603,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
            ),
            child: Center(
              child: Text(
-               '${optionKey.toUpperCase()}) ${text ?? ''}',
+               text ?? '',
                style: const TextStyle(
                  fontSize: 18,
                  fontWeight: FontWeight.bold,

@@ -10,6 +10,7 @@ import 'package:pocketbase/pocketbase.dart' hide SettingsService;
 import 'package:blind_social/features/chat/presentation/widgets/chat_list_item.dart';
 import 'package:blind_social/features/profile/presentation/screens/my_profile_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/user_profile_screen.dart';
+import 'package:blind_social/features/profile/presentation/screens/friend_requests_screen.dart';
 import 'package:blind_social/features/profile/presentation/screens/app_settings_screen.dart';
 import 'package:blind_social/features/developer/presentation/screens/developer_logs_screen.dart';
 import 'package:blind_social/core/utils/json_utils.dart';
@@ -28,6 +29,7 @@ import 'package:blind_social/features/servers/presentation/screens/chat_server_r
 import 'package:blind_social/features/admin/presentation/screens/admin_panel_screen.dart';
 import 'package:blind_social/features/admin/data/services/admin_service.dart';
 import 'chat_detail_screen.dart';
+import 'select_contact_screen.dart';
 import 'call_screen.dart';
 import 'favorite_messages_screen.dart';
 import 'archived_messages_screen.dart';
@@ -633,10 +635,18 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     }
   }
 
-Widget? _buildFAB() {
+  Widget? _buildFAB() {
     if (_tabController.index == 0) {
       return FloatingActionButton(
-        onPressed: _showUserSearchDialog,
+        onPressed: () async {
+          final targetUser = await Navigator.push<RecordModel>(
+            context,
+            MaterialPageRoute(builder: (_) => const SelectContactScreen()),
+          );
+          if (targetUser != null && mounted) {
+            _createOrOpenChat(targetUser);
+          }
+        },
         backgroundColor: Theme.of(context).colorScheme.primary,
         tooltip: "Yeni Sohbet Başlat",
         child: const Icon(Icons.message, color: Colors.black),
@@ -650,90 +660,6 @@ Widget? _buildFAB() {
       );
     }
     return null;
-  }
-
-  Future<void> _showUserSearchDialog() async {
-    final searchController = TextEditingController();
-    bool isSearching = false;
-    String? errorMessage;
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              title: const Text('Kullanıcı Ara'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: searchController,
-                    autofocus: true,
-                    maxLength: 32,
-                    decoration: InputDecoration(
-                      labelText: 'Kullanıcı Adı',
-                      hintText: 'Örn: ahmet123',
-                      border: const OutlineInputBorder(),
-                      errorText: errorMessage,
-                      counterText: "",
-                    ),
-                    onSubmitted: (val) {
-                      // Trigger search programmatically ? No simple handle for dialog.
-                    },
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isSearching ? null : () => Navigator.pop(context),
-                  child: const Text('İptal'),
-                ),
-                ElevatedButton(
-                  onPressed: isSearching ? null : () async {
-                    final username = searchController.text.trim();
-                    if (username.isEmpty) return;
-                    
-                    final currentUserId = PocketBaseService.client.authStore.model!.id;
-
-                    setStateDialog(() {
-                      isSearching = true;
-                      errorMessage = null;
-                    });
-                    
-                    try {
-                      final response = await PocketBaseService.client.collection('users').getFirstListItem('username = "$username"');
-
-                      if (response.id == currentUserId) {
-                         setStateDialog(() {
-                           isSearching = false;
-                           errorMessage = "Kendinizle sohbet edemezsiniz.";
-                         });
-                      } else {
-                         // Found! Start chat.
-                         if (context.mounted) {
-                           Navigator.pop(context);
-                           _createOrOpenChat(response);
-                         }
-                      }
-                    } catch (e) {
-                      AppLogger.instance.error('Kullanıcı arama hatası: $e');
-                      setStateDialog(() {
-                        isSearching = false;
-                        errorMessage = "Böyle bir kullanıcı bulunamadı.";
-                      });
-                    }
-                  },
-                  child: isSearching 
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Text('Ara & Mesaj At'),
-                ),
-              ],
-            );
-          }
-        );
-      }
-    );
   }
 
   Future<void> _showCreateChatServerDialog() async {
@@ -1403,6 +1329,15 @@ addRepaintBoundaries: true,
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/profile'), builder: (_) => const MyProfileScreen()));
+                  },
+                ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.group_add_outlined,
+                  title: 'Arkadaşlık İstekleri',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/friend_requests'), builder: (_) => const FriendRequestsScreen()));
                   },
                 ),
                 _buildDrawerItem(
