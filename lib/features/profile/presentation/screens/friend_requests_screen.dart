@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
-import 'package:blind_social/core/utils/app_logger.dart';
+import 'package:blind_social/core/utils/logger.dart';
 
 class FriendRequestsScreen extends StatefulWidget {
   const FriendRequestsScreen({super.key});

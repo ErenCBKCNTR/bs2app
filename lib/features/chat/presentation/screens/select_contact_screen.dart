@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import '../../../../core/services/pocketbase_service.dart';
-import '../../../../core/utils/app_logger.dart';
+import '../../../../core/utils/logger.dart';
 
 class SelectContactScreen extends StatefulWidget {
   const SelectContactScreen({super.key});
