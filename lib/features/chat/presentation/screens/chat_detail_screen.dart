@@ -854,13 +854,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         title: InkWell(
           onTap: () {
             _toggleUserStatus();
-            if (!_isGroup) {
+            if (widget.chat['is_group'] != true) {
                // Hedef kullanıcı ID'sini bulmalıyız
                final currentUserId = PocketBaseService.client.authStore.model?.id;
-               final participants = widget.chat.expand['chat_participants_via_chat_id'] ?? [];
+               final participants = widget.chat['expand']?['chat_participants_via_chat_id'] as List? ?? [];
                String? targetUserId;
                for (var p in participants) {
-                 final uid = p.getStringValue('user_id');
+                 final uid = p['user_id'];
                  if (uid != currentUserId) {
                    targetUserId = uid;
                    break;

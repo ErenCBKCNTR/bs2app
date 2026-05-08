@@ -557,7 +557,7 @@ addRepaintBoundaries: true,
                                                     Navigator.push(
                                                       context,
                                                       MaterialPageRoute(
-                                                        builder: (_) => blind_social_profile.UserProfileScreen(userId: userId),
+                                                        builder: (_) => blind_social_profile.UserProfileScreen(userId: post['user_id'] ?? ''),
                                                       ),
                                                     );
                                                   },
