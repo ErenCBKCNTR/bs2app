@@ -73,7 +73,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     _fetchChats();
     _checkPendingGameInvites();
     _setupRealtime();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+    _pollingTimer = Timer.periodic(const Duration(seconds: 60), (_) {
       _fetchChats(isBackground: true);
     });
     
@@ -365,26 +365,45 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
          }
       }
 
-      // Fetch missing side participants for 1-1 chats (If expand was blocked by rule limit)
+      // Toplu olarak eksik katılımcıları çek (N+1 sorgu problemini çözer)
+      List<String> missingChatIds = [];
       for (var chat in chatRecords) {
         if (chat.getBoolValue('is_group') == false) {
            final participants = (chat.expand['chat_participants_via_chat_id'] as List<dynamic>?)?.cast<RecordModel>() ?? [];
            bool hasOther = participants.any((p) => p.getStringValue('user_id') != userId);
            if (!hasOther) {
-              try {
-                final otherParts = await PocketBaseService.client.collection('chat_participants').getFullList(
-                  filter: 'chat_id = "${chat.id}" && user_id != "$userId"',
-                  expand: 'user_id'
-                );
-                if (otherParts.isNotEmpty) {
-                   participants.addAll(otherParts);
-                   chat.expand['chat_participants_via_chat_id'] = participants;
-                }
-              } catch (e) {
-                 AppLogger.instance.error('Diğer katılımcıyı çekerken hata: $e');
-              }
+              missingChatIds.add(chat.id);
            }
         }
+      }
+
+      if (missingChatIds.isNotEmpty) {
+          try {
+             // Maksimum 30 adetlik gruplar halinde tek bir seferde (batch) çekeriz.
+             const int chunkSize = 30;
+             for (int i = 0; i < missingChatIds.length; i += chunkSize) {
+                 final end = (i + chunkSize > missingChatIds.length) ? missingChatIds.length : (i + chunkSize);
+                 final chunk = missingChatIds.sublist(i, end);
+                 final chunkConds = chunk.map((id) => 'chat_id = "$id"').join(' || ');
+                 final filterStr = "($chunkConds) && user_id != \"$userId\"";
+                 
+                 final batchParts = await PocketBaseService.client.collection('chat_participants').getFullList(
+                    filter: filterStr,
+                    expand: 'user_id'
+                 );
+                 
+                 for (var chat in chatRecords) {
+                    final chatParts = batchParts.where((p) => p.getStringValue('chat_id') == chat.id).toList();
+                    if (chatParts.isNotEmpty) {
+                        final participants = (chat.expand['chat_participants_via_chat_id'] as List<dynamic>?)?.cast<RecordModel>() ?? [];
+                        participants.addAll(chatParts);
+                        chat.expand['chat_participants_via_chat_id'] = participants;
+                    }
+                 }
+             }
+          } catch(e) {
+              AppLogger.instance.error('Diğer katılımcıları toplu çekerken hata: $e');
+          }
       }
       
       // Chatleri sabitlemeye ve güncellenme tarihine göre sırala

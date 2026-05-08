@@ -17,6 +17,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   bool _isLoading = true;
   RecordModel? _userProfile;
   String? _errorMessage;
+  int _friendshipStatus = 0; // 0: None, 1: Friends, 2: Pending Outgoing, 3: Pending Incoming
 
   @override
   void initState() {
@@ -28,8 +29,35 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     try {
       final response = await PocketBaseService.client.collection('users').getOne(widget.userId);
 
+      final currentUserId = PocketBaseService.client.authStore.model?.id;
+      int status = 0;
+
+      if (currentUserId != null && currentUserId != widget.userId) {
+        // Check friends
+        final friends = await PocketBaseService.client.collection('friendships').getFullList(
+          filter: '(user1 = "$currentUserId" && user2 = "${widget.userId}") || (user1 = "${widget.userId}" && user2 = "$currentUserId")',
+        );
+        if (friends.isNotEmpty) {
+          status = 1;
+        } else {
+          // Check requests
+          final requests = await PocketBaseService.client.collection('friend_requests').getFullList(
+            filter: '(from_user = "$currentUserId" && to_user = "${widget.userId}") || (from_user = "${widget.userId}" && to_user = "$currentUserId")',
+          );
+          if (requests.isNotEmpty) {
+            final fromUser = requests[0].getStringValue('from_user');
+            if (fromUser == currentUserId) {
+              status = 2; // Pending Outgoing
+            } else {
+              status = 3; // Pending Incoming
+            }
+          }
+        }
+      }
+
       setState(() {
         _userProfile = response;
+        _friendshipStatus = status;
         _isLoading = false;
       });
     } catch (e) {
@@ -177,15 +205,39 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       return const SizedBox.shrink();
     }
     
+    String labelText = 'Arkadaş Olarak Ekle';
+    IconData iconData = Icons.person_add;
+    VoidCallback? onPressed = _sendFriendRequest;
+    Color bgColor = Theme.of(context).colorScheme.primary;
+
+    if (_friendshipStatus == 1) {
+      labelText = 'Arkadaşsınız';
+      iconData = Icons.people;
+      onPressed = null;
+      bgColor = Colors.grey.shade800;
+    } else if (_friendshipStatus == 2) {
+      labelText = 'Arkadaşlık İsteği Gönderildi';
+      iconData = Icons.check;
+      onPressed = null;
+      bgColor = Colors.grey.shade800;
+    } else if (_friendshipStatus == 3) {
+      labelText = 'Sizi Eklemek İstiyor';
+      iconData = Icons.person_add_alt_1;
+      onPressed = null;
+      bgColor = Colors.grey.shade800;
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ElevatedButton.icon(
-        onPressed: _sendFriendRequest,
-        icon: const Icon(Icons.person_add),
-        label: const Text('Arkadaş Olarak Ekle', style: TextStyle(fontSize: 16)),
+        onPressed: onPressed,
+        icon: Icon(iconData),
+        label: Text(labelText, style: const TextStyle(fontSize: 16)),
         style: ElevatedButton.styleFrom(
+          disabledBackgroundColor: bgColor,
+          disabledForegroundColor: Colors.white,
           minimumSize: const Size.fromHeight(50),
-          backgroundColor: Theme.of(context).colorScheme.primary,
+          backgroundColor: bgColor,
           foregroundColor: Colors.black,
         ),
       ),
@@ -196,34 +248,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     try {
       final currentUserId = PocketBaseService.client.authStore.model!.id;
       
-      // İlk önce istek atılmış mı kontrol edelim
-      final existingRequests = await PocketBaseService.client.collection('friend_requests').getFullList(
-        filter: '(from_user = "$currentUserId" && to_user = "${widget.userId}") || (from_user = "${widget.userId}" && to_user = "$currentUserId")',
-      );
-
-      if (existingRequests.isNotEmpty) {
-        if (mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(
-             const SnackBar(content: Text('Zaten bir arkadaşlık isteği gönderilmiş veya alınmış.')),
-           );
-        }
-        return;
-      }
-
-      // Ayrıca zaten arkadaşlar mı
-      final existingFriends = await PocketBaseService.client.collection('friendships').getFullList(
-        filter: '(user1 = "$currentUserId" && user2 = "${widget.userId}") || (user1 = "${widget.userId}" && user2 = "$currentUserId")',
-      );
-
-      if (existingFriends.isNotEmpty) {
-         if (mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(
-             const SnackBar(content: Text('Bu kullanıcı ile zaten arkadaşsınız.')),
-           );
-        }
-        return;
-      }
-
       // İstek oluştur
       await PocketBaseService.client.collection('friend_requests').create(body: {
         'from_user': currentUserId,
@@ -231,6 +255,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       });
 
       if (mounted) {
+        setState(() {
+          _friendshipStatus = 2; // Yolladik
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Arkadaşlık isteği gönderildi!')),
         );
