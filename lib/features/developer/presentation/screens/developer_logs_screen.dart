@@ -83,10 +83,38 @@ addRepaintBoundaries: true,
                     const SnackBar(content: Text('Hata kaydı panoya kopyalandı')),
                   );
                 },
+                onTap: log.details != null ? () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Günlük Detayı', style: TextStyle(fontSize: 16)),
+                      content: SingleChildScrollView(
+                         child: SelectableText(log.details!, style: const TextStyle(fontSize: 13, fontFamily: 'monospace')),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Kapat'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                             Clipboard.setData(ClipboardData(text: "${log.message}\n\n${log.details}"));
+                             ScaffoldMessenger.of(context).showSnackBar(
+                               const SnackBar(content: Text('Detaylar panoya kopyalandı')),
+                             );
+                             Navigator.pop(context);
+                          },
+                          child: const Text('Kopyala'),
+                        )
+                      ],
+                    ),
+                  );
+                } : null,
                 child: ListTile(
                   leading: Icon(iconData, color: textColor, size: 20),
                   title: Text(log.message, style: TextStyle(color: textColor, fontSize: 13)),
                   subtitle: Text(timeStr, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                  trailing: log.details != null ? const Icon(Icons.info_outline, size: 16, color: Colors.blueAccent) : null,
                   dense: true,
                 ),
               );

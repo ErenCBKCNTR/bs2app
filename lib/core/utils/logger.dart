@@ -8,19 +8,22 @@ class LogEntry {
   final DateTime timestamp;
   final String message;
   final LogLevel level;
+  final String? details; // Extended information, e.g. endpoint request counts
 
-  LogEntry({required this.timestamp, required this.message, required this.level});
+  LogEntry({required this.timestamp, required this.message, required this.level, this.details});
 
   Map<String, dynamic> toJson() => {
     'timestamp': timestamp.toIso8601String(),
     'message': message,
     'level': level.index,
+    'details': details, // Can be null
   };
 
   factory LogEntry.fromJson(Map<String, dynamic> json) => LogEntry(
     timestamp: DateTime.parse(json['timestamp']),
     message: json['message'] ?? '',
     level: LogLevel.values[json['level'] ?? 0],
+    details: json['details'], // Will be null for older entries
   );
 }
 
@@ -79,11 +82,12 @@ class AppLogger extends ChangeNotifier {
     }
   }
 
-  void log(String message, {LogLevel level = LogLevel.info}) {
+  void log(String message, {LogLevel level = LogLevel.info, String? details}) {
     final entry = LogEntry(
       timestamp: DateTime.now(),
       message: message,
       level: level,
+      details: details,
     );
 
     if (!_isLoaded) {
@@ -98,13 +102,17 @@ class AppLogger extends ChangeNotifier {
     }
     
     if (kDebugMode) {
-      print('[${level.name.toUpperCase()}] ${message}');
+      if (details != null) {
+         print('[${level.name.toUpperCase()}] $message\nDetails: $details');
+      } else {
+         print('[${level.name.toUpperCase()}] $message');
+      }
     }
   }
 
-  void info(String message) => log(message, level: LogLevel.info);
-  void warning(String message) => log(message, level: LogLevel.warning);
-  void error(String message) => log(message, level: LogLevel.error);
+  void info(String message, {String? details}) => log(message, level: LogLevel.info, details: details);
+  void warning(String message, {String? details}) => log(message, level: LogLevel.warning, details: details);
+  void error(String message, {String? details}) => log(message, level: LogLevel.error, details: details);
 
   void clear() async {
     _logs.clear();
