@@ -95,7 +95,6 @@ Uygulamanın SDK kısıtlamalarına (`sdk: ">=3.0.0 <4.0.0"`) uygun en stabil ve
 - **Çift Etiketleme Yasağı:** Etkileşimli öğelerin gereksiz veya birden fazla semantik düğüme sahip olmadığından emin olun. Gerekirse alt widget'larda `ExcludeSemantics` kullanın.
 - Büyük metinler ve özel widget'lar, daha iyi navigasyon için uygun yerlerde `Semantics` widget başlıklarını kullanmalıdır.
 - Görseller, görsel içeriğin açıklamasını sağlayan bir `semanticsLabel` değerine sahip olmalıdır.
-- **Otomatik Sesli Okuma / Anons Sistemi:** Ekran okuyucu kullanıcılarının deneyimini iyileştirmek için, özet niteliğindeki sayfalara ve ekranlara girildiğinde sayfa açılışında (örn. `WidgetsBinding.instance.addPostFrameCallback` içinde gecikmeli olarak) `SemanticsService.announce("... metin ...", TextDirection.ltr);` kullanılarak içeriğin otomatik okunması sağlanmalıdır. Ayrıca odak bir `FocusNode` kullanılarak ana başlığa veya içeriğe kaydırılmalıdır.
 
 ---
 
@@ -194,10 +193,6 @@ Projede kullanılan kritik `pubspec.yaml` paket listesi:
 *   Detay sayfasında `PageView` kullanılarak kampanyalar arasında akıcı hızlı geçiş desteği eklendi ve SharePlus ile Paylaş butonu getirildi (v1.6.2).
 *   Sohbet klavyesine akıllı emoji seçici (en çok kullanılanları hatırlayan yerel önbellek destekli) eklendi (v1.6.3).
 *   Çağrı başlangıcındaki "bip" sesi daha yumuşak bir sistem tonuyla değiştirildi (v1.6.3).
-*   Bilgi yarışması sayfasında, soruları TTS servisi ile okumak yerine ekran okuyuculara özel `SemanticsService.announce` kütüphanesine geçiş yapıldı.
-*   "Görev Özeti ve Geçmişi" sayfası gibi alanlara otomatik sesli okuma ve Focus yönlendirmesi eklendi.
-*   Cihaz takılmalarında (Jank) sayfa bazlı tespit yapılmasını sağlayan `GlobalRouteObserver` yapısı eklendi.
-*   Özel kişi arama sayfası artık büyük-küçük harf duyarlılığı olmadan çalışacak şekilde optimize edildi (`toLowerCase()`).
 
 **🛠️ Devam Eden / Bekleyen Görevler**
 *   Süresi dolan kampanyaların otomatik olarak "Pasif" işaretlenmesi için bir cron-job botu entegre edilecek.

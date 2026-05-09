@@ -11,6 +11,7 @@ class PerformanceMonitor {
   
   static double maxRamUsedMB = 0.0;
   static int cpuJankCount = 0; // CPU performans göstergesi olarak jank (dropped frames) kullanılıyor
+  static Map<String, int> janksPerRoute = {}; // Hangi sayfada kaç jank olduğunu tutar
   static Timer? _resourceTimer;
 
   static void init() {
@@ -35,6 +36,8 @@ class PerformanceMonitor {
         if (timing.totalSpan.inMilliseconds > 50) {
           _droppedFrames++;
           cpuJankCount++;
+          final route = GlobalRouteObserver.currentRoute;
+          janksPerRoute[route] = (janksPerRoute[route] ?? 0) + 1;
         }
       }
       

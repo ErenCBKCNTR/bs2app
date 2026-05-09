@@ -3,6 +3,7 @@ import 'package:flutter/semantics.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/features/task_board/data/models/task_item.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:blind_social/core/utils/pb_cache_manager.dart';
 
 class TaskOverviewScreen extends StatefulWidget {
   const TaskOverviewScreen({super.key});
@@ -39,10 +40,21 @@ class _TaskOverviewScreenState extends State<TaskOverviewScreen> {
       // Get all tasks assigned to me or created by me
       // Because we don't have board-level task fetch easily without joins,
       // we just filter by assignees contains me OR created_by = me.
-      final records = await PocketBaseService.client.collection('task_items').getFullList(
-        filter: 'assignees ~ "$userId" || created_by = "$userId"',
-        sort: '-created',
-      );
+      List<RecordModel> records = [];
+      try {
+        records = await PocketBaseService.client.collection('task_items').getFullList(
+          filter: 'assignees ~ "$userId" || created_by = "$userId"',
+          sort: '-created',
+        );
+        await PbCacheManager.saveList('task_items_overview', userId, records);
+      } catch (e) {
+        final cached = await PbCacheManager.getList('task_items_overview', userId);
+        if (cached != null) {
+          records = cached;
+        } else {
+          rethrow;
+        }
+      }
       
       final tasks = records.map((e) => TaskItem.fromRecord(e)).toList();
       

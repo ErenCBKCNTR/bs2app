@@ -9,6 +9,7 @@ import 'package:blind_social/features/task_board/data/models/task_list_model.dar
 import 'package:blind_social/features/task_board/data/models/task_item.dart';
 import 'package:blind_social/features/task_board/data/models/task_checklist.dart';
 import 'package:blind_social/features/task_board/data/models/task_comment.dart';
+import 'package:blind_social/core/utils/pb_cache_manager.dart';
 
 class TaskBoardService {
   final PocketBase _pb = PocketBaseService.client;
@@ -164,10 +165,21 @@ class TaskBoardService {
 
   // TASKS
   Future<List<TaskItem>> getTasks(String listId) async {
-    final records = await _pb.collection('task_items').getFullList(
-      filter: 'list_id = "$listId"',
-      sort: 'order, created',
-    );
+    List<RecordModel> records = [];
+    try {
+      records = await _pb.collection('task_items').getFullList(
+        filter: 'list_id = "$listId"',
+        sort: 'order, created',
+      );
+      await PbCacheManager.saveList('task_items', listId, records);
+    } catch (e) {
+      final cached = await PbCacheManager.getList('task_items', listId);
+      if (cached != null) {
+        records = cached;
+      } else {
+        rethrow;
+      }
+    }
     return records.map((e) => TaskItem.fromRecord(e)).toList();
   }
 

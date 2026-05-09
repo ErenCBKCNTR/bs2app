@@ -113,7 +113,21 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
                     });
                     
                     try {
-                      final response = await PocketBaseService.client.collection('users').getFirstListItem('username = "${username.toLowerCase()}"');
+                      final responseList = await PocketBaseService.client.collection('users').getFullList(
+                        filter: 'username ~ "$username"',
+                      );
+
+                      final response = responseList.where(
+                        (r) => r.getStringValue('username').toLowerCase() == username.toLowerCase()
+                      ).firstOrNull;
+
+                      if (response == null) {
+                        setStateDialog(() {
+                          isSearching = false;
+                          errorMessage = "Böyle bir kullanıcı bulunamadı.";
+                        });
+                        return;
+                      }
 
                       if (response.id == currentUserId) {
                          setStateDialog(() {
@@ -130,7 +144,7 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
                       AppLogger.instance.error('Kullanıcı arama hatası: $e');
                       setStateDialog(() {
                         isSearching = false;
-                        errorMessage = "Böyle bir kullanıcı bulunamadı.";
+                        errorMessage = "Arama sırasında bir hata oluştu.";
                       });
                     }
                   },

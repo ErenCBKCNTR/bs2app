@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
+import 'package:blind_social/core/utils/pb_cache_manager.dart';
 import 'package:pocketbase/pocketbase.dart' hide SettingsService;
 import 'package:blind_social/features/chat/presentation/widgets/chat_list_item.dart';
 import 'package:blind_social/features/profile/presentation/screens/my_profile_screen.dart';
@@ -369,11 +370,27 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       }
       
       // PocketBase'de önce kullanıcının katılımcı olduğu chat ID'lerini bulalım.
-      final myParticipants = await PocketBaseService.client.collection('chat_participants').getFullList(
-         filter: 'user_id = "$userId"',
-         expand: 'chat_id,chat_id.chat_participants_via_chat_id,chat_id.chat_participants_via_chat_id.user_id,chat_id.messages_via_chat_id',
-         headers: kIsWeb ? {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'} : const {},
-      ).timeout(const Duration(seconds: 15));
+      List<RecordModel> myParticipants = [];
+      try {
+        final cacheStr = 'user_id_participants';
+        myParticipants = await PocketBaseService.client.collection('chat_participants').getFullList(
+           filter: 'user_id = "$userId"',
+           expand: 'chat_id,chat_id.chat_participants_via_chat_id,chat_id.chat_participants_via_chat_id.user_id,chat_id.messages_via_chat_id',
+           headers: kIsWeb ? {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'} : const {},
+        ).timeout(const Duration(seconds: 15));
+        await PbCacheManager.saveList('chat_participants', cacheStr, myParticipants);
+      } catch (e) {
+        if (!hasInternet || loadedFromCache) {
+          final cached = await PbCacheManager.getList('chat_participants', 'user_id_participants');
+          if (cached != null && cached.isNotEmpty) {
+             myParticipants = cached;
+          } else {
+             rethrow;
+          }
+        } else {
+          rethrow;
+        }
+      }
       
       List<RecordModel> chatRecords = [];
       for(var p in myParticipants) {

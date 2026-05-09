@@ -94,6 +94,13 @@ class _DeveloperLogsScreenState extends State<DeveloperLogsScreen> {
                   'Toplam İşlemci (CPU) Takılma (Jank) Oranı: ${PerformanceMonitor.cpuJankCount}',
                   style: const TextStyle(fontSize: 13),
                 ),
+                if (PerformanceMonitor.janksPerRoute.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Text('Sayfa Bazlı Jank Detayı:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  ...PerformanceMonitor.janksPerRoute.entries.map(
+                    (e) => Text('- ${e.key}: ${e.value} kez', style: const TextStyle(fontSize: 12))
+                  ).toList(),
+                ],
               ],
             ),
           ),
