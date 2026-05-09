@@ -1,3 +1,4 @@
+import 'package:flutter/semantics.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -27,11 +28,11 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
   double _downloadProgress = 0.0;
   String _downloadStatus = '';
 
-  final FocusNode _headerFocusNode = FocusNode();
+  final FocusNode _buttonFocusNode = FocusNode();
 
   @override
   void dispose() {
-    _headerFocusNode.dispose();
+    _buttonFocusNode.dispose();
     super.dispose();
   }
 
@@ -65,7 +66,13 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
               _isLoading = false;
             });
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) _headerFocusNode.requestFocus();
+              if (mounted) {
+                SemanticsService.announce(
+                  "Yeni Bir Sürüm Var! Şu anda kullandığınız sürüm: $_currentVersion. Güncel sürüm: $_dbVersion. Uygulamayı kullanmaya devam etmek için lütfen en güncel sürüme güncelleyin. Uygulamayı güncellemek için lütfen aşağıdaki Uygulamayı Güncelle butonuna basınız.",
+                  TextDirection.ltr,
+                );
+                _buttonFocusNode.requestFocus();
+              }
             });
           }
           return;
@@ -120,6 +127,19 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
 
     try {
       final dir = await getExternalStorageDirectory();
+      
+      // Clean up old APK files to prevent storage bloat
+      if (dir != null) {
+        try {
+          final files = dir.listSync();
+          for (var file in files) {
+            if (file.path.endsWith('.apk')) {
+              file.deleteSync();
+            }
+          }
+        } catch (_) {}
+      }
+
       final filePath = '${dir?.path}/update_$_dbVersion.apk';
 
       final dio = Dio();
@@ -181,20 +201,14 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
               children: [
                 const Icon(Icons.system_update, size: 80, color: Colors.green),
                 const SizedBox(height: 24),
-                Semantics(
-                  header: true,
-                  child: Focus(
-                    focusNode: _headerFocusNode,
-                    child: const Text(
-                      "Yeni Bir Sürüm Var!",
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                const Text(
+                  "Yeni Bir Sürüm Var!",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  "Şu anda kullandığınız sürüm: $_currentVersion\nGüncel sürüm: $_dbVersion\n\nUygulamayı kullanmaya devam etmek için lütfen en güncel sürüme güncelleyin.\n\nÖNEMLİ: Yeni uygulamayı kurmadan önce yaşanabilecek çakışmaları önlemek için lütfen eski uygulamayı cihazınızdan kaldırın.",
+                  "Şu anda kullandığınız sürüm: $_currentVersion\nGüncel sürüm: $_dbVersion\n\nUygulamayı kullanmaya devam etmek için lütfen en güncel sürüme güncelleyin.\n\nUygulamayı güncellemek için lütfen aşağıdaki \"Uygulamayı Güncelle\" butonuna basınız.",
                   style: const TextStyle(fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
@@ -205,9 +219,12 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
                     children: [
                       LinearProgressIndicator(value: _downloadProgress),
                       const SizedBox(height: 8),
-                      Text(
-                        _downloadStatus,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      Semantics(
+                        liveRegion: true,
+                        child: Text(
+                          _downloadStatus,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   )
@@ -218,6 +235,7 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
+                          focusNode: _buttonFocusNode,
                           onPressed: _startDownload,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/core/utils/logger.dart';
@@ -15,11 +16,24 @@ class QuizLobbyScreen extends StatefulWidget {
 class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
   bool _isLoading = false;
   int _myScore = 0;
+  final FocusNode _singlePlayerFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _fetchMyScore();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _singlePlayerFocusNode.requestFocus();
+        SemanticsService.announce("Bilgi Yarışması sayfasına girdiniz. Tek kişilik oyna butonuna odaklanıldı.", TextDirection.ltr);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _singlePlayerFocusNode.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchMyScore() async {
@@ -273,6 +287,7 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     ElevatedButton.icon(
+                      focusNode: _singlePlayerFocusNode,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 24),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -281,7 +296,10 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
                       ),
                       onPressed: _startSinglePlayerGame,
                       icon: const Icon(Icons.person, size: 32),
-                      label: const Text('Tek Kişilik Oyna', style: TextStyle(fontSize: 20)),
+                      label: const Semantics(
+                        excludeSemantics: true,
+                        child: Text('Tek Kişilik Oyna', style: TextStyle(fontSize: 20)),
+                      ),
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton.icon(

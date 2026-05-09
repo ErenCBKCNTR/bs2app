@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:blind_social/features/games/presentation/screens/quiz_lobby_screen.dart';
 
 class GamesScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class _GamesScreenState extends State<GamesScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _titleFocusNode.requestFocus();
+        SemanticsService.announce("Oyun Alanı. Hoş Geldiniz! Oynamak istediğiniz oyunu seçin.", TextDirection.ltr);
       }
     });
   }
@@ -40,12 +42,15 @@ class _GamesScreenState extends State<GamesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Focus(
-                focusNode: _titleFocusNode,
-                child: const Text(
-                  'Hoş Geldiniz!\nOynamak istediğiniz oyunu seçin.',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, height: 1.3),
-                  textAlign: TextAlign.center,
+              Semantics(
+                header: true,
+                child: Focus(
+                  focusNode: _titleFocusNode,
+                  child: const Text(
+                    'Hoş Geldiniz!\nOynamak istediğiniz oyunu seçin.',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, height: 1.3),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
