@@ -23,10 +23,11 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
     super.initState();
     _fetchMyScore();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _singlePlayerFocusNode.requestFocus();
-        SemanticsService.announce("Bilgi Yarışması sayfasına girdiniz. Tek kişilik oyna butonuna odaklanıldı.", TextDirection.ltr);
-      }
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _singlePlayerFocusNode.requestFocus();
+        }
+      });
     });
   }
 
@@ -286,18 +287,21 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    ElevatedButton.icon(
-                      focusNode: _singlePlayerFocusNode,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        backgroundColor: Colors.deepPurple,
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: _startSinglePlayerGame,
-                      icon: const Icon(Icons.person, size: 32),
-                      label: const ExcludeSemantics(
-                        child: Text('Tek Kişilik Oyna', style: TextStyle(fontSize: 20)),
+                    Semantics(
+                      button: true,
+                      excludeSemantics: true,
+                      label: 'Tek Kişilik Oyna',
+                      child: ElevatedButton.icon(
+                        focusNode: _singlePlayerFocusNode,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          backgroundColor: Colors.deepPurple,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: _startSinglePlayerGame,
+                        icon: const Icon(Icons.person, size: 32),
+                        label: const Text('Tek Kişilik Oyna', style: TextStyle(fontSize: 20)),
                       ),
                     ),
                     const SizedBox(height: 24),

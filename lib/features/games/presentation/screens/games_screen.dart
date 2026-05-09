@@ -16,10 +16,11 @@ class _GamesScreenState extends State<GamesScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _titleFocusNode.requestFocus();
-        SemanticsService.announce("Oyun Alanı. Hoş Geldiniz! Oynamak istediğiniz oyunu seçin.", TextDirection.ltr);
-      }
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _titleFocusNode.requestFocus();
+        }
+      });
     });
   }
 
