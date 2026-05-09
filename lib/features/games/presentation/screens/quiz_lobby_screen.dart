@@ -296,8 +296,7 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
                       ),
                       onPressed: _startSinglePlayerGame,
                       icon: const Icon(Icons.person, size: 32),
-                      label: const Semantics(
-                        excludeSemantics: true,
+                      label: const ExcludeSemantics(
                         child: Text('Tek Kişilik Oyna', style: TextStyle(fontSize: 20)),
                       ),
                     ),
