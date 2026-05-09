@@ -136,19 +136,17 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       final currentIndex = _game!.getIntValue('current_question_index');
       if (currentIndex < questions.length) {
         final currentQuestion = questions[currentIndex] as Map<String, dynamic>;
-        final String qText = currentQuestion['question'] ?? '';
-        final String optA = currentQuestion['option_a'] ?? '';
-        final String optB = currentQuestion['option_b'] ?? '';
-        final String optC = currentQuestion['option_c'] ?? '';
-        final String optD = currentQuestion['option_d'] ?? '';
-        
-        final String textToRead = "$qText ... A şıkkı: $optA ... B şıkkı: $optB ... C şıkkı: $optC ... D şıkkı: $optD.";
         
         try {
-          await TtsService().stop();
-          await TtsService().speak(textToRead);
+          await player.stop();
+          final String audioFile = currentQuestion['audio_file'] ?? '';
+          if (audioFile.isNotEmpty) {
+            final record = RecordModel.fromJson(currentQuestion);
+            final fileUrl = PocketBaseService.client.getFileUrl(record, audioFile).toString();
+            await player.play(UrlSource(fileUrl));
+          }
         } catch (e) {
-          AppLogger.instance.error('TTS Okuma hatası: $e');
+          AppLogger.instance.error('Ses dosyası çalma hatası: $e');
         }
       }
     }
@@ -419,8 +417,10 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
         if (_questionFocusNode.canRequestFocus) {
            _questionFocusNode.requestFocus();
         }
-        final textToAnnounce = "${currentQ['question']} A şıkkı: ${currentQ['option_a']}, B şıkkı: ${currentQ['option_b']}, C şıkkı: ${currentQ['option_c']}, D şıkkı: ${currentQ['option_d']} ";
-        SemanticsService.announce(textToAnnounce, TextDirection.ltr);
+        if (!widget.serverReadsQuestions) {
+          final textToAnnounce = "${currentQ['question']} A şıkkı: ${currentQ['option_a']}, B şıkkı: ${currentQ['option_b']}, C şıkkı: ${currentQ['option_c']}, D şıkkı: ${currentQ['option_d']} ";
+          SemanticsService.announce(textToAnnounce, TextDirection.ltr);
+        }
       }
     }
 

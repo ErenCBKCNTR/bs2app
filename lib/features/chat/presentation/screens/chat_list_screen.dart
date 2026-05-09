@@ -55,6 +55,16 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   final Set<String> _pendingOperations = {}; 
   final Map<String, String> _userNameCache = {};
   Timer? _pollingTimer;
+  Timer? _fetchDebounceTimer;
+
+  void _debouncedFetchChats() {
+    if (!mounted) return;
+    _fetchDebounceTimer?.cancel();
+    _fetchDebounceTimer = Timer(const Duration(milliseconds: 2500), () {
+      if (mounted) _fetchChats(isBackground: true);
+    });
+  }
+
   UnsubscribeFunc? _realtimeMessagesUnsub;
   UnsubscribeFunc? _realtimeChatsUnsub;
   UnsubscribeFunc? _realtimeParticipantsUnsub;
@@ -73,7 +83,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     _fetchChats();
     _checkPendingGameInvites();
     _setupRealtime();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 60), (_) {
+    _pollingTimer = Timer.periodic(const Duration(minutes: 5), (_) {
       _fetchChats(isBackground: true);
     });
     
@@ -151,8 +161,18 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
               }
 
               try {
-                final senderRecord = await PocketBaseService.client.collection('users').getOne(senderId);
-                final senderName = senderRecord.getStringValue('username');
+                String senderName = 'Bir Kullanıcı';
+                if (_userNameCache.containsKey(senderId)) {
+                   senderName = _userNameCache[senderId]!;
+                } else {
+                   final senderRecord = await PocketBaseService.client.collection('users').getOne(senderId);
+                   senderName = senderRecord.getStringValue('username');
+                   if (mounted) {
+                     setState(() {
+                       _userNameCache[senderId] = senderName;
+                     });
+                   }
+                }
                 
                 if (mounted) {
                   Navigator.push(context, MaterialPageRoute(
@@ -180,17 +200,17 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
             }
          }
        }
-       _fetchChats(isBackground: true);
+       _debouncedFetchChats();
     });
 
     // Sohbet eklendiğinde
     _realtimeChatsUnsub = await PocketBaseService.client.collection('chats').subscribe('*', (e) {
-       _fetchChats(isBackground: true);
+       _debouncedFetchChats();
     });
 
     // Katılımcı eklendiğinde
     _realtimeParticipantsUnsub = await PocketBaseService.client.collection('chat_participants').subscribe('*', (e) {
-       _fetchChats(isBackground: true);
+       _debouncedFetchChats();
     });
 
     _realtimeGamesUnsub = await PocketBaseService.client.collection('quiz_games').subscribe('*', (e) async {
@@ -265,6 +285,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
 
   @override
   void dispose() {
+    _fetchDebounceTimer?.cancel();
     _pollingTimer?.cancel();
     _realtimeMessagesUnsub?.call();
     _realtimeChatsUnsub?.call();

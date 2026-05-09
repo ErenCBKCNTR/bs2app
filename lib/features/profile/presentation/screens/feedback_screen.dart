@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:blind_social/features/profile/data/services/feedback_service.dart';
+import 'package:blind_social/core/utils/performance_monitor.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'dart:async';
 
@@ -42,12 +43,17 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       final logsString = AppLogger.instance.logs
           .map((e) => '[${e.timestamp}] [${e.level.name.toUpperCase()}] ${e.message}')
           .join('\n');
+          
+      final performanceString = '--- PERFORMANS METRİKLERİ ---\n'
+          'En Yüksek RAM Kullanımı: ${PerformanceMonitor.maxRamUsedMB.toStringAsFixed(1)} MB\n'
+          'Çizim Takılma (Jank) Oranı: ${PerformanceMonitor.cpuJankCount}\n'
+          '-----------------------------\n';
 
       await FeedbackService().sendFeedback(
         category: _selectedCategory,
         subject: _subjectController.text.trim(),
         message: _messageController.text.trim(),
-        logs: logsString,
+        logs: performanceString + logsString,
       );
 
       setState(() {

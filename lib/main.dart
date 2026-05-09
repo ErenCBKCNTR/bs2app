@@ -17,8 +17,8 @@ import 'package:blind_social/core/services/notification_service.dart';
 import 'package:blind_social/core/services/security_service.dart';
 
 import 'package:blind_social/core/services/audio_cache_service.dart';
-
 import 'package:blind_social/features/update/presentation/screens/update_check_wrapper.dart';
+import 'package:blind_social/core/utils/performance_monitor.dart';
 
 void main() async {
   // Global hata yakalayıcı (Framework hataları)
@@ -116,6 +116,7 @@ void main() async {
   }
 
   // App'i hemen başlat
+  PerformanceMonitor.init();
   runApp(
     const ProviderScope(
       child: BlindSocialApp(),
