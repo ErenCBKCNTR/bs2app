@@ -16,6 +16,8 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
   bool _isLoading = true;
   bool _needsUpdate = false;
   String _apkUrl = '';
+  String _currentVersion = '';
+  String _dbVersion = '';
 
   @override
   void initState() {
@@ -42,6 +44,8 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
             setState(() {
               _needsUpdate = true;
               _apkUrl = apkUrl;
+              _currentVersion = currentVersion;
+              _dbVersion = dbVersion;
               _isLoading = false;
             });
           }
@@ -115,9 +119,9 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  "Uygulamayı kullanmaya devam etmek için lütfen en güncel sürüme güncelleyin.\n\nÖNEMLİ: Yeni uygulamayı kurmadan önce yaşanabilecek çakışmaları önlemek için lütfen eski uygulamayı cihazınızdan kaldırın.",
-                  style: TextStyle(fontSize: 16),
+                Text(
+                  "Şu anda kullandığınız sürüm: $_currentVersion\nGüncel sürüm: $_dbVersion\n\nUygulamayı kullanmaya devam etmek için lütfen en güncel sürüme güncelleyin.\n\nÖNEMLİ: Yeni uygulamayı kurmadan önce yaşanabilecek çakışmaları önlemek için lütfen eski uygulamayı cihazınızdan kaldırın.",
+                  style: const TextStyle(fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),

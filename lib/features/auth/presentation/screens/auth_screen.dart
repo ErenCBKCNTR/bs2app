@@ -6,6 +6,7 @@ import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/services/notification_service.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -18,12 +19,27 @@ class _AuthScreenState extends State<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  String _appVersion = 'Yükleniyor...';
 
   @override
   void initState() {
     super.initState();
+    _loadAppVersion();
     if (kIsWeb) {
       _checkWebOAuthRedirect();
+    }
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final Info = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _appVersion = Info.version;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _appVersion = 'Bilinmiyor');
     }
   }
 
@@ -546,6 +562,13 @@ class _AuthScreenState extends State<AuthScreen> {
               'Hesabınız yoksa otomatik olarak oluşturulacaktır.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 32),
+            Center(
+              child: Text(
+                'Versiyon: $_appVersion',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
             ),
           ],
         ),
