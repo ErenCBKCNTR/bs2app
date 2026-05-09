@@ -113,27 +113,30 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
             leading: const Icon(Icons.cake),
             title: const Text('Doğum Tarihi'),
             subtitle: const Text('Doğum tarihinizin kimler tarafından görünebileceğini seçin'),
-            trailing: DropdownButton<bool>(
-              value: !_hideBirthday,
-              underline: const SizedBox(),
-              items: const [
-                DropdownMenuItem(
-                  value: true,
-                  child: Text('Herkes'),
-                ),
-                DropdownMenuItem(
-                  value: false,
-                  child: Text('Hiç Kimse'),
-                ),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _hideBirthday = !value;
-                  });
-                  _updatePocketBaseSetting('hide_birthday', !value);
-                }
-              },
+            trailing: Semantics(
+              hint: 'Seçenekleri görmek ve değiştirmek için çift tıklayın',
+              child: DropdownButton<bool>(
+                value: !_hideBirthday,
+                underline: const SizedBox(),
+                items: const [
+                  DropdownMenuItem(
+                    value: true,
+                    child: Text('Herkes'),
+                  ),
+                  DropdownMenuItem(
+                    value: false,
+                    child: Text('Hiç Kimse'),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _hideBirthday = !value;
+                    });
+                    _updatePocketBaseSetting('hide_birthday', !value);
+                  }
+                },
+              ),
             ),
           ),
           const Divider(),

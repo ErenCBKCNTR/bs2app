@@ -130,29 +130,33 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> with Widg
                         ),
                       ),
                       const SizedBox(height: 16),
-                      DropdownButtonFormField<RoomType>(
-                        value: roomType,
-                        decoration: const InputDecoration(
-                          labelText: 'Oda Türü',
-                          border: OutlineInputBorder(),
+                      Semantics(
+                        hint: 'Seçenekleri görmek ve değiştirmek için çift tıklayın',
+                        button: true, // as it's a dropdown button
+                        child: DropdownButtonFormField<RoomType>(
+                          value: roomType,
+                          decoration: const InputDecoration(
+                            labelText: 'Oda Türü',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: RoomType.text,
+                              child: Text('Sadece Mesaj'),
+                            ),
+                            DropdownMenuItem(
+                              value: RoomType.voice,
+                              child: Text('Sadece Ses'),
+                            ),
+                            DropdownMenuItem(
+                              value: RoomType.hybrid,
+                              child: Text('Karışık (Mesaj + Ses)'),
+                            ),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) setStateDialog(() => roomType = val);
+                          },
                         ),
-                        items: [
-                          const DropdownMenuItem(
-                            value: RoomType.text,
-                            child: Text('Sadece Mesaj'),
-                          ),
-                          const DropdownMenuItem(
-                            value: RoomType.voice,
-                            child: Text('Sadece Ses'),
-                          ),
-                          const DropdownMenuItem(
-                            value: RoomType.hybrid,
-                            child: Text('Karışık (Mesaj + Ses)'),
-                          ),
-                        ],
-                        onChanged: (val) {
-                          if (val != null) setStateDialog(() => roomType = val);
-                        },
                       ),
                     ],
                   ),

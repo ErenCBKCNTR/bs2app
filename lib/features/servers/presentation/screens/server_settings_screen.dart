@@ -333,22 +333,25 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> with Single
                     maxLines: 3,
                   ),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<int>(
-                    value: _capacity,
-                    decoration: const InputDecoration(
-                      labelText: 'Kişi Kapasitesi',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.groups),
+                  Semantics(
+                    hint: 'Seçenekleri görmek ve değiştirmek için çift tıklayın',
+                    child: DropdownButtonFormField<int>(
+                      value: _capacity,
+                      decoration: const InputDecoration(
+                        labelText: 'Kişi Kapasitesi',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.groups),
+                      ),
+                      items: [12, 24, 32, 48, 64, 128].map((int value) {
+                        return DropdownMenuItem<int>(
+                          value: value,
+                          child: Text('$value Kişilik'),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) setState(() => _capacity = val);
+                      },
                     ),
-                    items: [12, 24, 32, 48, 64, 128].map((int value) {
-                      return DropdownMenuItem<int>(
-                        value: value,
-                        child: Text('$value Kişilik'),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) setState(() => _capacity = val);
-                    },
                   ),
                 ],
               ),

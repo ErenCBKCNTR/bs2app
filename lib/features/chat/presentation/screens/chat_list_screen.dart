@@ -743,21 +743,24 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                         },
                       ),
                       const SizedBox(height: 16),
-                      DropdownButtonFormField<int>(
-                        value: capacity,
-                        decoration: const InputDecoration(
-                          labelText: 'Kişi Kapasitesi',
-                          border: OutlineInputBorder(),
+                      Semantics(
+                        hint: 'Seçenekleri görmek ve değiştirmek için çift tıklayın',
+                        child: DropdownButtonFormField<int>(
+                          value: capacity,
+                          decoration: const InputDecoration(
+                            labelText: 'Kişi Kapasitesi',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: [12, 24, 32, 48, 64, 128].map((int value) {
+                            return DropdownMenuItem<int>(
+                              value: value,
+                              child: Text('$value Kişilik'),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) setStateDialog(() => capacity = val);
+                          },
                         ),
-                        items: [12, 24, 32, 48, 64, 128].map((int value) {
-                          return DropdownMenuItem<int>(
-                            value: value,
-                            child: Text('$value Kişilik'),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) setStateDialog(() => capacity = val);
-                        },
                       ),
                       const SizedBox(height: 8),
                       Theme(

@@ -1046,6 +1046,8 @@ addRepaintBoundaries: true,
                       return Align(
                         alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
                         child: Semantics(
+                          container: true,
+                          excludeSemantics: !isVoiceMessage,
                           label: "${isFavorite ? 'Yıldızlı. ' : ''}$replyText${isVoiceMessage 
                             ? (isMyMessage ? "Gönderdiğiniz sesli mesaj. $timeString" : "Gelen sesli mesaj. $timeString") 
                             : (isCallMessage 

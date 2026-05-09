@@ -142,22 +142,25 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<int>(
-                    value: selectedQuestionCount,
-                    decoration: const InputDecoration(
-                      labelText: 'Soru Sayısı',
-                      border: OutlineInputBorder(),
+                  Semantics(
+                    hint: 'Seçenekleri görmek ve değiştirmek için çift tıklayın',
+                    child: DropdownButtonFormField<int>(
+                      value: selectedQuestionCount,
+                      decoration: const InputDecoration(
+                        labelText: 'Soru Sayısı',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 10, child: Text('10 Soru')),
+                        DropdownMenuItem(value: 20, child: Text('20 Soru')),
+                        DropdownMenuItem(value: 30, child: Text('30 Soru')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setStateDialog(() => selectedQuestionCount = val);
+                        }
+                      },
                     ),
-                    items: const [
-                      DropdownMenuItem(value: 10, child: Text('10 Soru')),
-                      DropdownMenuItem(value: 20, child: Text('20 Soru')),
-                      DropdownMenuItem(value: 30, child: Text('30 Soru')),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) {
-                        setStateDialog(() => selectedQuestionCount = val);
-                      }
-                    },
                   ),
                 ],
               ),

@@ -28,6 +28,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   Timer? _debounce;
+  final FocusNode _firstCampaignFocusNode = FocusNode();
 
   final List<String> _categories = [
     'Tümü', 'Akaryakıt', 'Araç', 'E-Ticaret', 'Eğitim & Kırtasiye', 'Eğlence', 
@@ -55,10 +56,11 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     _debounce?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
+    _firstCampaignFocusNode.dispose();
     super.dispose();
   }
 
-  Future<void> _fetchCampaigns({bool refresh = false}) async {
+  Future<void> _fetchCampaigns({bool refresh = false, bool focusFirst = false}) async {
     if (refresh) {
       if (mounted) {
         setState(() {
@@ -112,6 +114,14 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
           _isLoading = false;
           _isLoadingMore = false;
         });
+        
+        if (focusFirst && _campaigns.isNotEmpty) {
+           WidgetsBinding.instance.addPostFrameCallback((_) {
+               if (_firstCampaignFocusNode.canRequestFocus) {
+                   _firstCampaignFocusNode.requestFocus();
+               }
+           });
+        }
       }
     } catch (e) {
       AppLogger.instance.error('Kampanyalar yüklenemedi: $e');
@@ -229,7 +239,7 @@ addRepaintBoundaries: true,
 
   void _changeCategory(String cat) {
     setState(() => _selectedCategory = cat);
-    _fetchCampaigns(refresh: true);
+    _fetchCampaigns(refresh: true, focusFirst: true);
 
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -266,6 +276,7 @@ addRepaintBoundaries: true,
                 clipBehavior: Clip.antiAlias,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 child: InkWell(
+                  focusNode: index == 0 ? _firstCampaignFocusNode : null,
                   onTap: () async {
                     final result = await Navigator.push(
                       context,

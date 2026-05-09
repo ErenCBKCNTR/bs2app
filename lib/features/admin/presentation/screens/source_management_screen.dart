@@ -62,23 +62,26 @@ class _SourceManagementScreenState extends State<SourceManagementScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  DropdownButtonFormField<String>(
-                    value: selectedCategory,
-                    decoration: const InputDecoration(
-                      labelText: 'Kategori Seçimi',
-                      border: OutlineInputBorder(),
+                  Semantics(
+                    hint: 'Seçenekleri görmek ve değiştirmek için çift tıklayın',
+                    child: DropdownButtonFormField<String>(
+                      value: selectedCategory,
+                      decoration: const InputDecoration(
+                        labelText: 'Kategori Seçimi',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: categories.map((cat) {
+                        return DropdownMenuItem(
+                          value: cat,
+                          child: Text(cat),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        setDialogState(() {
+                          if (val != null) selectedCategory = val;
+                        });
+                      },
                     ),
-                    items: categories.map((cat) {
-                      return DropdownMenuItem(
-                        value: cat,
-                        child: Text(cat),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      setDialogState(() {
-                        if (val != null) selectedCategory = val;
-                      });
-                    },
                   ),
                   const SizedBox(height: 16),
                   TextField(

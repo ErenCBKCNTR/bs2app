@@ -124,18 +124,21 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                         decoration: const InputDecoration(labelText: 'Açıklama (İsteğe Bağlı)'),
                       ),
                       const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        value: selectedTemplate,
-                        decoration: const InputDecoration(labelText: 'Pano Şablonu Seçin', border: OutlineInputBorder()),
-                        items: templates.keys.map((String key) {
-                          return DropdownMenuItem<String>(
-                            value: key,
-                            child: Text(key),
-                          );
-                        }).toList(),
-                        onChanged: isSaving ? null : (val) {
-                          if (val != null) setStateDialog(() => selectedTemplate = val);
-                        },
+                      Semantics(
+                        hint: 'Seçenekleri görmek ve değiştirmek için çift tıklayın',
+                        child: DropdownButtonFormField<String>(
+                          value: selectedTemplate,
+                          decoration: const InputDecoration(labelText: 'Pano Şablonu Seçin', border: OutlineInputBorder()),
+                          items: templates.keys.map((String key) {
+                            return DropdownMenuItem<String>(
+                              value: key,
+                              child: Text(key),
+                            );
+                          }).toList(),
+                          onChanged: isSaving ? null : (val) {
+                            if (val != null) setStateDialog(() => selectedTemplate = val);
+                          },
+                        ),
                       ),
                       if (templates[selectedTemplate]!.isNotEmpty) ...[
                         const SizedBox(height: 8),

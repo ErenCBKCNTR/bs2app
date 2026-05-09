@@ -128,21 +128,24 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 style: TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 24),
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: const InputDecoration(
-                  labelText: 'Kategori Seçin',
-                  border: OutlineInputBorder(),
+              Semantics(
+                hint: 'Seçenekleri görmek ve değiştirmek için çift tıklayın',
+                child: DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  decoration: const InputDecoration(
+                    labelText: 'Kategori Seçin',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: _categories.map((cat) {
+                    return DropdownMenuItem(
+                      value: cat['value'],
+                      child: Text(cat['label']!),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _selectedCategory = val);
+                  },
                 ),
-                items: _categories.map((cat) {
-                  return DropdownMenuItem(
-                    value: cat['value'],
-                    child: Text(cat['label']!),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) setState(() => _selectedCategory = val);
-                },
               ),
               const SizedBox(height: 16),
               TextFormField(
