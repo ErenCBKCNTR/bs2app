@@ -433,11 +433,15 @@ class _AuthScreenState extends State<AuthScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Hoş Geldiniz',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-              semanticsLabel: 'Kör Sosyal Ağına Hoş Geldiniz. Lütfen giriş yöntemi seçin.',
+            Semantics(
+              label: 'Blind social uygulamasına Hoş geldiniz. Lütfen giriş yöntemi seçin.',
+              child: const ExcludeSemantics(
+                child: Text(
+                  'Hoş Geldiniz',
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
             const SizedBox(height: 32),
             Semantics(

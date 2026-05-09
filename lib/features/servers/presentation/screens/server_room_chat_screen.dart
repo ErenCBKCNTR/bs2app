@@ -129,9 +129,10 @@ addRepaintBoundaries: true,
                           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                           child: Semantics(
                             label: "${isMe ? 'Siz' : senderName}: ${isVoice ? 'Sesli mesaj' : message.content}. $timeStr",
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              padding: const EdgeInsets.all(12),
+                            child: ExcludeSemantics(
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: isMe
                                     ? Theme.of(context).colorScheme.primary.withOpacity(0.8)
@@ -173,7 +174,8 @@ addRepaintBoundaries: true,
                               ),
                             ),
                           ),
-                        );
+                        ),
+                      );
                       },
                     ),
         ),

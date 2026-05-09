@@ -134,11 +134,13 @@ class _QuizGameScreenState extends State<QuizGameScreen> with TickerProviderStat
     }
   }
   
-  void _readQuestionAloud() {
+  void _readQuestionAloud(Map<String, dynamic> currentQ) {
     if (mounted) {
       if (_questionFocusNode.canRequestFocus) {
          _questionFocusNode.requestFocus();
       }
+      final textToAnnounce = "${currentQ['question']} A şıkkı: ${currentQ['option_a']}, B şıkkı: ${currentQ['option_b']}, C şıkkı: ${currentQ['option_c']}, D şıkkı: ${currentQ['option_d']}";
+      SemanticsService.announce(textToAnnounce, TextDirection.ltr);
     }
   }
 
@@ -349,18 +351,16 @@ class _QuizGameScreenState extends State<QuizGameScreen> with TickerProviderStat
     final currentTurnId = _game!.getStringValue('current_turn_id');
     final myId = PocketBaseService.client.authStore.model!.id;
 
+    final currentQ = questions[currentIndex] as Map<String, dynamic>;
+
     if (currentIndex != _currentQuestionIndex) {
       final prevIndex = _currentQuestionIndex;
       _currentQuestionIndex = currentIndex;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (prevIndex != -1) {
-          await Future.delayed(const Duration(milliseconds: 5000));
-        } else {
-          await Future.delayed(const Duration(milliseconds: 1500));
-        }
+        await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) {
           Vibration.vibrate(duration: 100);
-          _readQuestionAloud();
+          _readQuestionAloud(currentQ);
         }
       });
     }
@@ -368,8 +368,6 @@ class _QuizGameScreenState extends State<QuizGameScreen> with TickerProviderStat
     if (currentIndex >= questions.length) {
       return const Scaffold(body: Center(child: Text('Hata: Soru indeksi sınırların dışında.')));
     }
-
-    final currentQ = questions[currentIndex] as Map<String, dynamic>;
     final isMyTurn = currentTurnId == myId;
     final isPlayer1 = _game!.getStringValue('player1_id') == myId;
 

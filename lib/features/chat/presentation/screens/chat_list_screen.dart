@@ -371,24 +371,31 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       
       // PocketBase'de önce kullanıcının katılımcı olduğu chat ID'lerini bulalım.
       List<RecordModel> myParticipants = [];
-      try {
-        final cacheStr = 'user_id_participants';
-        myParticipants = await PocketBaseService.client.collection('chat_participants').getFullList(
-           filter: 'user_id = "$userId"',
-           expand: 'chat_id,chat_id.chat_participants_via_chat_id,chat_id.chat_participants_via_chat_id.user_id,chat_id.messages_via_chat_id',
-           headers: kIsWeb ? {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'} : const {},
-        ).timeout(const Duration(seconds: 15));
-        await PbCacheManager.saveList('chat_participants', cacheStr, myParticipants);
-      } catch (e) {
-        if (!hasInternet || loadedFromCache) {
-          final cached = await PbCacheManager.getList('chat_participants', 'user_id_participants');
-          if (cached != null && cached.isNotEmpty) {
-             myParticipants = cached;
+      final cacheStr = 'user_id_participants';
+      
+      final cachedParticipants = await PbCacheManager.getList('chat_participants', cacheStr, maxAge: const Duration(seconds: 15));
+      
+      if (cachedParticipants != null && cachedParticipants.isNotEmpty) {
+          myParticipants = cachedParticipants;
+      } else {
+        try {
+          myParticipants = await PocketBaseService.client.collection('chat_participants').getFullList(
+             filter: 'user_id = "$userId"',
+             expand: 'chat_id,chat_id.chat_participants_via_chat_id,chat_id.chat_participants_via_chat_id.user_id,chat_id.messages_via_chat_id',
+             headers: kIsWeb ? {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'} : const {},
+          ).timeout(const Duration(seconds: 15));
+          await PbCacheManager.saveList('chat_participants', cacheStr, myParticipants);
+        } catch (e) {
+          if (!hasInternet || loadedFromCache) {
+            final fallback = await PbCacheManager.getList('chat_participants', cacheStr);
+            if (fallback != null && fallback.isNotEmpty) {
+               myParticipants = fallback;
+            } else {
+               rethrow;
+            }
           } else {
-             rethrow;
+            rethrow;
           }
-        } else {
-          rethrow;
         }
       }
       

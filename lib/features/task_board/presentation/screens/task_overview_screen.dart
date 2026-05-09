@@ -41,18 +41,23 @@ class _TaskOverviewScreenState extends State<TaskOverviewScreen> {
       // Because we don't have board-level task fetch easily without joins,
       // we just filter by assignees contains me OR created_by = me.
       List<RecordModel> records = [];
-      try {
-        records = await PocketBaseService.client.collection('task_items').getFullList(
-          filter: 'assignees ~ "$userId" || created_by = "$userId"',
-          sort: '-created',
-        );
-        await PbCacheManager.saveList('task_items_overview', userId, records);
-      } catch (e) {
-        final cached = await PbCacheManager.getList('task_items_overview', userId);
-        if (cached != null) {
-          records = cached;
-        } else {
-          rethrow;
+      final cachedData = await PbCacheManager.getList('task_items_overview', userId, maxAge: const Duration(seconds: 15));
+      if (cachedData != null && cachedData.isNotEmpty) {
+        records = cachedData;
+      } else {
+        try {
+          records = await PocketBaseService.client.collection('task_items').getFullList(
+            filter: 'assignees ~ "$userId" || created_by = "$userId"',
+            sort: '-created',
+          );
+          await PbCacheManager.saveList('task_items_overview', userId, records);
+        } catch (e) {
+          final cached = await PbCacheManager.getList('task_items_overview', userId);
+          if (cached != null) {
+            records = cached;
+          } else {
+            rethrow;
+          }
         }
       }
       

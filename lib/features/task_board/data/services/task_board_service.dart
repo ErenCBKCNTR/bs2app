@@ -166,18 +166,24 @@ class TaskBoardService {
   // TASKS
   Future<List<TaskItem>> getTasks(String listId) async {
     List<RecordModel> records = [];
-    try {
-      records = await _pb.collection('task_items').getFullList(
-        filter: 'list_id = "$listId"',
-        sort: 'order, created',
-      );
-      await PbCacheManager.saveList('task_items', listId, records);
-    } catch (e) {
-      final cached = await PbCacheManager.getList('task_items', listId);
-      if (cached != null) {
-        records = cached;
-      } else {
-        rethrow;
+    
+    final cachedData = await PbCacheManager.getList('task_items', listId, maxAge: const Duration(seconds: 15));
+    if (cachedData != null && cachedData.isNotEmpty) {
+      records = cachedData;
+    } else {
+      try {
+        records = await _pb.collection('task_items').getFullList(
+          filter: 'list_id = "$listId"',
+          sort: 'order, created',
+        );
+        await PbCacheManager.saveList('task_items', listId, records);
+      } catch (e) {
+        final cached = await PbCacheManager.getList('task_items', listId);
+        if (cached != null) {
+          records = cached;
+        } else {
+          rethrow;
+        }
       }
     }
     return records.map((e) => TaskItem.fromRecord(e)).toList();
