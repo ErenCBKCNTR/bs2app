@@ -23,7 +23,7 @@ class QuizGameScreen extends StatefulWidget {
   State<QuizGameScreen> createState() => _QuizGameScreenState();
 }
 
-class _QuizGameScreenState extends State<QuizGameScreen> {
+class _QuizGameScreenState extends State<QuizGameScreen> with TickerProviderStateMixin {
   RecordModel? _game;
   bool _isLoading = true;
   UnsubscribeFunc? _unsub;
@@ -36,9 +36,15 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
   final player = AudioPlayer();
   bool _hasSpokenGameOver = false;
 
+  late final AnimationController _blinkController;
+
   @override
   void initState() {
     super.initState();
+    _blinkController = AnimationController(
+       vsync: this,
+       duration: const Duration(milliseconds: 600),
+    );
     _fetchGame();
     if (!widget.isSinglePlayer) {
       _subscribeToGame();
@@ -53,6 +59,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     player.dispose();
     TtsService().stop();
     _questionFocusNode.dispose();
+    _blinkController.dispose();
     super.dispose();
   }
 
@@ -106,6 +113,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
             _game = e.record;
             _answering = false;
             _selectedOption = null;
+            _blinkController.stop();
           });
           
           // Also call it here so multiplayer clients apply score on update
@@ -167,6 +175,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       final correctText = currentQuestion['option_${currentQuestion['correct_answer']}'];
       SemanticsService.announce('Yanlış cevap verdiniz. Doğru cevap $correctOpt şıkkı: $correctText.', TextDirection.ltr);
       Vibration.vibrate(pattern: [0, 400, 100, 400]);
+      _blinkController.repeat(reverse: true);
       try {
         await player.setVolume(1.0);
         await player.play(UrlSource('https://api.cabukcan.com/sounds/games/quiz/yanlis_cevap.mp3'));
@@ -235,6 +244,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
         setState(() {
           _answering = false;
           _selectedOption = null;
+          _blinkController.stop();
         });
         if (nextStatus == 'finished' && isCorrect) {
            _playEndSound();
@@ -347,7 +357,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       _currentQuestionIndex = currentIndex;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (prevIndex != -1) {
-          await Future.delayed(const Duration(milliseconds: 500));
+          await Future.delayed(const Duration(milliseconds: 5000));
         }
         if (mounted) {
           if (_questionFocusNode.canRequestFocus) {
@@ -460,10 +470,54 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     
     Color bgColor = Colors.white;
     Color textColor = Colors.black87;
+    bool shouldBlink = false;
 
-    if (_answering && isSelected) {
-      bgColor = isCorrect ? Colors.green[600]! : Colors.red[600]!;
-      textColor = Colors.white;
+    if (_answering) {
+      if (isSelected) {
+        bgColor = isCorrect ? Colors.green[600]! : Colors.red[600]!;
+        textColor = Colors.white;
+      } else if (isCorrect) {
+        bgColor = Colors.green[600]!;
+        textColor = Colors.white;
+        shouldBlink = true;
+      }
+    }
+
+    Widget content = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          text ?? '',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+
+    if (shouldBlink) {
+      content = AnimatedBuilder(
+        animation: _blinkController,
+        builder: (context, child) {
+          // Opacity varies between 0.3 and 1.0
+          return Opacity(
+            opacity: 0.3 + 0.7 * _blinkController.value,
+            child: child,
+          );
+        },
+        child: content,
+      );
     }
 
     return Semantics(
@@ -472,28 +526,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       excludeSemantics: true,
       child: GestureDetector(
          onTap: _answering ? null : () => _submitAnswer(optionKey, currentQ),
-         child: Container(
-           width: double.infinity,
-           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-           decoration: BoxDecoration(
-             color: bgColor,
-             borderRadius: BorderRadius.circular(16),
-             boxShadow: const [
-               BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-             ],
-           ),
-           child: Center(
-             child: Text(
-               text ?? '',
-               style: TextStyle(
-                 fontSize: 18,
-                 fontWeight: FontWeight.bold,
-                 color: textColor,
-               ),
-               textAlign: TextAlign.center,
-             ),
-           ),
-         ),
+         child: content,
       ),
     );
   }
