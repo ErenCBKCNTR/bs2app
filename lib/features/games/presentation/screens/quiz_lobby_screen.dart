@@ -15,7 +15,6 @@ class QuizLobbyScreen extends StatefulWidget {
 class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
   bool _isLoading = false;
   int _myScore = 0;
-  bool _serverReadsQuestions = false;
 
   @override
   void initState() {
@@ -44,11 +43,9 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
       
       // Get 15 random questions.
       // Since PocketBase doesn't have native "random", we can just fetch some and shuffle in Dart.
-      final filterStr = _serverReadsQuestions ? 'audio_file != ""' : '';
       final questionsResult = await PocketBaseService.client.collection('quiz_questions').getList(
         page: 1,
         perPage: 500,
-        filter: filterStr.isNotEmpty ? filterStr : null,
       );
       
       final List<RecordModel> allQuestions = List.from(questionsResult.items);
@@ -79,35 +76,10 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
       });
 
       if (mounted) {
-        if (_serverReadsQuestions) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Önemli Uyarı', style: TextStyle(color: Colors.red)),
-              content: const Text(
-                'Lütfen ekran okuyucunuzu kapatın. Sorular sistem tarafından otomatik okunacaktır. Ekran 4\'e bölünecektir. A şıkkı sol üstte, B şıkkı sağ üstte, C şıkkı sol altta, D şıkkı sağ altta. Ekrana çift tıklayarak soruyu ve şıkları tekrar okutabilirsiniz.'
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => QuizGameScreen(gameId: game.id, isSinglePlayer: true, serverReadsQuestions: _serverReadsQuestions)),
-                    );
-                  },
-                  child: const Text('Anladım, Başla'),
-                )
-              ],
-            ),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => QuizGameScreen(gameId: game.id, isSinglePlayer: true, serverReadsQuestions: _serverReadsQuestions)),
-          );
-        }
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => QuizGameScreen(gameId: game.id, isSinglePlayer: true)),
+        );
       }
     } catch (e) {
       AppLogger.instance.error('Tek kişilik oyun başlatılamadı: $e');
@@ -219,11 +191,9 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
         return;
       }
 
-      final filterStr = _serverReadsQuestions ? 'audio_file != ""' : '';
       final questionsResult = await PocketBaseService.client.collection('quiz_questions').getList(
         page: 1,
         perPage: 500,
-        filter: filterStr.isNotEmpty ? filterStr : null,
       );
       final List<RecordModel> allQuestions = List.from(questionsResult.items);
       allQuestions.shuffle();
@@ -255,35 +225,10 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
 
       if (mounted) {
         // We go to the game screen as waiting.
-        if (_serverReadsQuestions) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Önemli Uyarı', style: TextStyle(color: Colors.red)),
-              content: const Text(
-                'Lütfen ekran okuyucunuzu kapatın. Sorular sistem tarafından otomatik okunacaktır. Ekran 4\'e bölünecektir. A şıkkı sol üstte, B şıkkı sağ üstte, C şıkkı sol altta, D şıkkı sağ altta. Ekrana çift tıklayarak soruyu ve şıkları tekrar okutabilirsiniz.'
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => QuizGameScreen(gameId: game.id, isSinglePlayer: false, isWaiting: true, serverReadsQuestions: _serverReadsQuestions)),
-                    );
-                  },
-                  child: const Text('Anladım, Başla'),
-                )
-              ],
-            ),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => QuizGameScreen(gameId: game.id, isSinglePlayer: false, isWaiting: true, serverReadsQuestions: _serverReadsQuestions)),
-          );
-        }
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => QuizGameScreen(gameId: game.id, isSinglePlayer: false, isWaiting: true)),
+        );
       }
       
     } catch (e) {
@@ -366,19 +311,6 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
                       },
                       icon: const Icon(Icons.leaderboard, size: 32),
                       label: const Text('Puan Tablosu', style: TextStyle(fontSize: 20)),
-                    ),
-                    const SizedBox(height: 24),
-                    CheckboxListTile(
-                      title: const Text('Soruları Sunucu Okusun', style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: const Text('Bu mod seçildiğinde sadece sesi yüklenmiş sorular gelir, özel bölünmüş ekran açılır.'),
-                      value: _serverReadsQuestions,
-                      onChanged: (val) {
-                        setState(() {
-                          _serverReadsQuestions = val ?? false;
-                        });
-                      },
-                      activeColor: Colors.blueAccent,
-                      checkColor: Colors.white,
                     ),
                   ],
                 ),

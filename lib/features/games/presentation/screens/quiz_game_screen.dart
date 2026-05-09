@@ -11,14 +11,12 @@ class QuizGameScreen extends StatefulWidget {
   final String gameId;
   final bool isSinglePlayer;
   final bool isWaiting;
-  final bool serverReadsQuestions;
 
   const QuizGameScreen({
     super.key,
     required this.gameId,
     required this.isSinglePlayer,
     this.isWaiting = false,
-    this.serverReadsQuestions = false,
   });
 
   @override
@@ -128,59 +126,19 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     }
   }
   
-  Future<void> _playTurnSound() async {
-    Vibration.vibrate(duration: 100);
-
-    if (widget.serverReadsQuestions && _game != null) {
-      final questions = _game!.getDataValue<List>('questions_json');
-      final currentIndex = _game!.getIntValue('current_question_index');
-      if (currentIndex < questions.length) {
-        final currentQuestion = questions[currentIndex] as Map<String, dynamic>;
-        
-        try {
-          await player.stop();
-          final String audioFile = currentQuestion['audio_file'] ?? '';
-          if (audioFile.isNotEmpty) {
-            final record = RecordModel.fromJson(currentQuestion);
-            final fileUrl = PocketBaseService.client.getFileUrl(record, audioFile).toString();
-            await player.play(UrlSource(fileUrl));
-          }
-        } catch (e) {
-          AppLogger.instance.error('Ses dosyası çalma hatası: $e');
-        }
-      }
+  Future<void> _readQuestionAloud() async {
+    if (_game == null) return;
+    final questions = _game!.getDataValue<List>('questions_json');
+    final currentIndex = _game!.getIntValue('current_question_index');
+    if (currentIndex < questions.length) {
+      final currentQLocal = questions[currentIndex] as Map<String, dynamic>;
+      final textToAnnounce = "${currentQLocal['question']}...\n\nA şıkkı... ${currentQLocal['option_a']}...\n\nB şıkkı... ${currentQLocal['option_b']}...\n\nC şıkkı... ${currentQLocal['option_c']}...\n\nD şıkkı... ${currentQLocal['option_d']}...";
+      await TtsService().speak(textToAnnounce);
     }
   }
 
   void _playEndSound() {
     Vibration.vibrate(pattern: [0, 500, 200, 500, 200, 1000]);
-  }
-
-  int _lastTapTime = 0;
-  String? _pendingOption;
-  Map<String, dynamic>? _pendingQuestion;
-
-  void _handleQuadrantTap(String option, Map<String, dynamic> currentQuestion, VoidCallback replayQuestion) {
-    final now = DateTime.now().millisecondsSinceEpoch;
-    if (now - _lastTapTime < 500) {
-      // It's a double tap
-      _lastTapTime = now;
-      _pendingOption = null;
-      replayQuestion();
-      return;
-    }
-    
-    _lastTapTime = now;
-    _pendingOption = option;
-    _pendingQuestion = currentQuestion;
-    
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (!mounted) return;
-      if (_pendingOption == option && _pendingQuestion == currentQuestion) {
-        _submitAnswer(_pendingOption!, _pendingQuestion!);
-        _pendingOption = null;
-      }
-    });
   }
 
   Future<void> _submitAnswer(String option, Map<String, dynamic> currentQuestion) async {
@@ -229,7 +187,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       }
 
       // Wait for sound to play before transition
-      await Future.delayed(const Duration(milliseconds: 3000));
+      await Future.delayed(const Duration(milliseconds: 5000));
 
       int currentIndex = _game!.getIntValue('current_question_index');
       
@@ -327,7 +285,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
         }
       }
       
-      if (widget.serverReadsQuestions && !_hasSpokenGameOver) {
+      if (!_hasSpokenGameOver) {
         _hasSpokenGameOver = true;
         final String speechText = widget.isSinglePlayer 
             ? 'Oyun Bitti! Kazandığınız Puan: $p1Score'
@@ -391,14 +349,8 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
           if (_questionFocusNode.canRequestFocus) {
              _questionFocusNode.requestFocus();
           }
-          if (widget.serverReadsQuestions) {
-             _playTurnSound();
-          } else {
-             final currentQLocal = questions[currentIndex] as Map<String, dynamic>;
-             final textToAnnounce = "${currentQLocal['question']} A şıkkı: ${currentQLocal['option_a']}, B şıkkı: ${currentQLocal['option_b']}, C şıkkı: ${currentQLocal['option_c']}, D şıkkı: ${currentQLocal['option_d']} ";
-             SemanticsService.announce(textToAnnounce, TextDirection.ltr);
-             _playTurnSound();
-          }
+          Vibration.vibrate(duration: 100);
+          _readQuestionAloud();
         }
       });
     }
@@ -412,54 +364,13 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     final isPlayer1 = _game!.getStringValue('player1_id') == myId;
 
     void replayQuestion() {
-      _playTurnSound();
+      Vibration.vibrate(duration: 100);
       if (mounted) {
         if (_questionFocusNode.canRequestFocus) {
            _questionFocusNode.requestFocus();
         }
-        if (!widget.serverReadsQuestions) {
-          final textToAnnounce = "${currentQ['question']} A şıkkı: ${currentQ['option_a']}, B şıkkı: ${currentQ['option_b']}, C şıkkı: ${currentQ['option_c']}, D şıkkı: ${currentQ['option_d']} ";
-          SemanticsService.announce(textToAnnounce, TextDirection.ltr);
-        }
+        _readQuestionAloud();
       }
-    }
-
-    if (widget.serverReadsQuestions && isMyTurn) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Soru ${currentIndex + 1} / ${questions.length}'),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.replay),
-              tooltip: 'Soruyu Tekrar Dinle',
-              onPressed: replayQuestion,
-            ),
-          ],
-        ),
-        body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    _buildQuadrant('a', currentQ['option_a'], currentQ, Colors.blue, replayQuestion),
-                    _buildQuadrant('b', currentQ['option_b'], currentQ, Colors.red, replayQuestion),
-                  ]
-                ),
-              ),
-              Expanded(
-                child: Row(
-                  children: [
-                    _buildQuadrant('c', currentQ['option_c'], currentQ, Colors.green, replayQuestion),
-                    _buildQuadrant('d', currentQ['option_d'], currentQ, Colors.orange, replayQuestion),
-                  ]
-                )
-              ),
-            ]
-          )
-        )
-      );
     }
 
     return Scaffold(
@@ -539,50 +450,16 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     );
   }
 
-  Widget _buildQuadrant(String optionKey, String? text, Map<String, dynamic> currentQ, Color defaultColor, VoidCallback onDoubleTap) {
-    final isSelected = _selectedOption == optionKey;
-    final isCorrect = currentQ['correct_answer'] == optionKey;
-    
-    Color bgColor = defaultColor.withOpacity(0.8);
-    if (_answering && isSelected) {
-      bgColor = isCorrect ? Colors.green : Colors.red;
-    }
-
-    return Expanded(
-      child: Semantics(
-        button: true,
-        label: '${optionKey.toUpperCase()}',
-        child: GestureDetector(
-          onTap: () => _handleQuadrantTap(optionKey, currentQ, onDoubleTap),
-          child: Container(
-            margin: const EdgeInsets.all(4.0),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
-              child: Text(
-                optionKey.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 72,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildOptionButton(String optionKey, String? text, Map<String, dynamic> currentQ, Color defaultColor) {
     final isSelected = _selectedOption == optionKey;
     final isCorrect = currentQ['correct_answer'] == optionKey;
     
-    Color bgColor = defaultColor;
+    Color bgColor = Colors.white;
+    Color textColor = Colors.black87;
+
     if (_answering && isSelected) {
-      bgColor = isCorrect ? Colors.green[700]! : Colors.red[700]!;
+      bgColor = isCorrect ? Colors.green[600]! : Colors.red[600]!;
+      textColor = Colors.white;
     }
 
     return Semantics(
@@ -604,10 +481,10 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
            child: Center(
              child: Text(
                text ?? '',
-               style: const TextStyle(
+               style: TextStyle(
                  fontSize: 18,
                  fontWeight: FontWeight.bold,
-                 color: Colors.white,
+                 color: textColor,
                ),
                textAlign: TextAlign.center,
              ),

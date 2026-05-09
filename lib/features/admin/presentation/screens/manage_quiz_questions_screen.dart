@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:audioplayers/audioplayers.dart';
 import 'package:blind_social/features/admin/data/services/admin_service.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
@@ -26,7 +24,6 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
   int _diff3Questions = 0;
 
   int? _selectedDifficulty;
-  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -36,7 +33,6 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
 
   @override
   void dispose() {
-    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -97,113 +93,6 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
       AppLogger.instance.error('Soru silinirken hata: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Soru silinirken hata: $e')));
-      }
-    }
-  }
-
-  Future<void> _uploadAudioForQuestion(String questionId) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.audio,
-      withData: true,
-    );
-
-    if (result != null) {
-      final file = result.files.single;
-      
-      if (file.bytes == null && file.path == null) {
-        AppLogger.instance.error('FilePicker: Dosya verisi(bytes) de yolu(path) da null geldi.');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dosya okunamadı. Lütfen tekrar deneyin.')));
-        }
-        return;
-      }
-
-      final fileName = file.name;
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses dosyası yükleniyor...')));
-      }
-
-      try {
-        List<http.MultipartFile> files = [];
-        if (file.bytes != null) {
-          files.add(http.MultipartFile.fromBytes(
-            'audio_file',
-            file.bytes!,
-            filename: fileName,
-          ));
-        } else if (file.path != null) {
-          files.add(await http.MultipartFile.fromPath(
-            'audio_file',
-            file.path!,
-            filename: fileName,
-          ));
-        }
-
-        await PocketBaseService.client.collection('quiz_questions').update(
-          questionId,
-          files: files,
-        );
-        _fetchQuestions(); // Refresh
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses dosyası başarıyla yüklendi.')));
-        }
-      } catch (e) {
-        AppLogger.instance.error('Ses dosyası yüklenirken hata: $e');
-        if (mounted) {
-          ErrorHandler.handleError(context, e);
-        }
-      }
-    }
-  }
-
-  Future<void> _deleteAudioForQuestion(String questionId) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sesi Sil'),
-        content: const Text('Bu soruya ait ses dosyasını silmek istediğinize emin misiniz?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sil'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    try {
-      await PocketBaseService.client.collection('quiz_questions').update(
-        questionId,
-        body: {'audio_file': ''},
-      );
-      _fetchQuestions(); // Refresh list automatically
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ses dosyası silindi.')));
-      }
-    } catch (e) {
-      AppLogger.instance.error('Ses silinirken hata: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ses silinirken hata: $e')));
-      }
-    }
-  }
-
-  Future<void> _playAudio(RecordModel record) async {
-    try {
-      final url = PocketBaseService.client.getFileUrl(record, record.getStringValue('audio_file')).toString();
-      await _audioPlayer.play(UrlSource(url));
-    } catch (e) {
-      AppLogger.instance.error('Ses çalınırken hata: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ses çalınırken hata: $e')));
       }
     }
   }
@@ -342,7 +231,6 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
                         itemBuilder: (context, index) {
                           final q = filteredQuestions[index];
                           final correctAnswer = q.getStringValue('correct_answer');
-                          final hasAudio = q.getStringValue('audio_file').isNotEmpty;
                           
                           return Card(
                             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -363,11 +251,6 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
                                 subtitle: Row(
                                 children: [
                                   Text('Zorluk: ${q.getIntValue('difficulty')}'),
-                                  if (hasAudio) ...[
-                                    const SizedBox(width: 8),
-                                    const Icon(Icons.audiotrack, size: 16, color: Colors.green),
-                                    const Text(' Ses Yüklü', style: TextStyle(color: Colors.green, fontSize: 12)),
-                                  ]
                                 ],
                               ),
                               childrenPadding: const EdgeInsets.all(16),
@@ -382,27 +265,6 @@ class _ManageQuizQuestionsScreenState extends State<ManageQuizQuestionsScreen> {
                                   runSpacing: 8,
                                   alignment: WrapAlignment.end,
                                   children: [
-                                    if (hasAudio) ...[
-                                      ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
-                                        onPressed: () => _playAudio(q),
-                                        icon: const Icon(Icons.play_arrow),
-                                        label: const Text('Sesi Çal'),
-                                      ),
-                                      ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
-                                        onPressed: () => _deleteAudioForQuestion(q.id),
-                                        icon: const Icon(Icons.volume_off),
-                                        label: const Text('Sesi Sil'),
-                                      ),
-                                    ],
-                                    if (!hasAudio)
-                                      ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
-                                        onPressed: () => _uploadAudioForQuestion(q.id),
-                                        icon: const Icon(Icons.upload_file),
-                                        label: const Text('Ses Yükle'),
-                                      ),
                                     ElevatedButton.icon(
                                       style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
                                       onPressed: () => _deleteQuestion(q.id),
