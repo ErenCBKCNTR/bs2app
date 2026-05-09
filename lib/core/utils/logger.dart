@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:blind_social/core/utils/route_observer.dart';
 
 enum LogLevel { info, warning, error }
 
@@ -83,11 +84,14 @@ class AppLogger extends ChangeNotifier {
   }
 
   void log(String message, {LogLevel level = LogLevel.info, String? details}) {
+    final route = GlobalRouteObserver.currentRoute;
+    final String fullDetails = details != null ? 'Route: $route\n$details' : 'Route: $route';
+    
     final entry = LogEntry(
       timestamp: DateTime.now(),
       message: message,
       level: level,
-      details: details,
+      details: fullDetails,
     );
 
     if (!_isLoaded) {

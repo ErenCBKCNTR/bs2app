@@ -113,7 +113,7 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
                     });
                     
                     try {
-                      final response = await PocketBaseService.client.collection('users').getFirstListItem('username = "$username"');
+                      final response = await PocketBaseService.client.collection('users').getFirstListItem('username = "${username.toLowerCase()}"');
 
                       if (response.id == currentUserId) {
                          setStateDialog(() {

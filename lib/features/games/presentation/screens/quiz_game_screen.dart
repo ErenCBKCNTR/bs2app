@@ -134,14 +134,11 @@ class _QuizGameScreenState extends State<QuizGameScreen> with TickerProviderStat
     }
   }
   
-  Future<void> _readQuestionAloud() async {
-    if (_game == null) return;
-    final questions = _game!.getDataValue<List>('questions_json');
-    final currentIndex = _game!.getIntValue('current_question_index');
-    if (currentIndex < questions.length) {
-      final currentQLocal = questions[currentIndex] as Map<String, dynamic>;
-      final textToAnnounce = "${currentQLocal['question']} A şıkkı: ${currentQLocal['option_a']}, B şıkkı: ${currentQLocal['option_b']}, C şıkkı: ${currentQLocal['option_c']}, D şıkkı: ${currentQLocal['option_d']}";
-      SemanticsService.announce(textToAnnounce, TextDirection.ltr);
+  void _readQuestionAloud() {
+    if (mounted) {
+      if (_questionFocusNode.canRequestFocus) {
+         _questionFocusNode.requestFocus();
+      }
     }
   }
 
@@ -177,7 +174,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> with TickerProviderStat
       Vibration.vibrate(pattern: [0, 400, 100, 400]);
       _blinkController.repeat(reverse: true);
       try {
-        await player.setVolume(1.0);
+        await player.setVolume(0.3);
         await player.play(UrlSource('https://api.cabukcan.com/sounds/games/quiz/yanlis_cevap.mp3'));
       } catch (e) {
         AppLogger.instance.error('Yanlış cevap sesi çalınamadı: $e');
@@ -358,11 +355,10 @@ class _QuizGameScreenState extends State<QuizGameScreen> with TickerProviderStat
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (prevIndex != -1) {
           await Future.delayed(const Duration(milliseconds: 5000));
+        } else {
+          await Future.delayed(const Duration(milliseconds: 1500));
         }
         if (mounted) {
-          if (_questionFocusNode.canRequestFocus) {
-             _questionFocusNode.requestFocus();
-          }
           Vibration.vibrate(duration: 100);
           _readQuestionAloud();
         }
@@ -383,7 +379,8 @@ class _QuizGameScreenState extends State<QuizGameScreen> with TickerProviderStat
         if (_questionFocusNode.canRequestFocus) {
            _questionFocusNode.requestFocus();
         }
-        _readQuestionAloud();
+        final textToAnnounce = "${currentQ['question']} A şıkkı: ${currentQ['option_a']}, B şıkkı: ${currentQ['option_b']}, C şıkkı: ${currentQ['option_c']}, D şıkkı: ${currentQ['option_d']}";
+        SemanticsService.announce(textToAnnounce, TextDirection.ltr);
       }
     }
 
@@ -427,15 +424,19 @@ class _QuizGameScreenState extends State<QuizGameScreen> with TickerProviderStat
                     child: Center(
                       child: Focus(
                         focusNode: _questionFocusNode,
-                        child: Text(
-                          currentQ['question'] ?? '',
-                          style: const TextStyle(
-                            fontSize: 26, 
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                            height: 1.3,
+                        child: Semantics(
+                          label: "${currentQ['question']} A şıkkı: ${currentQ['option_a']}, B şıkkı: ${currentQ['option_b']}, C şıkkı: ${currentQ['option_c']}, D şıkkı: ${currentQ['option_d']}",
+                          excludeSemantics: true,
+                          child: Text(
+                            currentQ['question'] ?? '',
+                            style: const TextStyle(
+                              fontSize: 26, 
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                              height: 1.3,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),

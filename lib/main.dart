@@ -19,6 +19,7 @@ import 'package:blind_social/core/services/security_service.dart';
 import 'package:blind_social/core/services/audio_cache_service.dart';
 import 'package:blind_social/features/update/presentation/screens/update_check_wrapper.dart';
 import 'package:blind_social/core/utils/performance_monitor.dart';
+import 'package:blind_social/core/utils/route_observer.dart';
 
 void main() async {
   // Global hata yakalayıcı (Framework hataları)
@@ -157,6 +158,7 @@ class BlindSocialApp extends ConsumerWidget {
     return MaterialApp(
       title: 'Blind Social',
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [globalRouteObserver],
       themeMode: themeMode,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

@@ -1,5 +1,6 @@
 import 'package:flutter/scheduler.dart';
 import 'package:blind_social/core/utils/logger.dart';
+import 'package:blind_social/core/utils/route_observer.dart';
 import 'dart:io';
 import 'dart:async';
 
@@ -40,9 +41,10 @@ class PerformanceMonitor {
       final now = DateTime.now().millisecondsSinceEpoch;
       if (now - _lastWarningMs > 10000) {
         if (_droppedFrames > 10) {
+          final String currentRoute = GlobalRouteObserver.currentRoute;
           AppLogger.instance.warning(
-             'Arayüz Takılma Uyarısı (UI Jank)', 
-             details: 'Son 10 saniyede $_droppedFrames kez ekran çiziminde gecikme (50ms+) yaşandı. Uygulamayı yoran iç içe ListView, ağır animasyonlar veya gereksiz Widget yeniden oluşturulmaları (rebuilds) olabilir.'
+             'Arayüz Takılma Uyarısı (UI Jank) [$currentRoute]', 
+             details: 'Sayfa: $currentRoute\nSon 10 saniyede $_droppedFrames kez ekran çiziminde gecikme (50ms+) yaşandı. Uygulamayı yoran iç içe ListView, ağır animasyonlar veya gereksiz Widget yeniden oluşturulmaları (rebuilds) olabilir.'
           );
         }
         _droppedFrames = 0;
