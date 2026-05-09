@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/features/task_board/data/models/task_item.dart';
 import 'package:pocketbase/pocketbase.dart';
@@ -13,11 +14,18 @@ class TaskOverviewScreen extends StatefulWidget {
 class _TaskOverviewScreenState extends State<TaskOverviewScreen> {
   bool _isLoading = true;
   List<TaskItem> _tasks = [];
+  final FocusNode _titleFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _fetchTasks();
+  }
+
+  @override
+  void dispose() {
+    _titleFocusNode.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchTasks() async {
@@ -43,6 +51,21 @@ class _TaskOverviewScreenState extends State<TaskOverviewScreen> {
           _tasks = tasks;
           _isLoading = false;
         });
+
+        final int completedTasksCount = tasks.where((t) => t.isCompleted).length;
+        final int pendingTasksCount = tasks.where((t) => !t.isCompleted).length;
+
+        // Otomatik sesli okuma için semantik duyurusu (Announce)
+        final String announcement = "Görev Özeti ve Geçmişi sayfası. Toplam ${tasks.length} görev içerisinde, $completedTasksCount adet tamamlanan, $pendingTasksCount adet bekleyen görev bulunuyor.";
+        Future.delayed(const Duration(milliseconds: 500), () {
+          SemanticsService.announce(announcement, TextDirection.ltr);
+        });
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_titleFocusNode.canRequestFocus) {
+             _titleFocusNode.requestFocus();
+          }
+        });
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
@@ -63,7 +86,10 @@ class _TaskOverviewScreenState extends State<TaskOverviewScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Görev Özeti ve Geçmişi'),
+        title: Focus(
+          focusNode: _titleFocusNode,
+          child: const Text('Görev Özeti ve Geçmişi')
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
