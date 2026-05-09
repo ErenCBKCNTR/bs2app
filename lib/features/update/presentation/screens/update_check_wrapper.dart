@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 
 class UpdateCheckWrapper extends StatefulWidget {
   final Widget child;
@@ -18,6 +22,18 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
   String _apkUrl = '';
   String _currentVersion = '';
   String _dbVersion = '';
+  
+  bool _isDownloading = false;
+  double _downloadProgress = 0.0;
+  String _downloadStatus = '';
+
+  final FocusNode _headerFocusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _headerFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -47,6 +63,9 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
               _currentVersion = currentVersion;
               _dbVersion = dbVersion;
               _isLoading = false;
+            });
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _headerFocusNode.requestFocus();
             });
           }
           return;
@@ -79,13 +98,62 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
     return 0;
   }
 
-  Future<void> _launchUpdateUrl() async {
+  Future<void> _startDownload() async {
     if (_apkUrl.isEmpty) return;
-    final Uri url = Uri.parse(_apkUrl);
+
+    if (!Platform.isAndroid) {
+      // iOS and Web will still use url launcher
+      final Uri url = Uri.parse(_apkUrl);
+      try {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } catch (e) {
+        debugPrint("Guncelleme linki acilamadi: $e");
+      }
+      return;
+    }
+
+    setState(() {
+      _isDownloading = true;
+      _downloadProgress = 0.0;
+      _downloadStatus = 'İndiriliyor...';
+    });
+
     try {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+      final dir = await getExternalStorageDirectory();
+      final filePath = '${dir?.path}/update_$_dbVersion.apk';
+
+      final dio = Dio();
+      await dio.download(
+        _apkUrl,
+        filePath,
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            setState(() {
+              _downloadProgress = received / total;
+              _downloadStatus = 'İndiriliyor: %${(_downloadProgress * 100).toStringAsFixed(0)}';
+            });
+          }
+        },
+      );
+
+      setState(() {
+        _downloadStatus = 'İndirme tamamlandı! Kurulum başlatılıyor...';
+      });
+
+      final result = await OpenFilex.open(filePath);
+      
+      if (result.type != ResultType.done) {
+        setState(() {
+          _downloadStatus = 'Kurulum başlatılamadı: ${result.message}';
+          _isDownloading = false;
+        });
+      }
     } catch (e) {
-      debugPrint("Guncelleme linki acilamadi: $e");
+      AppLogger.instance.error("İndirme hatası: $e");
+      setState(() {
+        _isDownloading = false;
+        _downloadStatus = 'İndirme başarısız oldu. Lütfen tekrar deneyin.';
+      });
     }
   }
 
@@ -113,10 +181,16 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
               children: [
                 const Icon(Icons.system_update, size: 80, color: Colors.green),
                 const SizedBox(height: 24),
-                const Text(
-                  "Yeni Bir Sürüm Var!",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
+                Semantics(
+                  header: true,
+                  child: Focus(
+                    focusNode: _headerFocusNode,
+                    child: const Text(
+                      "Yeni Bir Sürüm Var!",
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -125,18 +199,43 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _launchUpdateUrl,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text("Uygulamayı Güncelle", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                
+                if (_isDownloading)
+                  Column(
+                    children: [
+                      LinearProgressIndicator(value: _downloadProgress),
+                      const SizedBox(height: 8),
+                      Text(
+                        _downloadStatus,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  )
+                else
+                  Column(
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _startDownload,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text("Uygulamayı Güncelle", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                      if (_downloadStatus.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          _downloadStatus,
+                          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        )
+                      ]
+                    ],
                   ),
-                ),
               ],
             ),
           ),

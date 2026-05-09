@@ -462,6 +462,7 @@ class _AuthScreenState extends State<AuthScreen> {
             const SizedBox(height: 32),
             Semantics(
               button: true,
+              excludeSemantics: true,
               label: 'Google hesabınız ile hızlı giriş yapın veya kayıt olun.',
               child: OutlinedButton.icon(
                 onPressed: _isLoading ? null : _authenticateWithGoogle,
@@ -512,40 +513,35 @@ class _AuthScreenState extends State<AuthScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            Semantics(
-              label: 'E-posta adresinizi giriniz.',
-              child: TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'E-posta Adresi',
-                  hintText: 'ornek@eposta.com',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
-                ),
-                textInputAction: TextInputAction.next,
+            TextFormField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'E-posta Adresi',
+                hintText: 'ornek@eposta.com',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.email),
               ),
+              textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: 16),
-            Semantics(
-              label: 'Şifrenizi giriniz. Eğer hesabınız yoksa belirleyeceğiniz şifre en az 8 karakter olmalıdır.',
-              child: TextFormField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Şifre',
-                  hintText: 'En az 8 karakter',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
-                ),
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _authenticate(),
+            TextFormField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Şifre',
+                hintText: 'En az 8 karakter',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.lock),
               ),
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _authenticate(),
             ),
             const SizedBox(height: 32),
             Semantics(
               label: 'Devam Et. Kayıtlı e-posta ise giriş yapar, değilse yeni hesap oluşturur.',
               button: true,
+              excludeSemantics: true,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _authenticate,
                 style: ElevatedButton.styleFrom(
