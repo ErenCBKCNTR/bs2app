@@ -132,8 +132,8 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     final currentIndex = _game!.getIntValue('current_question_index');
     if (currentIndex < questions.length) {
       final currentQLocal = questions[currentIndex] as Map<String, dynamic>;
-      final textToAnnounce = "${currentQLocal['question']}...\n\nA şıkkı... ${currentQLocal['option_a']}...\n\nB şıkkı... ${currentQLocal['option_b']}...\n\nC şıkkı... ${currentQLocal['option_c']}...\n\nD şıkkı... ${currentQLocal['option_d']}...";
-      await TtsService().speak(textToAnnounce);
+      final textToAnnounce = "${currentQLocal['question']} A şıkkı: ${currentQLocal['option_a']}, B şıkkı: ${currentQLocal['option_b']}, C şıkkı: ${currentQLocal['option_c']}, D şıkkı: ${currentQLocal['option_d']}";
+      SemanticsService.announce(textToAnnounce, TextDirection.ltr);
     }
   }
 
@@ -153,6 +153,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
     // Feedback
     if (isCorrect) {
       // Correct feedback (short, short, long)
+      SemanticsService.announce('Doğru cevap!', TextDirection.ltr);
       Vibration.vibrate(pattern: [0, 100, 50, 100, 50, 300]);
       try {
         await player.setVolume(0.5);
@@ -162,6 +163,9 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       }
     } else {
       // Wrong feedback (long, long)
+      final correctOpt = currentQuestion['correct_answer'].toString().toUpperCase();
+      final correctText = currentQuestion['option_${currentQuestion['correct_answer']}'];
+      SemanticsService.announce('Yanlış cevap verdiniz. Doğru cevap $correctOpt şıkkı: $correctText.', TextDirection.ltr);
       Vibration.vibrate(pattern: [0, 400, 100, 400]);
       try {
         await player.setVolume(1.0);
@@ -187,7 +191,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
       }
 
       // Wait for sound to play before transition
-      await Future.delayed(const Duration(milliseconds: 5000));
+      await Future.delayed(const Duration(milliseconds: 3000));
 
       int currentIndex = _game!.getIntValue('current_question_index');
       
@@ -292,9 +296,9 @@ class _QuizGameScreenState extends State<QuizGameScreen> {
             : 'Oyun Bitti! $resultText Siz $myScore, Rakibiniz ise $opponentScore puan aldı.';
         
         WidgetsBinding.instance.addPostFrameCallback((_) async {
-          // Yanlış veya doğru cevap sesinin bitmesini bekleyelim (yaklaşık 2.5 sn daha iyi bir bekleme süresi)
-          await Future.delayed(const Duration(milliseconds: 2500));
-          await TtsService().speak(speechText);
+          // Yanlış veya doğru cevap sesinin bitmesini bekleyelim
+          await Future.delayed(const Duration(milliseconds: 1500));
+          SemanticsService.announce(speechText, TextDirection.ltr);
         });
       }
       
