@@ -42,8 +42,8 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
       }
 
       friendsList.sort((a, b) {
-        final aName = a.getStringValue('full_name').isNotEmpty ? a.getStringValue('full_name') : a.getStringValue('username');
-        final bName = b.getStringValue('full_name').isNotEmpty ? b.getStringValue('full_name') : b.getStringValue('username');
+        final aName = a.getStringValue('username').isNotEmpty ? a.getStringValue('username') : a.getStringValue('full_name');
+        final bName = b.getStringValue('username').isNotEmpty ? b.getStringValue('username') : b.getStringValue('full_name');
         return aName.toLowerCase().compareTo(bName.toLowerCase());
       });
 

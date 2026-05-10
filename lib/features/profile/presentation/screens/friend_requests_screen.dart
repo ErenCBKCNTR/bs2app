@@ -162,7 +162,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
     final username = fromUser.getStringValue('username');
     final fullName = fromUser.getStringValue('full_name');
-    final displayName = fullName.isNotEmpty ? fullName : username;
+    final displayName = username.isNotEmpty ? username : fullName;
 
     return Semantics(
       label: "$displayName'den gelen arkadaşlık isteği",
@@ -204,7 +204,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
     final username = toUser.getStringValue('username');
     final fullName = toUser.getStringValue('full_name');
-    final displayName = fullName.isNotEmpty ? fullName : username;
+    final displayName = username.isNotEmpty ? username : fullName;
 
     return Semantics(
       label: "$displayName'ye gönderilen arkadaşlık isteği. İptal etmek için tıklayın.",

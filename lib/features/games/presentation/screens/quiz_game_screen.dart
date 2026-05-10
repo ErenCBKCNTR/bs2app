@@ -31,6 +31,8 @@ class _QuizGameScreenState extends State<QuizGameScreen> with TickerProviderStat
   String? _selectedOption;
   bool _scoreAdded = false;
   int _currentQuestionIndex = -1;
+  String? _currentTurnId;
+  String _opponentResultText = "";
   final FocusNode _questionFocusNode = FocusNode();
 
   final player = AudioPlayer();
@@ -109,8 +111,30 @@ class _QuizGameScreenState extends State<QuizGameScreen> with TickerProviderStat
     try {
       final sub = await PocketBaseService.client.collection('quiz_games').subscribe(widget.gameId, (e) {
         if (mounted) {
+          final oldGame = _game;
+          final newGame = e.record!;
+          
+          if (oldGame != null && !widget.isSinglePlayer) {
+             final myId = PocketBaseService.client.authStore.model!.id;
+             final isPlayer1 = oldGame.getStringValue('player1_id') == myId;
+             final oldOpponentScore = isPlayer1 ? oldGame.getIntValue('player2_score') : oldGame.getIntValue('player1_score');
+             final newOpponentScore = isPlayer1 ? newGame.getIntValue('player2_score') : newGame.getIntValue('player1_score');
+             
+             final oldTurnId = oldGame.getStringValue('current_turn_id');
+             final newTurnId = newGame.getStringValue('current_turn_id');
+             
+             // Girdiğimizde sıra rakipteydi ve şimdi bana geçtiyse
+             if (oldTurnId != myId && newTurnId == myId) {
+                if (newOpponentScore > oldOpponentScore) {
+                   _opponentResultText = 'Rakibiniz bu soruyu doğru cevapladı. Şimdi sıra sizde. ';
+                } else {
+                   _opponentResultText = 'Rakibiniz bu soruyu yanlış cevapladı. Şimdi sıra sizde. ';
+                }
+             }
+          }
+
           setState(() {
-            _game = e.record;
+            _game = newGame;
             _answering = false;
             _selectedOption = null;
             _blinkController.stop();
@@ -119,7 +143,7 @@ class _QuizGameScreenState extends State<QuizGameScreen> with TickerProviderStat
           // Also call it here so multiplayer clients apply score on update
           _checkAndAddScore();
           
-          if (e.record!.getStringValue('status') == 'finished') {
+          if (newGame.getStringValue('status') == 'finished') {
              _playEndSound();
           }
         }
@@ -134,12 +158,12 @@ class _QuizGameScreenState extends State<QuizGameScreen> with TickerProviderStat
     }
   }
   
-  void _readQuestionAloud(Map<String, dynamic> currentQ) {
+  void _readQuestionAloud(Map<String, dynamic> currentQ, {String prefix = ""}) {
     if (mounted) {
       if (_questionFocusNode.canRequestFocus) {
          _questionFocusNode.requestFocus();
       }
-      final textToAnnounce = "${currentQ['question']} A şıkkı: ${currentQ['option_a']}, B şıkkı: ${currentQ['option_b']}, C şıkkı: ${currentQ['option_c']}, D şıkkı: ${currentQ['option_d']}";
+      final textToAnnounce = "$prefix${currentQ['question']} A şıkkı: ${currentQ['option_a']}, B şıkkı: ${currentQ['option_b']}, C şıkkı: ${currentQ['option_c']}, D şıkkı: ${currentQ['option_d']}";
       SemanticsService.announce(textToAnnounce, TextDirection.ltr);
     }
   }
@@ -353,14 +377,23 @@ class _QuizGameScreenState extends State<QuizGameScreen> with TickerProviderStat
 
     final currentQ = questions[currentIndex] as Map<String, dynamic>;
 
-    if (currentIndex != _currentQuestionIndex) {
-      final prevIndex = _currentQuestionIndex;
+    if (currentIndex != _currentQuestionIndex || currentTurnId != _currentTurnId) {
       _currentQuestionIndex = currentIndex;
+      _currentTurnId = currentTurnId;
+      final isMyTurnNow = currentTurnId == myId;
+      
+      String prefix = _opponentResultText;
+      _opponentResultText = ""; // Reset after using
+
+      if (!isMyTurnNow && !widget.isSinglePlayer) {
+         prefix += "Bu soru rakibiniz içindir, lütfen bekleyin. ";
+      }
+
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) {
           Vibration.vibrate(duration: 100);
-          _readQuestionAloud(currentQ);
+          _readQuestionAloud(currentQ, prefix: prefix);
         }
       });
     }
