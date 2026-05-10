@@ -135,6 +135,18 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
                            errorMessage = "Kendinizle sohbet edemezsiniz.";
                          });
                       } else {
+                         // Check blocks
+                         final blocks = await PocketBaseService.client.collection('user_blocks').getFullList(
+                           filter: '(blocker = "$currentUserId" && blocked = "${response.id}") || (blocker = "${response.id}" && blocked = "$currentUserId")',
+                         );
+                         if (blocks.isNotEmpty) {
+                           setStateDialog(() {
+                             isSearching = false;
+                             errorMessage = "Böyle bir kullanıcı bulunamadı."; // Blocked => fake not found
+                           });
+                           return;
+                         }
+
                          // Kullanıcı bulundu! Geri döndür.
                          if (context.mounted) {
                            Navigator.pop(context, response);

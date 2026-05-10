@@ -18,6 +18,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   RecordModel? _userProfile;
   String? _errorMessage;
   int _friendshipStatus = 0; // 0: None, 1: Friends, 2: Pending Outgoing, 3: Pending Incoming
+  bool _hasBlocked = false;
+  bool _isBlockedBy = false;
+  String? _blockRecordId;
+  String? _friendshipRecordId;
 
   @override
   void initState() {
@@ -33,12 +37,29 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       int status = 0;
 
       if (currentUserId != null && currentUserId != widget.userId) {
+        // Check blocks first
+        final blocksByMe = await PocketBaseService.client.collection('user_blocks').getFullList(
+          filter: 'blocker = "$currentUserId" && blocked = "${widget.userId}"',
+        );
+        if (blocksByMe.isNotEmpty) {
+          _hasBlocked = true;
+          _blockRecordId = blocksByMe[0].id;
+        }
+
+        final blocksToMe = await PocketBaseService.client.collection('user_blocks').getFullList(
+          filter: 'blocker = "${widget.userId}" && blocked = "$currentUserId"',
+        );
+        if (blocksToMe.isNotEmpty) {
+          _isBlockedBy = true;
+        }
+
         // Check friends
         final friends = await PocketBaseService.client.collection('friendships').getFullList(
           filter: '(user1 = "$currentUserId" && user2 = "${widget.userId}") || (user1 = "${widget.userId}" && user2 = "$currentUserId")',
         );
         if (friends.isNotEmpty) {
           status = 1;
+          _friendshipRecordId = friends[0].id;
         } else {
           // Check requests
           final requests = await PocketBaseService.client.collection('friend_requests').getFullList(
@@ -65,6 +86,112 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         _errorMessage = "Profil yüklenemedi: $e";
         _isLoading = false;
       });
+    }
+  }
+
+  Widget _buildRemoveFriendButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ElevatedButton.icon(
+        onPressed: _removeFriend,
+        icon: const Icon(Icons.person_remove),
+        label: const Text('Arkadaş Listemden Çıkar', style: TextStyle(fontSize: 16)),
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size.fromHeight(50),
+          backgroundColor: Colors.red,
+          foregroundColor: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _removeFriend() async {
+    if (_friendshipRecordId == null) return;
+    try {
+      await PocketBaseService.client.collection('friendships').delete(_friendshipRecordId!);
+      if (mounted) {
+        setState(() {
+          _friendshipStatus = 0;
+          _friendshipRecordId = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Arkadaşlıktan çıkarıldı.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata oluştu: $e')),
+        );
+      }
+    }
+  }
+
+  Widget _buildBlockButton() {
+    final labelText = _hasBlocked ? 'Kullanıcının Engelini Kaldır' : 'Kullanıcıyı Engelle';
+    final bgColor = _hasBlocked ? Colors.grey.shade600 : Colors.red.shade900;
+    final iconData = _hasBlocked ? Icons.lock_open : Icons.block;
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ElevatedButton.icon(
+        onPressed: _toggleBlock,
+        icon: Icon(iconData),
+        label: Text(labelText, style: const TextStyle(fontSize: 16)),
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size.fromHeight(50),
+          backgroundColor: bgColor,
+          foregroundColor: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _toggleBlock() async {
+    final currentUserId = PocketBaseService.client.authStore.model!.id;
+    try {
+      if (_hasBlocked) {
+        if (_blockRecordId != null) {
+          await PocketBaseService.client.collection('user_blocks').delete(_blockRecordId!);
+          if (mounted) {
+            setState(() {
+              _hasBlocked = false;
+              _blockRecordId = null;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Kullanıcının engeli kaldırıldı.')),
+            );
+          }
+        }
+      } else {
+        // Engellemeden once eger arkadaslik varsa onu da sil
+        if (_friendshipRecordId != null) {
+          try {
+            await PocketBaseService.client.collection('friendships').delete(_friendshipRecordId!);
+          } catch (_) {}
+        }
+        final record = await PocketBaseService.client.collection('user_blocks').create(body: {
+          'blocker': currentUserId,
+          'blocked': widget.userId,
+        });
+        if (mounted) {
+          setState(() {
+            _hasBlocked = true;
+            _blockRecordId = record.id;
+            _friendshipStatus = 0; // Reset friendship status as well
+            _friendshipRecordId = null;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Kullanıcı engellendi.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('İşlem başarısız: $e')),
+        );
+      }
     }
   }
 
@@ -101,6 +228,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final dobRaw = _userProfile!.getStringValue('dob');
     final hideBirthday = _userProfile!.getBoolValue('hide_birthday');
     final hideLastSeen = _userProfile!.getBoolValue('hide_last_seen');
+    final hideFullName = _userProfile!.getBoolValue('hide_full_name');
+    final fullName = _userProfile!.getStringValue('full_name');
     final isOnline = _userProfile!.getBoolValue('is_online');
     
     String formattedDob = "Belirtilmemiş";
@@ -168,6 +297,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               displayName,
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
+            if (!hideFullName && fullName.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  ProfanityFilter.filter(fullName),
+                  style: const TextStyle(fontSize: 18, color: Colors.grey),
+                ),
+              ),
             const SizedBox(height: 8),
             Semantics(
               label: statusText,
@@ -192,7 +329,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               value: formattedJoined,
             ),
             const SizedBox(height: 40),
-            _buildFriendButton(),
+            if (!_isBlockedBy) _buildFriendButton(),
+            if (_friendshipStatus == 1 && !_isBlockedBy) const SizedBox(height: 16),
+            if (_friendshipStatus == 1 && !_isBlockedBy) _buildRemoveFriendButton(),
+            if (currentUserId != widget.userId) const SizedBox(height: 16),
+            if (currentUserId != widget.userId) _buildBlockButton(),
+            const SizedBox(height: 40),
           ],
         ),
       ),

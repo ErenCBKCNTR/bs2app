@@ -1135,6 +1135,20 @@ addRepaintBoundaries: true,
             currentUserId: currentUserId ?? '',
             unreadCount: unreadCount,
             onTap: () async {
+                if (targetUserId != null) {
+                  final blocks = await PocketBaseService.client.collection('user_blocks').getFullList(
+                    filter: '(blocker = "$currentUserId" && blocked = "$targetUserId") || (blocker = "$targetUserId" && blocked = "$currentUserId")',
+                  );
+                  if (blocks.isNotEmpty) {
+                     if (context.mounted) {
+                       ScaffoldMessenger.of(context).showSnackBar(
+                         const SnackBar(content: Text('Aradığınız kişi bulunamadı.')), // Fakely say not found
+                       );
+                     }
+                     return;
+                  }
+                }
+                
                 await Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -1405,7 +1419,7 @@ addRepaintBoundaries: true,
                 _buildDrawerItem(
                   context,
                   icon: Icons.group_add_outlined,
-                  title: 'Arkadaşlık İstekleri',
+                  title: 'Ark. İstekleri ve Engellenenler',
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/friend_requests'), builder: (_) => const FriendRequestsScreen()));

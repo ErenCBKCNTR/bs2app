@@ -152,6 +152,16 @@
         "presentable": false,
         "unique": false,
         "options": {}
+      },
+      {
+        "system": false,
+        "id": "hide_fullname_field",
+        "name": "hide_full_name",
+        "type": "bool",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {}
       }
     ],
     "indexes": [],
@@ -2067,5 +2077,42 @@
     "createRule": "@request.auth.id != ''",
     "updateRule": "@request.auth.id != ''",
     "deleteRule": "@request.auth.id = user1 || @request.auth.id = user2"
+  },
+  {
+    "id": "col_user_blocks",
+    "name": "user_blocks",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "system": false,
+        "id": "blk_blocker",
+        "name": "blocker",
+        "type": "relation",
+        "required": true,
+        "options": {
+          "collectionId": "_pb_users_auth_",
+          "cascadeDelete": true,
+          "maxSelect": 1
+        }
+      },
+      {
+        "system": false,
+        "id": "blk_blocked",
+        "name": "blocked",
+        "type": "relation",
+        "required": true,
+        "options": {
+          "collectionId": "_pb_users_auth_",
+          "cascadeDelete": true,
+          "maxSelect": 1
+        }
+      }
+    ],
+    "listRule": "@request.auth.id = blocker || @request.auth.id = blocked",
+    "viewRule": "@request.auth.id = blocker || @request.auth.id = blocked",
+    "createRule": "@request.auth.id = blocker",
+    "updateRule": "@request.auth.id = blocker",
+    "deleteRule": "@request.auth.id = blocker"
   }
 ]

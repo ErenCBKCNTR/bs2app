@@ -15,6 +15,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   bool _screenProtection = true;
   bool _hideLastSeen = false;
   bool _hideBirthday = false;
+  bool _hideFullName = false;
   bool _isLoadingPbSettings = true;
 
   @override
@@ -34,6 +35,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           setState(() {
             _hideLastSeen = record.getBoolValue('hide_last_seen');
             _hideBirthday = record.getBoolValue('hide_birthday');
+            _hideFullName = record.getBoolValue('hide_full_name');
             _isLoadingPbSettings = false;
           });
         }
@@ -93,6 +95,19 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
               setState(() {
                 _showOnLockScreen = value;
               });
+            },
+          ),
+          const Divider(),
+          SwitchListTile(
+            secondary: const Icon(Icons.badge),
+            title: const Text('İsim Soyisim Bilgimi Göster'),
+            subtitle: const Text('Diğer kullanıcılar gerçek isminizi ve soyisminizi görebilir'),
+            value: !_hideFullName,
+            onChanged: (bool value) {
+              setState(() {
+                _hideFullName = !value;
+              });
+              _updatePocketBaseSetting('hide_full_name', !value);
             },
           ),
           const Divider(),

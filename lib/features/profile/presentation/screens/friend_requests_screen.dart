@@ -14,6 +14,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   bool _isLoading = true;
   List<RecordModel> _incomingRequests = [];
   List<RecordModel> _outgoingRequests = [];
+  List<RecordModel> _blockedUsers = [];
 
   @override
   void initState() {
@@ -37,10 +38,17 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
         expand: 'to_user'
       );
 
+      // Engellenen kullanıcılar (blocker = benim id olanlar)
+      final blocks = await PocketBaseService.client.collection('user_blocks').getFullList(
+        filter: 'blocker = "$currentUserId"',
+        expand: 'blocked'
+      );
+
       if (mounted) {
         setState(() {
           _incomingRequests = incoming;
           _outgoingRequests = outgoing;
+          _blockedUsers = blocks;
           _isLoading = false;
         });
       }
@@ -102,11 +110,29 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     }
   }
 
+  Future<void> _unblockUser(RecordModel blockRecord) async {
+    try {
+      await PocketBaseService.client.collection('user_blocks').delete(blockRecord.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Kullanıcının engeli kaldırıldı.')),
+        );
+        _fetchRequests();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Arkadaşlık İstekleri'),
+        title: const Text('İstekler ve Engellenenler'),
       ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())
@@ -135,6 +161,17 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                     )
                   else
                     ..._outgoingRequests.map((req) => _buildOutgoingRequestItem(req)),
+
+                  const Divider(height: 32),
+
+                  _buildSectionHeader('Engellenen Kullanıcılar', _blockedUsers.length),
+                  if (_blockedUsers.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text('Engellenen kullanıcı yok.', style: TextStyle(color: Colors.grey)),
+                    )
+                  else
+                    ..._blockedUsers.map((blk) => _buildBlockedUserItem(blk)),
                 ],
               ),
             ),
@@ -221,6 +258,35 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
           child: IconButton(
             icon: const Icon(Icons.close, color: Colors.grey),
             onPressed: () => _rejectRequest(request),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBlockedUserItem(RecordModel blockRecord) {
+    final blockedUser = blockRecord.expand['blocked']?.first;
+    if (blockedUser == null) return const SizedBox.shrink();
+
+    final username = blockedUser.getStringValue('username');
+    final fullName = blockedUser.getStringValue('full_name');
+    final displayName = username.isNotEmpty ? username : fullName;
+
+    return Semantics(
+      label: "Engellenen kullanıcı $displayName. Engeli kaldırmak için tıklayın.",
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          child: Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : '?'),
+        ),
+        title: Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text('@$username'),
+        trailing: Semantics(
+          label: 'Engeli kaldır',
+          button: true,
+          child: IconButton(
+            icon: const Icon(Icons.lock_open, color: Colors.blue),
+            onPressed: () => _unblockUser(blockRecord),
           ),
         ),
       ),
