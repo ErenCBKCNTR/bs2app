@@ -146,6 +146,16 @@
       {
         "system": false,
         "id": "hide_birthday_field",
+        "name": "hide_birthday",
+        "type": "bool",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {}
+      },
+      {
+        "system": false,
+        "id": "birthday_privacy_field",
         "name": "birthday_privacy",
         "type": "select",
         "required": false,
@@ -163,6 +173,16 @@
       {
         "system": false,
         "id": "hide_fullname_field",
+        "name": "hide_full_name",
+        "type": "bool",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {}
+      },
+      {
+        "system": false,
+        "id": "fullname_privacy_field",
         "name": "fullname_privacy",
         "type": "select",
         "required": false,
