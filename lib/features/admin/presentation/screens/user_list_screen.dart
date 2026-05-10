@@ -74,10 +74,8 @@ addRepaintBoundaries: true,
                   itemCount: _users.length,
                   itemBuilder: (context, index) {
                     final user = _users[index];
-                    final pbName = user.getStringValue('full_name').isEmpty 
-                        ? user.getStringValue('name') 
-                        : user.getStringValue('full_name');
-                    final username = pbName.isNotEmpty ? pbName : (user.getStringValue('username').isEmpty ? 'İsimsiz Kullanıcı' : user.getStringValue('username'));
+                    final username = user.getStringValue('username');
+                    final displayName = username.isNotEmpty ? username : (user.getStringValue('full_name').isNotEmpty ? user.getStringValue('full_name') : 'İsimsiz');
                     final email = user.getStringValue('email');
                     final displayEmail = email.isNotEmpty ? email : 'Gizli (PocketBase)';
                     final created = DateFormat('dd.MM.yyyy HH:mm').format(DateTime.parse(user.created).toLocal());
@@ -89,12 +87,14 @@ addRepaintBoundaries: true,
                         onTap: () => _showUserDetails(user),
                         leading: CircleAvatar(
                           backgroundColor: Colors.green.shade700,
-                          child: Text(
-                            username.isNotEmpty ? username[0].toUpperCase() : '?',
-                            style: const TextStyle(color: Colors.white),
-                          ),
+                          child: username.isNotEmpty 
+                            ? Text(
+                                username[0].toUpperCase(),
+                                style: const TextStyle(color: Colors.white),
+                              )
+                            : const Icon(Icons.person, color: Colors.white),
                         ),
-                        title: Text(username.isEmpty ? 'İsimsiz Kullanıcı' : username, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        title: Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

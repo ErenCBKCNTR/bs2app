@@ -132,7 +132,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('İstekler ve Engellenenler'),
+        title: const Text('Arkadaşlık ve Engellenenler Listesi'),
       ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())
@@ -204,10 +204,10 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
       label: "$displayName'den gelen arkadaşlık isteği",
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          child: displayName == 'İsimsiz' 
-            ? const Icon(Icons.person, size: 24) 
-            : Text(displayName[0].toUpperCase()),
+          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          child: username.isNotEmpty 
+            ? Text(username[0].toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold))
+            : Icon(Icons.person, color: Theme.of(context).colorScheme.primary),
         ),
         title: Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text('@$username'),
@@ -241,10 +241,10 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
       label: "$displayName'ye gönderilen arkadaşlık isteği. İptal etmek için tıklayın.",
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          child: displayName == 'İsimsiz' 
-            ? const Icon(Icons.person, size: 24) 
-            : Text(displayName[0].toUpperCase()),
+          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          child: username.isNotEmpty 
+            ? Text(username[0].toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold))
+            : Icon(Icons.person, color: Theme.of(context).colorScheme.primary),
         ),
         title: Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text('@$username'),
@@ -268,10 +268,10 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
       label: "Engellenen kullanıcı $displayName. Engeli kaldırmak için tıklayın.",
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          child: displayName == 'İsimsiz' 
-            ? const Icon(Icons.person, size: 24) 
-            : Text(displayName[0].toUpperCase()),
+          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          child: username.isNotEmpty 
+            ? Text(username[0].toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold))
+            : Icon(Icons.person, color: Theme.of(context).colorScheme.primary),
         ),
         title: Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text('@$username'),

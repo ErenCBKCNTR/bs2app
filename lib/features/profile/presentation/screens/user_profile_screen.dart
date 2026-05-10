@@ -128,20 +128,24 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Widget _buildBlockButton() {
-    final labelText = _hasBlocked ? 'Kullanıcının Engelini Kaldır' : 'Kullanıcıyı Engelle';
+    final labelText = _hasBlocked ? 'Engellemeyi Kaldır' : 'Kullanıcıyı Engelle';
     final bgColor = _hasBlocked ? Colors.grey.shade600 : Colors.red.shade900;
     final iconData = _hasBlocked ? Icons.lock_open : Icons.block;
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ElevatedButton.icon(
-        onPressed: _toggleBlock,
-        icon: Icon(iconData),
-        label: Text(labelText, style: const TextStyle(fontSize: 16)),
-        style: ElevatedButton.styleFrom(
-          minimumSize: const Size.fromHeight(50),
-          backgroundColor: bgColor,
-          foregroundColor: Colors.white,
+      child: Semantics(
+        label: labelText,
+        button: true,
+        child: ElevatedButton.icon(
+          onPressed: _toggleBlock,
+          icon: Icon(iconData),
+          label: Text(labelText, style: const TextStyle(fontSize: 16)),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size.fromHeight(50),
+            backgroundColor: bgColor,
+            foregroundColor: Colors.white,
+          ),
         ),
       ),
     );
@@ -332,10 +336,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     child: CircleAvatar(
                       radius: 60,
                       backgroundColor: Theme.of(context).colorScheme.primary,
-                      child: Text(
-                        displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : '?',
-                        style: const TextStyle(fontSize: 48, color: Colors.black, fontWeight: FontWeight.bold),
-                      ),
+                      child: username.isNotEmpty 
+                        ? Text(
+                            username[0].toUpperCase(),
+                            style: const TextStyle(fontSize: 48, color: Colors.black, fontWeight: FontWeight.bold),
+                          )
+                        : const Icon(Icons.person, size: 48, color: Colors.black),
                     ),
                   ),
                 ),

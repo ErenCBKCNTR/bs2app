@@ -1052,6 +1052,7 @@ addRepaintBoundaries: true,
                  final targetUserRec = p.expand['user_id']!.first;
                  displayChatName = targetUserRec.getStringValue('username');
                  if (displayChatName.isEmpty) displayChatName = targetUserRec.getStringValue('full_name');
+                 if (displayChatName.isEmpty) displayChatName = 'İsimsiz';
               } else {
                  if (_userNameCache.containsKey(uid)) {
                    displayChatName = _userNameCache[uid]!;
@@ -1350,7 +1351,7 @@ addRepaintBoundaries: true,
     return Padding(
       padding: const EdgeInsets.only(left: 24, top: 16, bottom: 8),
       child: Text(
-        title.toUpperCase(),
+        title,
         style: const TextStyle(
           color: Colors.grey,
           fontSize: 12,

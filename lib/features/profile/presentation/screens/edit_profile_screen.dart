@@ -76,7 +76,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           else
             TextButton(
               onPressed: _saveProfile,
-              child: const Text('KAYDET', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text('Kaydet', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
         ],
       ),

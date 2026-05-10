@@ -177,7 +177,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 12),
       child: Text(
-        title.toUpperCase(),
+        title,
         style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
