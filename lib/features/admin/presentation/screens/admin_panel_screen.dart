@@ -196,7 +196,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: BorderSide(color: color.withOpacity(0.1)),
+        border: Border.all(color: color.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

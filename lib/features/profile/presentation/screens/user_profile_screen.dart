@@ -360,7 +360,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
-                      border: BorderSide(color: statusColor.withOpacity(0.2)),
+                      border: Border.all(color: statusColor.withOpacity(0.2)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
