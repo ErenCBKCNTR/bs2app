@@ -119,92 +119,102 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             icon: const Icon(Icons.edit_outlined),
             tooltip: "Profili Düzenle",
           ),
-          IconButton(
-            onPressed: _signOut,
-            icon: const Icon(Icons.logout),
-            tooltip: "Çıkış Yap",
-          )
         ],
       ),
       body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
           children: [
+            const SizedBox(height: 8),
+            // Profil Header
             Container(
               width: double.infinity,
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                    Theme.of(context).colorScheme.surface,
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(24),
               ),
-              padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
                   Semantics(
                     label: "Profil fotoğrafınız",
-                    child: CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      child: username.isNotEmpty && username != 'Bilinmiyor'
-                        ? Text(
-                            username[0].toUpperCase(),
-                            style: const TextStyle(fontSize: 40, color: Colors.black, fontWeight: FontWeight.bold),
-                          )
-                        : const Icon(Icons.person, size: 40, color: Colors.black),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
+                      ),
+                      child: CircleAvatar(
+                        radius: 44,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        child: username.isNotEmpty && username != 'Bilinmiyor'
+                          ? Text(
+                              username[0].toUpperCase(),
+                              style: const TextStyle(fontSize: 36, color: Colors.black, fontWeight: FontWeight.bold),
+                            )
+                          : const Icon(Icons.person, size: 36, color: Colors.black),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   Text(
                     fullName,
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
                   ),
                   Text(
                     '@$username',
-                    style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.primary.withOpacity(0.8)),
+                    style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+            
+            // Hakkımda Section
+            _buildSectionTitle('Hakkımda'),
+            _buildBioCard(bio),
+            const SizedBox(height: 16),
+
+            // Bilgiler Section
+            _buildSectionTitle('Bilgiler'),
+            Row(
+              children: [
+                Expanded(child: _buildMiniInfoCard(Icons.cake_outlined, 'Doğum Tarihi', _formatDate(dob), Colors.blue)),
+                const SizedBox(width: 12),
+                Expanded(child: _buildMiniInfoCard(Icons.calendar_today_outlined, 'Katılım', _formatDate(createdAt), Colors.green)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildFullWidthInfoCard(Icons.email_outlined, 'E-posta', PocketBaseService.client.authStore.model?.getStringValue('email') ?? 'Belirtilmemiş', Colors.amber),
+            
             const SizedBox(height: 24),
+            
+            // Çıkış Yap Butonu
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSectionTitle('Hakkımda'),
-                  _buildBioCard(bio),
-                  const SizedBox(height: 24),
-                  _buildSectionTitle('Bilgiler'),
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.5,
-                    children: [
-                      _buildMiniInfoCard(Icons.cake_outlined, 'Doğum Tarihi', _formatDate(dob)),
-                      _buildMiniInfoCard(Icons.calendar_today_outlined, 'Katılım', _formatDate(createdAt)),
-                      _buildMiniInfoCard(Icons.email_outlined, 'E-posta', PocketBaseService.client.authStore.model?.getStringValue('email') ?? 'Yok'),
-                      _buildMiniInfoCard(Icons.verified_user_outlined, 'Rol', 'Üye'),
-                    ],
+              padding: const EdgeInsets.only(bottom: 24),
+              child: ElevatedButton.icon(
+                onPressed: _signOut,
+                icon: const Icon(Icons.logout),
+                label: const Text('Hesaptan Çıkış Yap'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.withOpacity(0.08),
+                  foregroundColor: Colors.redAccent,
+                  elevation: 0,
+                  minimumSize: const Size(double.infinity, 54),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: Colors.red.withOpacity(0.2)),
                   ),
-                  const SizedBox(height: 32),
-                  ElevatedButton.icon(
-                    onPressed: _signOut,
-                    icon: const Icon(Icons.logout),
-                    label: const Text('Hesaptan Çıkış Yap'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade900.withOpacity(0.1),
-                      foregroundColor: Colors.red,
-                      elevation: 0,
-                      minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(color: Colors.red.withOpacity(0.2)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                ],
+                ),
               ),
             ),
           ],
@@ -214,53 +224,82 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
-    return Padding(
+    return Container(
+      width: double.infinity,
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5),
       ),
     );
   }
 
   Widget _buildBioCard(String bio) {
-    return Card(
-      elevation: 0,
-      color: Theme.of(context).colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.white.withOpacity(0.05)),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Text(
-          bio,
-          style: const TextStyle(fontSize: 16, height: 1.5),
-        ),
+      child: Text(
+        bio,
+        style: TextStyle(fontSize: 15, height: 1.4, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9)),
       ),
     );
   }
 
-  Widget _buildMiniInfoCard(IconData icon, String title, String value) {
-    return Card(
-      elevation: 0,
-      color: Theme.of(context).colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.white.withOpacity(0.05)),
+  Widget _buildMiniInfoCard(IconData icon, String title, String value, Color accentColor) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accentColor.withOpacity(0.1)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 8),
-            Text(title, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-            Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: accentColor),
+          const SizedBox(height: 8),
+          Text(title, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFullWidthInfoCard(IconData icon, String title, String value, Color accentColor) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accentColor.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: accentColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 20, color: accentColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
