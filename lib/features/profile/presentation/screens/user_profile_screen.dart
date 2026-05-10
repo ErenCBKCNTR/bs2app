@@ -223,6 +223,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       return const Center(child: Text("Kullanıcı bulunamadı."));
     }
 
+    final currentUserId = PocketBaseService.client.authStore.model?.id;
     final username = _userProfile!.getStringValue('username');
     final displayName = ProfanityFilter.filter(username.isNotEmpty ? username : 'İsimsiz');
     final dobRaw = _userProfile!.getStringValue('dob');
@@ -342,8 +343,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Widget _buildFriendButton() {
-    final currentUserId = PocketBaseService.client.authStore.model?.id;
-    if (currentUserId == null || currentUserId == widget.userId) {
+    if (widget.userId == null) {
       return const SizedBox.shrink();
     }
     
