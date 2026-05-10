@@ -146,22 +146,50 @@
       {
         "system": false,
         "id": "hide_birthday_field",
-        "name": "hide_birthday",
-        "type": "bool",
+        "name": "birthday_privacy",
+        "type": "select",
         "required": false,
         "presentable": false,
         "unique": false,
-        "options": {}
+        "options": {
+          "maxSelect": 1,
+          "values": [
+            "none",
+            "friends",
+            "everyone"
+          ]
+        }
       },
       {
         "system": false,
         "id": "hide_fullname_field",
-        "name": "hide_full_name",
-        "type": "bool",
+        "name": "fullname_privacy",
+        "type": "select",
         "required": false,
         "presentable": false,
         "unique": false,
-        "options": {}
+        "options": {
+          "maxSelect": 1,
+          "values": [
+            "none",
+            "friends",
+            "everyone"
+          ]
+        }
+      },
+      {
+        "system": false,
+        "id": "bio_field",
+        "name": "bio",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": 500,
+          "pattern": ""
+        }
       }
     ],
     "indexes": [],

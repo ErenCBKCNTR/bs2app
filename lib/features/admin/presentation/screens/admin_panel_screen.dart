@@ -70,217 +70,182 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                 onRefresh: _loadStats,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      InkWell(
-                        onTap: () {
-                           Navigator.push(
-                             context,
-                             MaterialPageRoute(builder: (context) => const ActiveUsersListScreen()),
-                           );
-                        },
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                      const SizedBox(height: 16),
+                      _buildSectionHeader('Özet'),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildSummaryCard(
+                              'Toplam Kullanıcı',
+                              _stats['totalUsers']?.toString() ?? '0',
+                              Icons.people,
+                              Colors.blue,
                             ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.purple.withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.history, color: Colors.white, size: 32),
-                              SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Son 24 Saatte Aktif Olanlar',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      'Giriş yapan kullanıcıları listele',
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 20),
-                            ],
-                          ),
+                            _buildSummaryCard(
+                              'Geri Bildirim',
+                              _stats['feedbackCount']?.toString() ?? '0',
+                              Icons.feedback,
+                              Colors.amber,
+                            ),
+                            _buildSummaryCard(
+                              'Aktif Sunucular',
+                              _stats['totalServers']?.toString() ?? '0',
+                              Icons.dns,
+                              Colors.purple,
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      InkWell(
-                        onTap: () {
-                           Navigator.push(
-                             context,
-                             MaterialPageRoute(builder: (context) => const SendAnnouncementScreen()),
-                           );
-                        },
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.blueGrey.withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.campaign, color: Colors.white, size: 32),
-                              SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Tüm Kullanıcılara Duyuru',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      'Genel mesaj gönder',
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 20),
-                            ],
-                          ),
-                        ),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader('Hızlı Aksiyonlar'),
+                      _buildActionItem(
+                        context,
+                        title: 'Son 24 Saatte Aktif Olanlar',
+                        subtitle: 'Giriş yapan kullanıcıları analiz edin',
+                        icon: Icons.history,
+                        gradient: const [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActiveUsersListScreen())),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
+                      _buildActionItem(
+                        context,
+                        title: 'Tüm Kullanıcılara Duyuru',
+                        subtitle: 'Sistem geneli bilgilendirme mesajı gönder',
+                        icon: Icons.campaign,
+                        gradient: const [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SendAnnouncementScreen())),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader('Yönetim'),
                       GridView.count(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         crossAxisCount: 2,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
                         childAspectRatio: 1.1,
                         children: [
                           _buildStatCard(
-                            title: 'Tüm Kullanıcılar',
-                            value: _stats['totalUsers']?.toString() ?? '0',
-                            subtitle: 'Kayıtlı hesaplar',
-                            icon: Icons.group,
-                            color: Colors.purple,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const UserListScreen()),
-                              );
-                            },
+                            title: 'Kullanıcı Listesi',
+                            value: 'Yönet',
+                            subtitle: 'Profil & Yetki',
+                            icon: Icons.group_outlined,
+                            color: Colors.indigo,
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UserListScreen())),
                           ),
                           _buildStatCard(
-                            title: 'Geri Bildirimler',
-                            value: _stats['feedbackCount']?.toString() ?? '0',
-                            subtitle: 'Gelen mesajlar',
-                            icon: Icons.feedback_outlined,
+                            title: 'Geri Bildirim',
+                            value: 'İncele',
+                            subtitle: 'Mesajları Oku',
+                            icon: Icons.comment_bank_outlined,
                             color: Colors.teal,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const FeedbackManagementScreen()),
-                              );
-                            },
-                          ),
-                          _buildStatCard(
-                            title: 'Toplam Sunucular',
-                            value: _stats['totalServers'].toString(),
-                            subtitle: 'Aktif sunucular',
-                            icon: Icons.dns,
-                            color: Colors.orange,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const ServerListScreen()),
-                              );
-                            },
-                          ),
-                          _buildStatCard(
-                            title: 'Kaynak Yönetimi',
-                            value: _stats['totalSources']?.toString() ?? '0',
-                            subtitle: 'Tarama Kaynakları',
-                            icon: Icons.campaign,
-                            color: Colors.red,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const SourceManagementScreen()),
-                              );
-                            },
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FeedbackManagementScreen())),
                           ),
                           _buildStatCard(
                             title: 'Oyun Alanı',
-                            value: 'Yönetim',
-                            subtitle: 'Oyun Ayarları',
-                            icon: Icons.games,
+                            value: 'Ayarlar',
+                            subtitle: 'Oyun Listesi',
+                            icon: Icons.sports_esports_outlined,
                             color: Colors.green,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const GameManagementScreen()),
-                              );
-                            },
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GameManagementScreen())),
                           ),
                           _buildStatCard(
-                            title: 'Sürüm Bilgisi',
-                            value: 'Güncelle',
-                            subtitle: 'Uygulama Sürümü',
-                            icon: Icons.system_update_alt,
-                            color: Colors.indigo,
-                            onTap: () {
-                              _showUpdateDialog(context);
-                            },
+                            title: 'Sürüm Kontrol',
+                            value: 'APK',
+                            subtitle: 'Sürüm Güncelle',
+                            icon: Icons.system_update_outlined,
+                            color: Colors.orange,
+                            onTap: () => _showUpdateDialog(context),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      width: 140,
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: BorderSide(color: color.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 12),
+          Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(title, style: const TextStyle(fontSize: 11, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionItem(BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required List<Color> gradient,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(color: gradient.first.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 32),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
+          ],
+        ),
       ),
     );
   }
@@ -293,65 +258,33 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     required Color color,
     VoidCallback? onTap,
   }) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
-    return Semantics(
-      button: onTap != null,
-      label: "$title istatistiği. Değer: $value. $subtitle",
-      onTapHint: onTap != null ? "Detaylı listeyi görmek için çift dokunun" : null,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF232B2B) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: color.withOpacity(0.2)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: color.withOpacity(0.1)),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  shape: BoxShape.circle,
                 ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: color, size: 28),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDarkMode ? Colors.grey[300] : Colors.grey[800],
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 12),
+              Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+              Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.grey), textAlign: TextAlign.center),
+            ],
           ),
         ),
       ),

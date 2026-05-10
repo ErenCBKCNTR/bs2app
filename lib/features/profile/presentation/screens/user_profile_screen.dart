@@ -227,14 +227,49 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final username = _userProfile!.getStringValue('username');
     final displayName = ProfanityFilter.filter(username.isNotEmpty ? username : 'İsimsiz');
     final dobRaw = _userProfile!.getStringValue('dob');
-    final hideBirthday = _userProfile!.getBoolValue('hide_birthday');
     final hideLastSeen = _userProfile!.getBoolValue('hide_last_seen');
-    final hideFullName = _userProfile!.getBoolValue('hide_full_name');
     final fullName = _userProfile!.getStringValue('full_name');
     final isOnline = _userProfile!.getBoolValue('is_online');
     
+    // Privacy Logic for Birthday
+    // Handle both legacy (bool) and new (select) fields
+    String birthdayPrivacy = 'everyone';
+    if (_userProfile!.data.containsKey('birthday_privacy')) {
+      birthdayPrivacy = _userProfile!.getStringValue('birthday_privacy');
+      if (birthdayPrivacy.isEmpty) birthdayPrivacy = 'everyone';
+    } else {
+      birthdayPrivacy = _userProfile!.getBoolValue('hide_birthday') ? 'none' : 'everyone';
+    }
+
+    bool showBirthday = false;
+    if (birthdayPrivacy == 'everyone') {
+      showBirthday = true;
+    } else if (birthdayPrivacy == 'friends' && _friendshipStatus == 1) {
+      showBirthday = true;
+    } else if (widget.userId == currentUserId) {
+      showBirthday = true; // Always show own info
+    }
+
+    // Privacy Logic for Full Name
+    String fullnamePrivacy = 'everyone';
+    if (_userProfile!.data.containsKey('fullname_privacy')) {
+      fullnamePrivacy = _userProfile!.getStringValue('fullname_privacy');
+      if (fullnamePrivacy.isEmpty) fullnamePrivacy = 'everyone';
+    } else {
+      fullnamePrivacy = _userProfile!.getBoolValue('hide_full_name') ? 'none' : 'everyone';
+    }
+
+    bool showFullName = false;
+    if (fullnamePrivacy == 'everyone') {
+      showFullName = true;
+    } else if (fullnamePrivacy == 'friends' && _friendshipStatus == 1) {
+      showFullName = true;
+    } else if (widget.userId == currentUserId) {
+      showFullName = true; // Always show own info
+    }
+    
     String formattedDob = "Belirtilmemiş";
-    if (hideBirthday) {
+    if (!showBirthday) {
       formattedDob = "Gizli";
     } else if (dobRaw.isNotEmpty) {
       try {
@@ -251,6 +286,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         formattedJoined = DateFormat('dd.MM.yyyy').format(date);
       } catch (_) {}
     }
+
+    final bio = _userProfile!.getStringValue('bio');
+    final hasBio = bio.isNotEmpty;
 
     String statusText = "Son görülme bilinmiyor";
     Color statusColor = Colors.grey;
@@ -275,78 +313,123 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
 
     return SingleChildScrollView(
-      child: Center(
-        child: Column(
-          children: [
-            const SizedBox(height: 40),
-            Semantics(
-              label: "$displayName adlı kullanıcının profil fotoğrafı",
-              child: Hero(
-                tag: 'avatar_${widget.userId}',
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  child: Text(
-                    displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : '?',
-                    style: const TextStyle(fontSize: 48, color: Colors.black, fontWeight: FontWeight.bold),
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+            ),
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+                Semantics(
+                  label: "$displayName adlı kullanıcının profil fotoğrafı",
+                  child: Hero(
+                    tag: 'avatar_${widget.userId}',
+                    child: CircleAvatar(
+                      radius: 60,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      child: Text(
+                        displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : '?',
+                        style: const TextStyle(fontSize: 48, color: Colors.black, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              displayName,
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            if (!hideFullName && fullName.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  ProfanityFilter.filter(fullName),
-                  style: const TextStyle(fontSize: 18, color: Colors.grey),
+                const SizedBox(height: 20),
+                Text(
+                  displayName,
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
-              ),
-            const SizedBox(height: 8),
-            Semantics(
-              label: statusText,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
+                if (showFullName && fullName.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      ProfanityFilter.filter(fullName),
+                      style: const TextStyle(fontSize: 18, color: Colors.grey),
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                Semantics(
+                  label: statusText,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: BorderSide(color: statusColor.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: statusColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          statusText,
+                          style: TextStyle(color: statusColor, fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                child: Text(statusText, style: TextStyle(color: statusColor, fontWeight: FontWeight.w600)),
-              ),
+              ],
             ),
-            const SizedBox(height: 40),
-            _buildInfoCard(
-              icon: Icons.cake,
-              title: "Doğum Tarihi",
-              value: formattedDob,
+          ),
+          const SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (hasBio) ...[
+                  const Text('Hakkında', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Card(
+                    elevation: 0,
+                    color: Theme.of(context).colorScheme.surface,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(ProfanityFilter.filter(bio), style: const TextStyle(fontSize: 16, height: 1.4)),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                const Text('Detaylar', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(child: _buildCompactInfoCard(Icons.cake_outlined, "Doğum Günü", formattedDob)),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildCompactInfoCard(Icons.calendar_today_outlined, "Katılım", formattedJoined)),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                if (!_isBlockedBy) _buildFriendButton(),
+                if (_friendshipStatus == 1 && !_isBlockedBy) const SizedBox(height: 12),
+                if (_friendshipStatus == 1 && !_isBlockedBy) _buildRemoveFriendButton(),
+                if (currentUserId != widget.userId) const SizedBox(height: 12),
+                if (currentUserId != widget.userId) _buildBlockButton(),
+                const SizedBox(height: 48),
+              ],
             ),
-            _buildInfoCard(
-              icon: Icons.calendar_today,
-              title: "Katılma Tarihi",
-              value: formattedJoined,
-            ),
-            const SizedBox(height: 40),
-            if (!_isBlockedBy) _buildFriendButton(),
-            if (_friendshipStatus == 1 && !_isBlockedBy) const SizedBox(height: 16),
-            if (_friendshipStatus == 1 && !_isBlockedBy) _buildRemoveFriendButton(),
-            if (currentUserId != widget.userId) const SizedBox(height: 16),
-            if (currentUserId != widget.userId) _buildBlockButton(),
-            const SizedBox(height: 40),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildFriendButton() {
-    if (widget.userId == null) {
-      return const SizedBox.shrink();
-    }
-    
     String labelText = 'Arkadaş Olarak Ekle';
     IconData iconData = Icons.person_add;
     VoidCallback? onPressed = _sendFriendRequest;
@@ -369,19 +452,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       bgColor = Colors.grey.shade800;
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(iconData),
-        label: Text(labelText, style: const TextStyle(fontSize: 16)),
-        style: ElevatedButton.styleFrom(
-          disabledBackgroundColor: bgColor,
-          disabledForegroundColor: Colors.white,
-          minimumSize: const Size.fromHeight(50),
-          backgroundColor: bgColor,
-          foregroundColor: Colors.black,
-        ),
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(iconData),
+      label: Text(labelText, style: const TextStyle(fontSize: 16)),
+      style: ElevatedButton.styleFrom(
+        disabledBackgroundColor: bgColor,
+        disabledForegroundColor: Colors.white,
+        minimumSize: const Size.fromHeight(56),
+        backgroundColor: bgColor,
+        foregroundColor: Colors.black,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }
@@ -389,8 +470,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Future<void> _sendFriendRequest() async {
     try {
       final currentUserId = PocketBaseService.client.authStore.model!.id;
-      
-      // İstek oluştur
       await PocketBaseService.client.collection('friend_requests').create(body: {
         'from_user': currentUserId,
         'to_user': widget.userId,
@@ -398,7 +477,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
       if (mounted) {
         setState(() {
-          _friendshipStatus = 2; // Yolladik
+          _friendshipStatus = 2;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Arkadaşlık isteği gönderildi!')),
@@ -413,23 +492,21 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
   }
 
-  Widget _buildInfoCard({required IconData icon, required String title, required String value}) {
-    return Semantics(
-      label: "$title. $value",
-      child: ExcludeSemantics(
-        child: Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          color: Theme.of(context).colorScheme.surface,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.white.withOpacity(0.1)),
-          ),
-          child: ListTile(
-            leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
-            title: Text(title, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-            subtitle: Text(value, style: const TextStyle(fontSize: 18, color: Colors.white)),
-          ),
+  Widget _buildCompactInfoCard(IconData icon, String title, String value) {
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(height: 8),
+            Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          ],
         ),
       ),
     );

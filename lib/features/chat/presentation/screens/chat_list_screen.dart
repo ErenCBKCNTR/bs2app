@@ -1346,6 +1346,21 @@ addRepaintBoundaries: true,
     );
   }
 
+  Widget _buildDrawerSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 24, top: 16, bottom: 8),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          color: Colors.grey,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
   Widget _buildDrawer(BuildContext context) {
     final user = PocketBaseService.client.authStore.model;
     final email = user?.getStringValue('email') ?? 'Hesap Bilgisi Yok';
@@ -1401,16 +1416,16 @@ addRepaintBoundaries: true,
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
+                _buildDrawerSectionHeader('Sosyal'),
                 _buildDrawerItem(
                   context,
                   icon: Icons.person_outline,
                   title: 'Profilim',
-                  isActive: true,
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/profile'), builder: (_) => const MyProfileScreen()));
@@ -1419,7 +1434,7 @@ addRepaintBoundaries: true,
                 _buildDrawerItem(
                   context,
                   icon: Icons.group_add_outlined,
-                  title: 'Ark. İstekleri ve Engellenenler',
+                  title: 'Arkadaşlık ve Engellenenler Listesi',
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/friend_requests'), builder: (_) => const FriendRequestsScreen()));
@@ -1427,13 +1442,19 @@ addRepaintBoundaries: true,
                 ),
                 _buildDrawerItem(
                   context,
-                  icon: Icons.settings_outlined,
-                  title: 'Uygulama Ayarları',
+                  icon: Icons.games_outlined,
+                  title: 'Oyun Alanı',
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/settings'), builder: (_) => const AppSettingsScreen()));
+                    Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/games'), builder: (_) => const blind_social_games.GamesScreen()));
                   },
                 ),
+                
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24),
+                  child: Divider(height: 32),
+                ),
+                _buildDrawerSectionHeader('İçerik ve Araçlar'),
                 _buildDrawerItem(
                   context,
                   icon: Icons.campaign_outlined,
@@ -1454,15 +1475,6 @@ addRepaintBoundaries: true,
                 ),
                 _buildDrawerItem(
                   context,
-                  icon: Icons.games_outlined,
-                  title: 'Oyun Alanı',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/games'), builder: (_) => const blind_social_games.GamesScreen()));
-                  },
-                ),
-                _buildDrawerItem(
-                  context,
                   icon: Icons.build_circle_outlined,
                   title: 'Araçlar',
                   onTap: () {
@@ -1470,11 +1482,28 @@ addRepaintBoundaries: true,
                     Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/tools'), builder: (_) => const blind_social_tools.ToolsScreen()));
                   },
                 ),
+
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24),
+                  child: Divider(height: 32),
+                ),
+                _buildDrawerSectionHeader('Sistem'),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.settings_outlined,
+                  title: 'Uygulama Ayarları',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/settings'), builder: (_) => const AppSettingsScreen()));
+                  },
+                ),
+                
                 if (AdminService().isAdmin()) ...[
                   const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8.0),
-                    child: Divider(color: Colors.white24, indent: 32, endIndent: 32, height: 1),
+                    padding: EdgeInsets.symmetric(horizontal: 24),
+                    child: Divider(height: 32),
                   ),
+                  _buildDrawerSectionHeader('Yönetim'),
                   _buildDrawerItem(
                     context,
                     icon: Icons.admin_panel_settings_outlined,
@@ -1494,12 +1523,12 @@ addRepaintBoundaries: true,
                     },
                   ),
                 ],
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
               ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.only(bottom: 24),
             child: Text(
               'Versiyon 1.0.0',
               textAlign: TextAlign.center,

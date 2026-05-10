@@ -198,36 +198,31 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     if (fromUser == null) return const SizedBox.shrink();
 
     final username = fromUser.getStringValue('username');
-    final fullName = fromUser.getStringValue('full_name');
-    final displayName = username.isNotEmpty ? username : fullName;
+    final displayName = username.isNotEmpty ? username : 'İsimsiz';
 
     return Semantics(
       label: "$displayName'den gelen arkadaşlık isteği",
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.surface,
-          child: Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : '?'),
+          child: displayName == 'İsimsiz' 
+            ? const Icon(Icons.person, size: 24) 
+            : Text(displayName[0].toUpperCase()),
         ),
         title: Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text('@$username'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Semantics(
-              label: 'Kabul et',
-              button: true,
-              child: IconButton(
-                icon: const Icon(Icons.check_circle, color: Colors.green),
-                onPressed: () => _acceptRequest(request),
-              ),
+            IconButton(
+              icon: const Icon(Icons.check_circle, color: Colors.green),
+              onPressed: () => _acceptRequest(request),
+              tooltip: 'İsteği kabul et',
             ),
-            Semantics(
-              label: 'Reddet',
-              button: true,
-              child: IconButton(
-                icon: const Icon(Icons.cancel, color: Colors.red),
-                onPressed: () => _rejectRequest(request),
-              ),
+            IconButton(
+              icon: const Icon(Icons.cancel, color: Colors.red),
+              onPressed: () => _rejectRequest(request),
+              tooltip: 'İsteği reddet',
             ),
           ],
         ),
@@ -240,25 +235,23 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     if (toUser == null) return const SizedBox.shrink();
 
     final username = toUser.getStringValue('username');
-    final fullName = toUser.getStringValue('full_name');
-    final displayName = username.isNotEmpty ? username : fullName;
+    final displayName = username.isNotEmpty ? username : 'İsimsiz';
 
     return Semantics(
       label: "$displayName'ye gönderilen arkadaşlık isteği. İptal etmek için tıklayın.",
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.surface,
-          child: Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : '?'),
+          child: displayName == 'İsimsiz' 
+            ? const Icon(Icons.person, size: 24) 
+            : Text(displayName[0].toUpperCase()),
         ),
         title: Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text('@$username'),
-        trailing: Semantics(
-          label: 'İsteği iptal et',
-          button: true,
-          child: IconButton(
-            icon: const Icon(Icons.close, color: Colors.grey),
-            onPressed: () => _rejectRequest(request),
-          ),
+        trailing: IconButton(
+          icon: const Icon(Icons.close, color: Colors.grey),
+          onPressed: () => _rejectRequest(request),
+          tooltip: 'Gönderilen isteği iptal et',
         ),
       ),
     );
@@ -269,25 +262,23 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     if (blockedUser == null) return const SizedBox.shrink();
 
     final username = blockedUser.getStringValue('username');
-    final fullName = blockedUser.getStringValue('full_name');
-    final displayName = username.isNotEmpty ? username : fullName;
+    final displayName = username.isNotEmpty ? username : 'İsimsiz';
 
     return Semantics(
       label: "Engellenen kullanıcı $displayName. Engeli kaldırmak için tıklayın.",
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.surface,
-          child: Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : '?'),
+          child: displayName == 'İsimsiz' 
+            ? const Icon(Icons.person, size: 24) 
+            : Text(displayName[0].toUpperCase()),
         ),
         title: Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text('@$username'),
-        trailing: Semantics(
-          label: 'Engeli kaldır',
-          button: true,
-          child: IconButton(
-            icon: const Icon(Icons.lock_open, color: Colors.blue),
-            onPressed: () => _unblockUser(blockRecord),
-          ),
+        trailing: IconButton(
+          icon: const Icon(Icons.lock_open, color: Colors.blue),
+          onPressed: () => _unblockUser(blockRecord),
+          tooltip: 'Kullanıcının engelini kaldır',
         ),
       ),
     );

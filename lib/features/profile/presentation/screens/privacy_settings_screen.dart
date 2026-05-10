@@ -14,8 +14,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   bool _showOnLockScreen = false;
   bool _screenProtection = true;
   bool _hideLastSeen = false;
-  bool _hideBirthday = false;
-  bool _hideFullName = false;
+  String _birthdayPrivacy = 'everyone';
+  String _fullnamePrivacy = 'everyone';
   bool _isLoadingPbSettings = true;
 
   @override
@@ -34,8 +34,22 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         if (mounted) {
           setState(() {
             _hideLastSeen = record.getBoolValue('hide_last_seen');
-            _hideBirthday = record.getBoolValue('hide_birthday');
-            _hideFullName = record.getBoolValue('hide_full_name');
+            
+            // Handle legacy bool or new select values
+            if (record.data.containsKey('birthday_privacy')) {
+              _birthdayPrivacy = record.getStringValue('birthday_privacy');
+              if (_birthdayPrivacy.isEmpty) _birthdayPrivacy = 'everyone';
+            } else {
+              _birthdayPrivacy = record.getBoolValue('hide_birthday') ? 'none' : 'everyone';
+            }
+
+            if (record.data.containsKey('fullname_privacy')) {
+              _fullnamePrivacy = record.getStringValue('fullname_privacy');
+              if (_fullnamePrivacy.isEmpty) _fullnamePrivacy = 'everyone';
+            } else {
+              _fullnamePrivacy = record.getBoolValue('hide_full_name') ? 'none' : 'everyone';
+            }
+            
             _isLoadingPbSettings = false;
           });
         }
@@ -49,7 +63,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     }
   }
 
-  Future<void> _updatePocketBaseSetting(String key, bool value) async {
+  Future<void> _updatePocketBaseSetting(String key, dynamic value) async {
     try {
       final userId = PocketBaseService.client.authStore.model?.id;
       if (userId != null) {
@@ -98,17 +112,31 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
             },
           ),
           const Divider(),
-          SwitchListTile(
-            secondary: const Icon(Icons.badge),
-            title: const Text('İsim Soyisim Bilgimi Göster'),
-            subtitle: const Text('Diğer kullanıcılar gerçek isminizi ve soyisminizi görebilir'),
-            value: !_hideFullName,
-            onChanged: (bool value) {
-              setState(() {
-                _hideFullName = !value;
-              });
-              _updatePocketBaseSetting('hide_full_name', !value);
-            },
+          ListTile(
+            leading: const Icon(Icons.badge),
+            title: const Text('İsim Soyisim Bilgisi'),
+            subtitle: const Text('Bu bilgiyi kimlerin görebileceğini seçin'),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Semantics(
+              label: 'İsim soyisim gizlilik ayarı',
+              child: SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'everyone', label: Text('Herkes'), icon: Icon(Icons.public)),
+                  ButtonSegment(value: 'friends', label: Text('Arkadaşlar'), icon: Icon(Icons.people)),
+                  ButtonSegment(value: 'none', label: Text('Hiç Kimse'), icon: Icon(Icons.lock)),
+                ],
+                selected: {_fullnamePrivacy},
+                onSelectionChanged: (Set<String> newSelection) {
+                  final value = newSelection.first;
+                  setState(() {
+                    _fullnamePrivacy = value;
+                  });
+                  _updatePocketBaseSetting('fullname_privacy', value);
+                },
+              ),
+            ),
           ),
           const Divider(),
           SwitchListTile(
@@ -127,29 +155,25 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           ListTile(
             leading: const Icon(Icons.cake),
             title: const Text('Doğum Tarihi'),
-            subtitle: const Text('Doğum tarihinizin kimler tarafından görünebileceğini seçin'),
-            trailing: Semantics(
-              hint: 'Seçenekleri görmek ve değiştirmek için çift tıklayın',
-              child: DropdownButton<bool>(
-                value: !_hideBirthday,
-                underline: const SizedBox(),
-                items: const [
-                  DropdownMenuItem(
-                    value: true,
-                    child: Text('Herkes'),
-                  ),
-                  DropdownMenuItem(
-                    value: false,
-                    child: Text('Hiç Kimse'),
-                  ),
+            subtitle: const Text('Bu bilgiyi kimlerin görebileceğini seçin'),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Semantics(
+              label: 'Doğum tarihi gizlilik ayarı',
+              child: SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'everyone', label: Text('Herkes'), icon: Icon(Icons.public)),
+                  ButtonSegment(value: 'friends', label: Text('Arkadaşlar'), icon: Icon(Icons.people)),
+                  ButtonSegment(value: 'none', label: Text('Hiç Kimse'), icon: Icon(Icons.lock)),
                 ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _hideBirthday = !value;
-                    });
-                    _updatePocketBaseSetting('hide_birthday', !value);
-                  }
+                selected: {_birthdayPrivacy},
+                onSelectionChanged: (Set<String> newSelection) {
+                  final value = newSelection.first;
+                  setState(() {
+                    _birthdayPrivacy = value;
+                  });
+                  _updatePocketBaseSetting('birthday_privacy', value);
                 },
               ),
             ),
