@@ -27,7 +27,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.blind_social"
+        applicationId = "com.prusoft.blindsocial"
         minSdk = 24
         targetSdk = 36
         versionCode = flutter.versionCode

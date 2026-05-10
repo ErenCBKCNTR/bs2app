@@ -176,8 +176,8 @@ class _QuizGameScreenState extends State<QuizGameScreen> with TickerProviderStat
       Vibration.vibrate(pattern: [0, 400, 100, 400]);
       _blinkController.repeat(reverse: true);
       try {
-        await player.setVolume(0.3);
-        await player.play(UrlSource('https://api.cabukcan.com/sounds/games/quiz/yanlis_cevap.mp3'));
+        await player.setVolume(0.1);
+        await player.play(UrlSource('https://api.cabukcan.com/sounds/games/quiz/yanlis_cevap.mp3'), volume: 0.1);
       } catch (e) {
         AppLogger.instance.error('Yanlış cevap sesi çalınamadı: $e');
       }

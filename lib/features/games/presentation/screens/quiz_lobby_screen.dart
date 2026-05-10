@@ -16,24 +16,15 @@ class QuizLobbyScreen extends StatefulWidget {
 class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
   bool _isLoading = false;
   int _myScore = 0;
-  final FocusNode _singlePlayerFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _fetchMyScore();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          _singlePlayerFocusNode.requestFocus();
-        }
-      });
-    });
   }
 
   @override
   void dispose() {
-    _singlePlayerFocusNode.dispose();
     super.dispose();
   }
 
@@ -287,22 +278,17 @@ class _QuizLobbyScreenState extends State<QuizLobbyScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Semantics(
-                      button: true,
-                      excludeSemantics: true,
-                      label: 'Tek Kişilik Oyna',
-                      child: ElevatedButton.icon(
-                        focusNode: _singlePlayerFocusNode,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 24),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          backgroundColor: Colors.deepPurple,
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed: _startSinglePlayerGame,
-                        icon: const Icon(Icons.person, size: 32),
-                        label: const Text('Tek Kişilik Oyna', style: TextStyle(fontSize: 20)),
+                    ElevatedButton.icon(
+                      autofocus: true,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        backgroundColor: Colors.deepPurple,
+                        foregroundColor: Colors.white,
                       ),
+                      onPressed: _startSinglePlayerGame,
+                      icon: const Icon(Icons.person, size: 32),
+                      label: const Text('Tek Kişilik Oyna', style: TextStyle(fontSize: 20)),
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton.icon(

@@ -10,23 +10,14 @@ class GamesScreen extends StatefulWidget {
 }
 
 class _GamesScreenState extends State<GamesScreen> {
-  final FocusNode _titleFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          _titleFocusNode.requestFocus();
-        }
-      });
-    });
   }
 
   @override
   void dispose() {
-    _titleFocusNode.dispose();
     super.dispose();
   }
 
@@ -46,7 +37,7 @@ class _GamesScreenState extends State<GamesScreen> {
               Semantics(
                 header: true,
                 child: Focus(
-                  focusNode: _titleFocusNode,
+                  autofocus: true,
                   child: const Text(
                     'Hoş Geldiniz!\nOynamak istediğiniz oyunu seçin.',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, height: 1.3),

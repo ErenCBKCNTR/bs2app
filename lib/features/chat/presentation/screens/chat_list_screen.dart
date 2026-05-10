@@ -440,7 +440,10 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                  for (var chat in chatRecords) {
                     final chatParts = batchParts.where((p) => p.getStringValue('chat_id') == chat.id).toList();
                     if (chatParts.isNotEmpty) {
-                        final participants = (chat.expand['chat_participants_via_chat_id'] as List<dynamic>?)?.cast<RecordModel>() ?? [];
+                        List<RecordModel> participants = [];
+                        if (chat.expand['chat_participants_via_chat_id'] != null) {
+                           participants = List<RecordModel>.from(chat.expand['chat_participants_via_chat_id'] as List<dynamic>);
+                        }
                         participants.addAll(chatParts);
                         chat.expand['chat_participants_via_chat_id'] = participants;
                     }
@@ -1128,6 +1131,7 @@ addRepaintBoundaries: true,
           },
           child: ChatListItem(
             chat: chat,
+            displayChatName: displayChatName,
             currentUserId: currentUserId ?? '',
             unreadCount: unreadCount,
             onTap: () async {

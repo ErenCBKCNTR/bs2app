@@ -5,6 +5,7 @@ import 'package:blind_social/core/services/pocketbase_service.dart';
 
 class ChatListItem extends StatelessWidget {
   final RecordModel chat;
+  final String displayChatName;
   final String currentUserId;
   final int unreadCount;
   final VoidCallback onTap;
@@ -16,6 +17,7 @@ class ChatListItem extends StatelessWidget {
   const ChatListItem({
     super.key,
     required this.chat,
+    required this.displayChatName,
     required this.currentUserId,
     this.unreadCount = 0,
     required this.onTap,
@@ -29,7 +31,6 @@ class ChatListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final myPart = chat.data['my_participant'] as RecordModel?;
     final isPinned = myPart?.getBoolValue('is_pinned') ?? false;
-    final displayChatName = chat.getStringValue('name').isEmpty ? 'İsimsiz Sohbet' : chat.getStringValue('name');
 
     return Dismissible(
       key: Key(chat.id),
