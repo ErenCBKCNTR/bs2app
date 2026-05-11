@@ -1234,7 +1234,6 @@ class LanguageTr extends BaseLanguage {
   String get deleteUppercase => "SİL";
   @override
   String get shareError => "Paylaşma hatası";
-  @override
 }
 
 

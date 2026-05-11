@@ -27,7 +27,7 @@ class BlogScreen extends ConsumerStatefulWidget {
   ConsumerState<BlogScreen> createState() => _BlogScreenState();
 }
 
-class _BlogScreenState extends State<BlogScreen> {
+class _BlogScreenState extends ConsumerState<BlogScreen> {
   static List<Map<String, dynamic>>? _cachedPosts;
   
   final _postController = TextEditingController();

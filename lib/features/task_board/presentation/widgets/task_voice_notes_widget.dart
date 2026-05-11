@@ -211,7 +211,6 @@ class _TaskVoiceNotesWidgetState extends ConsumerState<TaskVoiceNotesWidget> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(localizationProvider);
-    final lang = ref.read(localizationProvider);
     // 3 limits
     bool canRecord = widget.task.voiceNotes.length < 3;
 

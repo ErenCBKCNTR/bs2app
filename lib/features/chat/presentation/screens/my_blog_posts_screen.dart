@@ -18,7 +18,7 @@ class MyBlogPostsScreen extends ConsumerStatefulWidget {
   ConsumerState<MyBlogPostsScreen> createState() => _MyBlogPostsScreenState();
 }
 
-class _MyBlogPostsScreenState extends State<MyBlogPostsScreen> {
+class _MyBlogPostsScreenState extends ConsumerState<MyBlogPostsScreen> {
   List<Map<String, dynamic>> _posts = [];
   bool _isLoading = true;
 

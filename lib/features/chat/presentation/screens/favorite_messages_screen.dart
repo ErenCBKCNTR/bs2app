@@ -23,7 +23,7 @@ class FavoriteMessagesScreen extends ConsumerStatefulWidget {
   ConsumerState<FavoriteMessagesScreen> createState() => _FavoriteMessagesScreenState();
 }
 
-class _FavoriteMessagesScreenState extends State<FavoriteMessagesScreen> {
+class _FavoriteMessagesScreenState extends ConsumerState<FavoriteMessagesScreen> {
   List<RecordModel> _favoriteMessages = [];
   List<RecordModel> _filteredMessages = [];
   bool _isLoading = true;

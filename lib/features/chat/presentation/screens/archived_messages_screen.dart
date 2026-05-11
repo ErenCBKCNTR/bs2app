@@ -15,7 +15,7 @@ class ArchivedMessagesScreen extends ConsumerStatefulWidget {
   ConsumerState<ArchivedMessagesScreen> createState() => _ArchivedMessagesScreenState();
 }
 
-class _ArchivedMessagesScreenState extends State<ArchivedMessagesScreen> {
+class _ArchivedMessagesScreenState extends ConsumerState<ArchivedMessagesScreen> {
   List<RecordModel> _chats = [];
   bool _isLoading = true;
 
