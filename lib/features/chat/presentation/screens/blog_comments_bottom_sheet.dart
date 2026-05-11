@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:intl/intl.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 import 'package:blind_social/features/profile/presentation/screens/user_profile_screen.dart' as blind_social_profile;
 
-class BlogCommentsBottomSheet extends StatefulWidget {
+class BlogCommentsBottomSheet extends ConsumerStatefulWidget {
   final String postId;
 
   const BlogCommentsBottomSheet({super.key, required this.postId});
 
   @override
-  State<BlogCommentsBottomSheet> createState() => _BlogCommentsBottomSheetState();
+  ConsumerState<BlogCommentsBottomSheet> createState() => _BlogCommentsBottomSheetState();
 }
 
-class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
+class _BlogCommentsBottomSheetState extends ConsumerState<BlogCommentsBottomSheet> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _comments = [];
   final _commentController = TextEditingController();
@@ -41,7 +43,8 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
         });
       }
     } catch (e) {
-      AppLogger.instance.error('Yorumlar getirilirken hata: $e');
+      final lang = ref.read(localizationProvider);
+      AppLogger.instance.error('${lang.fetchingCommentsError}: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -66,9 +69,10 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
       _commentController.clear();
       _fetchComments();
     } catch (e) {
-      AppLogger.instance.error('Yorum gönderilirken hata: $e');
+      final lang = ref.read(localizationProvider);
+      AppLogger.instance.error('${lang.failedToPostComment}: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Yorum gönderilemedi: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.failedToPostComment}: $e')));
       }
     } finally {
       if (mounted) {
@@ -91,6 +95,7 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
     return SafeArea(
@@ -113,11 +118,11 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Yorumlar', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text(lang.comments, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               IconButton(
                 onPressed: () => Navigator.pop(context), 
                 icon: const Icon(Icons.close),
-                tooltip: "Kapat",
+                tooltip: lang.close,
               ),
             ],
           ),
@@ -126,7 +131,7 @@ class _BlogCommentsBottomSheetState extends State<BlogCommentsBottomSheet> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _comments.isEmpty
-                    ? const Center(child: Text("Henüz yorum yapılmamış."))
+                    ? Center(child: Text(lang.noComments))
                     : ListView.builder(
 addAutomaticKeepAlives: false,
 addRepaintBoundaries: true,
@@ -135,16 +140,16 @@ addRepaintBoundaries: true,
                         itemBuilder: (context, index) {
                           final c = _comments[index];
                           final user = c['expand']?['user_id'];
-                          final username = ProfanityFilter.filter(user != null ? (user['username'] ?? user['full_name'] ?? 'Bilinmeyen') : 'Bilinmeyen');
+                          final username = ProfanityFilter.filter(user != null ? (user['username'] ?? user['full_name'] ?? lang.unknown) : lang.unknown);
                           final content = ProfanityFilter.filter(c['content'] ?? '');
                           final timeStr = _formatTime(c['created'] ?? '');
                           
                           return ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: Semantics(
-                              label: "$username adlı kullanıcının profili",
+                              label: lang.commentUserAvatarSemantics(username),
                               button: true,
-                              onTapHint: "Profil detaylarını görüntüle",
+                              onTapHint: lang.viewProfileDetailsHint,
                               child: GestureDetector(
                                 onTap: () {
                                   if (user != null && user['id'] != null) {
@@ -179,10 +184,10 @@ addRepaintBoundaries: true,
               Expanded(
                 child: TextField(
                   controller: _commentController,
-                  decoration: const InputDecoration(
-                    hintText: 'Yorum yazın...',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: InputDecoration(
+                    hintText: lang.writeComment,
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                 ),
               ),
@@ -194,7 +199,7 @@ addRepaintBoundaries: true,
                   onPressed: _postComment,
                   icon: const Icon(Icons.send),
                   color: Colors.green,
-                  tooltip: 'Yorumu Gönder',
+                  tooltip: lang.sendComment,
                 ),
             ],
           ),

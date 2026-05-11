@@ -61,9 +61,9 @@ class _SavedRecordingsScreenState extends ConsumerState<SavedRecordingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        String msg = "Oynatma hatası: $e";
+        String msg = lang.playbackError(e.toString());
         if (e.toString().contains("Source error")) {
-          msg = "Dosya formatı veya içeriği hatalı. Lütfen kaydı teyit edin.";
+          msg = lang.invalidFileFormat;
         }
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       }
@@ -74,9 +74,9 @@ class _SavedRecordingsScreenState extends ConsumerState<SavedRecordingsScreen> {
     try {
       final file = File(recording.filePath);
       if (await file.exists()) {
-        await Share.shareXFiles([XFile(recording.filePath)], text: '${recording.stationName} radyo kaydı');
+        await Share.shareXFiles([XFile(recording.filePath)], text: ref.read(localizationProvider).radioRecordingShareText(recording.stationName));
       } else {
-        throw Exception("Dosya bulunamadı");
+        throw Exception(ref.read(localizationProvider).fileNotFound);
       }
     } catch (e) {
       if (mounted) {
@@ -177,7 +177,7 @@ addRepaintBoundaries: true,
                     final isPlaying = _playingId == rec.id;
 
                     return Semantics(
-                      label: "${rec.stationName}. $dateStr tarihinde saat $timeStr kaydedildi. Süre $durationStr.",
+                      label: lang.recordingSemanticLabel(rec.stationName, dateStr, timeStr, durationStr),
                       customSemanticsActions: {
                         CustomSemanticsAction(label: ref.read(localizationProvider).playRecording): () => _playRecording(rec),
                         CustomSemanticsAction(label: ref.read(localizationProvider).shareRecording): () => _shareRecording(rec),
@@ -202,7 +202,7 @@ addRepaintBoundaries: true,
                             children: [
                               Text('$dateStr - $timeStr', style: const TextStyle(color: Colors.white70)),
                               Text(
-                                'Süre: $durationStr', 
+                                '${lang.durationLabel}: $durationStr', 
                                 style: const TextStyle(color: Colors.blueAccent, fontSize: 13, fontWeight: FontWeight.w500)
                               ),
                             ],
@@ -214,17 +214,17 @@ addRepaintBoundaries: true,
                             IconButton(
                               icon: Icon(isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded),
                               onPressed: () => _playRecording(rec),
-                              tooltip: 'Oynat',
+                              tooltip: isPlaying ? lang.radioPause : lang.radioPlay,
                             ),
                             IconButton(
                               icon: const Icon(Icons.share_rounded, size: 20),
                               onPressed: () => _shareRecording(rec),
-                              tooltip: 'Paylaş',
+                              tooltip: lang.share,
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 22),
                               onPressed: () => _deleteRecording(rec),
-                              tooltip: 'Sil',
+                              tooltip: lang.delete,
                             ),
                           ],
                         ),

@@ -44,7 +44,7 @@ class _MyBlogPostsScreenState extends ConsumerState<MyBlogPostsScreen> {
         });
       }
     } catch (e) {
-      AppLogger.instance.error('Kendi gönderilerim yüklenemedi: $e');
+      AppLogger.instance.error('${lang.failedToLoadDetails}: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -63,17 +63,17 @@ class _MyBlogPostsScreenState extends ConsumerState<MyBlogPostsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Silmeyi Onayla'),
-        content: const Text('Bu gönderiyi silmek istediğinize emin misiniz?'),
+        title: Text(lang.deleteConfirmTitle),
+        content: Text(lang.deletePostConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
+            child: Text(lang.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Sil', style: TextStyle(color: Colors.white)),
+            child: Text(lang.delete, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -87,10 +87,10 @@ class _MyBlogPostsScreenState extends ConsumerState<MyBlogPostsScreen> {
         _posts.removeWhere((p) => p['id'] == postId);
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gönderi silindi.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.postDeleted)));
       }
     } catch (e) {
-      AppLogger.instance.error('Gönderi silinemedi: $e');
+      AppLogger.instance.error('${lang.failedToDeletePost}: $e');
     }
   }
 
@@ -102,7 +102,7 @@ class _MyBlogPostsScreenState extends ConsumerState<MyBlogPostsScreen> {
       builder: (context) {
         Future.delayed(const Duration(milliseconds: 100), () => focusNode.requestFocus());
         return AlertDialog(
-          title: const Text('Düzenle'),
+          title: Text(lang.editPostTitle),
           content: TextField(
             controller: controller,
             focusNode: focusNode,
@@ -114,11 +114,11 @@ class _MyBlogPostsScreenState extends ConsumerState<MyBlogPostsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('İptal'),
+              child: Text(lang.cancel),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, controller.text.trim()),
-              child: const Text('Kaydet'),
+              child: Text(lang.save),
             ),
           ],
         );
@@ -135,10 +135,10 @@ class _MyBlogPostsScreenState extends ConsumerState<MyBlogPostsScreen> {
           }
         });
         if (mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gönderi güncellendi.')));
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.postUpdated)));
         }
       } catch (e) {
-        AppLogger.instance.error('Gönderi güncellenemedi: $e');
+        AppLogger.instance.error('${lang.failedToUpdatePost}: $e');
       }
     }
   }
@@ -178,7 +178,7 @@ class _MyBlogPostsScreenState extends ConsumerState<MyBlogPostsScreen> {
         });
       }
     } catch (e) {
-      AppLogger.instance.error('Beğeni işlemi başarısız: $e');
+      AppLogger.instance.error('${lang.likeProcessFailed}: $e');
     }
   }
 
@@ -221,7 +221,7 @@ class _MyBlogPostsScreenState extends ConsumerState<MyBlogPostsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gönderilerim'),
+        title: Text(lang.myPosts),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Divider(height: 1, color: isDarkMode ? Colors.white10 : Colors.black12),
@@ -230,7 +230,7 @@ class _MyBlogPostsScreenState extends ConsumerState<MyBlogPostsScreen> {
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())
         : _posts.isEmpty 
-          ? const Center(child: Text("Henüz hiç gönderi paylaşmadınız."))
+          ? Center(child: Text(lang.noPostsYet))
           : ListView.builder(
 addAutomaticKeepAlives: false,
 addRepaintBoundaries: true,
@@ -252,7 +252,13 @@ addRepaintBoundaries: true,
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Semantics(
-                    label: "$username. $timeStr. $content. $likes beğeni, $commentCount yorum.",
+                    label: lang.blogPostSemanticLabel(
+                      username: username,
+                      time: timeStr,
+                      content: content,
+                      likes: likes,
+                      comments: commentCount,
+                    ),
                     button: true,
                     excludeSemantics: true,
                     onTap: () {
@@ -263,7 +269,7 @@ addRepaintBoundaries: true,
                         builder: (_) => BlogCommentsBottomSheet(postId: post['id']),
                       );
                     },
-                    onTapHint: "Yorumları okumak ve yazmak için çift dokunun",
+                    onTapHint: lang.readCommentsHint,
                     customSemanticsActions: {
                       CustomSemanticsAction(label: ref.read(localizationProvider).editPost): () {
                         _showEditDialog(post['id'], content);
@@ -348,8 +354,8 @@ addRepaintBoundaries: true,
                                           if (val == 'delete') _deletePost(post['id']);
                                         },
                                         itemBuilder: (context) => [
-                                          const PopupMenuItem(value: 'edit', child: Text('Düzenle')),
-                                          const PopupMenuItem(value: 'delete', child: Text('Sil', style: TextStyle(color: Colors.red))),
+                                          PopupMenuItem(value: 'edit', child: Text(lang.edit)),
+                                          PopupMenuItem(value: 'delete', child: Text(lang.delete, style: const TextStyle(color: Colors.red))),
                                         ],
                                       ),
                                     ],

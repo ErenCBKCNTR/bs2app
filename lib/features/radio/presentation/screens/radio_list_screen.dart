@@ -68,7 +68,7 @@ class _RadioListScreenState extends ConsumerState<RadioListScreen> {
               onChanged: _filterStations,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText: 'Kanal Ara...',
+                hintText: lang.radioSearchHint,
                 hintStyle: const TextStyle(color: Colors.white60),
                 prefixIcon: const Icon(Icons.search, color: Colors.white),
                 border: OutlineInputBorder(
@@ -108,16 +108,16 @@ class _RadioListScreenState extends ConsumerState<RadioListScreen> {
                           elevation: 2,
                         ),
                         child: Semantics(
-                          label: "Kaydedilen Canlı Yayınlar",
+                          label: lang.savedRecordingsTitle,
                           excludeSemantics: true,
-                          child: const Column(
+                          child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.album, size: 20),
-                              SizedBox(height: 4),
+                              const Icon(Icons.album, size: 20),
+                              const SizedBox(height: 4),
                               Text(
-                                'Kayıtlar',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                lang.radioRecordings,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                                 textAlign: TextAlign.center,
                               ),
                             ],
@@ -138,7 +138,7 @@ class _RadioListScreenState extends ConsumerState<RadioListScreen> {
                           elevation: 2,
                         ),
                         child: Semantics(
-                          label: _isFavoritesView ? "Tüm Kanallar" : "Favori Kanallar",
+                          label: _isFavoritesView ? lang.radioAllChannels : lang.radioFavorites,
                           excludeSemantics: true,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -146,7 +146,7 @@ class _RadioListScreenState extends ConsumerState<RadioListScreen> {
                               Icon(_isFavoritesView ? Icons.list : Icons.favorite, size: 20),
                               const SizedBox(height: 4),
                               Text(
-                                _isFavoritesView ? 'Tüm Kanallar' : 'Favoriler',
+                                _isFavoritesView ? lang.radioAllChannels : lang.radioFavorites,
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                                 textAlign: TextAlign.center,
                                 maxLines: 1,

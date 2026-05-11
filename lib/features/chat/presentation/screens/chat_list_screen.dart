@@ -642,12 +642,10 @@ class _ChatListScreenContentState extends ConsumerState<_ChatListScreenContent> 
     final lang = ref.watch(localizationProvider);
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
-        if (didPop) return;
-
-        // Async işlemler için ayrı bir fonksiyon çağırıyoruz
-        _handleBackNavigation();
-      },
+            onPopInvoked: (didPop) {
+              if (didPop) return;
+              _handleBackNavigation();
+            },
       child: Scaffold(
         appBar: AppBar(
           title: Semantics(
@@ -700,7 +698,7 @@ class _ChatListScreenContentState extends ConsumerState<_ChatListScreenContent> 
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(lang.cancel.toUpperCase()),
+            child: Text(lang.cancelUppercase),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -1558,7 +1556,7 @@ addRepaintBoundaries: true,
           Padding(
             padding: const EdgeInsets.only(bottom: 24),
             child: Text(
-              'Versiyon 1.0.0',
+              lang.version('1.0.0'),
               textAlign: TextAlign.center,
               style: TextStyle(color: isDark ? Colors.white54 : Colors.black54, fontSize: 13),
             ),
@@ -1598,19 +1596,19 @@ addRepaintBoundaries: true,
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sohbeti Silinecek'),
-        content: const Text('Bu sohbeti silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'),
+        title: Text(lang.deleteChatTitle),
+        content: Text(lang.deleteChatConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('İPTAL'),
+            child: Text(lang.cancelUppercase),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _deleteChat(chat.id);
             },
-            child: const Text('SİL', style: TextStyle(color: Colors.red)),
+            child: Text(lang.deleteUppercase, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -1641,12 +1639,12 @@ addRepaintBoundaries: true,
       
       _fetchChats(isBackground: true);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sohbet silindi.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.chatDeletedStatus)));
       }
     } catch (e) {
       AppLogger.instance.error('Sohbet silme hatası: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sohbet silinemedi: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.chatDeleteError(e.toString()))));
       }
     } finally {
       if (mounted) {

@@ -44,13 +44,18 @@ class ChatMessageBubble extends ConsumerWidget {
     return Align(
       alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
       child: Semantics(
-        label: "${isFavorite ? 'Yıldızlı. ' : ''}${isVoiceMessage 
-            ? (isMyMessage ? "Gönderdiğiniz sesli mesaj. $timeString" : "Gelen sesli mesaj. $timeString") 
-            : (isCallMessage 
-                ? "$content. $timeString" 
-                : (isMyMessage ? "Gönderdiğiniz mesaj: $content. $timeString" : "Gelen mesaj: $content. $timeString"))}${isEdited ? '. Düzenlendi' : ''}${reactions.isNotEmpty ? '. Tepkiler: $reactions' : ''}",
+        label: lang.messageSemanticLabel(
+          isFavorite: isFavorite,
+          isVoice: isVoiceMessage,
+          isMyMessage: isMyMessage,
+          isCall: isCallMessage,
+          isEdited: isEdited,
+          content: content.toString(),
+          time: timeString,
+          reactions: reactions,
+        ),
         button: true,
-        onLongPressHint: "Tepki eklemek veya diğer seçenekler için uzun dokunun",
+        onLongPressHint: lang.messageLongPressHint,
         customSemanticsActions: {
           CustomSemanticsAction(label: lang.messageReactionSemantic): () {
             onLongPress();
@@ -84,9 +89,9 @@ class ChatMessageBubble extends ConsumerWidget {
                             style: const TextStyle(color: Colors.white, fontSize: 16),
                           ),
                         if (isEdited)
-                          const Text(
-                            'Düzenlendi',
-                            style: TextStyle(fontSize: 10, color: Colors.white70, fontStyle: FontStyle.italic),
+                          Text(
+                            lang.edited,
+                            style: const TextStyle(fontSize: 10, color: Colors.white70, fontStyle: FontStyle.italic),
                           ),
                         const SizedBox(height: 4),
                         Row(

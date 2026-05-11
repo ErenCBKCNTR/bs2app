@@ -394,8 +394,8 @@ class _BlogScreenState extends ConsumerState<BlogScreen> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Semantics(
                 button: true,
-                label: "Gönderilerim sayfası",
-                onTapHint: "Paylaştığınız tüm gönderileri görmek için çift dokunun",
+                label: lang.myPostsPage,
+                onTapHint: lang.myPostsPageHint,
                 child: InkWell(
                   onTap: () {
                     Navigator.push(
@@ -435,9 +435,9 @@ class _BlogScreenState extends ConsumerState<BlogScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Semantics(
                 button: true,
-                label: "Yeni gönderi paylaş",
+                label: lang.shareNewPost,
                 excludeSemantics: true,
-                onTapHint: "Yeni bir blog içeriği oluşturmak için çift dokunun",
+                onTapHint: lang.shareNewPost,
                 child: OutlinedButton.icon(
                   onPressed: _showCreatePostDialog,
                   icon: const Icon(Icons.edit, size: 20),
@@ -492,7 +492,13 @@ addRepaintBoundaries: true,
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: Semantics(
-                            label: "$username. $timeStr. $content. $likes beğeni, $commentCount yorum.",
+                            label: lang.blogPostSemanticLabel(
+                              username: username,
+                              time: timeStr,
+                              content: content,
+                              likes: likes,
+                              comments: commentCount,
+                            ),
                             button: true,
                             excludeSemantics: true,
                             onTap: () {
@@ -553,9 +559,9 @@ addRepaintBoundaries: true,
                                           Row(
                                             children: [
                                               Semantics(
-                                                label: "$username adlı kullanıcının profili",
+                                                label: lang.commentUserAvatarSemantics(username),
                                                 button: true,
-                                                onTapHint: "Profil detaylarını görüntüle",
+                                                onTapHint: lang.viewProfileDetailsHint,
                                                 child: GestureDetector(
                                                   onTap: () {
                                                     Navigator.push(

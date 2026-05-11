@@ -1084,7 +1084,7 @@ class LanguageTr extends BaseLanguage {
   @override
   String get voiceCommentSent => "Sesli yorum gönderildi";
   @override
-  String get noComments => "Henüz yorum yok. İlk yorum yapan siz olun!";
+  String get noComments => "Henüz yorum yapılmamış.";
   @override
   String get stopVoiceMessage => "Sesli Mesajı Durdur";
   @override
@@ -1271,5 +1271,170 @@ class LanguageTr extends BaseLanguage {
   String get ongoingWork => "Devam Eden Çalışma";
   @override
   String get completedWork => "Tamamlanan Çalışma";
+  @override
+  String get writeComment => "Yorum yazın...";
+  @override
+  String get close => "Kapat";
+  @override
+  String get sendComment => "Yorumu Gönder";
+  @override
+  String get fetchingCommentsError => "Yorumlar getirilirken hata";
+  @override
+  String get failedToPostComment => "Yorum gönderilemedi";
+  @override
+  String commentUserAvatarSemantics(String username) => "$username adlı kullanıcının profili";
+  @override
+  String get viewProfileDetailsHint => "Profil detaylarını görüntüle";
+  @override
+  String messageSemanticLabel({
+    required bool isFavorite,
+    required bool isVoice,
+    required bool isMyMessage,
+    required bool isCall,
+    required bool isEdited,
+    required String content,
+    required String time,
+    required String reactions,
+  }) {
+    String label = isFavorite ? 'Yıldızlı. ' : '';
+    if (isVoice) {
+      label += isMyMessage ? "Gönderdiğiniz sesli mesaj. $time" : "Gelen sesli mesaj. $time";
+    } else if (isCall) {
+      label += "$content. $time";
+    } else {
+      label += isMyMessage ? "Gönderdiğiniz mesaj: $content. $time" : "Gelen mesaj: $content. $time";
+    }
+    if (isEdited) label += '. Düzenlendi';
+    if (reactions.isNotEmpty) label += '. Tepkiler: $reactions';
+    return label;
+  }
+  @override
+  String get messageLongPressHint => "Tepki eklemek veya diğer seçenekler için uzun dokunun";
+  @override
+  String get myPostsPage => "Gönderilerim sayfası";
+  @override
+  String get myPostsPageHint => "Paylaştığınız tüm gönderileri görmek için çift dokunun";
+  @override
+  String get shareNewPost => "Yeni gönderi paylaş";
+  @override
+  String blogPostSemanticLabel({
+    required String username,
+    required String time,
+    required String content,
+    required int likes,
+    required int comments,
+  }) => "$username. $time. $content. $likes beğeni, $comments yorum.";
+  @override
+  String get closeBottomSheet => "Kapat";
+  @override
+  String get speaker => "Hoparlör";
+  @override
+  String get video => "Video";
+  @override
+  String get mute => "Sessize al";
+  @override
+  String get share => "Paylaş";
+  @override
+  String get switchCamera => "Kamera Değiştir";
+  @override
+  String get endCall => "Bitir";
+  @override
+  String get answer => "Cevapla";
+  @override
+  String get decline => "Reddet";
+  @override
+  String get recordingProgress => "Ses ilerlemesi";
+  @override
+  String get rewind5s => "5 saniye geri sar";
+  @override
+  String get forward5s => "5 saniye ileri sar";
+  @override
+  String recordingDurationLabel(String position, String duration) => "Ses ilerlemesi: $position / $duration";
+  @override
+  String version(String value) => "Versiyon $value";
+  @override
+  String get radioSearchHint => "Kanal Ara...";
+  @override
+  String get radioRecordings => "Kayıtlar";
+  @override
+  String get radioFavorites => "Favoriler";
+  @override
+  String get radioAllChannels => "Tüm Kanallar";
+  @override
+  String get radioOnAir => "YAYINDA";
+  @override
+  String get radioStopped => "DURDURULDU";
+  @override
+  String get radioStartRecording => "Kaydı Başlat";
+  @override
+  String get radioStopRecording => "Kaydı Durdur";
+  @override
+  String radioVolumeLevel(int level) => "Ses Seviyesi: %$level";
+  @override
+  String get radioSleepTimerTitle => "Uyku Zamanlayıcısı";
+  @override
+  String get radioPreviousChannel => "Önceki Kanal";
+  @override
+  String get radioNextChannel => "Sonraki Kanal";
+  @override
+  String get radioPlay => "Yayını Başlat";
+  @override
+  String get radioPause => "Yayını Durdur";
+  @override
+  String get radioRecordingStopHint => "Kaydı bitirmek için çift dokunun";
+  @override
+  String get radioRecordingStartHint => "Canlı yayını kaydetmek için çift dokunun";
+  @override
+  String radioSleepMode(String time) => "Uyku Modu: $time";
+  @override
+  String radioFavAdded(String name) => "$name favorilere eklendi.";
+  @override
+  String radioFavRemoved(String name) => "$name favorilerden çıkarıldı.";
+  @override
+  String playbackError(String error) => "Oynatma hatası: $error";
+  @override
+  String get invalidFileFormat => "Dosya formatı veya içeriği hatalı. Lütfen kaydı teyit edin.";
+  @override
+  String radioRecordingShareText(String name) => "$name radyo kaydı";
+  @override
+  String get fileNotFound => "Dosya bulunamadı";
+  @override
+  String recordingSemanticLabel(String station, String date, String time, String duration) => "$station. $date tarihinde saat $time kaydedildi. Süre $duration.";
+  @override
+  String get durationLabel => "Süre";
+  @override
+  String get failedToDeletePost => "Gönderi silinemedi";
+  @override
+  String get failedToUpdatePost => "Gönderi güncellenemedi";
+  @override
+  String get likeProcessFailed => "Beğeni işlemi başarısız";
+  @override
+  String get globalErrorOccurred => "Uygulamada bir hata oluştu";
+  @override
+  String get exitAndClose => "ÇIKIŞ YAP VE KAPAT";
+  @override
+  String get deleteChatTitle => "Sohbeti Sil";
+  @override
+  String get deleteChatConfirm => "Bu sohbeti silmek istediğinize emin misiniz? Bu işlem geri alınamaz.";
+  @override
+  String get chatDeletedStatus => "Sohbet silindi.";
+  @override
+  String chatDeleteError(String error) => "Sohbet silinemedi: $error";
+  @override
+  String get myPosts => "Gönderilerim";
+  @override
+  String get deleteConfirmTitle => "Silmeyi Onayla";
+  @override
+  String get deletePostConfirm => "Bu gönderiyi silmek istediğinize emin misiniz?";
+  @override
+  String get postDeleted => "Gönderi silindi.";
+  @override
+  String get editPostTitle => "Gönderiyi Düzenle";
+  @override
+  String get postUpdated => "Gönderi güncellendi.";
+  @override
+  String get noPostsYet => "Henüz hiç gönderi paylaşmadınız.";
+  @override
+  String get readCommentsHint => "Yorumları okumak ve yazmak için çift dokunun";
 }
 

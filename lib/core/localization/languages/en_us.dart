@@ -1084,7 +1084,86 @@ class LanguageEn extends BaseLanguage {
   @override
   String get voiceCommentSent => "Voice comment sent";
   @override
-  String get noComments => "No comments yet. Be the first to comment!";
+  String get noComments => "No comments yet.";
+  @override
+  String get writeComment => "Write a comment...";
+  @override
+  String get close => "Close";
+  @override
+  String get sendComment => "Send Comment";
+  @override
+  String get fetchingCommentsError => "Error fetching comments";
+  @override
+  String get failedToPostComment => "Failed to post comment";
+  @override
+  String commentUserAvatarSemantics(String username) => "$username's profile";
+  @override
+  String get viewProfileDetailsHint => "View profile details";
+  @override
+  String messageSemanticLabel({
+    required bool isFavorite,
+    required bool isVoice,
+    required bool isMyMessage,
+    required bool isCall,
+    required bool isEdited,
+    required String content,
+    required String time,
+    required String reactions,
+  }) {
+    String label = isFavorite ? 'Starred. ' : '';
+    if (isVoice) {
+      label += isMyMessage ? "Voice message you sent. $time" : "Incoming voice message. $time";
+    } else if (isCall) {
+      label += "$content. $time";
+    } else {
+      label += isMyMessage ? "Message you sent: $content. $time" : "Incoming message: $content. $time";
+    }
+    if (isEdited) label += '. Edited';
+    if (reactions.isNotEmpty) label += '. Reactions: $reactions';
+    return label;
+  }
+  @override
+  String get messageLongPressHint => "Long press for reactions or other options";
+  @override
+  String get myPostsPage => "My posts page";
+  @override
+  String get myPostsPageHint => "Double tap to see all your shared posts";
+  @override
+  String get shareNewPost => "Share new post";
+  @override
+  String blogPostSemanticLabel({
+    required String username,
+    required String time,
+    required String content,
+    required int likes,
+    required int comments,
+  }) => "$username. $time. $content. $likes likes, $comments comments.";
+  @override
+  String get closeBottomSheet => "Close";
+  @override
+  String get speaker => "Speaker";
+  @override
+  String get video => "Video";
+  @override
+  String get mute => "Mute";
+  @override
+  String get share => "Share";
+  @override
+  String get switchCamera => "Switch Camera";
+  @override
+  String get endCall => "End Call";
+  @override
+  String get answer => "Answer";
+  @override
+  String get decline => "Decline";
+  @override
+  String get recordingProgress => "Recording progress";
+  @override
+  String get rewind5s => "Rewind 5 seconds";
+  @override
+  String get forward5s => "Forward 5 seconds";
+  @override
+  String recordingDurationLabel(String position, String duration) => "Recording progress: $position / $duration";
   @override
   String get stopVoiceMessage => "Stop Voice Message";
   @override
@@ -1099,6 +1178,78 @@ class LanguageEn extends BaseLanguage {
   String get user => "User";
   @override
   String unreadMessagesCount(int count) => "$count unread messages";
+  @override
+  String get versionLabel => "Version";
+  @override
+  String version(String value) => "Version $value";
+  @override
+  String get radioSearchHint => "Search Channel...";
+  @override
+  String get radioRecordings => "Recordings";
+  @override
+  String get radioFavorites => "Favorites";
+  @override
+  String get radioAllChannels => "All Channels";
+  @override
+  String get radioOnAir => "ON AIR";
+  @override
+  String get radioStopped => "STOPPED";
+  @override
+  String get radioStartRecording => "Start Recording";
+  @override
+  String get radioStopRecording => "Stop Recording";
+  @override
+  String radioVolumeLevel(int level) => "Volume Level: $level%";
+  @override
+  String get radioSleepTimerTitle => "Sleep Timer";
+  @override
+  String get radioPreviousChannel => "Previous Channel";
+  @override
+  String get radioNextChannel => "Next Channel";
+  @override
+  String get radioPlay => "Start Broadcast";
+  @override
+  String get radioPause => "Stop Broadcast";
+  @override
+  String get radioRecordingStopHint => "Double tap to stop recording";
+  @override
+  String get radioRecordingStartHint => "Double tap to record live broadcast";
+  @override
+  String radioSleepMode(String time) => "Sleep Mode: $time";
+  @override
+  String radioFavAdded(String name) => "$name added to favorites.";
+  @override
+  String radioFavRemoved(String name) => "$name removed from favorites.";
+  @override
+  String playbackError(String error) => "Playback error: $error";
+  @override
+  String get invalidFileFormat => "Invalid file format or content. Please verify the recording.";
+  @override
+  String radioRecordingShareText(String name) => "$name radio recording";
+  @override
+  String get fileNotFound => "File not found";
+  @override
+  String recordingSemanticLabel(String station, String date, String time, String duration) => "$station. Recorded on $date at $time. Duration $duration.";
+  @override
+  String get durationLabel => "Duration";
+  @override
+  String get failedToDeletePost => "Post could not be deleted";
+  @override
+  String get failedToUpdatePost => "Post could not be updated";
+  @override
+  String get likeProcessFailed => "Like operation failed";
+  @override
+  String get globalErrorOccurred => "A global error occurred in the application";
+  @override
+  String get exitAndClose => "LOGOUT AND CLOSE";
+  @override
+  String get deleteChatTitle => "Delete Chat";
+  @override
+  String get deleteChatConfirm => "Are you sure you want to delete this chat? This action cannot be undone.";
+  @override
+  String get chatDeletedStatus => "Chat deleted.";
+  @override
+  String chatDeleteError(String error) => "Could not delete chat: $error";
   @override
   String get incomingMessage => "Incoming message";
   @override
@@ -1271,4 +1422,54 @@ class LanguageEn extends BaseLanguage {
   String get ongoingWork => "Ongoing work";
   @override
   String get completedWork => "Completed work";
+  @override
+  String get myPosts => "My Posts";
+  @override
+  String get deleteConfirmTitle => "Confirm Delete";
+  @override
+  String get deletePostConfirm => "Are you sure you want to delete this post?";
+  @override
+  String get postDeleted => "Post deleted.";
+  @override
+  String get editPostTitle => "Edit Post";
+  @override
+  String get postUpdated => "Post updated.";
+  @override
+  String get noPostsYet => "You haven't shared any posts yet.";
+  @override
+  String get readCommentsHint => "Double tap to read and write comments";
+  @override
+  String blogPostSemanticLabel({
+    required String username,
+    required String time,
+    required String content,
+    required int likes,
+    required int comments,
+  }) => "$username. $time. $content. $likes likes, $comments comments.";
+  @override
+  String get closeBottomSheet => "Close";
+  @override
+  String get speaker => "Speaker";
+  @override
+  String get video => "Video";
+  @override
+  String get mute => "Mute";
+  @override
+  String get share => "Share";
+  @override
+  String get switchCamera => "Switch Camera";
+  @override
+  String get endCall => "End Call";
+  @override
+  String get answer => "Answer";
+  @override
+  String get decline => "Decline";
+  @override
+  String get recordingProgress => "Recording progress";
+  @override
+  String get rewind5s => "Rewind 5 seconds";
+  @override
+  String get forward5s => "Forward 5 seconds";
+  @override
+  String recordingDurationLabel(String position, String duration) => "Recording progress: $position / $duration";
 }

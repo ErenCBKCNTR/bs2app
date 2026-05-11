@@ -645,4 +645,88 @@ abstract class BaseLanguage {
   String get unarchiveChat;
   String get ongoingWork;
   String get completedWork;
+  String get writeComment;
+  String get close;
+  String get sendComment;
+  String get fetchingCommentsError;
+  String get failedToPostComment;
+  String commentUserAvatarSemantics(String username);
+  String get viewProfileDetailsHint;
+  String messageSemanticLabel({
+    required bool isFavorite,
+    required bool isVoice,
+    required bool isMyMessage,
+    required bool isCall,
+    required bool isEdited,
+    required String content,
+    required String time,
+    required String reactions,
+  });
+  String get messageLongPressHint;
+  String get myPostsPage;
+  String get myPostsPageHint;
+  String get shareNewPost;
+  String blogPostSemanticLabel({
+    required String username,
+    required String time,
+    required String content,
+    required int likes,
+    required int comments,
+  });
+  String get closeBottomSheet;
+  String get speaker;
+  String get video;
+  String get mute;
+  String get share;
+  String get switchCamera;
+  String get endCall;
+  String get answer;
+  String get decline;
+  String get recordingProgress;
+  String get rewind5s;
+  String get forward5s;
+  String recordingDurationLabel(String position, String duration);
+  String version(String value);
+  String get radioSearchHint;
+  String get radioRecordings;
+  String get radioFavorites;
+  String get radioAllChannels;
+  String get radioOnAir;
+  String get radioStopped;
+  String get radioStartRecording;
+  String get radioStopRecording;
+  String radioVolumeLevel(int level);
+  String get radioSleepTimerTitle;
+  String get radioPreviousChannel;
+  String get radioNextChannel;
+  String get radioPlay;
+  String get radioPause;
+  String get radioRecordingStopHint;
+  String get radioRecordingStartHint;
+  String radioSleepMode(String time);
+  String radioFavAdded(String name);
+  String radioFavRemoved(String name);
+  String playbackError(String error);
+  String get invalidFileFormat;
+  String radioRecordingShareText(String name);
+  String get fileNotFound;
+  String recordingSemanticLabel(String station, String date, String time, String duration);
+  String get durationLabel;
+  String get failedToDeletePost;
+  String get failedToUpdatePost;
+  String get likeProcessFailed;
+  String get globalErrorOccurred;
+  String get exitAndClose;
+  String get deleteChatTitle;
+  String get deleteChatConfirm;
+  String get chatDeletedStatus;
+  String chatDeleteError(String error);
+  String get myPosts;
+  String get deleteConfirmTitle;
+  String get deletePostConfirm;
+  String get postDeleted;
+  String get editPostTitle;
+  String get postUpdated;
+  String get noPostsYet;
+  String get readCommentsHint;
 }

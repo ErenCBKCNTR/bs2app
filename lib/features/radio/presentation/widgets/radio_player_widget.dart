@@ -186,14 +186,14 @@ class _RadioPlayerWidgetState extends ConsumerState<RadioPlayerWidget> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Uyku Zamanlayıcısı',
-                      style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                    Text(
+                      lang.radioSleepTimerTitle,
+                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white70),
                       onPressed: () => Navigator.pop(context),
-                      tooltip: 'Kapat',
+                      tooltip: lang.closeBottomSheet,
                     ),
                   ],
                 ),
@@ -360,7 +360,7 @@ class _RadioPlayerWidgetState extends ConsumerState<RadioPlayerWidget> {
               IconButton(
                 icon: const Icon(Icons.bedtime_outlined, size: 28, color: Colors.white54),
                 onPressed: _showSleepTimerDialog,
-                tooltip: 'Uyku Zamanlayıcısı',
+                tooltip: lang.radioSleepTimerTitle,
               ),
               Expanded(
                 child: Text(
@@ -391,14 +391,14 @@ class _RadioPlayerWidgetState extends ConsumerState<RadioPlayerWidget> {
                         SnackBar(
                           content: Text(
                             isFav 
-                              ? '${widget.station.name} favorilerden çıkarıldı.' 
-                              : '${widget.station.name} favorilere eklendi.'
+                              ? lang.radioFavRemoved(widget.station.name)
+                              : lang.radioFavAdded(widget.station.name)
                           ),
                           duration: const Duration(seconds: 1),
                         ),
                       );
                     },
-                    tooltip: isFav ? 'Favorilerden Çıkar' : 'Favorilere Ekle',
+                    tooltip: isFav ? lang.removeFromFavs : lang.addToFavs,
                   );
                 },
               ),
@@ -421,7 +421,7 @@ class _RadioPlayerWidgetState extends ConsumerState<RadioPlayerWidget> {
                 Icon(Icons.circle, color: _isPlaying ? Colors.red : Colors.white24, size: 10),
                 const SizedBox(width: 6),
                 Text(
-                  _isPlaying ? "YAYINDA" : "DURDURULDU",
+                  _isPlaying ? lang.radioOnAir : lang.radioStopped,
                   style: TextStyle(
                     color: _isPlaying ? Colors.red : Colors.white38,
                     fontWeight: FontWeight.bold,
@@ -447,7 +447,7 @@ class _RadioPlayerWidgetState extends ConsumerState<RadioPlayerWidget> {
                   const Icon(Icons.timer, color: Colors.amber, size: 16),
                   const SizedBox(width: 8),
                   Text(
-                    "Uyku Modu: ${_formatTime(_remainingSleepSeconds)}",
+                    lang.radioSleepMode(_formatTime(_remainingSleepSeconds)),
                     style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.w500),
                   ),
                 ],
@@ -461,13 +461,13 @@ class _RadioPlayerWidgetState extends ConsumerState<RadioPlayerWidget> {
               IconButton(
                 icon: const Icon(Icons.skip_previous_rounded, size: 44, color: Colors.white),
                 onPressed: widget.onPrevious,
-                tooltip: 'Önceki Kanal',
+                tooltip: lang.radioPreviousChannel,
               ),
               const SizedBox(width: 32),
               // Erişilebilirlik etiketi IconButton tooltip ile sağlanır.
               IconButton(
                 onPressed: _togglePlayback,
-                tooltip: _isPlaying ? 'Yayını Durdur' : 'Yayını Başlat',
+                tooltip: _isPlaying ? lang.radioPause : lang.radioPlay,
                 iconSize: 84,
                 padding: EdgeInsets.zero,
                 icon: Container(
@@ -488,16 +488,16 @@ class _RadioPlayerWidgetState extends ConsumerState<RadioPlayerWidget> {
               IconButton(
                 icon: const Icon(Icons.skip_next_rounded, size: 44, color: Colors.white),
                 onPressed: widget.onNext,
-                tooltip: 'Sonraki Kanal',
+                tooltip: lang.radioNextChannel,
               ),
             ],
           ),
           const SizedBox(height: 32),
           // Kayıt Butonu
           Semantics(
-            label: _isRecording ? "Kaydı Durdur" : "Kaydı Başlat",
+            label: _isRecording ? lang.radioStopRecording : lang.radioStartRecording,
             button: true,
-            hint: _isRecording ? "Kaydı bitirmek için çift dokunun" : "Canlı yayını kaydetmek için çift dokunun",
+            hint: _isRecording ? lang.radioRecordingStopHint : lang.radioRecordingStartHint,
             child: InkWell(
               onTap: _toggleRecording,
               borderRadius: BorderRadius.circular(30),
@@ -528,7 +528,7 @@ class _RadioPlayerWidgetState extends ConsumerState<RadioPlayerWidget> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      _isRecording ? "Kaydı Durdur" : "Kaydı Başlat",
+                      _isRecording ? lang.radioStopRecording : lang.radioStartRecording,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -573,7 +573,7 @@ class _RadioPlayerWidgetState extends ConsumerState<RadioPlayerWidget> {
                   ],
                 ),
                 Text(
-                  "Ses Seviyesi: %${(_volume * 100).toInt()}",
+                  lang.radioVolumeLevel((_volume * 100).toInt()),
                   style: const TextStyle(color: Colors.white54, fontSize: 13),
                 ),
               ],
