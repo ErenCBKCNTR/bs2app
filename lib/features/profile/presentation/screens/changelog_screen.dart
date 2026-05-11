@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/admin/data/services/admin_service.dart';
 import '../../../../core/providers/localization_provider.dart';
+import 'package:blind_social/core/localization/languages/language.dart';
 
 class ChangelogScreen extends ConsumerWidget {
   const ChangelogScreen({super.key});

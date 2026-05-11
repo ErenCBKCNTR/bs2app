@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/localization_provider.dart';
+import 'package:blind_social/core/localization/languages/language.dart';
 
 class UserProfileScreen extends ConsumerStatefulWidget {
   final String userId;

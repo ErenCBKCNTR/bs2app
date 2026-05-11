@@ -1,3 +1,4 @@
+
 import 'language.dart';
 
 class LanguageTr extends BaseLanguage {
@@ -133,6 +134,8 @@ class LanguageTr extends BaseLanguage {
 
   @override
   String get campaigns => "Kampanyalar";
+  @override
+  String get categories => "Kategoriler";
   @override
   String get all => "Hepsi";
   @override
@@ -527,7 +530,6 @@ class LanguageTr extends BaseLanguage {
   @override
   List<String> get months => ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
-  // App Settings
   @override
   String get themeSubtitle => "Açık, koyu veya sistem teması seçin";
   @override
@@ -715,23 +717,145 @@ class LanguageTr extends BaseLanguage {
   @override
   String get latest => "En Yeni";
   @override
-  String get taskOverview => "Görev Özeti ve Geçmişi";
+  String get chatArchivedStatus => "Arşivlendi";
+  @override
+  String get chatPinnedStatus => "Sabitlendi";
+  @override
+  String get chatUnarchivedStatus => "Arşivden Çıkarıldı";
+  @override
+  String get chatUnpinnedStatus => "Sabitlenmeden Çıkarıldı";
+  @override
+  String get connectionErrorWithStatus => "Bağlantı Hatası";
+  @override
+  String get create => "Oluştur";
+  @override
+  String get createServerTitle => "Sunucu Oluştur";
+  @override
+  String get deleteMessage => "Mesajı Sil";
+  @override
+  String get duration => "Süre";
+  @override
+  String get earpieceSet => "Ahize ayarlandı";
+  @override
+  String get editMessage => "Mesajı Düzenle";
+  @override
+  String get editMessageHint => "Yeni bir mesaj girin";
+  @override
+  String get editMessageTitle => "Mesajı Düzenle";
+  @override
+  String get edited => "Düzenlendi";
+  @override
+  String get emptyChatList => "Henüz sohbet yok";
+  @override
+  String get exit => "Çıkış";
+  @override
+  String get exitAppConfirm => "Uygulamadan çıkmak istediğinize emin misiniz?";
+  @override
+  String get exitAppTitle => "Uygulamadan Çık";
+  @override
+  String get failedToLoadDetails => "Detaylar yüklenemedi";
+  @override
+  String get favAddedStatus => "Favorilere eklendi";
+  @override
+  String get favRemovedStatus => "Favorilerden çıkarıldı";
+  @override
+  String get favoriteMessages => "Favori Mesajlar";
+  @override
+  String get gameInviteDesc => "size bilgi yarışması için oyun daveti gönderdi.";
+  @override
+  String get gameInviteTitle => "Oyun İsteği";
   @override
   String get generalStats => "Genel İstatistikler";
   @override
-  String get total => "Toplam";
+  String get group => "Grup";
   @override
-  String get completed => "Tamamlandı";
+  String get headsetOrBluetoothSet => "Kulaklık/Bluetooth ayarlandı";
   @override
-  String get pending => "Bekliyor";
+  String get inFavorites => "Favorilerde";
+  @override
+  String get incomingVideoCall => "Gelen görüntülü arama";
+  @override
+  String get incomingVoiceCall => "Gelen sesli arama";
+  @override
+  String get incomingVoiceMessage => "Gelen sesli mesaj";
+  @override
+  String get lineBusy => "Hat meşgul";
+  @override
+  String get liveVoiceRoom => "Canlı Sesli Oda";
+  @override
+  String get messageDeletedStatus => "Mesaj silindi";
+  @override
+  String get messageSentStatus => "Mesaj gönderildi";
+  @override
+  String get microphoneAccessDenied => "Mikrofon erişimi engellendi";
+  @override
+  String get missedCall => "Cevapsız arama";
+  @override
+  String get missedVideoCall => "Cevapsız görüntülü arama";
   @override
   String get myPendingTasks => "Bekleyen Görevlerim";
   @override
   String get myCompletedTasks => "Geçmiş (Tamamlanan) Görevlerim";
   @override
-  String get noPendingTasksFound => "Bekleyen göreviniz bulunmuyor.";
+  String get newChatTooltip => "Yeni Sohbet";
+  @override
+  String get newServerTooltip => "Yeni Sunucu";
   @override
   String get noCompletedTasksFound => "Hiç tamamlanmış göreviniz bulunmuyor.";
+  @override
+  String get noMessagesYet => "Henüz mesaj yok";
+  @override
+  String get noPendingTasksFound => "Bekleyen göreviniz bulunmuyor.";
+  @override
+  String get notInFavorites => "Favorilerde değil";
+  @override
+  String get outgoingCallUnanswered => "Giden arama cevapsız";
+  @override
+  String get outgoingVideoCall => "Giden görüntülü arama";
+  @override
+  String get outgoingVoiceCall => "Giden sesli arama";
+  @override
+  String get privateChat => "Özel Sohbet";
+  @override
+  String get removeFromFavs => "Favorilerden Çıkar";
+  @override
+  String get repliedMessage => "Yanıtlanan Mesaj";
+  @override
+  String get reply => "Yanıtla";
+  @override
+  String get securitySettings => "Güvenlik Ayarları";
+  @override
+  String get serverCreateGenericError => "Sunucu oluşturulamadı";
+  @override
+  String get serverCreatedSuccess => "Sunucu başarıyla oluşturuldu";
+  @override
+  String get serverLimitDaily => "Günlük sunucu oluşturma limitine ulaştınız";
+  @override
+  String get serverLimitReached => "Sunucu limitine ulaştınız";
+  @override
+  String get serverNameHint => "Sunucu ismi girin";
+  @override
+  String get serverNameLabel => "Sunucu Adı";
+  @override
+  String get serverNameMinLength => "Sunucu adı çok kısa";
+  @override
+  String get serverNameRequired => "Sunucu adı gerekli";
+  @override
+  String get serverNameTooShort => "Sunucu adı çok kısa";
+  @override
+  String get serverPasswordHint => "Şifre girin";
+  @override
+  String get serverPasswordLabel => "Sunucu Şifresi";
+  @override
+  String get servers => "Sunucular";
+  @override
+  String get speakerSet => "Hoparlör ayarlandı";
+  @override
+  String get starred => "Yıldızlı";
+  @override
+  String get statusFailed => "Durum alınamadı";
+  @override
+  String get taskOverview => "Görev Özeti";
   @override
   String taskOverviewAnnouncement(int total, int completed, int pending) =>
       "Görev Özeti ve Geçmişi sayfası. Toplam $total görev içerisinde, $completed adet tamamlanan, $pending adet bekleyen görev bulunuyor.";
@@ -739,230 +863,35 @@ class LanguageTr extends BaseLanguage {
   String taskOverviewStatsLabel(int total, int completed, int pending) =>
       "Genel İstatistikler. Toplam $total görev içerisinde, $completed adet tamamlanan ve $pending adet bekleyen görev bulunuyor";
   @override
-  String get inFavorites => "Favorilerinizde.";
+  String get total => "Toplam";
   @override
-  String get notInFavorites => "Favorilerinizde değil.";
+  String get unnamedChat => "İsimsiz Sohbet";
   @override
-  String boardAnnouncement(String name, String favText, int listCount, bool isOwner) {
-    String prefix = isOwner ? "" : "Sizinle paylaşılmış ";
-    return "$prefix$name isimli pano, $favText İçerisinde $listCount adet liste mevcut. Panoya girmek için çift tıklayın, favori durumunu değiştirmek için uzun basın.";
-  }
+  String get unreadMessageSuffix => "okunmamış";
   @override
-  String boardDetailAnnouncement(String name) => "$name isimli pano içerisindesiniz.";
+  String get videoCall => "Görüntülü Arama";
   @override
-  String get boardOptionsHint => "Pano seçeneklerini görmek için iki parmağınızla dokunun veya uzun basın.";
+  String get voiceCall => "Sesli Arama";
   @override
-  String get dropdownHint => "Seçenekleri görmek ve değiştirmek için çift tıklayın";
+  String get voiceSentStatus => "Ses gönderildi";
   @override
-  String get lastSeenHidden => "Son görülme gizli";
-  @override
-  String get activeNow => "Şu an aktif";
-  @override
-  String get lastSeenToday => "Son görülme bugün";
-  @override
-  String get statusFailed => "Durum alınamadı";
-  @override
-  String get gameInviteTitle => "Oyun İsteği";
-  @override
-  String get gameInviteDesc => "size bilgi yarışması için oyun daveti gönderdi.";
+  String get yourVoiceMessage => "Sesli mesajınız";
   @override
   String get accept => "Kabul Et";
   @override
   String get reject => "Reddet";
   @override
-  String get exitAppTitle => "Uygulamadan Çık";
-  @override
-  String get exitAppConfirm => "Uygulamadan çıkmak istediğinize emin misiniz?";
-  @override
-  String get exit => "ÇIK";
-  @override
-  String get newChatTooltip => "Yeni Sohbet Başlat";
-  @override
-  String get newServerTooltip => "Yeni Sohbet Sunucusu Oluştur";
-  @override
-  String get createServerTitle => "Yeni Sohbet Sunucusu";
-  @override
-  String get serverNameLabel => "Sunucu Adı";
-  @override
-  String get serverNameHint => "Örn: Blind Social Dostlar";
-  @override
-  String get serverNameRequired => "Sunucu adı boş olamaz";
-  @override
-  String get serverNameTooShort => "Sunucu adı 3 karakterden kısa olamaz";
-  @override
-  String get capacityLabel => "Kişi Kapasitesi";
-  @override
-  String get securitySettings => "Güvenlik Ayarları";
-  @override
-  String get serverPasswordLabel => "Sunucu Şifresi (Numara)";
-  @override
-  String get serverPasswordHint => "Şifresiz için boş bırakın";
-  @override
-  String get create => "Oluştur";
-  @override
-  String get serverCreatedSuccess => "Sunucu başarıyla oluşturuldu!";
-  @override
-  String get serverNameMinLength => "Sunucu adı en az 3 karakter olmalıdır.";
-  @override
-  String get serverLimitReached => "Kullanıcı en fazla 3 adet sunucu oluşturabilir";
-  @override
-  String get serverLimitDaily => "Bir günde en fazla 2 adet sunucu oluşturabilirsiniz";
-  @override
-  String get serverCreateGenericError => "Sunucu oluşturulamadı. Lütfen tekrar deneyin.";
-  @override
-  String get emptyChatList => "Henüz bir sohbetiniz yok.\nYeni bir sohbet başlatın.";
-  @override
-  String get unnamedChat => "İsimsiz Sohbet";
-  @override
-  String get liveVoiceRoom => "Canlı Ses Odası";
-  @override
-  String get reply => "Yanıtla";
-  @override
-  String get microphoneAccessDenied => "Mikrofona erişilemedi, sadece dinleyici olarak katıldınız.";
-  @override
-  String get connectionErrorWithStatus => "Bağlantı hatası: ";
-  @override
-  String get speakerSet => "Hoparlör";
-  @override
-  String get earpieceSet => "Ahize";
-  @override
-  String get headsetOrBluetoothSet => "Kulaklık / Bluetooth";
-  @override
-  String get deleteMessage => "Sil";
-  @override
-  String get editMessage => "Düzenle";
-  @override
-  String get editMessageTitle => "Mesajı Düzenle";
-  @override
-  String get editMessageHint => "Mesajınızı düzenleyin...";
-  @override
-  String get messageSentStatus => "Mesaj gönderildi";
-  @override
-  String get voiceSentStatus => "Sesli mesaj gönderildi";
-  @override
-  String get messageDeletedStatus => "Mesaj sizden silindi.";
-  @override
-  String get favAddedStatus => "Mesaj favorilere eklendi.";
-  @override
-  String get favRemovedStatus => "Mesaj favorilerden çıkarıldı.";
+  String get activeNow => "Şu an aktif";
   @override
   String get addToFavs => "Favorilere Ekle";
   @override
-  String get removeFromFavs => "Favorilerden Çıkar";
-  @override
-  String get chatPinnedStatus => "Sohbet sabitlendi";
-  @override
-  String get chatUnpinnedStatus => "Sohbet sabitlemesi kaldırıldı";
-  @override
-  String get chatArchivedStatus => "Sohbet arşivlendi";
-  @override
-  String get chatUnarchivedStatus => "Sohbet arşivden çıkarıldı";
-  @override
-  String get voiceCall => "Sesli Arama";
-  @override
-  String get videoCall => "Görüntülü Arama";
-  @override
-  String get missedCall => "Cevapsız Arama";
-  @override
-  String get group => "Grup";
-  @override
-  String get privateChat => "Özel Sohbet";
-  @override
-  String get servers => "Sunucular";
-  @override
   String get admin => "Yönetici";
   @override
-  String get failedToLoadDetails => "Detaylar yüklenemedi";
+  String boardAnnouncement(String name, String favText, int listCount, bool isOwner) => "";
   @override
-  String get favoriteMessages => "Favori Mesajlar";
+  String boardDetailAnnouncement(String name) => "";
   @override
-  String get noMessagesYet => "Henüz mesaj yok.";
+  String get boardOptionsHint => "Pano seçeneklerini görmek için iki parmağınızla dokunun veya uzun basın.";
   @override
-  String get unreadMessageSuffix => "Okunmamış Mesaj";
-  @override
-  String get outgoingVideoCall => "Giden Görüntülü Arama";
-  @override
-  String get outgoingVoiceCall => "Giden Sesli Arama";
-  @override
-  String get incomingVideoCall => "Gelen Görüntülü Arama";
-  @override
-  String get incomingVoiceCall => "Gelen Sesli Arama";
-  @override
-  String get callAcceptedByYou => "Aramayı Kabul Ettiniz";
-  @override
-  String get callAccepted => "Arama Kabul Edildi";
-  @override
-  String get outgoingCallUnanswered => "Giden Arama Cevaplanmadı";
-  @override
-  String get missedVideoCall => "Cevapsız Görüntülü Arama";
-  @override
-  String get lineBusy => "Hat Meşgul";
-  @override
-  String get callRejectedByYou => "Aramayı Reddetiniz";
-  @override
-  String get callRejected => "Arama Reddedildi";
-  @override
-  String get callCancelledByYou => "Aramayı İptal Ettiniz";
-  @override
-  String get callCancelled => "Arama İptal Edildi";
-  @override
-  String get duration => "Süre";
-  @override
-  String get starred => "Yıldızlı";
-  @override
-  String get repliedMessage => "Yanıtlanan mesaj";
-  @override
-  String get yourVoiceMessage => "Gönderdiğiniz sesli mesaj";
-  @override
-  String get incomingVoiceMessage => "Gelen sesli mesaj";
-  @override
-  String get incomingMessage => "Gelen mesaj";
-  @override
-  String get edited => "Düzenlendi";
-  @override
-  String get voiceMessage => "Sesli Mesaj";
-  @override
-  String get currentlySpeaking => "Şu anda konuşuyor";
-  @override
-  String get callLog => "Arama Kaydı";
-  @override
-  String get you => "Siz";
-  @override
-  String get replied => "Yanıtlanan";
-  @override
-  String get typeMessage => "Mesaj yaz...";
-  @override
-  String get replyingTo => "Yanıtlama";
-  @override
-  String get onlyAdminCanSendMessages => "Sadece Blind Social Ekibi mesaj gönderebilir";
-  @override
-  String get user => "Kullanıcı";
-  @override
-  String unreadMessagesCount(int count) => "$count Okunmamış Mesaj";
-  @override
-  String statusLastSeen(String date) => "Son görülme $date";
-  @override
-  String statusTodayAt(String time) => "Son görülme bugün $time";
-  @override
-  String voiceRoomCapacity(int count) => "$count Kişilik";
-  @override
-  String get deleteComment => "Mesajı Sil";
-  @override
-  String get deleteCommentConfirm => "Bu mesajı silmek istediğinize emin misiniz?";
-  @override
-  String get commentDeleted => "Mesaj silindi";
-  @override
-  String get commentSent => "Mesaj gönderildi";
-  @override
-  String get sendingVoiceComment => "Ses mesajı gönderiliyor, lütfen bekleyin";
-  @override
-  String get voiceCommentSent => "Sesli mesaj başarıyla gönderildi";
-  @override
-  String get noComments => "Henüz mesaj yok. İlk mesajı siz gönderin.";
-  @override
-  String get connectionError => "Bağlantı hatası oluştu";
-  @override
-  String get genericError => "Bir şeyler yanlış gitti";
-  @override
-  String get accessDenied => "Erişim Reddedildi";
+  String get deleteMessage => "Mesajı sil";
 }
