@@ -931,8 +931,6 @@ class LanguageTr extends BaseLanguage {
   @override
   String get securitySettings => "Güvenlik Ayarları";
   @override
-  String get unnamed => "İsimsiz";
-  @override
   String get blog => "Blog";
   @override
   String voiceRoomCapacity(String value) => "Kapasite: $value";
@@ -954,8 +952,6 @@ class LanguageTr extends BaseLanguage {
   String get replyingTo => "Yanıtlanıyor:";
   @override
   String get callLog => "Arama Kaydı";
-  @override
-  String get dropdownAccessibilityHint => "Seçeneği değiştirmek için çift dokunun";
   @override
   String get sendFeedback => "Geri Bildirim Gönder";
   @override
@@ -1036,4 +1032,18 @@ class LanguageTr extends BaseLanguage {
   String get playVoiceMessage => "Sesli Mesajı Oynat";
   @override
   String get incomplete => "Tamamlanmadı";
+  @override
+  String statusTodayAt(String time) => "Bugün $time";
+  @override
+  String statusLastSeen(String date) => "Son görülme: $date";
+  @override
+  String get user => "Kullanıcı";
+  @override
+  String unreadMessagesCount(int count) => "$count okunmamış mesaj";
+  @override
+  String get incomingMessage => "Gelen mesaj";
+  @override
+  String get yourMessage => "Senin mesajın";
+  @override
+  String get onlyAdminCanSendMessages => "Sadece yöneticiler mesaj gönderebilir";
 }

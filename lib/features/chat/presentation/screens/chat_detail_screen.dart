@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blind_social/core/providers/localization_provider.dart';
+import 'package:blind_social/core/localization/languages/language.dart';
 import 'package:blind_social/features/chat/presentation/screens/call_screen.dart';
 import 'package:blind_social/features/chat/presentation/screens/favorite_messages_screen.dart';
 import 'package:flutter/material.dart';

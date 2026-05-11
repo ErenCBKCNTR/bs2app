@@ -524,4 +524,11 @@ abstract class BaseLanguage {
   String get stopVoiceMessage;
   String get playVoiceMessage;
   String get incomplete;
+  String statusTodayAt(String time);
+  String statusLastSeen(String date);
+  String get user;
+  String unreadMessagesCount(int count);
+  String get incomingMessage;
+  String get yourMessage;
+  String get onlyAdminCanSendMessages;
 }

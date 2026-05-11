@@ -931,8 +931,6 @@ class LanguageEn extends BaseLanguage {
   @override
   String get securitySettings => "Security Settings";
   @override
-  String get unnamed => "Unnamed";
-  @override
   String get blog => "Blog";
   @override
   String voiceRoomCapacity(String value) => "Capacity: $value";
@@ -954,8 +952,6 @@ class LanguageEn extends BaseLanguage {
   String get replyingTo => "Replying to";
   @override
   String get callLog => "Call Log";
-  @override
-  String get dropdownAccessibilityHint => "Double tap to change option";
   @override
   String get sendFeedback => "Send Feedback";
   @override
@@ -1036,4 +1032,18 @@ class LanguageEn extends BaseLanguage {
   String get playVoiceMessage => "Play Voice Message";
   @override
   String get incomplete => "Incomplete";
+  @override
+  String statusTodayAt(String time) => "Today at $time";
+  @override
+  String statusLastSeen(String date) => "Last seen: $date";
+  @override
+  String get user => "User";
+  @override
+  String unreadMessagesCount(int count) => "$count unread messages";
+  @override
+  String get incomingMessage => "Incoming message";
+  @override
+  String get yourMessage => "Your message";
+  @override
+  String get onlyAdminCanSendMessages => "Only admins can send messages";
 }

@@ -803,7 +803,7 @@ class _ChatListScreenContentState extends ConsumerState<_ChatListScreenContent> 
                           items: [12, 24, 32, 48, 64, 128].map((int value) {
                             return DropdownMenuItem<int>(
                               value: value,
-                              child: Text(lang.voiceRoomCapacity(value)),
+                              child: Text(lang.voiceRoomCapacity(value.toString())),
                             );
                           }).toList(),
                           onChanged: (val) {
