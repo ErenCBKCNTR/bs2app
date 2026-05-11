@@ -1145,13 +1145,13 @@ addRepaintBoundaries: true,
           onLongPressHint: "Seçenekleri Göster",
           onLongPress: () => _showChatOptions(chat),
           customSemanticsActions: {
-            CustomSemanticsAction(label: isArchived ? 'Arşivden Çıkar' : 'Arşivle'): () {
+            CustomSemanticsAction(label: isArchived ? lang.unarchiveChat : lang.archiveChat): () {
               _toggleArchive(chat.id, isArchived);
             },
-            CustomSemanticsAction(label: isPinned ? 'Sabitlemeden Çıkar' : 'Sabitle'): () {
+            CustomSemanticsAction(label: isPinned ? lang.unpinChat : lang.pinChat): () {
                _togglePin(chat.id, isPinned);
             },
-            CustomSemanticsAction(label: 'Sohbeti Sil'): () {
+            CustomSemanticsAction(label: lang.deleteChat): () {
               _confirmDeleteChat(chat);
             },
           },
@@ -1211,9 +1211,9 @@ addRepaintBoundaries: true,
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const ArchivedMessagesScreen()));
               },
               icon: const Icon(Icons.archive, size: 18),
-              label: const FittedBox(
+              label: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text("Arşivlenmiş Sohbetler"),
+                child: Text(lang.archivedChats),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
@@ -1229,9 +1229,9 @@ addRepaintBoundaries: true,
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoriteMessagesScreen()));
               },
               icon: const Icon(Icons.star, size: 18),
-              label: const FittedBox(
+              label: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text("Favori Mesajlar"),
+                child: Text(lang.favoriteMessages),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
@@ -1291,7 +1291,7 @@ addRepaintBoundaries: true,
                   if (targetUserId != null)
                    ListTile(
                     leading: const Icon(Icons.person_outline),
-                    title: const Text('Profili Görüntüle'),
+                    title: Text(lang.viewProfile),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
@@ -1304,7 +1304,7 @@ addRepaintBoundaries: true,
                   ),
                   ListTile(
                     leading: Icon(isArchived ? Icons.unarchive : Icons.archive),
-                    title: Text(isArchived ? 'Arşivden Çıkar' : 'Arşivle'),
+                    title: Text(isArchived ? lang.unarchiveChat : lang.archiveChat),
                     onTap: () {
                       Navigator.pop(context);
                       _toggleArchive(chat.id, isArchived);
@@ -1312,7 +1312,7 @@ addRepaintBoundaries: true,
                   ),
                   ListTile(
                     leading: Icon(myPart?.getBoolValue('is_pinned') == true ? Icons.push_pin_outlined : Icons.push_pin),
-                    title: Text(myPart?.getBoolValue('is_pinned') == true ? 'Sabitlemeden Çıkar' : 'Sabitle'),
+                    title: Text(myPart?.getBoolValue('is_pinned') == true ? lang.unpinChat : lang.pinChat),
                     onTap: () {
                       Navigator.pop(context);
                       _togglePin(chat.id, myPart?.getBoolValue('is_pinned') ?? false);
@@ -1320,7 +1320,7 @@ addRepaintBoundaries: true,
                   ),
                   ListTile(
                     leading: const Icon(Icons.delete_outline, color: Colors.red),
-                    title: const Text('Sohbeti Sil', style: TextStyle(color: Colors.red)),
+                    title: Text(lang.deleteChat, style: const TextStyle(color: Colors.red)),
                     onTap: () {
                       Navigator.pop(context);
                       _confirmDeleteChat(chat);
@@ -1388,6 +1388,7 @@ addRepaintBoundaries: true,
   }
 
   Widget _buildDrawer(BuildContext context) {
+    final lang = ref.read(localizationProvider);
     final user = PocketBaseService.client.authStore.model;
     final email = user?.getStringValue('email') ?? 'Hesap Bilgisi Yok';
     final theme = Theme.of(context);
@@ -1447,11 +1448,11 @@ addRepaintBoundaries: true,
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                _buildDrawerSectionHeader('Sosyal'),
+                _buildDrawerSectionHeader(lang.socialSection),
                 _buildDrawerItem(
                   context,
                   icon: Icons.person_outline,
-                  title: 'Profilim',
+                  title: lang.myProfile,
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/profile'), builder: (_) => const MyProfileScreen()));
@@ -1460,7 +1461,7 @@ addRepaintBoundaries: true,
                 _buildDrawerItem(
                   context,
                   icon: Icons.group_add_outlined,
-                  title: 'Arkadaşlık ve Engellenenler Listesi',
+                  title: lang.friendAndBlockedList,
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/friend_requests'), builder: (_) => const FriendRequestsScreen()));
@@ -1469,7 +1470,7 @@ addRepaintBoundaries: true,
                 _buildDrawerItem(
                   context,
                   icon: Icons.games_outlined,
-                  title: 'Oyun Alanı',
+                  title: lang.gamesArea,
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/games'), builder: (_) => const blind_social_games.GamesScreen()));
@@ -1480,11 +1481,11 @@ addRepaintBoundaries: true,
                   padding: EdgeInsets.symmetric(horizontal: 24),
                   child: Divider(height: 32),
                 ),
-                _buildDrawerSectionHeader('İçerik ve Araçlar'),
+                _buildDrawerSectionHeader(lang.contentAndToolsSection),
                 _buildDrawerItem(
                   context,
                   icon: Icons.campaign_outlined,
-                  title: 'Kampanyalar',
+                  title: lang.campaigns,
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/campaigns'), builder: (_) => const CampaignsScreen()));
@@ -1493,7 +1494,7 @@ addRepaintBoundaries: true,
                 _buildDrawerItem(
                   context,
                   icon: Icons.radio_outlined,
-                  title: 'Canlı Radyo',
+                  title: lang.liveRadio,
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/radio'), builder: (_) => const RadioListScreen()));
@@ -1502,7 +1503,7 @@ addRepaintBoundaries: true,
                 _buildDrawerItem(
                   context,
                   icon: Icons.build_circle_outlined,
-                  title: 'Araçlar',
+                  title: lang.tools,
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/tools'), builder: (_) => const blind_social_tools.ToolsScreen()));
@@ -1513,11 +1514,11 @@ addRepaintBoundaries: true,
                   padding: EdgeInsets.symmetric(horizontal: 24),
                   child: Divider(height: 32),
                 ),
-                _buildDrawerSectionHeader('Sistem'),
+                _buildDrawerSectionHeader(lang.systemSection),
                 _buildDrawerItem(
                   context,
                   icon: Icons.settings_outlined,
-                  title: 'Uygulama Ayarları',
+                  title: lang.appSettings,
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/settings'), builder: (_) => const AppSettingsScreen()));
@@ -1529,11 +1530,11 @@ addRepaintBoundaries: true,
                     padding: EdgeInsets.symmetric(horizontal: 24),
                     child: Divider(height: 32),
                   ),
-                  _buildDrawerSectionHeader('Yönetim'),
+                  _buildDrawerSectionHeader(lang.administrationSection),
                   _buildDrawerItem(
                     context,
                     icon: Icons.admin_panel_settings_outlined,
-                    title: 'Yönetici Paneli',
+                    title: lang.adminPanel,
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/admin'), builder: (_) => const AdminPanelScreen()));
@@ -1542,7 +1543,7 @@ addRepaintBoundaries: true,
                   _buildDrawerItem(
                     context,
                     icon: Icons.bug_report_outlined,
-                    title: 'Geliştirici Modu / Loglar',
+                    title: lang.developerModeLogs,
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: '/logs'), builder: (_) => const DeveloperLogsScreen()));

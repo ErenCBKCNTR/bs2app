@@ -1,18 +1,20 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/localization/localization_provider.dart';
 import '../../data/radio_stations.dart';
 import '../../services/favorite_stations_service.dart';
 import 'radio_player_screen.dart';
 import 'saved_recordings_screen.dart';
 
-class RadioListScreen extends StatefulWidget {
+class RadioListScreen extends ConsumerStatefulWidget {
   const RadioListScreen({super.key});
 
   @override
-  State<RadioListScreen> createState() => _RadioListScreenState();
+  ConsumerState<RadioListScreen> createState() => _RadioListScreenState();
 }
 
-class _RadioListScreenState extends State<RadioListScreen> {
+class _RadioListScreenState extends ConsumerState<RadioListScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FavoriteStationsService _favoriteService = FavoriteStationsService();
   List<RadioStation> _filteredStations = radioStations;
@@ -55,7 +57,7 @@ class _RadioListScreenState extends State<RadioListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Canlı Radyo'),
+        title: Text(ref.watch(localizationProvider).liveRadio),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(

@@ -8,11 +8,14 @@ import 'package:blind_social/features/chat/presentation/screens/blog_comments_bo
 import 'package:blind_social/core/utils/profanity_filter.dart';
 import 'package:blind_social/core/widgets/expandable_text.dart';
 
-class MyBlogPostsScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/localization/localization_provider.dart';
+
+class MyBlogPostsScreen extends ConsumerStatefulWidget {
   const MyBlogPostsScreen({super.key});
 
   @override
-  State<MyBlogPostsScreen> createState() => _MyBlogPostsScreenState();
+  ConsumerConsumerState<MyBlogPostsScreen> createState() => _MyBlogPostsScreenState();
 }
 
 class _MyBlogPostsScreenState extends State<MyBlogPostsScreen> {
@@ -261,16 +264,16 @@ addRepaintBoundaries: true,
                     },
                     onTapHint: "Yorumları okumak ve yazmak için çift dokunun",
                     customSemanticsActions: {
-                      CustomSemanticsAction(label: 'Gönderiyi Düzenle'): () {
+                      CustomSemanticsAction(label: ref.read(localizationProvider).editPost): () {
                         _showEditDialog(post['id'], content);
                       },
-                      CustomSemanticsAction(label: 'Gönderiyi Sil'): () {
+                      CustomSemanticsAction(label: ref.read(localizationProvider).deletePost): () {
                         _deletePost(post['id']);
                       },
-                      CustomSemanticsAction(label: isLiked ? 'Beğeniyi Kaldır' : 'Beğen'): () {
+                      CustomSemanticsAction(label: isLiked ? ref.read(localizationProvider).unlikePost : ref.read(localizationProvider).likePost): () {
                         _toggleLike(post['id'], likes);
                       },
-                      CustomSemanticsAction(label: 'Yorumları Aç'): () {
+                      CustomSemanticsAction(label: ref.read(localizationProvider).openComments): () {
                         showModalBottomSheet(
                           context: context,
                           isScrollControlled: true,

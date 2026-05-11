@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/localization/localization_provider.dart';
 import 'package:blind_social/features/servers/data/models/chat_server.dart';
 import 'package:blind_social/features/servers/data/models/chat_server_room.dart';
 import 'package:blind_social/features/servers/data/services/chat_server_service.dart';
@@ -9,15 +11,15 @@ import 'package:blind_social/features/servers/presentation/screens/server_settin
 
 import 'package:pocketbase/pocketbase.dart';
 
-class ChatServerRoomsScreen extends StatefulWidget {
+class ChatServerRoomsScreen extends ConsumerStatefulWidget {
   final ChatServer server;
   const ChatServerRoomsScreen({super.key, required this.server});
 
   @override
-  State<ChatServerRoomsScreen> createState() => _ChatServerRoomsScreenState();
+  ConsumerState<ChatServerRoomsScreen> createState() => _ChatServerRoomsScreenState();
 }
 
-class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> with WidgetsBindingObserver {
+class _ChatServerRoomsScreenState extends ConsumerState<ChatServerRoomsScreen> with WidgetsBindingObserver {
   late ChatServer _server;
   List<ChatServerRoom> _rooms = [];
   bool _isLoading = true;
@@ -45,7 +47,7 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> with Widg
     
     // Ekran okuyucu için sunucuya katılma bildirimi
     SemanticsService.announce(
-      "Şu anda ${ProfanityFilter.filter(_server.name)} isimli sunucuya bağlandınız.", 
+      ref.read(localizationProvider).joinedServerAnnounce(ProfanityFilter.filter(_server.name)), 
       TextDirection.ltr,
     );
   }
@@ -131,7 +133,7 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> with Widg
                       ),
                       const SizedBox(height: 16),
                       Semantics(
-                        hint: 'Seçenekleri görmek ve değiştirmek için çift tıklayın',
+                        hint: ref.read(localizationProvider).doubleTapToSeeOptionsHint,
                         button: true, // as it's a dropdown button
                         child: DropdownButtonFormField<RoomType>(
                           value: roomType,
@@ -181,7 +183,7 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> with Widg
                         type: roomType,
                       );
                       
-                      SemanticsService.announce("$name isimli oda başarıyla oluşturulmuştur.", TextDirection.ltr);
+                      SemanticsService.announce(ref.read(localizationProvider).roomCreatedAnnounce(name), TextDirection.ltr);
 
                       if (context.mounted) {
                         Navigator.pop(context);
@@ -307,10 +309,10 @@ class _ChatServerRoomsScreenState extends State<ChatServerRoomsScreen> with Widg
                     }
 
                     return Semantics(
-                      label: '$roomName isimli $semanticType',
+                      label: ref.read(localizationProvider).roomSemanticLabel(roomName, semanticType),
                       excludeSemantics: true,
                       button: true,
-                      onTapHint: 'Odaya girmek için çift tıklayın',
+                      onTapHint: ref.read(localizationProvider).joinRoomHint,
                       child: Card(
                         elevation: 2,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

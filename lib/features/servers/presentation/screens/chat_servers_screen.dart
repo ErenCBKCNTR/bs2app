@@ -161,11 +161,11 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
           final encryptedText = hasPassword ? 'şifreli ' : '';
 
           final onlineCount = _onlineCounts[server.id] ?? 0;
-          final semanticLabel = 'Sunucu adı $serverName. Sunucu açıklaması $description. $capacityStr kişilik $encryptedText sunucu. Şu anda sunucuda $onlineCount kişi var.';
+          final semanticLabel = lang.serverSemanticLabel(serverName, description, capacityStr, encryptedText, onlineCount.toString());
 
           return Semantics(
                 label: semanticLabel,
-                onTapHint: 'Sunucuya katılmak için çift tıklayın',
+                onTapHint: lang.joinServerHint,
                 excludeSemantics: true,
                 button: true,
                 child: Card(

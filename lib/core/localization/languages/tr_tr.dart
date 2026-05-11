@@ -893,6 +893,8 @@ class LanguageTr extends BaseLanguage {
   @override
   String get favoriteMessages => "Favori Mesajlar";
   @override
+  String get archivedChats => "Arşivlenmiş Sohbetler";
+  @override
   String get gameInviteDesc => "Seni bir oyun oynamaya davet ettim!";
   @override
   String get gameInviteTitle => "Oyun Daveti";
@@ -1015,6 +1017,32 @@ class LanguageTr extends BaseLanguage {
   @override
   String get deleteComment => "Yorumu Sil";
   @override
+  String get editPost => "Gönderiyi Düzenle";
+  @override
+  String get deletePost => "Gönderiyi Sil";
+  @override
+  String get unlikePost => "Beğeniyi Kaldır";
+  @override
+  String get likePost => "Beğen";
+  @override
+  String get openComments => "Yorumları Aç";
+  @override
+  String get deleteVoiceNote => "Kaydı Sil";
+  @override
+  String get playRecording => "Kaydı Oynat";
+  @override
+  String get deleteRoom => "Odayı Sil";
+  @override
+  String get kickUser => "Sunucudan At";
+  @override
+  String get banUser => "Kullanıcıyı Yasakla";
+  @override
+  String get unbanUser => "Yasak listesinden çıkar";
+  @override
+  String get removeFromFavs => "Favorilerden Kaldır";
+  @override
+  String get playRecordAnnounce => "Kayıt oynatılıyor";
+  @override
   String get deleteCommentConfirm => "Bu yorumu silmek istediğinize emin misiniz?";
   @override
   String get commentDeleted => "Yorum silindi";
@@ -1044,4 +1072,177 @@ class LanguageTr extends BaseLanguage {
   String get incomingMessage => "Gelen mesaj";
   @override
   String get onlyAdminCanSendMessages => "Sadece yöneticiler mesaj gönderebilir";
+  @override
+  String get voiceNotes => "Sesli Notlar";
+  @override
+  String get noVoiceNotesAdded => "Sesli not eklenmemiş.";
+  @override
+  String get recordNewVoiceNote => "Yeni Sesli Not Kaydet (Max 5 dk)";
+  @override
+  String get voiceNote => "Sesli Not";
+  @override
+  String get deleteThisVoiceNote => "Bu sesli notu sil";
+  @override
+  String get voiceRecorderInitError => "Ses kaydedici başlatılamadı: ";
+  @override
+  String get voiceNoteSavedSuccessfully => "Sesli not başarıyla kaydedildi.";
+  @override
+  String get voiceNoteUploadError => "Ses notu yüklenemedi: ";
+  @override
+  String get voiceNoteDeleted => "Sesli not silindi.";
+  @override
+  String get voiceNoteDeleteError => "Ses notu silinemedi: ";
+  @override
+  String get voiceNotePlayError => "Ses notu oynatılamadı: ";
+
+  @override
+  String get taskStopwatch => "Görev Kronometresi";
+  @override
+  String get stopStopwatch => "Kronometreyi Durdur";
+  @override
+  String get startStopwatch => "Kronometreyi Başlat";
+  @override
+  String get startNewStopwatch => "Yeni Kronometre Başlat";
+  @override
+  String get stopwatchStarted => "Kronometre başlatıldı";
+  @override
+  String get stopwatchStopped => "Kronometre durduruldu";
+
+  @override
+  String get socialSection => "Sosyal";
+  @override
+  String get friendAndBlockedList => "Arkadaşlık ve Engellenenler Listesi";
+  @override
+  String get gamesArea => "Oyun Alanı";
+  @override
+  String get contentAndToolsSection => "İçerik ve Araçlar";
+  @override
+  String get liveRadio => "Canlı Radyo";
+  @override
+  String get tools => "Araçlar";
+  @override
+  String get systemSection => "Sistem";
+  @override
+  String get administrationSection => "Yönetim";
+  @override
+  String get adminPanel => "Yönetici Paneli";
+  @override
+  String get developerModeLogs => "Geliştirici Modu / Loglar";
+
+  // Semantics & Actions
+  @override
+  String get viewProfile => "Profili Görüntüle";
+  @override
+  String get unarchiveChat => "Arşivden Çıkar";
+  @override
+  String get archiveChat => "Arşivle";
+  @override
+  String get unpinChat => "Sabitlemeden Çıkar";
+  @override
+  String get pinChat => "Sabitle";
+  @override
+  String get deleteChat => "Sohbeti Sil";
+  @override
+  String get deleteRoom => "Odayı sil";
+  @override
+  String get kickFromServer => "Sunucudan At";
+  @override
+  String get banUser => "Kullanıcıyı Yasakla";
+  @override
+  String get unbanUser => "Yasak listesinden çıkar";
+  @override
+  String serverSemanticLabel(String serverName, String description, String capacity, String encryptedText, String onlineCount) =>
+      "Sunucu adı $serverName. Sunucu açıklaması $description. $capacity kişilik $encryptedText sunucu. Şu anda sunucuda $onlineCount kişi var.";
+  @override
+  String get joinServerHint => "Sunucuya katılmak için çift tıklayın";
+  @override
+  String joinedServerAnnounce(String serverName) => "Şu anda $serverName isimli sunucuya bağlandınız.";
+  @override
+  String get doubleTapToSeeOptionsHint => "Seçenekleri görmek ve değiştirmek için çift tıklayın";
+  @override
+  String roomCreatedAnnounce(String roomName) => "$roomName isimli oda başarıyla oluşturulmuştur.";
+  @override
+  String roomSemanticLabel(String roomName, String roomType) => "$roomName isimli $roomType";
+  @override
+  String get joinRoomHint => "Odaya girmek için çift tıklayın";
+  @override
+  String get roomsTabCreatorHint => "Odalar sekmesi. Odaları silmek için ilgili odanın üzerindeyken işlemler menüsünden odayı sil seçeneğini kullanabilirsiniz (tek parmakla yukarı ve aşağı kaydırarak).";
+  @override
+  String get roomsTabHint => "Odalar sekmesi";
+  @override
+  String get messageReactionSemantic => "Mesaja durum ifadesi bırak";
+  @override
+  String get playRecording => "Kaydı Oynat";
+  @override
+  String get shareRecording => "Kaydı Paylaş";
+  @override
+  String get removeRecording => "Kaydı Sil";
+  @override
+  String get deleteLog => "Çalışma Süresini Sil";
+
+  // Additional found items
+  @override
+  String errorLabel(String errorMsg) => "Hata: $errorMsg";
+  @override
+  String get workHistory => "Çalışma Geçmişi";
+  @override
+  String get lessThanOneMinute => "1 dakikadan az";
+  @override
+  String get daysSuffix => "gün";
+  @override
+  String get hoursSuffix => "saat";
+  @override
+  String get minutesSuffix => "dakika";
+  @override
+  String get recordingStarted => "Kayıt başladı";
+  @override
+  String get recordingPaused => "Kayıt duraklatıldı";
+  @override
+  String get recordingResumed => "Kayda devam ediliyor";
+  @override
+  String get recordingCancelled => "Kayıt iptal edildi";
+  @override
+  String get recordingStopped => "Kayıt durduruldu";
+  @override
+  String get voiceNoteSaved => "Sesli not başarıyla kaydedildi.";
+  @override
+  String get voiceNoteDeleted => "Sesli not silindi.";
+  @override
+  String get cancelBtn => "İptal Et";
+  @override
+  String get finishBtn => "Bitir";
+  @override
+  String playRadioError(String stationName) => "$stationName oynatılamadı. Bağlantı hatası.";
+  @override
+  String get sleepTimerCancelled => "Uyku zamanlayıcısı iptal edildi.";
+  @override
+  String get sleepTimerExpired => "Uyku zamanlayıcısı süresi doldu. Yayın durduruldu.";
+  @override
+  String sleepTimerSet(String minutes) => "Uyku zamanlayıcısı $minutes dakikaya ayarlandı.";
+  @override
+  String get cancelTimerBtn => "Zamanlayıcıyı İptal Et";
+  @override
+  String recordingCompleted(String stationName) => "Kayıt tamamlandı: $stationName";
+  @override
+  String get recordingStoppedAndSaved => "Kayıt durduruldu ve kaydedildi";
+  @override
+  String get recordingInit => "Kayıt başlatıldı...";
+  @override
+  String get liveRadioRecordingStarted => "Canlı yayın kaydı başlatıldı";
+  @override
+  String get savedRecordingsTitle => "Kaydedilen Yayınlar";
+  @override
+  String get noSavedRecordings => "Henüz kaydedilmiş yayın yok.";
+  @override
+  String get permanentlyDeleteNotice => "Bu kaydı telefonunuzdan kalıcı olarak silmek istediğinize emin misiniz?";
+  @override
+  String get cancelUppercase => "İPTAL";
+  @override
+  String get deleteUppercase => "SİL";
+  @override
+  String get shareError => "Paylaşma hatası";
+  @override
+  String get playRecordAnnounce => "kaydı oynatılıyor";
 }
+
+

@@ -5,11 +5,14 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'chat_detail_screen.dart';
 
-class ArchivedMessagesScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/localization/localization_provider.dart';
+
+class ArchivedMessagesScreen extends ConsumerStatefulWidget {
   const ArchivedMessagesScreen({super.key});
 
   @override
-  State<ArchivedMessagesScreen> createState() => _ArchivedMessagesScreenState();
+  ConsumerConsumerState<ArchivedMessagesScreen> createState() => _ArchivedMessagesScreenState();
 }
 
 class _ArchivedMessagesScreenState extends State<ArchivedMessagesScreen> {
@@ -113,7 +116,7 @@ class _ArchivedMessagesScreenState extends State<ArchivedMessagesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Arşivlenmiş Sohbetler')),
+      appBar: AppBar(title: Text(ref.watch(localizationProvider).archivedChats)),
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -132,7 +135,7 @@ addRepaintBoundaries: true,
                         excludeSemantics: true,
                         hint: "Sohbeti açmak için çift dokunun, seçenekler için uzun dokunun",
                         customSemanticsActions: {
-                          CustomSemanticsAction(label: 'Arşivden çıkar'): () {
+                          CustomSemanticsAction(label: ref.read(localizationProvider).unarchiveChat): () {
                             _unarchiveChat(myParticipant.id);
                           },
                         },

@@ -6,15 +6,18 @@ import 'package:blind_social/features/servers/data/services/chat_server_service.
 import 'package:blind_social/core/utils/profanity_filter.dart';
 import 'package:pocketbase/pocketbase.dart';
 
-class ServerSettingsScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/localization/localization_provider.dart';
+
+class ServerSettingsScreen extends ConsumerStatefulWidget {
   final ChatServer server;
   const ServerSettingsScreen({super.key, required this.server});
 
   @override
-  State<ServerSettingsScreen> createState() => _ServerSettingsScreenState();
+  ConsumerState<ServerSettingsScreen> createState() => _ServerSettingsScreenState();
 }
 
-class _ServerSettingsScreenState extends State<ServerSettingsScreen> with SingleTickerProviderStateMixin {
+class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late TextEditingController _nameController;
   late TextEditingController _descController;
@@ -477,7 +480,7 @@ addRepaintBoundaries: true,
           return Semantics(
             customSemanticsActions: {
               if (imCreator)
-                CustomSemanticsAction(label: 'Odayı sil'): () {
+                CustomSemanticsAction(label: ref.read(localizationProvider).deleteRoom): () {
                   _deleteRoom(room);
                 },
             },
@@ -523,11 +526,11 @@ addRepaintBoundaries: true,
         return Semantics(
           customSemanticsActions: {
             if (!isCreator && !isMe && (imCreator || imAdmin))
-              CustomSemanticsAction(label: 'Sunucudan At'): () {
+              CustomSemanticsAction(label: ref.read(localizationProvider).kickUser): () {
                 _kickMember(membership);
               },
             if (!isCreator && !isMe && imCreator)
-              CustomSemanticsAction(label: 'Kullanıcıyı Yasakla'): () {
+              CustomSemanticsAction(label: ref.read(localizationProvider).banUser): () {
                 _banMember(membership);
               },
           },
@@ -612,7 +615,7 @@ addRepaintBoundaries: true,
         return Semantics(
           customSemanticsActions: {
             if (imCreator)
-              CustomSemanticsAction(label: 'Yasak listesinden çıkar'): () {
+              CustomSemanticsAction(label: ref.read(localizationProvider).unbanUser): () {
                 _unbanMember(ban);
               },
           },

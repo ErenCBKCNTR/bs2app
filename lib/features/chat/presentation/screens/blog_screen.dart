@@ -17,11 +17,14 @@ import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
 
-class BlogScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/localization/localization_provider.dart';
+
+class BlogScreen extends ConsumerStatefulWidget {
   const BlogScreen({super.key});
 
   @override
-  State<BlogScreen> createState() => _BlogScreenState();
+  ConsumerConsumerState<BlogScreen> createState() => _BlogScreenState();
 }
 
 class _BlogScreenState extends State<BlogScreen> {
@@ -503,18 +506,18 @@ addRepaintBoundaries: true,
                             customSemanticsActions: {
                               ...post['user_id'] == PocketBaseService.client.authStore.model?.id
                               ? {
-                                  CustomSemanticsAction(label: 'Gönderiyi Düzenle'): () {
+                                  CustomSemanticsAction(label: ref.read(localizationProvider).editPost): () {
                                     _showEditDialog(post['id'], content);
                                   },
-                                  CustomSemanticsAction(label: 'Gönderiyi Sil'): () {
+                                  CustomSemanticsAction(label: ref.read(localizationProvider).deletePost): () {
                                     _deletePost(post['id']);
                                   },
                                 }
                               : {},
-                              CustomSemanticsAction(label: isLiked ? 'Beğeniyi Kaldır' : 'Beğen'): () {
+                              CustomSemanticsAction(label: isLiked ? ref.read(localizationProvider).unlikePost : ref.read(localizationProvider).likePost): () {
                                 _toggleLike(post['id'], likes);
                               },
-                              CustomSemanticsAction(label: 'Yorumları Aç'): () {
+                              CustomSemanticsAction(label: ref.read(localizationProvider).openComments): () {
                                 showModalBottomSheet(
                                   context: context,
                                   isScrollControlled: true,

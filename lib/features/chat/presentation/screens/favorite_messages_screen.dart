@@ -6,7 +6,10 @@ import 'package:intl/intl.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
 import '../../../../core/utils/logger.dart';
 
-class FavoriteMessagesScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/localization/localization_provider.dart';
+
+class FavoriteMessagesScreen extends ConsumerStatefulWidget {
   final String? chatId;
   final String? chatName;
 
@@ -17,7 +20,7 @@ class FavoriteMessagesScreen extends StatefulWidget {
   });
 
   @override
-  State<FavoriteMessagesScreen> createState() => _FavoriteMessagesScreenState();
+  ConsumerConsumerState<FavoriteMessagesScreen> createState() => _FavoriteMessagesScreenState();
 }
 
 class _FavoriteMessagesScreenState extends State<FavoriteMessagesScreen> {
@@ -188,7 +191,7 @@ addRepaintBoundaries: true,
                         button: true,
                         excludeSemantics: true,
                         customSemanticsActions: {
-                          CustomSemanticsAction(label: 'Favorilerden Kaldır'): () => _removeFromFavorites(message),
+                          CustomSemanticsAction(label: ref.read(localizationProvider).removeFromFavs): () => _removeFromFavorites(message),
                         },
                         child: Card(
                           margin: const EdgeInsets.symmetric(vertical: 4),

@@ -425,6 +425,7 @@ abstract class BaseLanguage {
   String get admin;
   String get failedToLoadDetails;
   String get favoriteMessages;
+  String get archivedChats;
   String get noMessagesYet;
   String get unreadMessageSuffix;
   String get outgoingVideoCall;
@@ -515,6 +516,19 @@ abstract class BaseLanguage {
   String get checklistTitle;
   String get copy;
   String get deleteComment;
+  String get editPost;
+  String get deletePost;
+  String get unlikePost;
+  String get likePost;
+  String get openComments;
+  String get deleteVoiceNote;
+  String get playRecording;
+  String get deleteRoom;
+  String get kickUser;
+  String get banUser;
+  String get unbanUser;
+  String get removeFromFavs;
+  String get playRecordAnnounce;
   String get deleteCommentConfirm;
   String get commentDeleted;
   String get commentSent;
@@ -530,4 +544,97 @@ abstract class BaseLanguage {
   String unreadMessagesCount(int count);
   String get incomingMessage;
   String get onlyAdminCanSendMessages;
+  // Task Board
+  String get voiceNotes;
+  String get noVoiceNotesAdded;
+  String get recordNewVoiceNote;
+  String get voiceNote;
+  String get deleteThisVoiceNote;
+  String get voiceRecorderInitError;
+  String get voiceNoteSavedSuccessfully;
+  String get voiceNoteUploadError;
+  String get voiceNoteDeleted;
+  String get voiceNoteDeleteError;
+  String get voiceNotePlayError;
+
+  String get taskStopwatch;
+  String get stopStopwatch;
+  String get startStopwatch;
+  String get startNewStopwatch;
+  String get stopwatchStarted;
+  String get stopwatchStopped;
+
+  // Drawer (Left Menu)
+  String get socialSection;
+  String get friendAndBlockedList;
+  String get gamesArea;
+  String get contentAndToolsSection;
+  String get liveRadio;
+  String get tools;
+  String get systemSection;
+  String get administrationSection;
+  String get adminPanel;
+  String get developerModeLogs;
+  String get archivedChats;
+  String get favoriteMessages;
+  String get chatUnarchivedStatus;
+
+  // Semantics & Actions
+  String get viewProfile;
+  String get unarchiveChat;
+  String get archiveChat;
+  String get unpinChat;
+  String get pinChat;
+  String get deleteChat;
+  String get deleteRoom;
+  String get kickFromServer;
+  String get banUser;
+  String get unbanUser;
+  String serverSemanticLabel(String serverName, String description, String capacity, String encryptedText, String onlineCount);
+  String get joinServerHint;
+  String joinedServerAnnounce(String serverName);
+  String get doubleTapToSeeOptionsHint;
+  String roomCreatedAnnounce(String roomName);
+  String roomSemanticLabel(String roomName, String roomType);
+  String get joinRoomHint;
+  String get roomsTabCreatorHint;
+  String get roomsTabHint;
+  String get messageReactionSemantic;
+  String get playRecording;
+  String get shareRecording;
+  String get removeRecording;
+  String get deleteLog;
+
+  // Additional found items
+  String errorLabel(String errorMsg);
+  String get workHistory;
+  String get lessThanOneMinute;
+  String get daysSuffix;
+  String get hoursSuffix;
+  String get minutesSuffix;
+  String get recordingStarted;
+  String get recordingPaused;
+  String get recordingResumed;
+  String get recordingCancelled;
+  String get recordingStopped;
+  String get voiceNoteSaved;
+  String get voiceNoteDeleted;
+  String get cancelBtn;
+  String get finishBtn;
+  String playRadioError(String stationName);
+  String get sleepTimerCancelled;
+  String get sleepTimerExpired;
+  String sleepTimerSet(String minutes);
+  String get cancelTimerBtn;
+  String recordingCompleted(String stationName);
+  String get recordingStoppedAndSaved;
+  String get recordingInit;
+  String get liveRadioRecordingStarted;
+  String get savedRecordingsTitle;
+  String get noSavedRecordings;
+  String get permanentlyDeleteNotice;
+  String get cancelUppercase;
+  String get deleteUppercase;
+  String get shareError;
+  String get playRecordAnnounce;
 }

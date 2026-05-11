@@ -1,22 +1,25 @@
 
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/localization/localization_provider.dart';
 import 'package:just_audio/just_audio.dart';
+
+import 'dart:io';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'dart:ui' show TextDirection;
 import '../../models/radio_recording.dart';
 import '../../data/recording_database.dart';
 
-class SavedRecordingsScreen extends StatefulWidget {
+class SavedRecordingsScreen extends ConsumerStatefulWidget {
   const SavedRecordingsScreen({super.key});
 
   @override
-  State<SavedRecordingsScreen> createState() => _SavedRecordingsScreenState();
+  ConsumerState<SavedRecordingsScreen> createState() => _SavedRecordingsScreenState();
 }
 
-class _SavedRecordingsScreenState extends State<SavedRecordingsScreen> {
+class _SavedRecordingsScreenState extends ConsumerState<SavedRecordingsScreen> {
   List<RadioRecording> _recordings = [];
   bool _isLoading = true;
   final AudioPlayer _player = AudioPlayer();
@@ -43,12 +46,12 @@ class _SavedRecordingsScreenState extends State<SavedRecordingsScreen> {
       if (_playingId == recording.id) {
         await _player.stop();
         setState(() => _playingId = null);
-        SemanticsService.announce("Kayıt durduruldu", TextDirection.ltr);
+        SemanticsService.announce(ref.read(localizationProvider).recordingStopped, TextDirection.ltr);
       } else {
         await _player.setFilePath(recording.filePath);
         _player.play();
         setState(() => _playingId = recording.id);
-        SemanticsService.announce("${recording.stationName} kaydı oynatılıyor", TextDirection.ltr);
+        SemanticsService.announce(ref.read(localizationProvider).playRecordAnnounce, TextDirection.ltr);
         
         _player.playerStateStream.listen((state) {
           if (state.processingState == ProcessingState.completed) {
@@ -77,7 +80,7 @@ class _SavedRecordingsScreenState extends State<SavedRecordingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Paylaşma hatası: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${ref.read(localizationProvider).shareError}: $e")));
       }
     }
   }
@@ -86,16 +89,16 @@ class _SavedRecordingsScreenState extends State<SavedRecordingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Kaydı Sil'),
-        content: const Text('Bu kaydı telefonunuzdan kalıcı olarak silmek istediğinize emin misiniz?'),
+        title: Text(ref.read(localizationProvider).removeRecording),
+        content: Text(ref.read(localizationProvider).permanentlyDeleteNotice),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('İPTAL'),
+            child: Text(ref.read(localizationProvider).cancelUppercase),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('SİL', style: TextStyle(color: Colors.red)),
+            child: Text(ref.read(localizationProvider).deleteUppercase, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -110,12 +113,12 @@ class _SavedRecordingsScreenState extends State<SavedRecordingsScreen> {
         }
         _loadRecordings();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kayıt silindi")));
-          SemanticsService.announce("Kayıt silindi", TextDirection.ltr);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.read(localizationProvider).removeRecording)));
+          SemanticsService.announce(ref.read(localizationProvider).removeRecording, TextDirection.ltr);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Silme hatası: $e")));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.read(localizationProvider).errorLabel(e.toString()))));
         }
       }
     }
@@ -141,18 +144,18 @@ class _SavedRecordingsScreenState extends State<SavedRecordingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Kaydedilen Yayınlar')),
+      appBar: AppBar(title: Text(ref.watch(localizationProvider).savedRecordingsTitle)),
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _recordings.isEmpty
-                ? const Center(
+                ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.album_outlined, size: 64, color: Colors.white24),
-                        SizedBox(height: 16),
-                        Text('Henüz kaydedilmiş yayın yok.', style: TextStyle(color: Colors.white54)),
+                        const Icon(Icons.album_outlined, size: 64, color: Colors.white24),
+                        const SizedBox(height: 16),
+                        Text(ref.watch(localizationProvider).noSavedRecordings, style: const TextStyle(color: Colors.white54)),
                       ],
                     ),
                   )
@@ -175,9 +178,9 @@ addRepaintBoundaries: true,
                     return Semantics(
                       label: "${rec.stationName}. $dateStr tarihinde saat $timeStr kaydedildi. Süre $durationStr.",
                       customSemanticsActions: {
-                        CustomSemanticsAction(label: 'Kaydı Oynat'): () => _playRecording(rec),
-                        CustomSemanticsAction(label: 'Kaydı Paylaş'): () => _shareRecording(rec),
-                        CustomSemanticsAction(label: 'Kaydı Sil'): () => _deleteRecording(rec),
+                        CustomSemanticsAction(label: ref.read(localizationProvider).playRecording): () => _playRecording(rec),
+                        CustomSemanticsAction(label: ref.read(localizationProvider).shareRecording): () => _shareRecording(rec),
+                        CustomSemanticsAction(label: ref.read(localizationProvider).deleteRecording): () => _deleteRecording(rec),
                       },
                       child: ListTile(
                         leading: CircleAvatar(

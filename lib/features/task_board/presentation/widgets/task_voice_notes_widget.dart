@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/localization/localization_provider.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'dart:io';
 import 'dart:async';
 import 'package:path_provider/path_provider.dart';
@@ -9,7 +12,7 @@ import 'package:blind_social/features/task_board/data/services/task_board_servic
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:flutter/semantics.dart';
 
-class TaskVoiceNotesWidget extends StatefulWidget {
+class TaskVoiceNotesWidget extends ConsumerStatefulWidget {
   final TaskItem task;
   final TaskBoardService service;
   final VoidCallback onChanged;
@@ -17,10 +20,10 @@ class TaskVoiceNotesWidget extends StatefulWidget {
   const TaskVoiceNotesWidget({Key? key, required this.task, required this.service, required this.onChanged}) : super(key: key);
 
   @override
-  State<TaskVoiceNotesWidget> createState() => _TaskVoiceNotesWidgetState();
+  ConsumerState<TaskVoiceNotesWidget> createState() => _TaskVoiceNotesWidgetState();
 }
 
-class _TaskVoiceNotesWidgetState extends State<TaskVoiceNotesWidget> {
+class _TaskVoiceNotesWidgetState extends ConsumerState<TaskVoiceNotesWidget> {
   final AudioRecorder _audioRecorder = AudioRecorder();
   final AudioPlayer _audioPlayer = AudioPlayer();
   
@@ -133,7 +136,7 @@ class _TaskVoiceNotesWidgetState extends State<TaskVoiceNotesWidget> {
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startBtnFocusNode.requestFocus();
-      SemanticsService.announce('Kayıt iptal edildi', TextDirection.ltr);
+      SemanticsService.announce(ref.read(localizationProvider).recordingCancelled, TextDirection.ltr);
     });
   }
 
@@ -146,7 +149,7 @@ class _TaskVoiceNotesWidgetState extends State<TaskVoiceNotesWidget> {
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startBtnFocusNode.requestFocus();
-      SemanticsService.announce('Kayıt durduruldu', TextDirection.ltr);
+      SemanticsService.announce(ref.read(localizationProvider).recordingStopped, TextDirection.ltr);
     });
 
     if (path != null) {
@@ -172,9 +175,9 @@ class _TaskVoiceNotesWidgetState extends State<TaskVoiceNotesWidget> {
     try {
       await widget.service.deleteVoiceNote(widget.task.id, fileName);
       widget.onChanged();
-      SemanticsService.announce('Sesli not silindi.', TextDirection.ltr);
+      SemanticsService.announce(ref.read(localizationProvider).voiceNoteDeleted, TextDirection.ltr);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ses notu silinemedi: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.read(localizationProvider).errorLabel(e.toString()))));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -207,6 +210,7 @@ class _TaskVoiceNotesWidgetState extends State<TaskVoiceNotesWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.read(localizationProvider);
     // 3 limits
     bool canRecord = widget.task.voiceNotes.length < 3;
 
@@ -216,7 +220,7 @@ class _TaskVoiceNotesWidgetState extends State<TaskVoiceNotesWidget> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Sesli Notlar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(lang.voiceNotes, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             if (_isLoading) const SizedBox(
               width: 16, height: 16, 
               child: CircularProgressIndicator(strokeWidth: 2)
@@ -225,7 +229,7 @@ class _TaskVoiceNotesWidgetState extends State<TaskVoiceNotesWidget> {
         ),
         const SizedBox(height: 16),
         if (widget.task.voiceNotes.isEmpty)
-           const Text('Sesli not eklenmemiş.'),
+           Text(lang.noVoiceNotesAdded),
            
         ...widget.task.voiceNotes.map((fileName) {
             final isCurrentPlaying = _playingFile == fileName && _isPlaying;
@@ -235,7 +239,7 @@ class _TaskVoiceNotesWidgetState extends State<TaskVoiceNotesWidget> {
                 button: true,
                 onTapHint: isCurrentPlaying ? 'Durdur' : 'Dinle',
                 customSemanticsActions: {
-                  const CustomSemanticsAction(label: 'Kaydı Sil'): () => _deleteVoiceNote(fileName),
+                  CustomSemanticsAction(label: ref.read(localizationProvider).deleteVoiceNote): () => _deleteVoiceNote(fileName),
                 },
                 child: ExcludeSemantics(
                   child: ListTile(
@@ -244,11 +248,11 @@ class _TaskVoiceNotesWidgetState extends State<TaskVoiceNotesWidget> {
                       onPressed: () => _togglePlay(fileName),
                       tooltip: isCurrentPlaying ? 'Durdur' : 'Dinle',
                     ),
-                    title: const Text('Sesli Not'),
+                    title: Text(lang.voiceNote),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () => _deleteVoiceNote(fileName),
-                      tooltip: 'Bu sesli notu sil',
+                      tooltip: lang.deleteThisVoiceNote,
                     ),
                     onTap: () => _togglePlay(fileName),
                   ),
@@ -264,7 +268,7 @@ class _TaskVoiceNotesWidgetState extends State<TaskVoiceNotesWidget> {
               focusNode: _startBtnFocusNode,
               onPressed: _startRecording,
               icon: const Icon(Icons.mic),
-              label: const Text('Yeni Sesli Not Kaydet (Max 5 dk)'),
+              label: Text(lang.recordNewVoiceNote),
             )
           else if (_isRecording)
             Card(

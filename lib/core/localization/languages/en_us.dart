@@ -893,6 +893,8 @@ class LanguageEn extends BaseLanguage {
   @override
   String get favoriteMessages => "Favorite Messages";
   @override
+  String get archivedChats => "Archived Chats";
+  @override
   String get gameInviteDesc => "I've invited you to play a game!";
   @override
   String get gameInviteTitle => "Game Invite";
@@ -1015,6 +1017,32 @@ class LanguageEn extends BaseLanguage {
   @override
   String get deleteComment => "Delete Comment";
   @override
+  String get editPost => "Edit Post";
+  @override
+  String get deletePost => "Delete Post";
+  @override
+  String get unlikePost => "Unlike Post";
+  @override
+  String get likePost => "Like Post";
+  @override
+  String get openComments => "Open Comments";
+  @override
+  String get deleteVoiceNote => "Delete Voice Note";
+  @override
+  String get playRecording => "Play Recording";
+  @override
+  String get deleteRoom => "Delete Room";
+  @override
+  String get kickUser => "Kick User";
+  @override
+  String get banUser => "Ban User";
+  @override
+  String get unbanUser => "Unban User";
+  @override
+  String get removeFromFavs => "Remove from Favorites";
+  @override
+  String get playRecordAnnounce => "Playing recording";
+  @override
   String get deleteCommentConfirm => "Are you sure you want to delete this comment?";
   @override
   String get commentDeleted => "Comment deleted";
@@ -1044,4 +1072,175 @@ class LanguageEn extends BaseLanguage {
   String get incomingMessage => "Incoming message";
   @override
   String get onlyAdminCanSendMessages => "Only admins can send messages";
+  @override
+  String get voiceNotes => "Voice Notes";
+  @override
+  String get noVoiceNotesAdded => "No voice notes added.";
+  @override
+  String get recordNewVoiceNote => "Record New Voice Note (Max 5 mins)";
+  @override
+  String get voiceNote => "Voice Note";
+  @override
+  String get deleteThisVoiceNote => "Delete this voice note";
+  @override
+  String get voiceRecorderInitError => "Voice recorder could not be initialized: ";
+  @override
+  String get voiceNoteSavedSuccessfully => "Voice note saved successfully.";
+  @override
+  String get voiceNoteUploadError => "Voice note could not be uploaded: ";
+  @override
+  String get voiceNoteDeleted => "Voice note deleted.";
+  @override
+  String get voiceNoteDeleteError => "Voice note could not be deleted: ";
+  @override
+  String get voiceNotePlayError => "Voice note could not be played: ";
+
+  @override
+  String get taskStopwatch => "Task Stopwatch";
+  @override
+  String get stopStopwatch => "Stop Stopwatch";
+  @override
+  String get startStopwatch => "Start Stopwatch";
+  @override
+  String get startNewStopwatch => "Start New Stopwatch";
+  @override
+  String get stopwatchStarted => "Stopwatch started.";
+  @override
+  String get stopwatchStopped => "Stopwatch stopped.";
+
+  @override
+  String get socialSection => "Social";
+  @override
+  String get friendAndBlockedList => "Friends & Blocked List";
+  @override
+  String get gamesArea => "Games Area";
+  @override
+  String get contentAndToolsSection => "Content & Tools";
+  @override
+  String get liveRadio => "Live Radio";
+  @override
+  String get tools => "Tools";
+  @override
+  String get systemSection => "System";
+  @override
+  String get administrationSection => "Administration";
+  @override
+  String get adminPanel => "Admin Panel";
+  @override
+  String get developerModeLogs => "Developer Mode / Logs";
+
+  // Semantics & Actions
+  @override
+  String get viewProfile => "View Profile";
+  @override
+  String get unarchiveChat => "Unarchive";
+  @override
+  String get archiveChat => "Archive";
+  @override
+  String get unpinChat => "Unpin";
+  @override
+  String get pinChat => "Pin";
+  @override
+  String get deleteChat => "Delete Chat";
+  @override
+  String get deleteRoom => "Delete Room";
+  @override
+  String get kickFromServer => "Kick from Server";
+  @override
+  String get banUser => "Ban User";
+  @override
+  String get unbanUser => "Unban User";
+  @override
+  String serverSemanticLabel(String serverName, String description, String capacity, String encryptedText, String onlineCount) =>
+      "Server name $serverName. Description $description. $capacity capacity $encryptedText server. Currently $onlineCount people are online.";
+  @override
+  String get joinServerHint => "Double tap to join the server";
+  @override
+  String joinedServerAnnounce(String serverName) => "You are now connected to the server named $serverName.";
+  @override
+  String get doubleTapToSeeOptionsHint => "Double tap to see and change options";
+  @override
+  String roomCreatedAnnounce(String roomName) => "Room named $roomName has been successfully created.";
+  @override
+  String roomSemanticLabel(String roomName, String roomType) => "$roomType room named $roomName";
+  @override
+  String get joinRoomHint => "Double tap to enter the room";
+  @override
+  String get roomsTabCreatorHint => "Rooms tab. To delete rooms, you can use the delete room option from the actions menu while on the relevant room (by swiping up and down with one finger).";
+  @override
+  String get roomsTabHint => "Rooms tab";
+  @override
+  String get messageReactionSemantic => "Leave a reaction to message";
+  @override
+  String get playRecording => "Play Recording";
+  @override
+  String get shareRecording => "Share Recording";
+  @override
+  String get removeRecording => "Delete Recording";
+  @override
+  String get deleteLog => "Delete Work Log";
+
+  // Additional found items
+  @override
+  String errorLabel(String errorMsg) => "Error: $errorMsg";
+  @override
+  String get workHistory => "Work History";
+  @override
+  String get lessThanOneMinute => "Less than 1 minute";
+  @override
+  String get daysSuffix => "days";
+  @override
+  String get hoursSuffix => "hours";
+  @override
+  String get minutesSuffix => "minutes";
+  @override
+  String get recordingStarted => "Recording started";
+  @override
+  String get recordingPaused => "Recording paused";
+  @override
+  String get recordingResumed => "Recording resumed";
+  @override
+  String get recordingCancelled => "Recording cancelled";
+  @override
+  String get recordingStopped => "Recording stopped";
+  @override
+  String get voiceNoteSaved => "Voice note saved successfully.";
+  @override
+  String get voiceNoteDeleted => "Voice note deleted.";
+  @override
+  String get cancelBtn => "Cancel";
+  @override
+  String get finishBtn => "Finish";
+  @override
+  String playRadioError(String stationName) => "Failed to play $stationName. Connection error.";
+  @override
+  String get sleepTimerCancelled => "Sleep timer cancelled.";
+  @override
+  String get sleepTimerExpired => "Sleep timer expired. Broadcast stopped.";
+  @override
+  String sleepTimerSet(String minutes) => "Sleep timer set to $minutes minutes.";
+  @override
+  String get cancelTimerBtn => "Cancel Timer";
+  @override
+  String recordingCompleted(String stationName) => "Recording completed: $stationName";
+  @override
+  String get recordingStoppedAndSaved => "Recording stopped and saved";
+  @override
+  String get recordingInit => "Recording initializing...";
+  @override
+  String get liveRadioRecordingStarted => "Live radio recording started";
+  @override
+  String get savedRecordingsTitle => "Saved Broadcasts";
+  @override
+  String get noSavedRecordings => "No saved broadcasts yet.";
+  @override
+  String get permanentlyDeleteNotice => "Are you sure you want to permanently delete this recording from your phone?";
+  @override
+  String get cancelUppercase => "CANCEL";
+  @override
+  String get deleteUppercase => "DELETE";
+  @override
+  String get shareError => "Share error";
+  @override
+  String get playRecordAnnounce => "Playing recording";
 }

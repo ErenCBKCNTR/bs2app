@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
+import 'package:blind_social/core/localization/localization_provider.dart';
 
-class ChatMessageBubble extends StatelessWidget {
+class ChatMessageBubble extends ConsumerWidget {
   final Map<String, dynamic> message;
   final bool isMyMessage;
   final VoidCallback onLongPress;
@@ -28,7 +30,8 @@ class ChatMessageBubble extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(localizationProvider);
     final content = ProfanityFilter.filter(message['content'].toString());
     final createdAt = DateTime.parse(message['created'] ?? DateTime.now().toIso8601String()).toLocal();
     final timeString = DateFormat('HH:mm').format(createdAt);
@@ -49,7 +52,7 @@ class ChatMessageBubble extends StatelessWidget {
         button: true,
         onLongPressHint: "Tepki eklemek veya diğer seçenekler için uzun dokunun",
         customSemanticsActions: {
-          CustomSemanticsAction(label: 'Mesaja durum ifadesi bırak'): () {
+          CustomSemanticsAction(label: lang.messageReactionSemantic): () {
             onLongPress();
           },
         },

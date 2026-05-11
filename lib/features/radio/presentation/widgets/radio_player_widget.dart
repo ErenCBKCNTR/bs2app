@@ -1,5 +1,7 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/localization/localization_provider.dart';
 import 'package:flutter/semantics.dart';
 import 'package:just_audio/just_audio.dart';
 import 'dart:async';
@@ -12,7 +14,7 @@ import 'dart:ui' show TextDirection;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
-class RadioPlayerWidget extends StatefulWidget {
+class RadioPlayerWidget extends ConsumerStatefulWidget {
   final RadioStation station;
   final VoidCallback onNext;
   final VoidCallback onPrevious;
@@ -25,10 +27,10 @@ class RadioPlayerWidget extends StatefulWidget {
   });
 
   @override
-  State<RadioPlayerWidget> createState() => _RadioPlayerWidgetState();
+  ConsumerState<RadioPlayerWidget> createState() => _RadioPlayerWidgetState();
 }
 
-class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
+class _RadioPlayerWidgetState extends ConsumerState<RadioPlayerWidget> {
   late AudioPlayer _player;
   bool _isPlaying = false;
   double _volume = 0.8;
@@ -82,7 +84,7 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
         setState(() => _isBuffering = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${widget.station.name} oynatılamadı. Bağlantı hatası.'),
+            content: Text(ref.read(localizationProvider).playRadioError(widget.station.name)),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -107,7 +109,7 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
         _remainingSleepSeconds = 0;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Uyku zamanlayıcısı iptal edildi.')),
+        SnackBar(content: Text(ref.read(localizationProvider).sleepTimerCancelled)),
       );
       return;
     }
@@ -128,7 +130,7 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Uyku zamanlayıcısı süresi doldu. Yayın durduruldu.')),
+          SnackBar(content: Text(ref.read(localizationProvider).sleepTimerExpired)),
         );
       }
     });
@@ -144,7 +146,7 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Uyku zamanlayıcısı $minutes dakikaya ayarlandı.')),
+      SnackBar(content: Text(ref.read(localizationProvider).sleepTimerSet(minutes.toString()))),
     );
   }
 
@@ -219,7 +221,7 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
                             ),
                             child: const Icon(Icons.timer_off, color: Colors.redAccent),
                           ),
-                          title: const Text('Zamanlayıcıyı İptal Et', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                          title: Text(ref.read(localizationProvider).cancelTimerBtn, style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
                           onTap: () { Navigator.pop(context); _setSleepTimer(0); },
                         ),
                       const SizedBox(height: 10),
@@ -245,7 +247,7 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
         ),
         child: Icon(icon, color: Colors.blueAccent, size: 24),
       ),
-      title: Text('$minutes Dakika', style: const TextStyle(color: Colors.white, fontSize: 16)),
+      title: Text('$minutes ${ref.read(localizationProvider).minutesSuffix}', style: const TextStyle(color: Colors.white, fontSize: 16)),
       onTap: () { Navigator.pop(context); _setSleepTimer(minutes); },
     );
   }
@@ -276,23 +278,23 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Kayıt tamamlandı: ${recording?.stationName}'),
+              content: Text(ref.read(localizationProvider).recordingCompleted(recording?.stationName ?? '')),
               behavior: SnackBarBehavior.floating,
             ),
           );
           // Announce to screen reader
-          SemanticsService.announce("Kayıt durduruldu ve kaydedildi", TextDirection.ltr);
+          SemanticsService.announce(ref.read(localizationProvider).recordingStoppedAndSaved, TextDirection.ltr);
         }
       } else {
         setState(() => _isRecording = true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Kayıt başlatıldı...'),
+           SnackBar(
+            content: Text(ref.read(localizationProvider).recordingInit),
             behavior: SnackBarBehavior.floating,
           ),
         );
         // Announce to screen reader
-        SemanticsService.announce("Canlı yayın kaydı başlatıldı", TextDirection.ltr);
+        SemanticsService.announce(ref.read(localizationProvider).liveRadioRecordingStarted, TextDirection.ltr);
         
         await _recordingService.startRecording(widget.station.url, widget.station.name);
       }
@@ -300,7 +302,7 @@ class _RadioPlayerWidgetState extends State<RadioPlayerWidget> {
       setState(() => _isRecording = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Kayıt hatası: $e')),
+          SnackBar(content: Text(ref.read(localizationProvider).errorLabel(e.toString()))),
         );
       }
     }
