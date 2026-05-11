@@ -461,33 +461,6 @@ abstract class BaseLanguage {
   String get incomingMessage;
   String get edited;
   String get voiceMessage;
-  String get currentlySpeaking;
-  String get callLog;
-  String get you;
-  String get replied;
-  String get typeMessage;
-  String get replyingTo;
-  String get onlyAdminCanSendMessages;
-  String get unnamed;
-  String get user;
-  String unreadMessagesCount(int count);
-  String statusLastSeen(String date);
-  String statusTodayAt(String time);
-  String voiceRoomCapacity(int count);
-  String get deleteComment;
-  String get deleteCommentConfirm;
-  String get commentDeleted;
-  String get commentSent;
-  String get sendingVoiceComment;
-  String get voiceCommentSent;
-  String get noComments;
-  String get voiceMessage;
-  String get playVoiceMessage;
-  String get stopVoiceMessage;
-  String get emptyTemplate;
-  String get softwareDevTemplate;
-  String get dailyTasksTemplate;
-  String get projectMgmtTemplate;
 
   // Campaigns
   String get campaigns;

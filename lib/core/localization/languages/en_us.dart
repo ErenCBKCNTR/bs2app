@@ -994,20 +994,6 @@ class LanguageEn extends BaseLanguage {
   String get voiceCommentSent => "Voice message sent successfully";
   @override
   String get noComments => "No messages yet. Be the first to send one.";
-  @override
-  String get voiceMessage => "Voice Message";
-  @override
-  String get playVoiceMessage => "Tap to play";
-  @override
-  String get stopVoiceMessage => "Tap to stop";
-  @override
-  String get emptyTemplate => "Empty Template";
-  @override
-  String get softwareDevTemplate => "Software Development";
-  @override
-  String get dailyTasksTemplate => "Daily Tasks";
-  @override
-  String get projectMgmtTemplate => "Project Management";
 
   @override
   String get chats => "Chats";

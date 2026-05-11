@@ -969,20 +969,6 @@ class LanguageTr extends BaseLanguage {
   String get voiceCommentSent => "Sesli mesaj başarıyla gönderildi";
   @override
   String get noComments => "Henüz mesaj yok. İlk mesajı siz gönderin.";
-  @override
-  String get voiceMessage => "Sesli Mesaj";
-  @override
-  String get playVoiceMessage => "Oynatmak için dokunun";
-  @override
-  String get stopVoiceMessage => "Durdurmak için dokunun";
-  @override
-  String get emptyTemplate => "Boş Şablon";
-  @override
-  String get softwareDevTemplate => "Yazılım Geliştirme";
-  @override
-  String get dailyTasksTemplate => "Günlük İşler";
-  @override
-  String get projectMgmtTemplate => "Proje Yönetimi";
 
   @override
   String get chats => "Sohbetler";
