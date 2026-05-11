@@ -738,4 +738,15 @@ abstract class BaseLanguage {
   String get postUpdated;
   String get noPostsYet;
   String get readCommentsHint;
+
+  // Chat Input
+  String get cancelRecording;
+  String pausedRecording(String duration);
+  String recording(String duration);
+  String get resumeRecording;
+  String get pauseRecording;
+  String get toggleEmojiKeyboard;
+  String get completeAndSend;
+  String get recordVoiceMessage;
+  String get sendMessage;
 }

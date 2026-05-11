@@ -178,6 +178,26 @@ class LanguageTr extends BaseLanguage {
   @override
   String get participants => "Katılımcılar";
 
+  // Chat Input
+  @override
+  String get cancelRecording => "Kaydı iptal et";
+  @override
+  String pausedRecording(String duration) => "Durduruldu: $duration";
+  @override
+  String recording(String duration) => "Kayıt: $duration";
+  @override
+  String get resumeRecording => "Kayda devam et";
+  @override
+  String get pauseRecording => "Kaydı duraklat";
+  @override
+  String get toggleEmojiKeyboard => "Emoji klavyesini aç veya kapat";
+  @override
+  String get completeAndSend => "Ses kaydını tamamla ve gönder";
+  @override
+  String get recordVoiceMessage => "Sesli mesaj kaydet";
+  @override
+  String get sendMessage => "Mesajı gönder";
+
   // Task Board
   @override
   String get taskBoard => "Görev Panosu";

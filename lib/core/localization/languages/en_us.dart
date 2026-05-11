@@ -178,6 +178,26 @@ class LanguageEn extends BaseLanguage {
   @override
   String get participants => "Participants";
 
+  // Chat Input
+  @override
+  String get cancelRecording => "Cancel recording";
+  @override
+  String pausedRecording(String duration) => "Paused: $duration";
+  @override
+  String recording(String duration) => "Recording: $duration";
+  @override
+  String get resumeRecording => "Resume recording";
+  @override
+  String get pauseRecording => "Pause recording";
+  @override
+  String get toggleEmojiKeyboard => "Open/Close emoji keyboard";
+  @override
+  String get completeAndSend => "Complete and send recording";
+  @override
+  String get recordVoiceMessage => "Record voice message";
+  @override
+  String get sendMessage => "Send message";
+
   // Task Board
   @override
   String get taskBoard => "Task Board";

@@ -8,8 +8,10 @@ import 'package:vibration/vibration.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/foundation.dart' as foundation;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/localization/language_provider.dart';
 
-class ChatInputField extends StatefulWidget {
+class ChatInputField extends ConsumerStatefulWidget {
   final Function(String) onSendText;
   final Function(String) onSendAudio;
   final String hintText;
@@ -26,10 +28,10 @@ class ChatInputField extends StatefulWidget {
   });
 
   @override
-  State<ChatInputField> createState() => _ChatInputFieldState();
+  ConsumerState<ChatInputField> createState() => _ChatInputFieldState();
 }
 
-class _ChatInputFieldState extends State<ChatInputField> {
+class _ChatInputFieldState extends ConsumerState<ChatInputField> {
   final TextEditingController _controller = TextEditingController();
   final AudioRecorder _audioRecorder = AudioRecorder();
   final FocusNode _focusNode = FocusNode();
@@ -175,6 +177,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final lang = ref.watch(localizationProvider);
 
     return SafeArea(
       top: false,
@@ -188,7 +191,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
               children: [
                 if (_isRecording) ...[
                   IconButton(
-                    tooltip: "Kaydı iptal et",
+                    tooltip: lang.cancelRecording,
                     icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: _cancelRecording,
                   ),
@@ -201,15 +204,15 @@ class _ChatInputFieldState extends State<ChatInputField> {
                       ),
                       child: Text(
                         _isPaused 
-                          ? 'Durduruldu: ${_formatRecordDuration(_recordDuration)}'
-                          : 'Kayıt: ${_formatRecordDuration(_recordDuration)}',
+                          ? lang.pausedRecording(_formatRecordDuration(_recordDuration))
+                          : lang.recording(_formatRecordDuration(_recordDuration)),
                         style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
                     ),
                   ),
                   IconButton(
-                    tooltip: _isPaused ? "Kayda devam et" : "Kaydı duraklat",
+                    tooltip: _isPaused ? lang.resumeRecording : lang.pauseRecording,
                     icon: Icon(_isPaused ? Icons.mic : Icons.pause, color: Colors.orange),
                     onPressed: _pauseOrResumeRecording,
                   ),
@@ -222,7 +225,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
                       style: const TextStyle(fontSize: 14),
                       decoration: InputDecoration(
                         prefixIcon: foundation.kIsWeb ? null : IconButton(
-                          tooltip: "Emoji klavyesini aç veya kapat",
+                          tooltip: lang.toggleEmojiKeyboard,
                           icon: Icon(
                             _showEmojiPicker ? Icons.keyboard : Icons.emoji_emotions_outlined,
                             color: isDarkMode ? Colors.white70 : Colors.black54,
@@ -256,7 +259,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
                 const SizedBox(width: 8),
                 if (_isRecording)
                   Semantics(
-                    label: "Ses kaydını tamamla ve gönder",
+                    label: lang.completeAndSend,
                     button: true,
                     child: GestureDetector(
                       onTap: _stopRecordingAndSend,
@@ -269,7 +272,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
                   )
                 else if (widget.canRecord && _controller.text.isEmpty)
                   Semantics(
-                    label: "Sesli mesaj kaydet",
+                    label: lang.recordVoiceMessage,
                     button: true,
                     child: GestureDetector(
                       onTap: _startRecording,
@@ -285,7 +288,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
                     radius: 22,
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     child: IconButton(
-                      tooltip: "Mesajı gönder",
+                      tooltip: lang.sendMessage,
                       icon: const Icon(Icons.send, color: Colors.black, size: 20),
                       onPressed: _handleSendText,
                     ),
