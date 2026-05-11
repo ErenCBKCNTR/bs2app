@@ -1234,4 +1234,11 @@ class LanguageEn extends BaseLanguage {
   String get deleteUppercase => "DELETE";
   @override
   String get shareError => "Share error";
+  @override
+  String get deleteRecording => "Delete Recording";
 }
+  @override
+  String get ongoingWork => "Ongoing work";
+
+  @override
+  String get completedWork => "Completed work";

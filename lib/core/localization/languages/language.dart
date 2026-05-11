@@ -612,4 +612,21 @@ abstract class BaseLanguage {
   String get deleteUppercase;
   String get shareError;
   String get playRecordAnnounce;
+  String get deleteComment;
+  String get editPost;
+  String get deletePost;
+  String get unlikePost;
+  String get likePost;
+  String get openComments;
+  String get deleteVoiceNote;
+  String get playRecording;
+  String get shareRecording;
+  String get deleteRecording;
+  String get deleteRoom;
+  String get kickUser;
+  String get banUser;
+  String get unbanUser;
+  String get unarchiveChat;
+  String get ongoingWork;
+  String get completedWork;
 }
