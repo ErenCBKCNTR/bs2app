@@ -347,8 +347,6 @@ class LanguageTr extends BaseLanguage {
   @override
   String get boardOwner => "Pano Sahibi";
   @override
-  String get members => "Kullanıcılar";
-  @override
   String get noOtherMembers => "Başka üye bulunamadı.";
   @override
   String get canEditBoard => "Panoyu Düzenleyebilir";
@@ -395,13 +393,9 @@ class LanguageTr extends BaseLanguage {
   @override
   String get makeMeResponsible => "Beni Sorumlu Yap";
   @override
-  String get description => "Açıklama";
-  @override
   String get editDescription => "Açıklama Düzenle";
   @override
   String get noDescription => "Henüz açıklama eklenmemiş.";
-  @override
-  String get checklist => "Kontrol Listesi";
   @override
   String get addChecklistItem => "Madde Ekle";
   @override
@@ -739,11 +733,11 @@ class LanguageTr extends BaseLanguage {
   @override
   String get noCompletedTasksFound => "Hiç tamamlanmış göreviniz bulunmuyor.";
   @override
-  String taskOverviewAnnouncement(int total, int completed, int pending) => 
-    "Görev Özeti ve Geçmişi sayfası. Toplam $total görev içerisinde, $completed adet tamamlanan, $pending adet bekleyen görev bulunuyor.";
+  String taskOverviewAnnouncement(int total, int completed, int pending) =>
+      "Görev Özeti ve Geçmişi sayfası. Toplam $total görev içerisinde, $completed adet tamamlanan, $pending adet bekleyen görev bulunuyor.";
   @override
-  String taskOverviewStatsLabel(int total, int completed, int pending) => 
-    "Genel İstatistikler. Toplam $total görev içerisinde, $completed adet tamamlanan ve $pending adet bekleyen görev bulunuyor";
+  String taskOverviewStatsLabel(int total, int completed, int pending) =>
+      "Genel İstatistikler. Toplam $total görev içerisinde, $completed adet tamamlanan ve $pending adet bekleyen görev bulunuyor";
   @override
   String get inFavorites => "Favorilerinizde.";
   @override
@@ -828,7 +822,7 @@ class LanguageTr extends BaseLanguage {
   @override
   String get microphoneAccessDenied => "Mikrofona erişilemedi, sadece dinleyici olarak katıldınız.";
   @override
-  String get connectionErrorWithStatus => "Bağlantı hatası: "; // Will concatenate status manually or via interpolation
+  String get connectionErrorWithStatus => "Bağlantı hatası: ";
   @override
   String get speakerSet => "Hoparlör";
   @override
@@ -969,7 +963,6 @@ class LanguageTr extends BaseLanguage {
   String get voiceCommentSent => "Sesli mesaj başarıyla gönderildi";
   @override
   String get noComments => "Henüz mesaj yok. İlk mesajı siz gönderin.";
-
   @override
   String get connectionError => "Bağlantı hatası oluştu";
   @override

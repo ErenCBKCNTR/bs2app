@@ -22,6 +22,7 @@ class LanguageEn extends BaseLanguage {
   @override
   String get notSpecified => "Not specified";
 
+  // Login/Auth
   @override
   String get login => "Login";
   @override
@@ -43,6 +44,7 @@ class LanguageEn extends BaseLanguage {
   @override
   String get signOutAccount => "Sign Out of Account";
 
+  // Profile
   @override
   String get profile => "Profile";
   @override
@@ -88,6 +90,7 @@ class LanguageEn extends BaseLanguage {
   @override
   String get contactSupportForChange => "Note: Contact support to change username or email address.";
 
+  // Settings
   @override
   String get appSettings => "App Settings";
   @override
@@ -131,53 +134,37 @@ class LanguageEn extends BaseLanguage {
   @override
   String get fontSizeExample => "Sample Text: This setting affects all text throughout the app. You can choose the size that best suits your reading comfort.";
 
+  // Chat
   @override
-  String get campaigns => "Campaigns";
+  String get chats => "Chats";
   @override
-  String get all => "All";
+  String get messagePlaceholder => "Type a message...";
   @override
-  String get searchCampaign => "Search campaigns";
+  String get send => "Send";
   @override
-  String get noCampaignFound => "No campaigns found";
+  String get voiceMessage => "Voice Message";
   @override
-  String get viewOnWeb => "View on web page";
-  @override
-  String get shareCampaign => "Share Campaign";
-  @override
-  String get inspectingCategory => " category browsing.";
-  @override
-  String get campaignParticipation => "CAMPAIGN PARTICIPATION";
-  @override
-  String get earningsUsage => "EARNINGS USAGE";
-  @override
-  String get includedBrands => "Included Brands";
-  @override
-  String get otherCampaignsForBrand => " Tap to view other campaigns for ";
-  @override
-  String get showLess => "Show Less";
-  @override
-  String get showAll => "Show All";
-  @override
-  String get campaignConditions => "Campaign Conditions";
-  @override
-  String get startDate => "Start date";
-  @override
-  String get endDate => "End date";
+  String get participants => "Participants";
 
+  // Task Board
   @override
   String get taskBoard => "Task Board";
   @override
   String get myBoards => "My Boards";
+  @override
+  String get myTasks => "My Tasks";
+  @override
+  String get addBoard => "Add Board";
+  @override
+  String get addList => "Add List";
+  @override
+  String get addCard => "Add Card";
   @override
   String get createBoard => "Create Board";
   @override
   String get boardName => "Board Name";
   @override
   String get boardStats => "Board Statistics";
-  @override
-  String get addCard => "Add Card";
-  @override
-  String get addList => "Add List";
   @override
   String get members => "Members";
   @override
@@ -347,8 +334,6 @@ class LanguageEn extends BaseLanguage {
   @override
   String get boardOwner => "Board Owner";
   @override
-  String get members => "Members";
-  @override
   String get noOtherMembers => "No other members found.";
   @override
   String get canEditBoard => "Can Edit Board";
@@ -395,15 +380,9 @@ class LanguageEn extends BaseLanguage {
   @override
   String get makeMeResponsible => "Make Me Responsible";
   @override
-  String get description => "Description";
-  @override
   String get editDescription => "Edit Description";
   @override
   String get noDescription => "No description added yet.";
-  @override
-  String get checklist => "Checklist";
-  @override
-  String get addChecklistItem => "Add Item";
   @override
   String get voiceNotes => "Voice Notes";
   @override
@@ -735,40 +714,15 @@ class LanguageEn extends BaseLanguage {
   @override
   String get myCompletedTasks => "History (Completed) Tasks";
   @override
-  String get noPendingTasksFound => "You have no pending tasks.";
-  @override
-  String get noCompletedTasksFound => "You have no completed tasks.";
-  @override
-  String taskOverviewAnnouncement(int total, int completed, int pending) => 
-    "Task Overview and History page. In total $total tasks, $completed completed, $pending pending tasks found.";
-  @override
-  String taskOverviewStatsLabel(int total, int completed, int pending) => 
-    "General Statistics. In total $total tasks, $completed completed and $pending pending tasks found";
-
-  @override
-  String get taskOverview => "Task Overview and History";
-  @override
-  String get generalStats => "General Statistics";
-  @override
-  String get total => "Total";
-  @override
-  String get completed => "Completed";
-  @override
-  String get pending => "Pending";
-  @override
-  String get myPendingTasks => "My Pending Tasks";
-  @override
-  String get myCompletedTasks => "My Background (Completed) Tasks";
-  @override
   String get noPendingTasksFound => "No pending tasks found.";
   @override
   String get noCompletedTasksFound => "No completed tasks found.";
   @override
-  String taskOverviewAnnouncement(int total, int completed, int pending) => 
-    "Task Overview and History page. In total of $total tasks, there are $completed completed and $pending pending tasks.";
+  String taskOverviewAnnouncement(int total, int completed, int pending) =>
+      "Task Overview and History page. In total of $total tasks, there are $completed completed and $pending pending tasks.";
   @override
-  String taskOverviewStatsLabel(int total, int completed, int pending) => 
-    "General Statistics. In total of $total tasks, there are $completed completed and $pending pending tasks";
+  String taskOverviewStatsLabel(int total, int completed, int pending) =>
+      "General Statistics. In total of $total tasks, there are $completed completed and $pending pending tasks";
   @override
   String get inFavorites => "In favorites.";
   @override
@@ -994,7 +948,6 @@ class LanguageEn extends BaseLanguage {
   String get voiceCommentSent => "Voice message sent successfully";
   @override
   String get noComments => "No messages yet. Be the first to send one.";
-
   @override
   String get connectionError => "Connection error occurred";
   @override
