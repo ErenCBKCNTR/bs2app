@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:blind_social/core/localization/localization_provider.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 import '../../data/radio_stations.dart';
 import '../../services/favorite_stations_service.dart';
 import 'radio_player_screen.dart';

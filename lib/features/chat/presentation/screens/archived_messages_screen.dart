@@ -6,7 +6,7 @@ import 'package:blind_social/core/utils/logger.dart';
 import 'chat_detail_screen.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:blind_social/core/localization/localization_provider.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 
 class ArchivedMessagesScreen extends ConsumerStatefulWidget {
   const ArchivedMessagesScreen({super.key});

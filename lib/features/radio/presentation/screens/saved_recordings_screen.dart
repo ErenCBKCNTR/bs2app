@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:blind_social/core/localization/localization_provider.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 import 'package:just_audio/just_audio.dart';
 
 import 'dart:io';

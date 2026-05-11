@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:blind_social/core/localization/localization_provider.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 import 'package:blind_social/features/servers/data/models/chat_server.dart';
 import 'package:blind_social/features/servers/data/models/chat_server_room.dart';
 import 'package:blind_social/features/servers/data/services/chat_server_service.dart';

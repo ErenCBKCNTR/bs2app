@@ -7,7 +7,7 @@ import 'package:blind_social/core/utils/profanity_filter.dart';
 import '../../../../core/utils/logger.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:blind_social/core/localization/localization_provider.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 
 class FavoriteMessagesScreen extends ConsumerStatefulWidget {
   final String? chatId;

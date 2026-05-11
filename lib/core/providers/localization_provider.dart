@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,35 +31,25 @@ class LocalizationNotifier extends StateNotifier<BaseLanguage> {
         state = LanguageTr();
       }
     } else {
-      // No saved language, try to detect from IP
-      await _detectLanguageFromIP();
+      // No saved language, detect from system locale
+      _detectLanguageFromSystem();
     }
   }
 
-  Future<void> _detectLanguageFromIP() async {
-    try {
-      final response = await http.get(Uri.parse('https://ipapi.co/json/')).timeout(const Duration(seconds: 5));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final countryCode = data['country_code'] as String?;
-        
-        if (countryCode == 'TR') {
-          state = LanguageTr();
-          // We don't necessarily save it to prefs yet, let the user decide or save it now
-          // For consistency, let's save the detected one:
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_languageKey, 'tr');
-        } else {
-          state = LanguageEn();
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_languageKey, 'en');
-        }
-      }
-    } catch (e) {
-      // Fallback to Turkish if detection fails (app's main target)
+  void _detectLanguageFromSystem() {
+    final locale = PlatformDispatcher.instance.locale;
+    final langCode = locale.languageCode.toLowerCase();
+    
+    if (langCode == 'tr') {
       state = LanguageTr();
-      debugPrint("IP-based language detection failed: $e");
+    } else {
+      state = LanguageEn();
     }
+    
+    // Save the detected language for future sessions
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString(_languageKey, state is LanguageEn ? 'en' : 'tr');
+    });
   }
 
   Future<void> setLanguage(String langCode) async {
