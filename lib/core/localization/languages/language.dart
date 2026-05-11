@@ -170,7 +170,6 @@ abstract class BaseLanguage {
   String get boardMembersTitle;
   String get searchMemberHint;
   String get boardOwner;
-  String get members;
   String get noOtherMembers;
   String get canEditBoard;
   String get canOnlyViewBoard;
@@ -194,10 +193,8 @@ abstract class BaseLanguage {
   String get assignees;
   String get leaveResponsibility;
   String get makeMeResponsible;
-  String get description;
   String get editDescription;
   String get noDescription;
-  String get checklist;
   String get addChecklistItem;
   String get voiceNotes;
   String get resources;
@@ -292,7 +289,6 @@ abstract class BaseLanguage {
   String get feedbackReceived;
   String get feedbackThanksRedirect;
   String get returnNow;
-  String get dropdownAccessibilityHint;
   String get friendRequestsAndBlocks;
   String get incomingRequestsHeader;
   String get noIncomingRequests;
@@ -303,7 +299,6 @@ abstract class BaseLanguage {
   String get friendRequestAccepted;
   String get friendRequestRejected;
   String get userUnblocked;
-  String get unnamed;
   String get friendRequestFrom;
   String get friendRequestTo;
   String get cancelOutgoingRequest;
@@ -344,9 +339,7 @@ abstract class BaseLanguage {
   String get unspecified;
   String get hidden;
   String get lastSeenUnknown;
-  String get lastSeenHidden;
   String get currentlyActive;
-  String get lastSeenToday;
   String get userProfilePhoto;
   String get about;
   String get details;
@@ -361,8 +354,6 @@ abstract class BaseLanguage {
   String get taskOverview;
   String get generalStats;
   String get total;
-  String get completed;
-  String get pending;
   String get myPendingTasks;
   String get myCompletedTasks;
   String get noPendingTasksFound;
@@ -375,10 +366,7 @@ abstract class BaseLanguage {
   String boardDetailAnnouncement(String name);
   String get boardOptionsHint;
   String get dropdownHint;
-  String get dropdownAccessibilityHint;
-  String get lastSeenHidden;
   String get activeNow;
-  String get lastSeenToday;
   String get statusFailed;
   String get gameInviteTitle;
   String get gameInviteDesc;
@@ -457,10 +445,7 @@ abstract class BaseLanguage {
   String get repliedMessage;
   String get yourVoiceMessage;
   String get incomingVoiceMessage;
-  String get yourMessage;
-  String get incomingMessage;
   String get edited;
-  String get voiceMessage;
 
   // Campaigns
   String get campaigns;

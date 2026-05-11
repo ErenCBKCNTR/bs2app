@@ -971,37 +971,6 @@ class LanguageTr extends BaseLanguage {
   String get noComments => "Henüz mesaj yok. İlk mesajı siz gönderin.";
 
   @override
-  String get chats => "Sohbetler";
-  @override
-  String get messagePlaceholder => "Mesajınızı yazın...";
-  @override
-  String get send => "Gönder";
-  @override
-  String get voiceMessage => "Sesli Mesaj";
-  @override
-  String get participants => "Katılımcılar";
-
-  @override
-  String get taskBoard => "Görev Panosu";
-  @override
-  String get myBoards => "Panolarım";
-  @override
-  String get myTasks => "Görevlerim";
-  @override
-  String get addBoard => "Pano Ekle";
-  @override
-  String get addList => "Liste Ekle";
-  @override
-  String get addCard => "Kart Ekle";
-
-  @override
-  String get campaigns => "Kampanyalar";
-  @override
-  String get categories => "Kategoriler";
-  @override
-  String get all => "Tümü";
-
-  @override
   String get connectionError => "Bağlantı hatası oluştu";
   @override
   String get genericError => "Bir şeyler yanlış gitti";

@@ -996,37 +996,6 @@ class LanguageEn extends BaseLanguage {
   String get noComments => "No messages yet. Be the first to send one.";
 
   @override
-  String get chats => "Chats";
-  @override
-  String get messagePlaceholder => "Type a message...";
-  @override
-  String get send => "Send";
-  @override
-  String get voiceMessage => "Voice Message";
-  @override
-  String get participants => "Participants";
-
-  @override
-  String get taskBoard => "Task Board";
-  @override
-  String get myBoards => "My Boards";
-  @override
-  String get myTasks => "My Tasks";
-  @override
-  String get addBoard => "Add Board";
-  @override
-  String get addList => "Add List";
-  @override
-  String get addCard => "Add Card";
-
-  @override
-  String get campaigns => "Campaigns";
-  @override
-  String get categories => "Categories";
-  @override
-  String get all => "All";
-
-  @override
   String get connectionError => "Connection error occurred";
   @override
   String get genericError => "Something went wrong";

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/pb_cache_manager.dart';

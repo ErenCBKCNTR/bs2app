@@ -26,7 +26,7 @@ class TaskDetailScreen extends ConsumerStatefulWidget {
   }) : super(key: key);
 
   @override
-  State<TaskDetailScreen> createState() => _TaskDetailScreenState();
+  ConsumerState<TaskDetailScreen> createState() => _TaskDetailScreenState();
 }
 
 class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
