@@ -529,6 +529,5 @@ abstract class BaseLanguage {
   String get user;
   String unreadMessagesCount(int count);
   String get incomingMessage;
-  String get yourMessage;
   String get onlyAdminCanSendMessages;
 }

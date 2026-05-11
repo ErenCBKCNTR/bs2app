@@ -1043,7 +1043,5 @@ class LanguageTr extends BaseLanguage {
   @override
   String get incomingMessage => "Gelen mesaj";
   @override
-  String get yourMessage => "Senin mesajın";
-  @override
   String get onlyAdminCanSendMessages => "Sadece yöneticiler mesaj gönderebilir";
 }

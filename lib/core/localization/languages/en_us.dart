@@ -1043,7 +1043,5 @@ class LanguageEn extends BaseLanguage {
   @override
   String get incomingMessage => "Incoming message";
   @override
-  String get yourMessage => "Your message";
-  @override
   String get onlyAdminCanSendMessages => "Only admins can send messages";
 }
