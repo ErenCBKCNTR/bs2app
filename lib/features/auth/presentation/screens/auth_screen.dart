@@ -127,7 +127,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen e-posta ve şifrenizi girin.')),
+        SnackBar(content: Text(lang.pleaseEnterEmailAndPassword)),
       );
       return;
     }
@@ -162,18 +162,18 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           await NotificationService().syncWithServer();
         } on ClientException catch (signUpError) {
           if (mounted) {
-            String errorMessage = 'Kayıt sırasında bir hata oluştu.';
+            String errorMessage = lang.registerError;
             if (signUpError.response.isNotEmpty && signUpError.response['data'] != null) {
               final data = signUpError.response['data'] as Map<String, dynamic>;
               final List<String> errors = [];
               if (data['email'] != null) {
-                errors.add('E-posta: Geçerli bir e-posta adresi giriniz veya bu e-posta zaten kullanımda.');
+                errors.add(lang.invalidEmail);
               }
               if (data['password'] != null) {
-                errors.add('Şifre: En az 8 karakter uzunluğunda olmalıdır.');
+                errors.add(lang.passwordTooShort);
               }
               if (data['username'] != null) {
-                errors.add('Kullanıcı Adı: Geçersiz veya kullanımda (en az 3 karakter boşluksuz).');
+                errors.add(lang.invalidUsername);
               }
               
               if (errors.isNotEmpty) {
@@ -194,10 +194,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         }
       } else {
         if (mounted) {
-          String errorMessage = 'Giriş yapılamadı.';
+          String errorMessage = lang.loginError;
           if (e.response.isNotEmpty && e.response['message'] != null) {
             if (e.response['message'].toString().contains('Failed to authenticate')) {
-              errorMessage = 'E-posta adresi veya şifre hatalı.';
+              errorMessage = lang.loginError; // "E-posta adresi veya şifre hatalı." is more specific but let's use generic for now or add more strings
             } else {
               errorMessage = e.response['message'] ?? e.toString();
             }
@@ -213,7 +213,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Beklenmeyen bir hata oluştu: $e')),
+          SnackBar(content: Text('${lang.error}: $e')),
         );
       }
     } finally {
@@ -441,23 +441,49 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(localizationProvider);
-    final currentLangCode = ref.read(localizationProvider.notifier).currentLanguageCode;
+    final currentLangCode = ref.watch(localizationProvider.notifier).languageCode;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${lang.login} / ${lang.signUp}'),
+        title: Text(lang.welcomeBack),
         centerTitle: true,
-      ),
-      floatingActionButton: FloatingActionButton.small(
-        onPressed: () {
-          final nextLang = currentLangCode == 'tr-TR' ? 'en-US' : 'tr-TR';
-          ref.read(localizationProvider.notifier).setLanguage(nextLang);
-        },
-        tooltip: lang.language,
-        child: Text(
-          currentLangCode == 'tr-TR' ? '🇺🇸' : '🇹🇷',
-          style: const TextStyle(fontSize: 20),
-        ),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.language),
+            tooltip: lang.language,
+            onSelected: (String code) {
+              ref.read(localizationProvider.notifier).setLanguage(code);
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(
+                value: 'tr',
+                child: Row(
+                  children: [
+                    const Text('🇹🇷 '),
+                    Text('Türkçe', style: TextStyle(
+                      fontWeight: currentLangCode == 'tr' ? FontWeight.bold : FontWeight.normal,
+                    )),
+                    if (currentLangCode == 'tr') const Spacer(),
+                    if (currentLangCode == 'tr') const Icon(Icons.check, size: 18),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'en',
+                child: Row(
+                  children: [
+                    const Text('🇺🇸 '),
+                    Text('English', style: TextStyle(
+                      fontWeight: currentLangCode == 'en' ? FontWeight.bold : FontWeight.normal,
+                    )),
+                    if (currentLangCode == 'en') const Spacer(),
+                    if (currentLangCode == 'en') const Icon(Icons.check, size: 18),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -466,7 +492,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Semantics(
-              label: '${lang.appName} uygulamasına Hoş geldiniz. Lütfen giriş yöntemi seçin.',
+              label: lang.welcomeScreenSemantics(lang.appName),
               child: ExcludeSemantics(
                 child: Text(
                   lang.welcomeBack,
@@ -479,7 +505,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             Semantics(
               button: true,
               excludeSemantics: true,
-              label: 'Google hesabınız ile hızlı giriş yapın veya kayıt olun.',
+              label: lang.googleLoginSemantics,
               child: OutlinedButton.icon(
                 onPressed: _isLoading ? null : _authenticateWithGoogle,
                 style: OutlinedButton.styleFrom(
@@ -507,7 +533,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   ),
                 ),
                 label: Text(
-                  'Google ile Devam Et',
+                  lang.continueWithGoogle,
                   style: TextStyle(
                     color: Theme.of(context).brightness == Brightness.dark 
                         ? Colors.white 
@@ -523,7 +549,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 const Expanded(child: Divider()),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text('veya e-posta ile', style: TextStyle(color: Colors.grey[600])),
+                  child: Text(lang.orWithEmail, style: TextStyle(color: Colors.grey[600])),
                 ),
                 const Expanded(child: Divider()),
               ],
@@ -534,7 +560,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
                 labelText: lang.email,
-                hintText: 'ornek@eposta.com',
+                hintText: lang.emailHint,
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.email),
               ),
@@ -546,7 +572,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               obscureText: true,
               decoration: InputDecoration(
                 labelText: lang.password,
-                hintText: 'En az 8 karakter',
+                hintText: lang.passwordHint,
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.lock),
               ),
@@ -555,7 +581,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             ),
             const SizedBox(height: 32),
             Semantics(
-              label: 'Devam Et. Kayıtlı e-posta ise giriş yapar, değilse yeni hesap oluşturur.',
+              label: lang.authHint,
               button: true,
               excludeSemantics: true,
               child: ElevatedButton(
@@ -566,14 +592,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 ),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Devam Et'),
+                    : Text(lang.continueBtn),
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Hesabınız yoksa otomatik olarak oluşturulacaktır.',
+            Text(
+              lang.noAccountAutoCreate,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 32),
             Center(

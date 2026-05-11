@@ -43,6 +43,38 @@ class LanguageTr extends BaseLanguage {
   String get welcomeBack => "Tekrar Hoş Geldiniz";
   @override
   String get signOutAccount => "Hesaptan Çıkış Yap";
+  @override
+  String get continueWithGoogle => "Google ile Devam Et";
+  @override
+  String get orWithEmail => "veya e-posta ile";
+  @override
+  String get pleaseEnterEmailAndPassword => "Lütfen e-posta ve şifrenizi girin.";
+  @override
+  String get authHint => "Devam Et. Kayıtlı e-posta ise giriş yapar, değilse yeni hesap oluşturur.";
+  @override
+  String get noAccountAutoCreate => "Hesabınız yoksa otomatik olarak oluşturulacaktır.";
+  @override
+  String get continueBtn => "Devam Et";
+  @override
+  String get passwordHint => "En az 8 karakter";
+  @override
+  String get emailHint => "ornek@eposta.com";
+  @override
+  String get googleLoginSuccess => "Google ile giriş başarılı!";
+  @override
+  String get loginError => "Giriş yapılamadı.";
+  @override
+  String get registerError => "Kayıt sırasında bir hata oluştu.";
+  @override
+  String get googleLoginCancel => "Google girişi iptal edildi.";
+  @override
+  String get invalidEmail => "Geçerli bir e-posta adresi giriniz.";
+  @override
+  String get passwordTooShort => "Şifre en az 8 karakter olmalıdır.";
+  @override
+  String welcomeScreenSemantics(String appName) => "$appName uygulamasına Hoş geldiniz. Lütfen giriş yöntemi seçin.";
+  @override
+  String get googleLoginSemantics => "Google hesabınız ile hızlı giriş yapın veya kayıt olun.";
 
   // Profile
   @override

@@ -43,6 +43,38 @@ class LanguageEn extends BaseLanguage {
   String get welcomeBack => "Welcome Back";
   @override
   String get signOutAccount => "Sign Out of Account";
+  @override
+  String get continueWithGoogle => "Continue with Google";
+  @override
+  String get orWithEmail => "or with email";
+  @override
+  String get pleaseEnterEmailAndPassword => "Please enter your email and password.";
+  @override
+  String get authHint => "Continue. It will log in if registered, otherwise creates a new account.";
+  @override
+  String get noAccountAutoCreate => "If you don't have an account, it will be created automatically.";
+  @override
+  String get continueBtn => "Continue";
+  @override
+  String get passwordHint => "At least 8 characters";
+  @override
+  String get emailHint => "example@email.com";
+  @override
+  String get googleLoginSuccess => "Google login successful!";
+  @override
+  String get loginError => "Login failed.";
+  @override
+  String get registerError => "An error occurred during registration.";
+  @override
+  String get googleLoginCancel => "Google login cancelled.";
+  @override
+  String get invalidEmail => "Please enter a valid email address.";
+  @override
+  String get passwordTooShort => "Password must be at least 8 characters.";
+  @override
+  String welcomeScreenSemantics(String appName) => "Welcome to $appName. Please choose a login method.";
+  @override
+  String get googleLoginSemantics => "Sign in or sign up quickly with your Google account.";
 
   // Profile
   @override

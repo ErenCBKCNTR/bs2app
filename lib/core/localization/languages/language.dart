@@ -22,6 +22,22 @@ abstract class BaseLanguage {
   String get signUp;
   String get welcomeBack;
   String get signOutAccount;
+  String get continueWithGoogle;
+  String get orWithEmail;
+  String get pleaseEnterEmailAndPassword;
+  String get authHint;
+  String get noAccountAutoCreate;
+  String get continueBtn;
+  String get passwordHint;
+  String get emailHint;
+  String get googleLoginSuccess;
+  String get loginError;
+  String get registerError;
+  String get googleLoginCancel;
+  String get invalidEmail;
+  String get passwordTooShort;
+  String welcomeScreenSemantics(String appName);
+  String get googleLoginSemantics;
 
   // Profile
   String get profile;
