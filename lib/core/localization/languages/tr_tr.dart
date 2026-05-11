@@ -1,4 +1,3 @@
-
 import 'language.dart';
 
 class LanguageTr extends BaseLanguage {
@@ -23,6 +22,7 @@ class LanguageTr extends BaseLanguage {
   @override
   String get notSpecified => "Belirtilmemiş";
 
+  // Login/Auth
   @override
   String get login => "Giriş Yap";
   @override
@@ -44,6 +44,7 @@ class LanguageTr extends BaseLanguage {
   @override
   String get signOutAccount => "Hesaptan Çıkış Yap";
 
+  // Profile
   @override
   String get profile => "Profil";
   @override
@@ -89,6 +90,7 @@ class LanguageTr extends BaseLanguage {
   @override
   String get contactSupportForChange => "Not: Kullanıcı adınızı ve e-posta adresinizi değiştirmek için lütfen destek ekibiyle iletişime geçin.";
 
+  // Settings
   @override
   String get appSettings => "Uygulama Ayarları";
   @override
@@ -132,55 +134,37 @@ class LanguageTr extends BaseLanguage {
   @override
   String get fontSizeExample => "Örnek Metin: Bu ayar uygulama genelindeki tüm yazıların boyutunu etkiler. Okumanızı kolaylaştırmak için size en uygun boyutu seçebilirsiniz.";
 
+  // Chat
   @override
-  String get campaigns => "Kampanyalar";
+  String get chats => "Sohbetler";
   @override
-  String get categories => "Kategoriler";
+  String get messagePlaceholder => "Mesaj yazın...";
   @override
-  String get all => "Hepsi";
+  String get send => "Gönder";
   @override
-  String get searchCampaign => "Kampanya ara";
+  String get voiceMessage => "Sesli Mesaj";
   @override
-  String get noCampaignFound => "Kampanya bulunamadı";
-  @override
-  String get viewOnWeb => "Web sayfasında görüntüle";
-  @override
-  String get shareCampaign => "Kampanyayı Paylaş";
-  @override
-  String get inspectingCategory => " kategorisini incelemektesiniz.";
-  @override
-  String get campaignParticipation => "KAMPANYA KATILIMI";
-  @override
-  String get earningsUsage => "KAZANCIN KULLANIMI";
-  @override
-  String get includedBrands => "Kampanyaya Dahil Markalar";
-  @override
-  String get otherCampaignsForBrand => " markasına ait diğer kampanyaları görüntülemek için tıklayın";
-  @override
-  String get showLess => "Daha Az Göster";
-  @override
-  String get showAll => "Tümünü Göster";
-  @override
-  String get campaignConditions => "Kampanya Koşulları";
-  @override
-  String get startDate => "Başlangıç";
-  @override
-  String get endDate => "Bitiş";
+  String get participants => "Katılımcılar";
 
+  // Task Board
   @override
   String get taskBoard => "Görev Panosu";
   @override
   String get myBoards => "Panolarım";
+  @override
+  String get myTasks => "Görevlerim";
+  @override
+  String get addBoard => "Pano Ekle";
+  @override
+  String get addList => "Liste Ekle";
+  @override
+  String get addCard => "Kart Ekle";
   @override
   String get createBoard => "Pano Oluştur";
   @override
   String get boardName => "Pano Adı";
   @override
   String get boardStats => "Pano İstatistikleri";
-  @override
-  String get addCard => "Kart Ekle";
-  @override
-  String get addList => "Liste Ekle";
   @override
   String get members => "Üyeler";
   @override
@@ -201,7 +185,6 @@ class LanguageTr extends BaseLanguage {
   String get overview => "Genel Bakış";
   @override
   String get description => "Açıklama";
-
   @override
   String get boardFilterAll => "Tüm panolar listeleniyor";
   @override
@@ -223,7 +206,7 @@ class LanguageTr extends BaseLanguage {
   @override
   String get deleteBoardTitle => "Panoyu Sil";
   @override
-  String get deleteBoardConfirm => "isimli panoyu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.";
+  String get deleteBoardConfirm => "Pano silinsin mi? Bu işlem geri alınamaz.";
   @override
   String get yesDelete => "Evet, Sil";
   @override
@@ -252,19 +235,18 @@ class LanguageTr extends BaseLanguage {
   String get emptyFavs => "Favori panonuz bulunmuyor.";
   @override
   String get emptyBoards => "Henüz bir görev panosu bulunmuyor\nEkranın sağ altından Pano Oluştur butonuna tıklayabilirsiniz.";
-
   @override
   String get pinList => "Başa Tuttur";
   @override
   String get unpinList => "Başa Tutturmayı Kaldır";
   @override
-  String get listPinnedSuccess => "isimli liste başa tutturuldu";
+  String get listPinnedSuccess => "liste başa tutturuldu";
   @override
-  String get listUnpinnedSuccess => "isimli listenin başa tutturulması kaldırıldı";
+  String get listUnpinnedSuccess => "listenin başa tutturulması kaldırıldı";
   @override
-  String get listCollapsed => "isimli liste daraltıldı";
+  String get listCollapsed => "liste daraltıldı";
   @override
-  String get listExpanded => "isimli liste genişletildi";
+  String get listExpanded => "liste genişletildi";
   @override
   String get moveUp => "Yukarı Taşı";
   @override
@@ -276,7 +258,7 @@ class LanguageTr extends BaseLanguage {
   @override
   String get listNameRequired => "Lütfen liste adı giriniz";
   @override
-  String get listCreatedSuccess => "isimli liste oluşturuldu";
+  String get listCreatedSuccess => "liste oluşturuldu";
   @override
   String get addTaskTitle => "Yeni Görev Ekle";
   @override
@@ -286,7 +268,7 @@ class LanguageTr extends BaseLanguage {
   @override
   String get taskDesc => "Geniş Açıklama";
   @override
-  String get taskAddedSuccess => "isimli görev eklendi";
+  String get taskAddedSuccess => "görev eklendi";
   @override
   String get inviteUser => "Üye Davet Et";
   @override
@@ -308,11 +290,11 @@ class LanguageTr extends BaseLanguage {
   @override
   String get listOptionsHint => "Liste ile alakalı işlem yapmak için parmağınızı yukarı ya da aşağı kaydırın.";
   @override
-  String get moveListUp => "isimli liste yukarı taşındı";
+  String get moveListUp => "liste yukarı taşındı";
   @override
-  String get moveListDown => "isimli liste aşağı taşındı";
+  String get moveListDown => "liste aşağı taşındı";
   @override
-  String get deleteTaskConfirm => "isimli görevi silmek istediğinize emin misiniz?";
+  String get deleteTaskConfirm => "Görevi silmek istediğinize emin misiniz?";
   @override
   String get searchCards => "Kart Ara (isim, #id veya etiket)";
   @override
@@ -324,7 +306,7 @@ class LanguageTr extends BaseLanguage {
   @override
   String get markAsIncomplete => "Tamamlanmadı Olarak İşaretle";
   @override
-  String get timeSpentOnTask => "Görev üzerinde toplam {time} çalışıldı.";
+  String get timeSpentOnTask => "Toplam {time} çalışıldı.";
   @override
   String get lessThanAMinute => "1 dakikadan az";
   @override
@@ -336,7 +318,7 @@ class LanguageTr extends BaseLanguage {
   @override
   String get membersCount => "{count} Üye";
   @override
-  String get deleteListConfirm => "isimli listeyi ve içindeki tüm görevleri silmek istediğinize emin misiniz?";
+  String get deleteListConfirm => "Listeyi ve içindeki tüm görevleri silmek istediğinize emin misiniz?";
   @override
   String get deleteListTitle => "Listeyi Sil";
   @override
@@ -344,7 +326,7 @@ class LanguageTr extends BaseLanguage {
   @override
   String get addTask => "Görev Ekle";
   @override
-  String get boardMembersTitle => "Panoya Bağlı Kullanıcılar";
+  String get boardMembersTitle => "Pano Üyeleri";
   @override
   String get searchMemberHint => "E-posta veya kullanıcı adı ara";
   @override
@@ -352,31 +334,31 @@ class LanguageTr extends BaseLanguage {
   @override
   String get noOtherMembers => "Başka üye bulunamadı.";
   @override
-  String get canEditBoard => "Panoyu Düzenleyebilir";
+  String get canEditBoard => "Düzenleyebilir";
   @override
   String get canOnlyViewBoard => "Sadece Görüntüleyebilir";
   @override
   String get removeMember => "Üyeyi Çıkar";
   @override
-  String get removeMemberConfirm => "isimli üyeyi panodan çıkarmak istediğinize emin misiniz?";
+  String get removeMemberConfirm => "Üyeyi çıkarmak istediğinize emin misiniz?";
   @override
   String get editPermission => "Yetki Düzenle";
   @override
-  String get giveEditPermissionConfirm => "isimli kullanıcıya düzenleme yetkisi vermek istiyor musunuz?";
+  String get giveEditPermissionConfirm => "Düzenleme yetkisi verilsin mi?";
   @override
-  String get takeEditPermissionConfirm => "isimli kullanıcının düzenleme yetkisini almak istiyor musunuz?";
+  String get takeEditPermissionConfirm => "Düzenleme yetkisi alınsın mı?";
   @override
-  String get editPermissionSuccess => "Kullanıcıya düzenleme yetkisi verildi";
+  String get editPermissionSuccess => "Düzenleme yetkisi verildi";
   @override
-  String get editPermissionRemoved => "Kullanıcının düzenleme yetkisi alındı";
+  String get editPermissionRemoved => "Düzenleme yetkisi alındı";
   @override
-  String get removeMemberSuccess => "isimli üye panodan çıkarıldı";
+  String get removeMemberSuccess => "Üye çıkarıldı";
   @override
   String get failedToChangePermission => "Yetki değiştirilemedi";
   @override
   String get failedToRemoveMember => "Üye çıkarılamadı";
   @override
-  String get taskDetails => "isimli görevin detayları";
+  String get taskDetails => "görevin detayları";
   @override
   String get shareTask => "Kartı Paylaş";
   @override
@@ -384,13 +366,13 @@ class LanguageTr extends BaseLanguage {
   @override
   String get createdDate => "Oluşturulma";
   @override
-  String get dueDateTarget => "Bitiş (Hedef)";
+  String get dueDateTarget => "Bitiş Tarihi";
   @override
   String get noDueDate => "Bitiş tarihi eklenmemiş";
   @override
   String get setDueDate => "Bitiş Tarihi Belirle";
   @override
-  String get assignees => "Sorumlular (Atananlar)";
+  String get assignees => "Sorumlular";
   @override
   String get leaveResponsibility => "Sorumluluğu Bırak";
   @override
@@ -398,7 +380,7 @@ class LanguageTr extends BaseLanguage {
   @override
   String get editDescription => "Açıklama Düzenle";
   @override
-  String get noDescription => "Henüz açıklama eklenmemiş.";
+  String get noDescription => "Açıklama eklenmemiş.";
   @override
   String get addChecklistItem => "Madde Ekle";
   @override
@@ -410,25 +392,25 @@ class LanguageTr extends BaseLanguage {
   @override
   String get comments => "Yorumlar";
   @override
-  String get remainingDays => "Bu görevin tamamlanması için {days} gün kaldı.";
+  String get remainingDays => "{days} gün kaldı.";
   @override
-  String get todayIsLastDay => "Bu görevin tamamlanması için bugün son gün.";
+  String get todayIsLastDay => "Bugün son gün.";
   @override
-  String get overdueDays => "Bu görevin süresi {days} gün gecikti.";
+  String get overdueDays => "{days} gün gecikti.";
   @override
-  String get setDueDateTitle => "Bitiş Tarihini Belirle";
+  String get setDueDateTitle => "Bitiş Tarihi Belirle";
   @override
-  String get dueDateHint => "Bitiş tarihini gün, ay ve yıl olarak araya eğik çizgi ekleyerek giriniz. Eğik çizgi koymazsanız sistem otomatik olarak ekleyecektir. Örneğin 15082026.";
+  String get dueDateHint => "GG/AA/YYYY formatında giriniz. Örneğin 15082026.";
   @override
   String get dueDateLabel => "Bitiş Tarihi (GG/AA/YYYY)";
   @override
-  String get dueDateExample => "Örn: 30/12/2026 veya 30122026";
+  String get dueDateExample => "Örn: 30/12/2026";
   @override
-  String get dueDateDeleteHint => "Silmek için alanı boş bırakarak \"Kaydet\"e basabilirsiniz.";
+  String get dueDateDeleteHint => "Silmek için boş bırakıp \"Kaydet\"e basınız.";
   @override
-  String get invalidDateFormat => "Geçersiz tarih formatı. Lütfen GG/AA/YYYY formatında giriniz.";
+  String get invalidDateFormat => "Geçersiz tarih formatı.";
   @override
-  String get dueDateSuccess => "Bitiş tarihi başarıyla eklendi.";
+  String get dueDateSuccess => "Bitiş tarihi eklendi.";
   @override
   String get dueDateDeleted => "Bitiş tarihi silindi.";
   @override
@@ -452,7 +434,7 @@ class LanguageTr extends BaseLanguage {
   @override
   String get shareTaskCreated => "Oluşturulma Tarihi";
   @override
-  String get shareTaskDue => "Bitiş Tarihi (Hedef)";
+  String get shareTaskDue => "Bitiş Tarihi";
   @override
   String get shareTaskRemaining => "Kalan Süre";
   @override
@@ -460,7 +442,7 @@ class LanguageTr extends BaseLanguage {
   @override
   String get shareTaskLabels => "Etiketler";
   @override
-  String get shareTaskAssignees => "Sorumlular (Atananlar)";
+  String get shareTaskAssignees => "Sorumlular";
   @override
   String get shareTaskChecklist => "Kontrol Listesi";
   @override
@@ -468,29 +450,29 @@ class LanguageTr extends BaseLanguage {
   @override
   String get shareTaskVoiceNotes => "Sesli Notlar";
   @override
-  String get shareTaskVoiceNotesCount => "adet sesli not mevcut.";
+  String get shareTaskVoiceNotesCount => "adet sesli not.";
   @override
   String get shareTaskStopwatch => "Görev Kronometresi";
   @override
-  String get shareTaskTimeSpent => "Bu görev üzerinde toplam {time} çalışıldı.";
+  String get shareTaskTimeSpent => "Toplam {time} çalışıldı.";
   @override
   String get shareTaskFooter => "Blind Social - Görev Planlayıcısı ile oluşturulmuştur.";
   @override
   String get moveTaskTitle => "Listeyi Değiştir";
   @override
-  String get moveTaskSuccess => "Görev başka listeye taşındı";
+  String get moveTaskSuccess => "Görev taşındı";
   @override
-  String get newChecklistItemTitle => "Yeni Kontrol Maddesi";
+  String get newChecklistItemTitle => "Yeni Madde";
   @override
   String get newChecklistItemLabel => "Başlık";
   @override
-  String get checklistProgress => "{total} işten {completed} bitti, yüzde {percentage} tamamlandı";
+  String get checklistProgress => "{total} işten {completed} bitti";
   @override
-  String get deleteTaskConfirmDetail => "Bu görevi silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve göreve ait tüm veriler (ses kayıtları, notlar vb.) silinir.";
+  String get deleteTaskConfirmDetail => "Görevi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.";
   @override
   String get deleteTaskSuccess => "Görev başarıyla silindi";
   @override
-  String get addResourceTitle => "Yeni URL/Kaynak Ekle";
+  String get addResourceTitle => "Yeni URL Ekle";
   @override
   String get addResourceLabel => "URL Adresi";
   @override
@@ -516,36 +498,37 @@ class LanguageTr extends BaseLanguage {
   @override
   String get colorOrange => "Turuncu";
   @override
-  String get noAssignees => "Bu göreve henüz kimse atanmadı.";
+  String get noAssignees => "Atama yapılmamış.";
   @override
-  String get assigneesAssigned => "isimli kullanıcılar bu görev için atandı.";
+  String get assigneesAssigned => "kullanıcı atandı.";
   @override
-  String get noResources => "Henüz kaynak eklenmemiş.";
+  String get noResources => "Kaynak eklenmemiş.";
   @override
   String get checklistEmpty => "Kontrol listesi boş.";
   @override
-  String get taskMessagesSubtitle => "Diğer üyelerle sohbet edin veya sesli mesaj bırakın.";
+  String get taskMessagesSubtitle => "Diğer üyelerle sohbet edin.";
   @override
-  String get taskMessagesSemantics => "isimli görev için mesajlaşmaktasınız";
+  String get taskMessagesSemantics => "görev için mesajlaşmaktasınız";
   @override
   List<String> get months => ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
+  // App Settings
   @override
-  String get themeSubtitle => "Açık, koyu veya sistem teması seçin";
+  String get themeSubtitle => "Tema seçiniz";
   @override
   String get languageSubtitle => "Uygulama dilini değiştirin";
   @override
-  String get notificationsSubtitle => "Ses ve titreşim ayarlarını yönetin";
+  String get notificationsSubtitle => "Ses ve titreşim ayarları";
   @override
-  String get accessibilitySubtitle => "Ekran okuyucu ve yardım özellikleri";
+  String get accessibilitySubtitle => "Erişilebilirlik ayarları";
   @override
-  String get privacySubtitle => "Ekran koruma ve kilit ekranı seçenekleri";
+  String get privacySubtitle => "Gizlilik seçenekleri";
   @override
-  String get feedbackSubtitle => "Görüşlerinizi bizimle paylaşın";
+  String get feedbackSubtitle => "Görüşlerinizi paylaşın";
   @override
   String get changelogSubtitle => "v1.7.5 - Neler yeni?";
   @override
-  String get feedbackPrompt => "Size daha iyi hizmet verebilmemiz için lütfen görüşlerinizi bizimle paylaşın.";
+  String get feedbackPrompt => "Lütfen görüşlerinizi paylaşın.";
   @override
   String get selectCategory => "Kategori Seçin";
   @override
@@ -561,33 +544,33 @@ class LanguageTr extends BaseLanguage {
   @override
   String get subjectTitle => "Konu Başlığı";
   @override
-  String get subjectHint => "Bildiriminizin konusunu kısaca belirtin";
+  String get subjectHint => "Konuyu kısaca belirtin";
   @override
-  String get maxCharacters100 => "Maksimum 100 karakter";
+  String get maxCharacters100 => "Maks 100 karakter";
   @override
   String get yourMessage => "Mesajınız";
   @override
-  String get messageHint => "Detaylı mesajınızı buraya yazabilirsiniz...";
+  String get messageHint => "Detaylı mesajınızı buraya yazın...";
   @override
-  String get maxCharacters1000 => "Maksimum 1000 karakter";
+  String get maxCharacters1000 => "Maks 1000 karakter";
   @override
-  String get enterSubject => "Lütfen bir konu başlığı girin";
+  String get enterSubject => "Konu başlığı girin";
   @override
   String get subjectTooShort => "Konu başlığı çok kısa";
   @override
-  String get enterMessage => "Lütfen mesajınızı girin";
+  String get enterMessage => "Mesajınızı girin";
   @override
-  String get messageTooShort => "Mesajınız en az 10 karakter olmalıdır";
+  String get messageTooShort => "Mesaj en az 10 karakter olmalı";
   @override
-  String get feedbackReceived => "Geri Bildiriminiz Alınmıştır";
+  String get feedbackReceived => "Geri Bildiriminiz Alındı";
   @override
-  String get feedbackThanksRedirect => "Uygulamamızı geliştirmemize yardımcı olduğunuz için teşekkür ederiz. 5 saniye içinde ana sayfaya yönlendirileceksiniz.";
+  String get feedbackThanksRedirect => "Teşekkür ederiz. Yönlendiriliyorsunuz...";
   @override
   String get returnNow => "Hemen Dön";
   @override
-  String get dropdownAccessibilityHint => "Seçenekleri görmek ve değiştirmek için çift tıklayın";
+  String get dropdownAccessibilityHint => "Seçenekleri görmek için çift tıklayın";
   @override
-  String get friendRequestsAndBlocks => "Arkadaşlık ve Engellenenler Listesi";
+  String get friendRequestsAndBlocks => "Arkadaşlık ve Engellenenler";
   @override
   String get incomingRequestsHeader => "Gelen İstekler";
   @override
@@ -597,57 +580,57 @@ class LanguageTr extends BaseLanguage {
   @override
   String get noOutgoingRequests => "Giden istek yok.";
   @override
-  String get blockedUsersHeader => "Engellenen Kullanıcılar";
+  String get blockedUsersHeader => "Engellenenler";
   @override
   String get noBlockedUsers => "Engellenen kullanıcı yok.";
   @override
-  String get friendRequestAccepted => "Arkadaşlık isteği kabul edildi.";
+  String get friendRequestAccepted => "İstek kabul edildi.";
   @override
-  String get friendRequestRejected => "Arkadaşlık isteği reddedildi.";
+  String get friendRequestRejected => "İstek reddedildi.";
   @override
-  String get userUnblocked => "Kullanıcının engeli kaldırıldı.";
+  String get userUnblocked => "Engel kaldırıldı.";
   @override
   String get unnamed => "İsimsiz";
   @override
-  String get friendRequestFrom => "den gelen arkadaşlık isteği";
+  String get friendRequestFrom => "den gelen istek";
   @override
-  String get friendRequestTo => "ye gönderilen arkadaşlık isteği. İptal etmek için tıklayın.";
+  String get friendRequestTo => "ye gönderilen istek. İptal etmek için tıklayın.";
   @override
-  String get cancelOutgoingRequest => "Gönderilen isteği iptal et";
+  String get cancelOutgoingRequest => "İsteği iptal et";
   @override
   String get blockedUserInfo => "Engellenen kullanıcı. Engeli kaldırmak için tıklayın.";
   @override
-  String get unblockUserTooltip => "Kullanıcının engelini kaldır";
+  String get unblockUserTooltip => "Engeli kaldır";
   @override
   String get messageNotifications => "Mesaj Bildirimleri";
   @override
   String get sound => "Ses";
   @override
-  String get messageSoundSubtitle => "Yeni mesaj geldiğinde ses çal";
+  String get messageSoundSubtitle => "Yeni mesaj sesi";
   @override
   String get vibration => "Titreşim";
   @override
-  String get messageVibrationSubtitle => "Yeni mesaj geldiğinde titreşim ver";
+  String get messageVibrationSubtitle => "Yeni mesaj titreşimi";
   @override
   String get callNotifications => "Arama Bildirimleri";
   @override
   String get ringtone => "Zil Sesi";
   @override
-  String get callSoundSubtitle => "Gelen aramalarda zil sesi çal";
+  String get callSoundSubtitle => "Arama sesi";
   @override
-  String get callVibrationSubtitle => "Gelen aramalarda titreşim ver";
+  String get callVibrationSubtitle => "Arama titreşimi";
   @override
   String get screenProtection => "Ekran Kaydı Koruması";
   @override
-  String get screenProtectionSubtitle => "Uygulama içinde ekran görüntüsü alınmasını ve kaydedilmesini engeller";
+  String get screenProtectionSubtitle => "Ekran görüntüsünü/kaydını engeller";
   @override
   String get showOnLockScreen => "Kilit Ekranında Göster";
   @override
-  String get showOnLockScreenSubtitle => "Ekran kilitliyken bile uygulama görünür kalır";
+  String get showOnLockScreenSubtitle => "Ekran kilitliyken görünürlük";
   @override
-  String get fullnamePrivacy => "İsim Soyisim Bilgisi";
+  String get fullnamePrivacy => "Ad Soyad Gizliliği";
   @override
-  String get whoCanSeeThis => "Bu bilgiyi kimlerin görebileceğini seçin";
+  String get whoCanSeeThis => "Kimler görebilir?";
   @override
   String get everyone => "Herkes";
   @override
@@ -655,27 +638,27 @@ class LanguageTr extends BaseLanguage {
   @override
   String get nobody => "Hiç Kimse";
   @override
-  String get fullnamePrivacySemantics => "İsim soyisim gizlilik ayarı";
+  String get fullnamePrivacySemantics => "Ad soyad gizlilik ayarı";
   @override
-  String get lastSeen => "Son Görülme Bilgisi";
+  String get lastSeen => "Son Görülme";
   @override
-  String get lastSeenSubtitle => "Diğer kullanıcıların son görülme zamanınızı görmesine izin verin";
+  String get lastSeenSubtitle => "Son görülme zamanını paylaş";
   @override
   String get birthday => "Doğum Tarihi";
   @override
   String get birthdayPrivacySemantics => "Doğum tarihi gizlilik ayarı";
   @override
-  String get privacyFooter => "Gizlilik ayarları uygulama güvenliğinizi ve kişisel verilerinizin korunmasını sağlar.";
+  String get privacyFooter => "Gizlilik ayarları uygulama güvenliğinizi sağlar.";
   @override
   String get profileInfo => "Profil Bilgileri";
   @override
   String get profileLoadError => "Profil yüklenemedi";
   @override
-  String get removeFromFriends => "Arkadaş Listemden Çıkar";
+  String get removeFromFriends => "Arkadaşlıktan Çıkar";
   @override
   String get removedFromFriends => "Arkadaşlıktan çıkarıldı.";
   @override
-  String get blockUser => "Kullanıcıyı Engelle";
+  String get blockUser => "Engelle";
   @override
   String get userBlocked => "Kullanıcı engellendi.";
   @override
@@ -689,13 +672,9 @@ class LanguageTr extends BaseLanguage {
   @override
   String get lastSeenUnknown => "Son görülme bilinmiyor";
   @override
-  String get lastSeenHidden => "Son görülme gizli";
-  @override
   String get currentlyActive => "Şu an aktif";
   @override
-  String get lastSeenToday => "Son görülme bugün";
-  @override
-  String get userProfilePhoto => "adlı kullanıcının profil fotoğrafı";
+  String get userProfilePhoto => "profil fotoğrafı";
   @override
   String get about => "Hakkında";
   @override
@@ -703,195 +682,171 @@ class LanguageTr extends BaseLanguage {
   @override
   String get joined => "Katılım";
   @override
-  String get addAsFriend => "Arkadaş Olarak Ekle";
+  String get addAsFriend => "Arkadaş Ekle";
   @override
   String get youAreFriends => "Arkadaşsınız";
   @override
-  String get friendRequestSent => "Arkadaşlık İsteği Gönderildi";
+  String get friendRequestSent => "İstek Gönderildi";
   @override
   String get wantsToAddYou => "Sizi Eklemek İstiyor";
   @override
-  String get friendRequestSentSuccess => "Arkadaşlık isteği gönderildi!";
+  String get friendRequestSentSuccess => "İstek gönderildi!";
   @override
-  String get noPermissionView => "Bu sayfayı görüntüleme yetkiniz yok.";
+  String get noPermissionView => "Görüntüleme yetkiniz yok.";
   @override
   String get latest => "En Yeni";
   @override
-  String get chatArchivedStatus => "Arşivlendi";
-  @override
-  String get chatPinnedStatus => "Sabitlendi";
-  @override
-  String get chatUnarchivedStatus => "Arşivden Çıkarıldı";
-  @override
-  String get chatUnpinnedStatus => "Sabitlenmeden Çıkarıldı";
-  @override
-  String get connectionErrorWithStatus => "Bağlantı Hatası";
-  @override
-  String get create => "Oluştur";
-  @override
-  String get createServerTitle => "Sunucu Oluştur";
-  @override
-  String get deleteMessage => "Mesajı Sil";
-  @override
-  String get duration => "Süre";
-  @override
-  String get earpieceSet => "Ahize ayarlandı";
-  @override
-  String get editMessage => "Mesajı Düzenle";
-  @override
-  String get editMessageHint => "Yeni bir mesaj girin";
-  @override
-  String get editMessageTitle => "Mesajı Düzenle";
-  @override
-  String get edited => "Düzenlendi";
-  @override
-  String get emptyChatList => "Henüz sohbet yok";
-  @override
-  String get exit => "Çıkış";
-  @override
-  String get exitAppConfirm => "Uygulamadan çıkmak istediğinize emin misiniz?";
-  @override
-  String get exitAppTitle => "Uygulamadan Çık";
-  @override
-  String get failedToLoadDetails => "Detaylar yüklenemedi";
-  @override
-  String get favAddedStatus => "Favorilere eklendi";
-  @override
-  String get favRemovedStatus => "Favorilerden çıkarıldı";
-  @override
-  String get favoriteMessages => "Favori Mesajlar";
-  @override
-  String get gameInviteDesc => "size bilgi yarışması için oyun daveti gönderdi.";
-  @override
-  String get gameInviteTitle => "Oyun İsteği";
-  @override
-  String get generalStats => "Genel İstatistikler";
-  @override
-  String get group => "Grup";
-  @override
-  String get headsetOrBluetoothSet => "Kulaklık/Bluetooth ayarlandı";
-  @override
-  String get inFavorites => "Favorilerde";
-  @override
-  String get incomingVideoCall => "Gelen görüntülü arama";
-  @override
-  String get incomingVoiceCall => "Gelen sesli arama";
-  @override
-  String get incomingVoiceMessage => "Gelen sesli mesaj";
-  @override
-  String get lineBusy => "Hat meşgul";
-  @override
-  String get liveVoiceRoom => "Canlı Sesli Oda";
-  @override
-  String get messageDeletedStatus => "Mesaj silindi";
-  @override
-  String get messageSentStatus => "Mesaj gönderildi";
-  @override
-  String get microphoneAccessDenied => "Mikrofon erişimi engellendi";
-  @override
-  String get missedCall => "Cevapsız arama";
-  @override
-  String get missedVideoCall => "Cevapsız görüntülü arama";
-  @override
-  String get myPendingTasks => "Bekleyen Görevlerim";
-  @override
-  String get myCompletedTasks => "Geçmiş (Tamamlanan) Görevlerim";
-  @override
-  String get newChatTooltip => "Yeni Sohbet";
-  @override
-  String get newServerTooltip => "Yeni Sunucu";
-  @override
-  String get noCompletedTasksFound => "Hiç tamamlanmış göreviniz bulunmuyor.";
-  @override
-  String get noMessagesYet => "Henüz mesaj yok";
-  @override
-  String get noPendingTasksFound => "Bekleyen göreviniz bulunmuyor.";
-  @override
-  String get notInFavorites => "Favorilerde değil";
-  @override
-  String get outgoingCallUnanswered => "Giden arama cevapsız";
-  @override
-  String get outgoingVideoCall => "Giden görüntülü arama";
-  @override
-  String get outgoingVoiceCall => "Giden sesli arama";
-  @override
-  String get privateChat => "Özel Sohbet";
-  @override
-  String get removeFromFavs => "Favorilerden Çıkar";
-  @override
-  String get repliedMessage => "Yanıtlanan Mesaj";
-  @override
-  String get reply => "Yanıtla";
-  @override
-  String get securitySettings => "Güvenlik Ayarları";
-  @override
-  String get serverCreateGenericError => "Sunucu oluşturulamadı";
-  @override
-  String get serverCreatedSuccess => "Sunucu başarıyla oluşturuldu";
-  @override
-  String get serverLimitDaily => "Günlük sunucu oluşturma limitine ulaştınız";
-  @override
-  String get serverLimitReached => "Sunucu limitine ulaştınız";
-  @override
-  String get serverNameHint => "Sunucu ismi girin";
-  @override
-  String get serverNameLabel => "Sunucu Adı";
-  @override
-  String get serverNameMinLength => "Sunucu adı çok kısa";
-  @override
-  String get serverNameRequired => "Sunucu adı gerekli";
-  @override
-  String get serverNameTooShort => "Sunucu adı çok kısa";
-  @override
-  String get serverPasswordHint => "Şifre girin";
-  @override
-  String get serverPasswordLabel => "Sunucu Şifresi";
-  @override
-  String get servers => "Sunucular";
-  @override
-  String get speakerSet => "Hoparlör ayarlandı";
-  @override
-  String get starred => "Yıldızlı";
-  @override
-  String get statusFailed => "Durum alınamadı";
-  @override
   String get taskOverview => "Görev Özeti";
-  @override
-  String taskOverviewAnnouncement(int total, int completed, int pending) =>
-      "Görev Özeti ve Geçmişi sayfası. Toplam $total görev içerisinde, $completed adet tamamlanan, $pending adet bekleyen görev bulunuyor.";
-  @override
-  String taskOverviewStatsLabel(int total, int completed, int pending) =>
-      "Genel İstatistikler. Toplam $total görev içerisinde, $completed adet tamamlanan ve $pending adet bekleyen görev bulunuyor";
   @override
   String get total => "Toplam";
   @override
-  String get unnamedChat => "İsimsiz Sohbet";
+  String get myPendingTasks => "Bekleyen Görevlerim";
   @override
-  String get unreadMessageSuffix => "okunmamış";
+  String get myCompletedTasks => "Tamamlanan Görevlerim";
   @override
-  String get videoCall => "Görüntülü Arama";
+  String get noPendingTasksFound => "Bekleyen görev yok";
   @override
-  String get voiceCall => "Sesli Arama";
+  String get noCompletedTasksFound => "Tamamlanan görev yok";
   @override
-  String get voiceSentStatus => "Ses gönderildi";
+  String taskOverviewAnnouncement(int total, int completed, int pending) => "Toplam $total görevden $completed tamamlandı, $pending bekliyor.";
   @override
-  String get yourVoiceMessage => "Sesli mesajınız";
+  String taskOverviewStatsLabel(int total, int completed, int pending) => "Toplam: $total, Tamamlanan: $completed, Bekleyen: $pending";
+  @override
+  String get notInFavorites => "Favorilerde Değil";
+  @override
+  String boardAnnouncement(String name, String favText, int listCount, bool isOwner) => "Pano: $name, Liste sayısı: $listCount, $favText";
+  @override
+  String boardDetailAnnouncement(String name) => "$name panosu detay sayfası";
+  @override
+  String get boardOptionsHint => "Seçenekler için çift tıklayın";
+  @override
+  String get dropdownHint => "Seçenek seçin";
+  @override
+  String get activeNow => "Aktif";
+  @override
+  String get statusFailed => "Durum Başarısız";
   @override
   String get accept => "Kabul Et";
   @override
   String get reject => "Reddet";
   @override
-  String get activeNow => "Şu an aktif";
+  String get exitAppTitle => "Çıkış";
+  @override
+  String get exitAppConfirm => "Çıkmak istediğinize emin misiniz?";
+  @override
+  String get exit => "Çıkış";
+  @override
+  String get newChatTooltip => "Yeni Sohbet";
+  @override
+  String get newServerTooltip => "Yeni Sunucu";
+  @override
+  String get serverNameLabel => "Sunucu Adı";
+  @override
+  String get serverNameHint => "Sunucu adı girin";
+  @override
+  String get serverNameRequired => "Gerekli";
+  @override
+  String get serverNameTooShort => "Çok kısa";
+  @override
+  String get serverPasswordLabel => "Sunucu Şifresi";
+  @override
+  String get serverPasswordHint => "Şifre girin";
+  @override
+  String get serverCreatedSuccess => "Sunucu oluşturuldu";
+  @override
+  String get serverNameMinLength => "En az 3 karakter";
+  @override
+  String get serverLimitReached => "Limit aşıldı";
+  @override
+  String get serverLimitDaily => "Günlük limit aşıldı";
+  @override
+  String get serverCreateGenericError => "Hata oluştu";
+  @override
+  String get unnamedChat => "İsimsiz Kanal";
+  @override
+  String get reply => "Yanıtla";
+  @override
+  String get speakerSet => "Hoparlör ayarlandı";
+  @override
+  String get voiceSentStatus => "Ses Gönderildi";
   @override
   String get addToFavs => "Favorilere Ekle";
   @override
-  String get admin => "Yönetici";
+  String get removeFromFavs => "Favorilerden Çıkar";
   @override
-  String boardAnnouncement(String name, String favText, int listCount, bool isOwner) => "";
+  String get voiceCall => "Sesli Arama";
   @override
-  String boardDetailAnnouncement(String name) => "";
+  String get videoCall => "Görüntülü Arama";
   @override
-  String get boardOptionsHint => "Pano seçeneklerini görmek için iki parmağınızla dokunun veya uzun basın.";
+  String get privateChat => "Özel Sohbet";
   @override
-  String get deleteMessage => "Mesajı sil";
+  String get servers => "Sunucular";
+  @override
+  String get noMessagesYet => "Mesaj yok";
+  @override
+  String get unreadMessageSuffix => "okunmamış mesaj";
+  @override
+  String get outgoingCallUnanswered => "Yanıtlanmadı";
+  @override
+  String get callAccepted => "Arama Kabul Edildi";
+  @override
+  String get callAcceptedByYou => "Arama Kabul Edildi";
+  @override
+  String get callRejected => "Arama Reddedildi";
+  @override
+  String get callRejectedByYou => "Arama Reddedildi";
+  @override
+  String get callCancelled => "Arama İptal Edildi";
+  @override
+  String get callCancelledByYou => "Arama İptal Edildi";
+  @override
+  String get starred => "Yıldızlı";
+  @override
+  String get repliedMessage => "Yanıtlanan Mesaj";
+  @override
+  String get yourVoiceMessage => "Sesli Mesajınız";
+
+  // Campaigns
+  @override
+  String get campaigns => "Kampanyalar";
+  @override
+  String get categories => "Kategoriler";
+  @override
+  String get all => "Hepsi";
+  @override
+  String get searchCampaign => "Ara";
+  @override
+  String get noCampaignFound => "Kampanya yok";
+  @override
+  String get viewOnWeb => "Web'de görüntüle";
+  @override
+  String get shareCampaign => "Paylaş";
+  @override
+  String get inspectingCategory => "Kategori:";
+  @override
+  String get campaignParticipation => "Katılım";
+  @override
+  String get earningsUsage => "Kazanım Kullanımı";
+  @override
+  String get includedBrands => "Markalar";
+  @override
+  String get otherCampaignsForBrand => "Diğer kampanyalar";
+  @override
+  String get showLess => "Daha Az";
+  @override
+  String get showAll => "Tümü";
+  @override
+  String get campaignConditions => "Koşullar";
+  @override
+  String get startDate => "Başlangıç";
+  @override
+  String get endDate => "Bitiş";
+
+  // Errors
+  @override
+  String get connectionError => "Bağlantı hatası";
+  @override
+  String get genericError => "Bir hata oluştu";
+  @override
+  String get accessDenied => "Erişim Reddedildi";
 }

@@ -1,4 +1,3 @@
-
 import 'language.dart';
 
 class LanguageEn extends BaseLanguage {
@@ -673,11 +672,7 @@ class LanguageEn extends BaseLanguage {
   @override
   String get lastSeenUnknown => "Last seen unknown";
   @override
-  String get lastSeenHidden => "Last seen hidden";
-  @override
   String get currentlyActive => "Currently active";
-  @override
-  String get lastSeenToday => "Last seen today";
   @override
   String get userProfilePhoto => "profile photo of";
   @override
@@ -700,7 +695,117 @@ class LanguageEn extends BaseLanguage {
   String get noPermissionView => "You do not have permission to view this page.";
   @override
   String get latest => "Latest";
-  
+  @override
+  String get taskOverview => "Task Overview";
+  @override
+  String get total => "Total";
+  @override
+  String get myPendingTasks => "My Pending Tasks";
+  @override
+  String get myCompletedTasks => "My Completed Tasks";
+  @override
+  String get noPendingTasksFound => "No pending tasks found";
+  @override
+  String get noCompletedTasksFound => "No completed tasks found";
+  @override
+  String taskOverviewAnnouncement(int total, int completed, int pending) => "You have $total tasks in total, $completed completed and $pending still pending.";
+  @override
+  String taskOverviewStatsLabel(int total, int completed, int pending) => "Total: $total, Completed: $completed, Pending: $pending";
+  @override
+  String get notInFavorites => "Not in Favorites";
+  @override
+  String boardAnnouncement(String name, String favText, int listCount, bool isOwner) => "Board named $name, list count $listCount, $favText";
+  @override
+  String boardDetailAnnouncement(String name) => "Board detail page for $name";
+  @override
+  String get boardOptionsHint => "Double tap or long press to see options";
+  @override
+  String get dropdownHint => "Select an option";
+  @override
+  String get activeNow => "Active Now";
+  @override
+  String get statusFailed => "Status Failed";
+  @override
+  String get accept => "Accept";
+  @override
+  String get reject => "Reject";
+  @override
+  String get exitAppTitle => "Exit Application";
+  @override
+  String get exitAppConfirm => "Are you sure you want to exit the application?";
+  @override
+  String get exit => "Exit";
+  @override
+  String get newChatTooltip => "New Chat";
+  @override
+  String get newServerTooltip => "New Server";
+  @override
+  String get serverNameLabel => "Server Name";
+  @override
+  String get serverNameHint => "Enter server name";
+  @override
+  String get serverNameRequired => "Server name is required";
+  @override
+  String get serverNameTooShort => "Server name is too short";
+  @override
+  String get serverPasswordLabel => "Server Password";
+  @override
+  String get serverPasswordHint => "Enter password";
+  @override
+  String get serverCreatedSuccess => "Server created successfully";
+  @override
+  String get serverNameMinLength => "Server name must be at least 3 characters";
+  @override
+  String get serverLimitReached => "Server limit reached";
+  @override
+  String get serverLimitDaily => "Daily server limit reached";
+  @override
+  String get serverCreateGenericError => "Failed to create server";
+  @override
+  String get unnamedChat => "Unnamed Channel";
+  @override
+  String get reply => "Reply";
+  @override
+  String get speakerSet => "Speaker set";
+  @override
+  String get voiceSentStatus => "Voice Sent";
+  @override
+  String get addToFavs => "Add to Favorites";
+  @override
+  String get removeFromFavs => "Remove from Favorites";
+  @override
+  String get voiceCall => "Voice Call";
+  @override
+  String get videoCall => "Video Call";
+  @override
+  String get privateChat => "Private Chat";
+  @override
+  String get servers => "Servers";
+  @override
+  String get noMessagesYet => "No messages yet";
+  @override
+  String get unreadMessageSuffix => "unread messages";
+  @override
+  String get outgoingCallUnanswered => "Unanswered outgoing call";
+  @override
+  String get callAccepted => "Call Accepted";
+  @override
+  String get callAcceptedByYou => "Call Accepted by You";
+  @override
+  String get callRejected => "Call Rejected";
+  @override
+  String get callRejectedByYou => "Call Rejected by You";
+  @override
+  String get callCancelled => "Call Cancelled";
+  @override
+  String get callCancelledByYou => "Call Cancelled by You";
+  @override
+  String get starred => "Starred";
+  @override
+  String get repliedMessage => "Replied Message";
+  @override
+  String get yourVoiceMessage => "Your Voice Message";
+
   // Campaigns
   @override
   String get campaigns => "Campaigns";
@@ -736,7 +841,7 @@ class LanguageEn extends BaseLanguage {
   String get startDate => "Start Date";
   @override
   String get endDate => "End Date";
-  
+
   // Errors
   @override
   String get connectionError => "Connection error occurred";
@@ -744,196 +849,4 @@ class LanguageEn extends BaseLanguage {
   String get genericError => "Something went wrong";
   @override
   String get accessDenied => "Access Denied";
-
-  // Missing implementations
-  @override
-  String get accept => "Accept";
-  @override
-  String get reject => "Reject";
-  @override
-  String get activeNow => "Active Now";
-  @override
-  String get addToFavs => "Add to Favorites";
-  @override
-  String get admin => "Admin";
-  @override
-  String boardAnnouncement(String name, String favText, int listCount, bool isOwner) => "";
-  @override
-  String boardDetailAnnouncement(String name) => "";
-  @override
-  String get boardOptionsHint => "Double tap or long press to see options";
-  @override
-  String get callAccepted => "Call Accepted";
-  @override
-  String get callAcceptedByYou => "Call Accepted by You";
-  @override
-  String get callCancelled => "Call Cancelled";
-  @override
-  String get callCancelledByYou => "Call Cancelled by You";
-  @override
-  String get callRejected => "Call Rejected";
-  @override
-  String get callRejectedByYou => "Call Rejected by You";
-  @override
-  String get capacityLabel => "Capacity";
-  @override
-  String get chatArchivedStatus => "Archived";
-  @override
-  String get chatPinnedStatus => "Pinned";
-  @override
-  String get chatUnarchivedStatus => "Unarchived";
-  @override
-  String get chatUnpinnedStatus => "Unpinned";
-  @override
-  String get connectionErrorWithStatus => "Connection Error";
-  @override
-  String get create => "Create";
-  @override
-  String get createServerTitle => "Create Server";
-  @override
-  String get deleteMessage => "Delete Message";
-  @override
-  String get dropdownHint => "Select an option";
-  @override
-  String get duration => "Duration";
-  @override
-  String get earpieceSet => "Earpiece set";
-  @override
-  String get editMessage => "Edit Message";
-  @override
-  String get editMessageHint => "Enter new message";
-  @override
-  String get editMessageTitle => "Edit Message";
-  @override
-  String get edited => "Edited";
-  @override
-  String get emptyChatList => "No chats yet";
-  @override
-  String get exit => "Exit";
-  @override
-  String get exitAppConfirm => "Are you sure you want to exit?";
-  @override
-  String get exitAppTitle => "Exit App";
-  @override
-  String get failedToLoadDetails => "Failed to load details";
-  @override
-  String get favAddedStatus => "Added to favorites";
-  @override
-  String get favRemovedStatus => "Removed from favorites";
-  @override
-  String get favoriteMessages => "Favorite Messages";
-  @override
-  String get gameInviteDesc => "invited you to a quiz game.";
-  @override
-  String get gameInviteTitle => "Game Invite";
-  @override
-  String get generalStats => "General Stats";
-  @override
-  String get group => "Group";
-  @override
-  String get headsetOrBluetoothSet => "Headset/Bluetooth set";
-  @override
-  String get inFavorites => "Favorited";
-  @override
-  String get incomingVideoCall => "Incoming video call";
-  @override
-  String get incomingVoiceCall => "Incoming voice call";
-  @override
-  String get incomingVoiceMessage => "Incoming voice message";
-  @override
-  String get lineBusy => "Line busy";
-  @override
-  String get liveVoiceRoom => "Live Voice Room";
-  @override
-  String get messageDeletedStatus => "Message deleted";
-  @override
-  String get messageSentStatus => "Message sent";
-  @override
-  String get microphoneAccessDenied => "Microphone access denied";
-  @override
-  String get missedCall => "Missed call";
-  @override
-  String get missedVideoCall => "Missed video call";
-  @override
-  String get myCompletedTasks => "Completed Tasks";
-  @override
-  String get myPendingTasks => "Pending Tasks";
-  @override
-  String get newChatTooltip => "New Chat";
-  @override
-  String get newServerTooltip => "New Server";
-  @override
-  String get noCompletedTasksFound => "No completed tasks";
-  @override
-  String get noMessagesYet => "No messages yet";
-  @override
-  String get noPendingTasksFound => "No pending tasks";
-  @override
-  String get notInFavorites => "Not in favorites";
-  @override
-  String get outgoingCallUnanswered => "Outgoing call unanswered";
-  @override
-  String get outgoingVideoCall => "Outgoing video call";
-  @override
-  String get outgoingVoiceCall => "Outgoing voice call";
-  @override
-  String get privateChat => "Private Chat";
-  @override
-  String get removeFromFavs => "Remove from Favorites";
-  @override
-  String get repliedMessage => "Replied Message";
-  @override
-  String get reply => "Reply";
-  @override
-  String get securitySettings => "Security Settings";
-  @override
-  String get serverCreateGenericError => "Failed to create server";
-  @override
-  String get serverCreatedSuccess => "Server created successfully";
-  @override
-  String get serverLimitDaily => "Daily server limit reached";
-  @override
-  String get serverLimitReached => "Server limit reached";
-  @override
-  String get serverNameHint => "Enter server name";
-  @override
-  String get serverNameLabel => "Server Name";
-  @override
-  String get serverNameMinLength => "Name too short";
-  @override
-  String get serverNameRequired => "Name required";
-  @override
-  String get serverNameTooShort => "Name too short";
-  @override
-  String get serverPasswordHint => "Enter password";
-  @override
-  String get serverPasswordLabel => "Server Password";
-  @override
-  String get servers => "Servers";
-  @override
-  String get speakerSet => "Speaker set";
-  @override
-  String get starred => "Starred";
-  @override
-  String get statusFailed => "Status failed";
-  @override
-  String get taskOverview => "Task Overview";
-  @override
-  String taskOverviewAnnouncement(int total, int completed, int pending) => "";
-  @override
-  String taskOverviewStatsLabel(int total, int completed, int pending) => "";
-  @override
-  String get total => "Total";
-  @override
-  String get unnamedChat => "Unnamed Chat";
-  @override
-  String get unreadMessageSuffix => "unread";
-  @override
-  String get videoCall => "Video Call";
-  @override
-  String get voiceCall => "Voice Call";
-  @override
-  String get voiceSentStatus => "Voice sent";
-  @override
-  String get yourVoiceMessage => "Your voice message";
 }
