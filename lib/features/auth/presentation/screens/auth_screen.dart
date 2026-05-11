@@ -122,6 +122,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 
   Future<void> _authenticate() async {
+    final lang = ref.read(localizationProvider);
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
@@ -162,6 +163,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           await NotificationService().syncWithServer();
         } on ClientException catch (signUpError) {
           if (mounted) {
+            final lang = ref.read(localizationProvider);
             String errorMessage = lang.registerError;
             if (signUpError.response.isNotEmpty && signUpError.response['data'] != null) {
               final data = signUpError.response['data'] as Map<String, dynamic>;
@@ -194,6 +196,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         }
       } else {
         if (mounted) {
+          final lang = ref.read(localizationProvider);
           String errorMessage = lang.loginError;
           if (e.response.isNotEmpty && e.response['message'] != null) {
             if (e.response['message'].toString().contains('Failed to authenticate')) {
@@ -212,6 +215,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final lang = ref.read(localizationProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${lang.error}: $e')),
         );
