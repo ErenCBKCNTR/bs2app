@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:blind_social/core/services/settings_service.dart';
 import 'package:vibration/vibration.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/localization_provider.dart';
 
-class NotificationSettingsScreen extends StatefulWidget {
+class NotificationSettingsScreen extends ConsumerStatefulWidget {
   const NotificationSettingsScreen({super.key});
 
   @override
-  State<NotificationSettingsScreen> createState() => _NotificationSettingsScreenState();
+  ConsumerState<NotificationSettingsScreen> createState() => _NotificationSettingsScreenState();
 }
 
-class _NotificationSettingsScreenState extends State<NotificationSettingsScreen> {
+class _NotificationSettingsScreenState extends ConsumerState<NotificationSettingsScreen> {
   final _settingsService = SettingsService();
   bool _isLoading = true;
 
@@ -36,24 +38,25 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Bildirim Ayarları')),
+        appBar: AppBar(title: Text(lang.notifications)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bildirim Ayarları'),
+        title: Text(lang.notifications),
       ),
       body: ListView(
         children: [
-          _buildSectionHeader('Mesaj Bildirimleri'),
+          _buildSectionHeader(lang.messageNotifications),
           SwitchListTile(
             secondary: const Icon(Icons.volume_up),
-            title: const Text('Ses'),
-            subtitle: const Text('Yeni mesaj geldiğinde ses çal'),
+            title: Text(lang.sound),
+            subtitle: Text(lang.messageSoundSubtitle),
             value: _settingsService.messageSoundEnabled,
             onChanged: (val) async {
               await _settingsService.setMessageSoundEnabled(val);
@@ -62,8 +65,8 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           ),
           SwitchListTile(
             secondary: const Icon(Icons.vibration),
-            title: const Text('Titreşim'),
-            subtitle: const Text('Yeni mesaj geldiğinde titreşim ver'),
+            title: Text(lang.vibration),
+            subtitle: Text(lang.messageVibrationSubtitle),
             value: _settingsService.messageVibrationEnabled,
             onChanged: (val) async {
               await _settingsService.setMessageVibrationEnabled(val);
@@ -72,11 +75,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             },
           ),
           const Divider(),
-          _buildSectionHeader('Arama Bildirimleri'),
+          _buildSectionHeader(lang.callNotifications),
           SwitchListTile(
             secondary: const Icon(Icons.ring_volume),
-            title: const Text('Zil Sesi'),
-            subtitle: const Text('Gelen aramalarda zil sesi çal'),
+            title: Text(lang.ringtone),
+            subtitle: Text(lang.callSoundSubtitle),
             value: _settingsService.callSoundEnabled,
             onChanged: (val) async {
               await _settingsService.setCallSoundEnabled(val);
@@ -85,8 +88,8 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           ),
           SwitchListTile(
             secondary: const Icon(Icons.vibration),
-            title: const Text('Titreşim'),
-            subtitle: const Text('Gelen aramalarda titreşim ver'),
+            title: Text(lang.vibration),
+            subtitle: Text(lang.callVibrationSubtitle),
             value: _settingsService.callVibrationEnabled,
             onChanged: (val) async {
               await _settingsService.setCallVibrationEnabled(val);

@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:blind_social/features/profile/data/services/feedback_service.dart';
 import 'package:blind_social/core/utils/performance_monitor.dart';
 import 'package:blind_social/core/utils/logger.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/localization_provider.dart';
 import 'dart:async';
 
-class FeedbackScreen extends StatefulWidget {
+class FeedbackScreen extends ConsumerStatefulWidget {
   const FeedbackScreen({super.key});
 
   @override
-  State<FeedbackScreen> createState() => _FeedbackScreenState();
+  ConsumerState<FeedbackScreen> createState() => _FeedbackScreenState();
 }
 
-class _FeedbackScreenState extends State<FeedbackScreen> {
+class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   final _formKey = GlobalKey<FormState>();
   final _subjectController = TextEditingController();
   final _messageController = TextEditingController();
@@ -35,6 +37,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   }
 
   Future<void> _submitFeedback() async {
+    final lang = ref.read(localizationProvider);
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSending = true);
@@ -71,7 +74,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       setState(() => _isSending = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata oluştu: $e')),
+          SnackBar(content: Text('${lang.error}: $e')),
         );
       }
     }
@@ -79,6 +82,15 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
+    final List<Map<String, String>> categories = [
+      {'value': 'Request', 'label': lang.feedbackRequest},
+      {'value': 'Suggestion', 'label': lang.feedbackSuggestion},
+      {'value': 'Complaint', 'label': lang.feedbackComplaint},
+      {'value': 'Thank you', 'label': lang.feedbackThankYou},
+      {'value': 'Other', 'label': lang.feedbackOther},
+    ];
+
     if (_isSuccess) {
       return Scaffold(
         body: Center(
@@ -89,21 +101,21 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               children: [
                 const Icon(Icons.check_circle_outline, size: 80, color: Colors.green),
                 const SizedBox(height: 24),
-                const Text(
-                  'Geri Bildiriminiz Alınmıştır',
+                Text(
+                  lang.feedbackReceived,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Uygulamamızı geliştirmemize yardımcı olduğunuz için teşekkür ederiz. 5 saniye içinde ana sayfaya yönlendirileceksiniz.',
+                Text(
+                  lang.feedbackThanksRedirect,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  style: const TextStyle(fontSize: 16, color: Colors.grey),
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
-                  child: const Text('Hemen Dön'),
+                  child: Text(lang.returnNow),
                 ),
               ],
             ),
@@ -114,7 +126,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('İstek, Öneri ve Şikayet'),
+        title: Text(lang.feedback),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -123,20 +135,20 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Size daha iyi hizmet verebilmemiz için lütfen görüşlerinizi bizimle paylaşın.',
-                style: TextStyle(color: Colors.grey),
+              Text(
+                lang.feedbackPrompt,
+                style: const TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 24),
               Semantics(
-                hint: 'Seçenekleri görmek ve değiştirmek için çift tıklayın',
+                hint: lang.dropdownAccessibilityHint,
                 child: DropdownButtonFormField<String>(
                   value: _selectedCategory,
-                  decoration: const InputDecoration(
-                    labelText: 'Kategori Seçin',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: lang.selectCategory,
+                    border: const OutlineInputBorder(),
                   ),
-                  items: _categories.map((cat) {
+                  items: categories.map((cat) {
                     return DropdownMenuItem(
                       value: cat['value'],
                       child: Text(cat['label']!),
@@ -151,15 +163,15 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               TextFormField(
                 controller: _subjectController,
                 maxLength: 100,
-                decoration: const InputDecoration(
-                  labelText: 'Konu Başlığı',
-                  hintText: 'Bildiriminizin konusunu kısaca belirtin',
-                  border: OutlineInputBorder(),
-                  counterText: "Maksimum 100 karakter",
+                decoration: InputDecoration(
+                  labelText: lang.subjectTitle,
+                  hintText: lang.subjectHint,
+                  border: const OutlineInputBorder(),
+                  counterText: lang.maxCharacters100,
                 ),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) return 'Lütfen bir konu başlığı girin';
-                  if (value.trim().length < 3) return 'Konu başlığı çok kısa';
+                  if (value == null || value.trim().isEmpty) return lang.enterSubject;
+                  if (value.trim().length < 3) return lang.subjectTooShort;
                   return null;
                 },
               ),
@@ -168,15 +180,15 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 controller: _messageController,
                 maxLength: 1000,
                 maxLines: 6,
-                decoration: const InputDecoration(
-                  labelText: 'Mesajınız',
-                  hintText: 'Detaylı mesajınızı buraya yazabilirsiniz...',
-                  border: OutlineInputBorder(),
-                  counterText: "Maksimum 1000 karakter",
+                decoration: InputDecoration(
+                  labelText: lang.yourMessage,
+                  hintText: lang.messageHint,
+                  border: const OutlineInputBorder(),
+                  counterText: lang.maxCharacters1000,
                 ),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) return 'Lütfen mesajınızı girin';
-                  if (value.trim().length < 10) return 'Mesajınız en az 10 karakter olmalıdır';
+                  if (value == null || value.trim().isEmpty) return lang.enterMessage;
+                  if (value.trim().length < 10) return lang.messageTooShort;
                   return null;
                 },
               ),
@@ -191,7 +203,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   ),
                   child: _isSending
                       ? const CircularProgressIndicator()
-                      : const Text('Bildirimi Gönder', style: TextStyle(fontWeight: FontWeight.bold)),
+                      : Text(lang.sendFeedback, style: const TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ),
             ],

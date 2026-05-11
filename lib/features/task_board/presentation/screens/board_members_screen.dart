@@ -3,18 +3,20 @@ import 'package:flutter/semantics.dart';
 import 'package:blind_social/features/task_board/data/models/task_board.dart';
 import 'package:blind_social/features/task_board/data/services/task_board_service.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 
-class BoardMembersScreen extends StatefulWidget {
+class BoardMembersScreen extends ConsumerStatefulWidget {
   final TaskBoard board;
   final TaskBoardService service;
 
   const BoardMembersScreen({Key? key, required this.board, required this.service}) : super(key: key);
 
   @override
-  State<BoardMembersScreen> createState() => _BoardMembersScreenState();
+  ConsumerState<BoardMembersScreen> createState() => _BoardMembersScreenState();
 }
 
-class _BoardMembersScreenState extends State<BoardMembersScreen> {
+class _BoardMembersScreenState extends ConsumerState<BoardMembersScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   bool _isLoading = true;
   TaskBoard? _board;
@@ -32,6 +34,7 @@ class _BoardMembersScreenState extends State<BoardMembersScreen> {
 
   Future<void> _fetchMembers() async {
     setState(() => _isLoading = true);
+    final lang = ref.read(localizationProvider);
     try {
       final updatedRecord = await PocketBaseService.client.collection('task_boards').getOne(_board!.id);
       _board = TaskBoard.fromRecord(updatedRecord);
@@ -56,12 +59,13 @@ class _BoardMembersScreenState extends State<BoardMembersScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
       setState(() => _isLoading = false);
     }
   }
 
   Future<void> _toggleEditPermission(String memberId) async {
+    final lang = ref.read(localizationProvider);
     try {
       List<String> editors = List.from(_board!.editors);
       bool isEditor = editors.contains(memberId);
@@ -77,24 +81,25 @@ class _BoardMembersScreenState extends State<BoardMembersScreen> {
       setState(() {
         _board = TaskBoard.fromRecord(updatedRecord);
       });
-      SemanticsService.announce(isEditor ? "Kullanıcının düzenleme yetkisi alındı" : "Kullanıcıya düzenleme yetkisi verildi", TextDirection.ltr);
+      SemanticsService.announce(isEditor ? lang.editPermissionRemoved : lang.editPermissionSuccess, TextDirection.ltr);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Yetki değiştirilemedi: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.failedToChangePermission}: $e')));
     }
   }
 
   Future<void> _removeMember(String memberId, String memberName) async {
+    final lang = ref.read(localizationProvider);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Üyeyi Çıkar'),
-        content: Text('$memberName isimli üyeyi panodan çıkarmak istediğinize emin misiniz?'),
+        title: Text(lang.removeMember),
+        content: Text('$memberName ${lang.removeMemberConfirm}'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hayır')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(lang.no)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Evet', style: TextStyle(color: Colors.white)),
+            child: Text(lang.yes, style: const TextStyle(color: Colors.white)),
           )
         ],
       )
@@ -112,24 +117,25 @@ class _BoardMembersScreenState extends State<BoardMembersScreen> {
           _board = TaskBoard.fromRecord(updatedRecord);
           _members.removeWhere((m) => m['id'] == memberId);
         });
-        SemanticsService.announce("$memberName isimli üye panodan çıkarıldı", TextDirection.ltr);
+        SemanticsService.announce("$memberName ${lang.removeMemberSuccess}", TextDirection.ltr);
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Üye çıkarılamadı: $e')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.failedToRemoveMember}: $e')));
       }
     }
   }
 
   Future<void> _askToggleEditPermission(String memberId, String memberName, bool isEditor) async {
+    final lang = ref.read(localizationProvider);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Yetki Düzenle'),
-        content: Text(isEditor ? '$memberName isimli kullanıcının düzenleme yetkisini almak istiyor musunuz?' : '$memberName isimli kullanıcıya düzenleme yetkisi vermek istiyor musunuz?'),
+        title: Text(lang.editPermission),
+        content: Text(isEditor ? '$memberName ${lang.takeEditPermissionConfirm}' : '$memberName ${lang.giveEditPermissionConfirm}'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hayır')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(lang.no)),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Evet'),
+            child: Text(lang.yes),
           )
         ],
       )
@@ -141,6 +147,7 @@ class _BoardMembersScreenState extends State<BoardMembersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     final isOwner = _currentUserId == _board?.ownerId;
     final query = _searchCtrl.text.toLowerCase();
     
@@ -155,7 +162,7 @@ class _BoardMembersScreenState extends State<BoardMembersScreen> {
       appBar: AppBar(
         title: Focus(
           autofocus: true,
-          child: const Text('Panoya Bağlı Kullanıcılar'),
+          child: Text(lang.boardMembersTitle),
         ),
       ),
       body: SafeArea(
@@ -167,7 +174,7 @@ class _BoardMembersScreenState extends State<BoardMembersScreen> {
                 controller: _searchCtrl,
                 onChanged: (v) => setState(() {}),
                 decoration: InputDecoration(
-                  hintText: 'E-posta veya kullanıcı adı ara',
+                  hintText: lang.searchMemberHint,
                   prefixIcon: const Icon(Icons.search),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -183,17 +190,17 @@ class _BoardMembersScreenState extends State<BoardMembersScreen> {
                       child: ListTile(
                         leading: const CircleAvatar(child: Icon(Icons.person)),
                         title: Text(_ownerData!['full_name']?.toString().isNotEmpty == true ? _ownerData!['full_name'] : _ownerData!['username']),
-                        subtitle: const Text('Pano Sahibi', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                        subtitle: Text(lang.boardOwner, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
                       ),
                     ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text('Kullanıcılar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text(lang.members, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                   if (filteredMembers.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Text('Başka üye bulunamadı.'),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(lang.noOtherMembers),
                     ),
                   ...filteredMembers.map((m) {
                     final memberId = m['id'];
@@ -203,28 +210,28 @@ class _BoardMembersScreenState extends State<BoardMembersScreen> {
                     return Card(
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       child: Semantics(
-                        label: '$mName. Yetkisi: ${isEditor ? "Panoyu Düzenleyebilir" : "Sadece Görüntüleyebilir"}. Yönetici seçenekleri için parmağınızı yukarı ya da aşağı kaydırın.',
+                        label: '$mName. ${lang.permission}: ${isEditor ? lang.canEditBoard : lang.canOnlyViewBoard}. ${lang.taskOptionsHint}',
                         button: true,
                         customSemanticsActions: {
-                          if (isOwner) CustomSemanticsAction(label: isEditor ? 'Düzenleme Yetkisini Al' : 'Düzenleme Yetkisi Ver'): () => _askToggleEditPermission(memberId, mName, isEditor),
-                          if (isOwner) const CustomSemanticsAction(label: 'Kullanıcıyı Panodan Çıkar'): () => _removeMember(memberId, mName),
+                          if (isOwner) CustomSemanticsAction(label: isEditor ? lang.takeEditPermissionConfirm : lang.giveEditPermissionConfirm): () => _askToggleEditPermission(memberId, mName, isEditor),
+                          if (isOwner) CustomSemanticsAction(label: lang.removeMember): () => _removeMember(memberId, mName),
                         },
                         child: ExcludeSemantics(
                           child: ListTile(
                             leading: const CircleAvatar(child: Icon(Icons.person)),
                             title: Text(mName),
-                            subtitle: Text(isEditor ? "Panoyu Düzenleyebilir" : "Sadece Görüntüleyebilir"),
+                            subtitle: Text(isEditor ? lang.canEditBoard : lang.canOnlyViewBoard),
                             trailing: isOwner ? Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
                                   icon: const Icon(Icons.edit),
-                                  tooltip: 'Yetkiyi Düzenle',
+                                  tooltip: lang.editPermission,
                                   onPressed: () => _askToggleEditPermission(memberId, mName, isEditor),
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.delete, color: Colors.red),
-                                  tooltip: 'Üyeyi Çıkar',
+                                  tooltip: lang.removeMember,
                                   onPressed: () => _removeMember(memberId, mName),
                                 )
                               ],

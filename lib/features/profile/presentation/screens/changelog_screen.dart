@@ -1,26 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/admin/data/services/admin_service.dart';
+import '../../../../core/providers/localization_provider.dart';
 
-class ChangelogScreen extends StatelessWidget {
+class ChangelogScreen extends ConsumerWidget {
   const ChangelogScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(localizationProvider);
     if (!AdminService().isAdmin()) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Erişim Engellendi')),
-        body: const Center(child: Text('Bu sayfayı görüntüleme yetkiniz yok.')),
+        appBar: AppBar(title: Text(lang.accessDenied)),
+        body: Center(child: Text(lang.noPermissionView)),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sürüm Notları'),
+        title: Text(lang.changelog),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _buildVersionSection(
+            lang: lang,
             version: '1.7.8',
             date: '8 Mayıs 2026',
             changes: [
@@ -35,6 +39,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.7.7',
             date: '2 Mayıs 2026',
             changes: [
@@ -46,6 +51,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.7.6',
             date: '2 Mayıs 2026',
             changes: [
@@ -58,6 +64,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.7.5',
             date: '30 Nisan 2026',
             changes: [
@@ -70,6 +77,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.7.4',
             date: '30 Nisan 2026',
             changes: [
@@ -83,6 +91,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.7.3',
             date: '30 Nisan 2026',
             changes: [
@@ -92,6 +101,7 @@ class ChangelogScreen extends StatelessWidget {
             ],
           ),
           _buildVersionSection(
+            lang: lang,
             version: '1.7.2',
             date: '30 Nisan 2026',
             changes: [
@@ -108,6 +118,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.7.1',
             date: '30 Nisan 2026',
             changes: [
@@ -121,6 +132,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.7.0',
             date: '29 Nisan 2026',
             changes: [
@@ -135,6 +147,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.6.4',
             date: '26 Nisan 2026',
             changes: [
@@ -148,6 +161,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.6.3',
             date: '23 Nisan 2026',
             changes: [
@@ -161,6 +175,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.4.0',
             date: '23 Nisan 2026',
             changes: [
@@ -171,6 +186,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.3.1',
             date: '23 Nisan 2026',
             changes: [
@@ -180,6 +196,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.3.0',
             date: '23 Nisan 2026',
             changes: [
@@ -189,6 +206,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.2.9',
             date: '23 Nisan 2026',
             changes: [
@@ -197,6 +215,7 @@ class ChangelogScreen extends StatelessWidget {
             ],
           ),
           _buildVersionSection(
+            lang: lang,
             version: '1.2.8',
             date: '23 Nisan 2026',
             changes: [
@@ -205,6 +224,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.2.4',
             date: '23 Nisan 2026',
             changes: [
@@ -214,6 +234,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.2.0',
             date: '23 Nisan 2026',
             changes: [
@@ -225,6 +246,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.1.0',
             date: '22 Nisan 2026',
             changes: [
@@ -235,6 +257,7 @@ class ChangelogScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildVersionSection(
+            lang: lang,
             version: '1.0.0',
             date: '15 Nisan 2026',
             changes: [
@@ -250,6 +273,7 @@ class ChangelogScreen extends StatelessWidget {
   }
 
   Widget _buildVersionSection({
+    required BaseLanguage lang,
     required String version,
     required String date,
     required List<String> changes,
@@ -276,9 +300,9 @@ class ChangelogScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.blue),
                 ),
-                child: const Text(
-                  'En Yeni',
-                  style: TextStyle(
+                child: Text(
+                  lang.latest,
+                  style: const TextStyle(
                     color: Colors.blue,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,

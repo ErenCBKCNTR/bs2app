@@ -4,15 +4,17 @@ import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/features/task_board/data/models/task_item.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/core/utils/pb_cache_manager.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/localization_provider.dart';
 
-class TaskOverviewScreen extends StatefulWidget {
+class TaskOverviewScreen extends ConsumerStatefulWidget {
   const TaskOverviewScreen({super.key});
 
   @override
-  State<TaskOverviewScreen> createState() => _TaskOverviewScreenState();
+  ConsumerState<TaskOverviewScreen> createState() => _TaskOverviewScreenState();
 }
 
-class _TaskOverviewScreenState extends State<TaskOverviewScreen> {
+class _TaskOverviewScreenState extends ConsumerState<TaskOverviewScreen> {
   bool _isLoading = true;
   List<TaskItem> _tasks = [];
   final FocusNode _titleFocusNode = FocusNode();
@@ -30,6 +32,7 @@ class _TaskOverviewScreenState extends State<TaskOverviewScreen> {
   }
 
   Future<void> _fetchTasks() async {
+    final lang = ref.read(localizationProvider);
     final userId = PocketBaseService.client.authStore.model?.id;
     if (userId == null) {
       if (mounted) setState(() => _isLoading = false);
@@ -73,7 +76,7 @@ class _TaskOverviewScreenState extends State<TaskOverviewScreen> {
         final int pendingTasksCount = tasks.where((t) => !t.isCompleted).length;
 
         // Otomatik sesli okuma için semantik duyurusu (Announce)
-        final String announcement = "Görev Özeti ve Geçmişi sayfası. Toplam ${tasks.length} görev içerisinde, $completedTasksCount adet tamamlanan, $pendingTasksCount adet bekleyen görev bulunuyor.";
+        final String announcement = lang.taskOverviewAnnouncement(tasks.length, completedTasksCount, pendingTasksCount);
         Future.delayed(const Duration(milliseconds: 500), () {
           SemanticsService.announce(announcement, TextDirection.ltr);
         });
@@ -91,9 +94,10 @@ class _TaskOverviewScreenState extends State<TaskOverviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Görev Özeti ve Geçmişi')),
+        appBar: AppBar(title: Text(lang.taskOverview)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -105,7 +109,7 @@ class _TaskOverviewScreenState extends State<TaskOverviewScreen> {
       appBar: AppBar(
         title: Focus(
           focusNode: _titleFocusNode,
-          child: const Text('Görev Özeti ve Geçmişi')
+          child: Text(lang.taskOverview)
         ),
       ),
       body: SafeArea(
@@ -115,7 +119,7 @@ class _TaskOverviewScreenState extends State<TaskOverviewScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Semantics(
-                label: 'Genel İstatistikler. Toplam ${_tasks.length} görev içerisinde, ${completedTasks.length} adet tamamlanan ve ${pendingTasks.length} adet bekleyen görev bulunuyor',
+                label: lang.taskOverviewStatsLabel(_tasks.length, completedTasks.length, pendingTasks.length),
                 child: ExcludeSemantics(
                   child: Card(
                     color: Colors.blue.shade900,
@@ -123,14 +127,14 @@ class _TaskOverviewScreenState extends State<TaskOverviewScreen> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          const Text('Genel İstatistikler', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                          Text(lang.generalStats, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
                           const SizedBox(height: 16),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              _buildStatItem('Toplam', _tasks.length.toString(), Colors.blue),
-                              _buildStatItem('Tamamlanan', completedTasks.length.toString(), Colors.green),
-                              _buildStatItem('Bekleyen', pendingTasks.length.toString(), Colors.orange),
+                              _buildStatItem(lang.total, _tasks.length.toString(), Colors.blue),
+                              _buildStatItem(lang.completed, completedTasks.length.toString(), Colors.green),
+                              _buildStatItem(lang.pending, pendingTasks.length.toString(), Colors.orange),
                             ],
                           ),
                         ],
@@ -140,18 +144,18 @@ class _TaskOverviewScreenState extends State<TaskOverviewScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text('Bekleyen Görevlerim', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(lang.myPendingTasks, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               if (pendingTasks.isEmpty)
-                const Text('Bekleyen göreviniz bulunmuyor.', style: TextStyle(color: Colors.grey))
+                Text(lang.noPendingTasksFound, style: const TextStyle(color: Colors.grey))
               else
                 ...pendingTasks.map((t) => _buildTaskTile(t)).toList(),
                 
               const SizedBox(height: 24),
-              const Text('Geçmiş (Tamamlanan) Görevlerim', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(lang.myCompletedTasks, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               if (completedTasks.isEmpty)
-                const Text('Hiç tamamlanmış göreviniz bulunmuyor.', style: TextStyle(color: Colors.grey))
+                Text(lang.noCompletedTasksFound, style: const TextStyle(color: Colors.grey))
               else
                 ...completedTasks.map((t) => _buildTaskTile(t)).toList(),
             ],
@@ -171,16 +175,18 @@ class _TaskOverviewScreenState extends State<TaskOverviewScreen> {
   }
 
   Widget _buildTaskTile(TaskItem task) {
+    final lang = ref.watch(localizationProvider);
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
         leading: Icon(task.isCompleted ? Icons.check_circle : Icons.pending, color: task.isCompleted ? Colors.green : Colors.orange),
         title: Text(task.title, style: TextStyle(decoration: task.isCompleted ? TextDecoration.lineThrough : null)),
         subtitle: Text(
-          'Oluşturulma: ${task.created.day}/${task.created.month}/${task.created.year}',
+          '${lang.joined}: ${task.created.day}/${task.created.month}/${task.created.year}',
           style: const TextStyle(fontSize: 12),
         ),
       ),
     );
   }
 }
+

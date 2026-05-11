@@ -6,16 +6,18 @@ import 'package:blind_social/features/task_board/data/services/task_board_servic
 import 'package:blind_social/core/widgets/chat_input_field.dart';
 import 'dart:async';
 import 'package:just_audio/just_audio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/localization_provider.dart';
 
-class TaskCommentsWidget extends StatefulWidget {
+class TaskCommentsWidget extends ConsumerStatefulWidget {
   final String taskId;
   const TaskCommentsWidget({super.key, required this.taskId});
 
   @override
-  State<TaskCommentsWidget> createState() => _TaskCommentsWidgetState();
+  ConsumerState<TaskCommentsWidget> createState() => _TaskCommentsWidgetState();
 }
 
-class _TaskCommentsWidgetState extends State<TaskCommentsWidget> {
+class _TaskCommentsWidgetState extends ConsumerState<TaskCommentsWidget> {
   final TaskBoardService _service = TaskBoardService();
   List<TaskComment> _comments = [];
   bool _isLoading = true;
@@ -59,16 +61,17 @@ class _TaskCommentsWidgetState extends State<TaskCommentsWidget> {
   }
 
   Future<void> _deleteComment(TaskComment comment) async {
+    final lang = ref.read(localizationProvider);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Mesajı Sil'),
-        content: const Text('Bu mesajı silmek istediğinize emin misiniz?'),
+        title: Text(lang.deleteComment),
+        content: Text(lang.deleteCommentConfirm),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(lang.cancel)),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sil', style: TextStyle(color: Colors.red)),
+            child: Text(lang.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -80,39 +83,42 @@ class _TaskCommentsWidgetState extends State<TaskCommentsWidget> {
         setState(() {
           _comments.removeWhere((c) => c.id == comment.id);
         });
-        SemanticsService.announce('Mesaj silindi', TextDirection.ltr);
+        SemanticsService.announce(lang.commentDeleted, TextDirection.ltr);
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Silinirken hata oluştu: $e')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
       }
     }
   }
 
   Future<void> _sendText(String text) async {
+    final lang = ref.read(localizationProvider);
     try {
       final cnd = await _service.createComment(widget.taskId, text);
       setState(() {
         _comments.insert(0, cnd);
       });
-      SemanticsService.announce("Mesaj gönderildi", TextDirection.ltr);
+      SemanticsService.announce(lang.commentSent, TextDirection.ltr);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
     }
   }
 
   Future<void> _sendVoice(String path) async {
+    final lang = ref.read(localizationProvider);
     try {
-      SemanticsService.announce("Ses mesajı gönderiliyor, lütfen bekleyin", TextDirection.ltr);
+      SemanticsService.announce(lang.sendingVoiceComment, TextDirection.ltr);
       final cnd = await _service.createVoiceComment(widget.taskId, path);
       setState(() {
         _comments.insert(0, cnd);
       });
-      SemanticsService.announce("Sesli mesaj başarıyla gönderildi", TextDirection.ltr);
+      SemanticsService.announce(lang.voiceCommentSent, TextDirection.ltr);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
     }
   }
 
   void _playVoice(TaskComment comment) async {
+    final lang = ref.read(localizationProvider);
     if (comment.voiceNote.isEmpty) return;
     try {
       if (_playingCommentId == comment.id) {
@@ -126,19 +132,20 @@ class _TaskCommentsWidgetState extends State<TaskCommentsWidget> {
       await _audioPlayer.setUrl(url);
       await _audioPlayer.play();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     if (_isLoading) return const Center(child: CircularProgressIndicator());
 
     return Column(
         children: [
           Expanded(
             child: _comments.isEmpty
-              ? const Center(child: Text('Henüz mesaj yok. İlk mesajı siz gönderin.', style: TextStyle(color: Colors.grey)))
+              ? Center(child: Text(lang.noComments, style: const TextStyle(color: Colors.grey)))
               : ListView.builder(
 addAutomaticKeepAlives: false,
 addRepaintBoundaries: true,
@@ -157,7 +164,7 @@ addRepaintBoundaries: true,
                       child: Semantics(
                         customSemanticsActions: {
                            if (isMe)
-                             const CustomSemanticsAction(label: 'Sil'): () => _deleteComment(c),
+                             CustomSemanticsAction(label: lang.deleteComment): () => _deleteComment(c),
                         },
                         child: GestureDetector(
                           onLongPress: isMe ? () => _deleteComment(c) : null,
@@ -183,7 +190,7 @@ addRepaintBoundaries: true,
                                 ],
                                 if (hasVoice)
                                   Semantics(
-                                    label: "Sesli Mesaj. ${isPlaying ? 'Durdurmak için dokunun' : 'Oynatmak için dokunun'}",
+                                    label: "${lang.voiceMessage}. ${isPlaying ? lang.stopVoiceMessage : lang.playVoiceMessage}",
                                     button: true,
                                     child: InkWell(
                                       onTap: () => _playVoice(c),
@@ -192,7 +199,7 @@ addRepaintBoundaries: true,
                                         children: [
                                           Icon(isPlaying ? Icons.stop : Icons.play_arrow, color: Colors.white),
                                           const SizedBox(width: 8),
-                                          const Text('Sesli Mesaj', style: TextStyle(color: Colors.white)),
+                                          Text(lang.voiceMessage, style: const TextStyle(color: Colors.white)),
                                         ],
                                       ),
                                     ),

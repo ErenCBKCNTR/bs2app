@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/settings_service.dart';
 import '../../../../core/services/pocketbase_service.dart';
+import '../../../../core/providers/localization_provider.dart';
 
-class PrivacySettingsScreen extends StatefulWidget {
+class PrivacySettingsScreen extends ConsumerStatefulWidget {
   const PrivacySettingsScreen({super.key});
 
   @override
-  State<PrivacySettingsScreen> createState() => _PrivacySettingsScreenState();
+  ConsumerState<PrivacySettingsScreen> createState() => _PrivacySettingsScreenState();
 }
 
-class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
+class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
   final SettingsService _settingsService = SettingsService();
   bool _showOnLockScreen = false;
   bool _screenProtection = true;
@@ -78,9 +80,10 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gizlilik Ayarları'),
+        title: Text(lang.privacy),
       ),
       body: _isLoadingPbSettings 
         ? const Center(child: CircularProgressIndicator()) 
@@ -88,8 +91,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         children: [
           SwitchListTile(
             secondary: const Icon(Icons.security),
-            title: const Text('Ekran Kaydı Koruması'),
-            subtitle: const Text('Uygulama içinde ekran görüntüsü alınmasını ve kaydedilmesini engeller'),
+            title: Text(lang.screenProtection),
+            subtitle: Text(lang.screenProtectionSubtitle),
             value: _screenProtection,
             onChanged: (bool value) async {
               await _settingsService.setScreenProtectionEnabled(value);
@@ -101,8 +104,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           const Divider(),
           SwitchListTile(
             secondary: const Icon(Icons.screen_lock_portrait),
-            title: const Text('Kilit Ekranında Göster'),
-            subtitle: const Text('Ekran kilitliyken bile uygulama görünür kalır'),
+            title: Text(lang.showOnLockScreen),
+            subtitle: Text(lang.showOnLockScreenSubtitle),
             value: _showOnLockScreen,
             onChanged: (bool value) async {
               await _settingsService.setShowOnLockScreenEnabled(value);
@@ -114,18 +117,18 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.badge),
-            title: const Text('İsim Soyisim Bilgisi'),
-            subtitle: const Text('Bu bilgiyi kimlerin görebileceğini seçin'),
+            title: Text(lang.fullnamePrivacy),
+            subtitle: Text(lang.whoCanSeeThis),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Semantics(
-              label: 'İsim soyisim gizlilik ayarı',
+              label: lang.fullnamePrivacySemantics,
               child: SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'everyone', label: Text('Herkes'), icon: Icon(Icons.public)),
-                  ButtonSegment(value: 'friends', label: Text('Arkadaşlar'), icon: Icon(Icons.people)),
-                  ButtonSegment(value: 'none', label: Text('Hiç Kimse'), icon: Icon(Icons.lock)),
+                segments: [
+                  ButtonSegment(value: 'everyone', label: Text(lang.everyone), icon: const Icon(Icons.public)),
+                  ButtonSegment(value: 'friends', label: Text(lang.friends), icon: const Icon(Icons.people)),
+                  ButtonSegment(value: 'none', label: Text(lang.nobody), icon: const Icon(Icons.lock)),
                 ],
                 selected: {_fullnamePrivacy},
                 onSelectionChanged: (Set<String> newSelection) {
@@ -141,8 +144,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           const Divider(),
           SwitchListTile(
             secondary: const Icon(Icons.visibility),
-            title: const Text('Son Görülme Bilgisi'),
-            subtitle: const Text('Diğer kullanıcıların son görülme zamanınızı görmesine izin verin'),
+            title: Text(lang.lastSeen),
+            subtitle: Text(lang.lastSeenSubtitle),
             value: !_hideLastSeen,
             onChanged: (bool value) {
               setState(() {
@@ -154,18 +157,18 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.cake),
-            title: const Text('Doğum Tarihi'),
-            subtitle: const Text('Bu bilgiyi kimlerin görebileceğini seçin'),
+            title: Text(lang.birthday),
+            subtitle: Text(lang.whoCanSeeThis),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Semantics(
-              label: 'Doğum tarihi gizlilik ayarı',
+              label: lang.birthdayPrivacySemantics,
               child: SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'everyone', label: Text('Herkes'), icon: Icon(Icons.public)),
-                  ButtonSegment(value: 'friends', label: Text('Arkadaşlar'), icon: Icon(Icons.people)),
-                  ButtonSegment(value: 'none', label: Text('Hiç Kimse'), icon: Icon(Icons.lock)),
+                segments: [
+                  ButtonSegment(value: 'everyone', label: Text(lang.everyone), icon: const Icon(Icons.public)),
+                  ButtonSegment(value: 'friends', label: Text(lang.friends), icon: const Icon(Icons.people)),
+                  ButtonSegment(value: 'none', label: Text(lang.nobody), icon: const Icon(Icons.lock)),
                 ],
                 selected: {_birthdayPrivacy},
                 onSelectionChanged: (Set<String> newSelection) {
@@ -179,11 +182,11 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
             ),
           ),
           const Divider(),
-          const Padding(
-            padding: EdgeInsets.all(16.0),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Text(
-              'Gizlilik ayarları uygulama güvenliğinizi ve kişisel verilerinizin korunmasını sağlar.',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+              lang.privacyFooter,
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
             ),
           ),
         ],

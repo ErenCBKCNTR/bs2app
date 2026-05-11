@@ -9,11 +9,13 @@ import 'package:blind_social/features/task_board/data/services/task_board_servic
 import 'package:blind_social/features/task_board/presentation/widgets/task_stopwatch_widget.dart';
 import 'package:blind_social/features/task_board/presentation/widgets/task_voice_notes_widget.dart';
 import 'package:blind_social/features/task_board/presentation/widgets/task_comments_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
-class TaskDetailScreen extends StatefulWidget {
+class TaskDetailScreen extends ConsumerStatefulWidget {
   final TaskItem task;
   final List<TaskListM> allLists;
 
@@ -27,7 +29,7 @@ class TaskDetailScreen extends StatefulWidget {
   State<TaskDetailScreen> createState() => _TaskDetailScreenState();
 }
 
-class _TaskDetailScreenState extends State<TaskDetailScreen> {
+class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
   final TaskBoardService _service = TaskBoardService();
   late TaskItem _task;
   List<TaskChecklist> _checklists = [];
@@ -49,20 +51,22 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   void _announceRemainingDays() {
+    final lang = ref.read(localizationProvider);
     if (_task.dueDate != null) {
       final diff = _task.dueDate!.difference(DateTime.now());
       final d = diff.inDays;
       if (d > 0) {
-        SemanticsService.announce('Bu görevin tamamlanması için $d gün kaldı.', TextDirection.ltr);
+        SemanticsService.announce(lang.remainingDays.replaceAll('{days}', d.toString()), TextDirection.ltr);
       } else if (d == 0) {
-        SemanticsService.announce('Bu görevin tamamlanması için bugün son gün.', TextDirection.ltr);
+        SemanticsService.announce(lang.todayIsLastDay, TextDirection.ltr);
       } else {
-        SemanticsService.announce('Bu görevin süresi ${d.abs()} gün gecikti.', TextDirection.ltr);
+        SemanticsService.announce(lang.overdueDays.replaceAll('{days}', d.abs().toString()), TextDirection.ltr);
       }
     }
   }
 
   Future<void> _selectDueDate() async {
+    final lang = ref.read(localizationProvider);
     final ctrl = TextEditingController();
     
     if (_task.dueDate != null) {
@@ -76,37 +80,37 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Bitiş Tarihini Belirle'),
+          title: Text(lang.setDueDateTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Semantics(
-                label: 'Bitiş tarihini gün, ay ve yıl olarak araya eğik çizgi ekleyerek giriniz. Eğik çizgi koymazsanız sistem otomatik olarak ekleyecektir. Örneğin 15082026.',
+                label: lang.dueDateHint,
                 child: TextField(
                   controller: ctrl,
                   keyboardType: TextInputType.datetime,
-                  decoration: const InputDecoration(
-                    labelText: 'Bitiş Tarihi (GG/AA/YYYY)',
-                    hintText: 'Örn: 30/12/2026 veya 30122026',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.calendar_today),
+                  decoration: InputDecoration(
+                    labelText: lang.dueDateLabel,
+                    hintText: lang.dueDateExample,
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.calendar_today),
                   ),
                 ),
               ),
               const SizedBox(height: 8),
-              const Text('Silmek için alanı boş bırakarak "Kaydet"e basabilirsiniz.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(lang.dueDateDeleteHint, style: const TextStyle(fontSize: 12, color: Colors.grey)),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context), 
-              child: const Text('İptal')
+              child: Text(lang.no)
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context, ctrl.text.trim());
               }, 
-              child: const Text('Kaydet')
+              child: Text(lang.save)
             ),
           ],
         );
@@ -134,7 +138,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         }
         
         if (selectedDate == null) {
-          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Geçersiz tarih formatı. Lütfen GG/AA/YYYY formatında giriniz.')));
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.invalidDateFormat)));
           return;
         }
       }
@@ -144,13 +148,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         final updated = await _service.updateTaskDates(_task.id, _task.startDate, selectedDate);
         setState(() => _task = updated);
         if (selectedDate != null) {
-          SemanticsService.announce('Bitiş tarihi başarıyla eklendi.', TextDirection.ltr);
+          SemanticsService.announce(lang.dueDateSuccess, TextDirection.ltr);
           _announceRemainingDays();
         } else {
-          SemanticsService.announce('Bitiş tarihi silindi.', TextDirection.ltr);
+          SemanticsService.announce(lang.dueDateDeleted, TextDirection.ltr);
         }
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
       } finally {
         if (mounted) setState(() => _isLoading = false);
       }
@@ -191,17 +195,19 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   Future<void> _fetchChecklists() async {
+    final lang = ref.read(localizationProvider);
     try {
       final items = await _service.getChecklist(_task.id);
       setState(() {
         _checklists = items;
       });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
     }
   }
 
   Future<void> _refreshTask() async {
+    final lang = ref.read(localizationProvider);
     try {
       final updatedTaskRecord = await PocketBaseService.client.collection('task_items').getOne(_task.id);
       setState(() {
@@ -209,30 +215,31 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       });
       await _fetchAssignees();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Görev yenilenemedi: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
     }
   }
 
   Future<void> _editDescription() async {
+    final lang = ref.read(localizationProvider);
     final ctrl = TextEditingController(text: _task.description);
     final isSaved = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Açıklama Düzenle'),
+          title: Text(lang.editDescription),
           content: TextField(
             controller: ctrl,
             maxLines: 5,
-            decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Açıklama giriniz...'),
+            decoration: InputDecoration(border: const OutlineInputBorder(), hintText: lang.descriptionHint),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('İptal'),
+              child: Text(lang.no),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Kaydet'),
+              child: Text(lang.save),
             ),
           ],
         );
@@ -245,14 +252,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         setState(() {
           _task = updated;
         });
-        SemanticsService.announce('Açıklama güncellendi', TextDirection.ltr);
+        SemanticsService.announce(lang.descriptionSuccess, TextDirection.ltr);
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
       }
     }
   }
 
   Future<void> _addLabel() async {
+    final lang = ref.read(localizationProvider);
     final ctrl = TextEditingController();
     String? selectedColor = 'blue';
     final colors = ['blue', 'red', 'green', 'purple', 'orange'];
@@ -263,13 +271,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Etiket Ekle'),
+              title: Text(lang.addLabelTitle),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: ctrl,
-                    decoration: const InputDecoration(labelText: 'Etiket Adı'),
+                    decoration: InputDecoration(labelText: lang.labelNameLabel),
                   ),
                   const SizedBox(height: 16),
                   Wrap(
@@ -278,7 +286,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       final colorObj = _getColor(c);
                       final cTr = _getColorNameTr(c);
                       return Semantics(
-                        label: '$cTr renk seçimi',
+                        label: '$cTr ${lang.colorSelection}',
                         selected: selectedColor == c,
                         child: ExcludeSemantics(
                           child: ChoiceChip(
@@ -299,14 +307,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, null),
-                  child: const Text('İptal'),
+                  child: Text(lang.no),
                 ),
                 ElevatedButton(
                   onPressed: () {
                     if (ctrl.text.isEmpty) return;
                     Navigator.pop(context, {'text': ctrl.text, 'color': selectedColor!});
                   },
-                  child: const Text('Ekle'),
+                  child: Text(lang.add),
                 ),
               ],
             );
@@ -322,14 +330,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         setState(() {
           _task = updated;
         });
-        SemanticsService.announce('Etiket eklendi', TextDirection.ltr);
+        SemanticsService.announce(lang.labelAdded, TextDirection.ltr);
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
       }
     }
   }
 
   Future<void> _removeLabel(dynamic label) async {
+    final lang = ref.read(localizationProvider);
     try {
       final newLabels = List.from(_task.labels)..remove(label);
       final updated = await _service.updateTaskLabels(_task.id, newLabels);
@@ -338,41 +347,42 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _addLabelBtnFocusNode.requestFocus();
-        SemanticsService.announce('Etiket silindi', TextDirection.ltr);
+        SemanticsService.announce(lang.labelDeleted, TextDirection.ltr);
       });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
     }
   }
 
   void _shareTaskInformation() {
+    final lang = ref.read(localizationProvider);
     final buffer = StringBuffer();
-    buffer.writeln('Görev Adı: ${_task.title}');
-    buffer.writeln('Durum: ${_task.isCompleted ? "Tamamlandı" : "Devam Ediyor"}');
+    buffer.writeln('${lang.shareTaskTitle}: ${_task.title}');
+    buffer.writeln('${lang.shareTaskStatus}: ${_task.isCompleted ? lang.completed : lang.incomplete}');
     
-    buffer.writeln('Oluşturulma Tarihi: ${_formatDt(_task.created)}');
+    buffer.writeln('${lang.shareTaskCreated}: ${_formatDt(_task.created)}');
     if (_task.dueDate != null) {
-      buffer.writeln('Bitiş Tarihi (Hedef): ${_formatDt(_task.dueDate!)}');
+      buffer.writeln('${lang.shareTaskDue}: ${_formatDt(_task.dueDate!)}');
       final diff = _task.dueDate!.difference(DateTime.now());
       final d = diff.inDays;
       if (d > 0) {
-        buffer.writeln('Kalan Süre: $d gün kaldı.');
+        buffer.writeln('${lang.shareTaskRemaining}: $d ${lang.days}.');
       } else if (d == 0) {
-        buffer.writeln('Kalan Süre: Bugün bitiyor.');
+        buffer.writeln('${lang.shareTaskRemaining}: ${lang.todayIsLastDay}');
       } else {
-        buffer.writeln('Kalan Süre: Süresi ${d.abs()} gün geçti.');
+        buffer.writeln('${lang.shareTaskRemaining}: ${lang.overdueDays.replaceAll('{days}', d.abs().toString())}');
       }
     }
     buffer.writeln();
 
     if (_task.description.isNotEmpty) {
-      buffer.writeln('Açıklama:');
+      buffer.writeln('${lang.shareTaskDescription}:');
       buffer.writeln(_task.description);
       buffer.writeln();
     }
 
     if (_task.labels.isNotEmpty) {
-      buffer.writeln('Etiketler:');
+      buffer.writeln('${lang.shareTaskLabels}:');
       for (var lbl in _task.labels) {
         buffer.writeln('- ${lbl['text']}');
       }
@@ -380,22 +390,22 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
 
     if (_assigneesData.isNotEmpty) {
-      buffer.writeln('Sorumlular (Atananlar):');
+      buffer.writeln('${lang.shareTaskAssignees}:');
       final assigneesStr = _assigneesData.map((u) => (u['full_name'] as String? ?? '').isNotEmpty == true ? u['full_name'] : u['username']).join(', ');
       buffer.writeln(assigneesStr);
       buffer.writeln();
     }
 
     if (_checklists.isNotEmpty) {
-      buffer.writeln('Kontrol Listesi:');
+      buffer.writeln('${lang.shareTaskChecklist}:');
       for (var c in _checklists) {
-        buffer.writeln('- ${c.title} (${c.isCompleted ? "Tamamlandı" : "Tamamlanmadı"})');
+        buffer.writeln('- ${c.title} (${c.isCompleted ? lang.completed : lang.incomplete})');
       }
       buffer.writeln();
     }
 
     if (_task.resources.isNotEmpty) {
-      buffer.writeln('Kaynaklar:');
+      buffer.writeln('${lang.shareTaskResources}:');
       for (var res in _task.resources) {
         final urlString = res is Map ? (res['url']?.toString() ?? '') : res.toString();
         final titleString = res is Map ? (res['title']?.toString() ?? urlString) : urlString;
@@ -410,7 +420,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
 
     if (_task.voiceNotes.isNotEmpty) {
-      buffer.writeln('Sesli Notlar: ${_task.voiceNotes.length} adet sesli not mevcut.');
+      buffer.writeln('${lang.shareTaskVoiceNotes}: ${_task.voiceNotes.length} ${lang.shareTaskVoiceNotesCount}');
       buffer.writeln();
     }
 
@@ -426,32 +436,33 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         int hours = total.inHours % 24;
         int mins = total.inMinutes % 60;
         List<String> p = [];
-        if(days > 0) p.add("$days gün");
-        if(hours > 0) p.add("$hours saat");
-        if(mins > 0) p.add("$mins dakika");
-        if(p.isEmpty) p.add("1 dakikadan az");
-        buffer.writeln("Görev Kronometresi: Bu görev üzerinde toplam ${p.join(" ")} çalışıldı.");
+        if(days > 0) p.add("$days ${lang.days}");
+        if(hours > 0) p.add("$hours ${lang.hours}");
+        if(mins > 0) p.add("$mins ${lang.minutes}");
+        if(p.isEmpty) p.add(lang.lessThanAMinute);
+        buffer.writeln("${lang.shareTaskStopwatch}: ${lang.shareTaskTimeSpent.replaceAll('{time}', p.join(" "))}");
         buffer.writeln();
       }
     }
 
     buffer.writeln('--------------------');
-    buffer.writeln('Blind Social - Görev Planlayıcısı ile oluşturulmuştur.');
+    buffer.writeln(lang.shareTaskFooter);
 
     Share.share(buffer.toString());
   }
 
   Future<void> _moveList() async {
+    final lang = ref.read(localizationProvider);
     final newListId = await showDialog<String>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Listeyi Değiştir'),
+          title: Text(lang.moveTaskTitle),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
-addAutomaticKeepAlives: false,
-addRepaintBoundaries: true,
+              addAutomaticKeepAlives: false,
+              addRepaintBoundaries: true,
               shrinkWrap: true,
               itemCount: widget.allLists.length,
               itemBuilder: (context, index) {
@@ -467,7 +478,7 @@ addRepaintBoundaries: true,
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, null),
-              child: const Text('İptal'),
+              child: Text(lang.no),
             ),
           ],
         );
@@ -480,9 +491,9 @@ addRepaintBoundaries: true,
         setState(() {
           _task = updated;
         });
-        SemanticsService.announce('Görev başka listeye taşındı', TextDirection.ltr);
+        SemanticsService.announce(lang.moveTaskSuccess, TextDirection.ltr);
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
       }
     }
   }
@@ -499,34 +510,43 @@ addRepaintBoundaries: true,
   }
 
   String _getColorNameTr(String c) {
+    final lang = ref.read(localizationProvider);
     switch (c) {
-      case 'red': return 'Kırmızı';
-      case 'green': return 'Yeşil';
-      case 'purple': return 'Mor';
-      case 'orange': return 'Turuncu';
-      case 'blue': return 'Mavi';
-      default: return 'Mavi';
+      case 'red': return lang.colorRed;
+      case 'green': return lang.colorGreen;
+      case 'purple': return lang.colorPurple;
+      case 'orange': return lang.colorOrange;
+      case 'blue': return lang.colorBlue;
+      default: return lang.colorBlue;
     }
   }
 
   void _announceChecklistProgress() {
+    final lang = ref.read(localizationProvider);
     if (_checklists.isEmpty) return;
     int completedCount = _checklists.where((c) => c.isCompleted).length;
     int total = _checklists.length;
     int percentage = ((completedCount / total) * 100).round();
-    SemanticsService.announce('$total işten $completedCount bitti, yüzde $percentage tamamlandı', TextDirection.ltr);
+    SemanticsService.announce(
+      lang.checklistProgress
+        .replaceAll('{total}', total.toString())
+        .replaceAll('{completed}', completedCount.toString())
+        .replaceAll('{percentage}', percentage.toString()), 
+      TextDirection.ltr
+    );
   }
 
   Future<void> _addChecklistItem() async {
+    final lang = ref.read(localizationProvider);
     final ctrl = TextEditingController();
     final isSaved = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Yeni Kontrol Maddesi'),
-        content: TextField(controller: ctrl, decoration: const InputDecoration(labelText: 'Başlık')),
+        title: Text(lang.newChecklistItemTitle),
+        content: TextField(controller: ctrl, decoration: InputDecoration(labelText: lang.newChecklistItemLabel)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Ekle')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(lang.no)),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: Text(lang.add)),
         ],
       )
     );
@@ -540,12 +560,13 @@ addRepaintBoundaries: true,
         });
         _announceChecklistProgress();
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
       }
     }
   }
 
   Future<void> _toggleChecklist(TaskChecklist item) async {
+    final lang = ref.read(localizationProvider);
     try {
       final updated = await _service.updateChecklistState(item.id, !item.isCompleted);
       setState(() {
@@ -554,11 +575,12 @@ addRepaintBoundaries: true,
       });
       _announceChecklistProgress();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
     }
   }
 
   Future<void> _deleteChecklistItem(TaskChecklist item) async {
+    final lang = ref.read(localizationProvider);
     try {
       await _service.deleteChecklistItem(item.id);
       setState(() {
@@ -569,22 +591,23 @@ addRepaintBoundaries: true,
         _addChecklistBtnFocusNode.requestFocus();
       });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
     }
   }
 
   Future<void> _deleteTask() async {
+    final lang = ref.read(localizationProvider);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Görevi Sil'),
-        content: const Text('Bu görevi silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve göreve ait tüm veriler (ses kayıtları, notlar vb.) silinir.'),
+        title: Text(lang.deleteTaskTitle),
+        content: Text(lang.deleteTaskConfirmDetail),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(lang.no)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sil', style: TextStyle(color: Colors.white)),
+            child: Text(lang.delete, style: const TextStyle(color: Colors.white)),
           ),
         ],
       )
@@ -594,10 +617,10 @@ addRepaintBoundaries: true,
       setState(() => _isLoading = true);
       try {
         await _service.deleteTask(_task.id);
-        SemanticsService.announce('Görev başarıyla silindi', TextDirection.ltr);
+        SemanticsService.announce(lang.deleteTaskSuccess, TextDirection.ltr);
         if (mounted) Navigator.pop(context, true);
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
         setState(() => _isLoading = false);
       }
     }
@@ -630,22 +653,23 @@ addRepaintBoundaries: true,
   }
 
   Future<void> _addResource() async {
+    final lang = ref.read(localizationProvider);
     final ctrl = TextEditingController();
     final isSaved = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Yeni URL/Kaynak Ekle'),
+        title: Text(lang.addResourceTitle),
         content: Row(
           children: [
             Expanded(
               child: TextField(
                 controller: ctrl,
-                decoration: const InputDecoration(labelText: 'URL Adresi', hintText: 'https://...'),
+                decoration: InputDecoration(labelText: lang.addResourceLabel, hintText: lang.addResourceHint),
               ),
             ),
             IconButton(
               icon: const Icon(Icons.paste),
-              tooltip: 'Panodan Yapıştır',
+              tooltip: lang.pasteFromClipboard,
               onPressed: () async {
                 final data = await Clipboard.getData(Clipboard.kTextPlain);
                 if (data != null && data.text != null) {
@@ -656,8 +680,8 @@ addRepaintBoundaries: true,
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Ekle')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(lang.no)),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: Text(lang.add)),
         ],
       )
     );
@@ -676,9 +700,9 @@ addRepaintBoundaries: true,
         setState(() {
           _task = updated;
         });
-        SemanticsService.announce('Kaynak eklendi', TextDirection.ltr);
+        SemanticsService.announce(lang.addResourceSuccess, TextDirection.ltr);
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
       } finally {
         if (mounted) setState(() => _isLoading = false);
       }
@@ -686,26 +710,29 @@ addRepaintBoundaries: true,
   }
 
   Future<void> _removeResource(dynamic res) async {
+    final lang = ref.read(localizationProvider);
     try {
       final newResources = List.from(_task.resources)..remove(res);
       final updated = await _service.updateTaskResources(_task.id, newResources);
       setState(() {
         _task = updated;
       });
-      SemanticsService.announce('Kaynak silindi', TextDirection.ltr);
+      SemanticsService.announce(lang.deleteResourceSuccess, TextDirection.ltr);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
     }
   }
 
   Future<void> _copyResource(String url) async {
+    final lang = ref.read(localizationProvider);
     await Clipboard.setData(ClipboardData(text: url));
-    SemanticsService.announce('URL panoya kopyalandı', TextDirection.ltr);
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('URL kopyalandı')));
+    SemanticsService.announce(lang.copyUrlSemantics, TextDirection.ltr);
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.copyUrlSuccess)));
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     return WillPopScope(
       onWillPop: () async {
         Navigator.pop(context, true); // Her zaman değişiklik var kabul edip sayfayı yenilemek için true dönüyoruz
@@ -715,22 +742,22 @@ addRepaintBoundaries: true,
         appBar: AppBar(
           title: Focus(
             autofocus: true,
-            child: Text('${_task.title} isimli görevin detayları'),
+            child: Text('${_task.title} ${lang.taskDetails}'),
           ),
           actions: [
             IconButton(
               icon: const Icon(Icons.share),
-              tooltip: 'Kartı Paylaş',
+              tooltip: lang.shareTask,
               onPressed: _shareTaskInformation,
             ),
             IconButton(
               icon: const Icon(Icons.drive_file_move),
-              tooltip: 'Listeyi Değiştir',
+              tooltip: lang.changeList,
               onPressed: _moveList,
             ),
             IconButton(
               icon: const Icon(Icons.delete, color: Colors.red),
-              tooltip: 'Görevi Sil',
+              tooltip: lang.deleteTaskTitle,
               onPressed: _deleteTask,
             )
           ],
@@ -743,14 +770,14 @@ addRepaintBoundaries: true,
               children: [
                 Text(_task.title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text('Oluşturulma: ${_formatDt(_task.created)}', style: const TextStyle(color: Colors.grey)),
+                Text('${lang.createdDate}: ${_formatDt(_task.created)}', style: const TextStyle(color: Colors.grey)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Text(_task.dueDate != null ? 'Bitiş (Hedef): ${_formatDt(_task.dueDate!)}' : 'Bitiş tarihi eklenmemiş', style: const TextStyle(color: Colors.grey)),
+                    Text(_task.dueDate != null ? '${lang.dueDateTarget}: ${_formatDt(_task.dueDate!)}' : lang.noDueDate, style: const TextStyle(color: Colors.grey)),
                     IconButton(
                       icon: const Icon(Icons.edit_calendar),
-                      tooltip: 'Bitiş Tarihi Belirle',
+                      tooltip: lang.setDueDate,
                       onPressed: _selectDueDate,
                     )
                   ]
@@ -766,10 +793,10 @@ addRepaintBoundaries: true,
                         final colorName = lbl['color'] ?? 'blue';
                         final cTr = _getColorNameTr(colorName);
                         return Semantics(
-                          label: '${lbl['text']} isimli $cTr renkli etiket. Etiketi silmek için işlemler menüsünü açın ve özellikleri kullanın.',
+                          label: '${lbl['text']} ${lang.label}. $cTr. ${lang.taskOptionsHint}',
                           button: true,
                           customSemanticsActions: {
-                            const CustomSemanticsAction(label: 'Etiketi Sil'): () => _removeLabel(lbl),
+                            CustomSemanticsAction(label: lang.labelDeleted): () => _removeLabel(lbl),
                           },
                           child: ExcludeSemantics(
                             child: Chip(
@@ -783,7 +810,7 @@ addRepaintBoundaries: true,
                     }).toList(),
                     ActionChip(
                       focusNode: _addLabelBtnFocusNode,
-                      label: const Text('Etiket Ekle'),
+                      label: Text(lang.addLabelTitle),
                       avatar: const Icon(Icons.add, size: 16),
                       onPressed: _addLabel,
                     )
@@ -794,9 +821,9 @@ addRepaintBoundaries: true,
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Sorumlular (Atananlar)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(lang.assignees, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     ActionChip(
-                      label: Text(_task.assignees.contains(PocketBaseService.client.authStore.model?.id) ? 'Sorumluluğu Bırak' : 'Beni Sorumlu Yap'),
+                      label: Text(_task.assignees.contains(PocketBaseService.client.authStore.model?.id) ? lang.leaveResponsibility : lang.makeMeResponsible),
                       onPressed: () async {
                         final uId = PocketBaseService.client.authStore.model?.id;
                         if (uId == null) return;
@@ -806,34 +833,34 @@ addRepaintBoundaries: true,
                             _task = updated;
                           });
                           await _fetchAssignees();
-                          SemanticsService.announce("Sorumluluk durumu güncellendi", TextDirection.ltr);
+                          SemanticsService.announce(lang.statusUpdated, TextDirection.ltr);
                         } catch (e) {
-                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
                         }
                       },
                     )
                   ],
                 ),
                 if (_assigneesData.isEmpty)
-                  const Text('Bu göreve henüz kimse atanmadı.')
+                  Text(lang.noAssignees)
                 else
-                  Text('${_assigneesData.map((u) => (u['full_name'] as String? ?? '').isNotEmpty == true ? u['full_name'] : u['username']).join(', ')} isimli kullanıcılar bu görev için atandı.'),
+                  Text('${_assigneesData.map((u) => (u['full_name'] as String? ?? '').isNotEmpty == true ? u['full_name'] : u['username']).join(', ')} ${lang.assigneesAssigned}'),
                 const SizedBox(height: 24),
 
                 // Açıklama
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Açıklama', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(lang.description, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     IconButton(
                       icon: const Icon(Icons.edit),
-                      tooltip: 'Açıklamayı Düzenle',
+                      tooltip: lang.editDescription,
                       onPressed: _editDescription,
                     )
                   ],
                 ),
                 Text(
-                  _task.description.isEmpty ? 'Açıklama eklenmemiş.' : _task.description,
+                  _task.description.isEmpty ? lang.noDescription : _task.description,
                 ),
                 const SizedBox(height: 24),
                 const Divider(),
@@ -842,16 +869,16 @@ addRepaintBoundaries: true,
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Kaynaklar (URL)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(lang.resources, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     IconButton(
                       icon: const Icon(Icons.add),
-                      tooltip: 'URL Ekle',
+                      tooltip: lang.addResource,
                       onPressed: _addResource,
                     )
                   ],
                 ),
                 if (_task.resources.isEmpty)
-                  const Text('Henüz kaynak eklenmemiş.')
+                  Text(lang.noResources)
                 else
                   ..._task.resources.map((res) {
                     final String urlString = res is Map ? (res['url']?.toString() ?? '') : res.toString();
@@ -859,11 +886,11 @@ addRepaintBoundaries: true,
                     
                     return Card(
                       child: Semantics(
-                        label: titleString != urlString ? 'Kaynak Başlığı: $titleString' : 'Kaynak URL: $urlString',
+                        label: titleString != urlString ? '${lang.checklistTitle}: $titleString' : 'URL: $urlString',
                         button: true,
                         customSemanticsActions: {
-                          const CustomSemanticsAction(label: 'URL Kopyala'): () => _copyResource(urlString),
-                          const CustomSemanticsAction(label: 'URL Sil'): () => _removeResource(res),
+                          CustomSemanticsAction(label: lang.copyUrlSuccess): () => _copyResource(urlString),
+                          CustomSemanticsAction(label: lang.delete): () => _removeResource(res),
                         },
                         child: ExcludeSemantics(
                           child: ListTile(
@@ -875,12 +902,12 @@ addRepaintBoundaries: true,
                               children: [
                                 IconButton(
                                   icon: const Icon(Icons.copy),
-                                  tooltip: 'Kopyala',
+                                  tooltip: lang.copy,
                                   onPressed: () => _copyResource(urlString),
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.delete, color: Colors.red),
-                                  tooltip: 'Sil',
+                                  tooltip: lang.delete,
                                   onPressed: () => _removeResource(res),
                                 ),
                               ],
@@ -901,7 +928,7 @@ addRepaintBoundaries: true,
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Kontrol Listesi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text(lang.checklist, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         if (_checklists.isNotEmpty)
                           Builder(
                             builder: (context) {
@@ -909,8 +936,8 @@ addRepaintBoundaries: true,
                               int total = _checklists.length;
                               int percentage = ((completedCount / total) * 100).round();
                               return Padding(
-                                padding: const EdgeInsets.only(top: 4.0),
-                                child: Text('Yüzde $percentage Tamamlandı ($completedCount/$total)', style: const TextStyle(fontSize: 14, color: Colors.white70)),
+                                padding: const EdgeInsets.all(0),
+                                child: Text(lang.checklistProgress.replaceAll('{total}', total.toString()).replaceAll('{completed}', completedCount.toString()).replaceAll('{percentage}', percentage.toString()), style: const TextStyle(fontSize: 14, color: Colors.white70)),
                               );
                             }
                           ),
@@ -919,21 +946,21 @@ addRepaintBoundaries: true,
                     IconButton(
                       focusNode: _addChecklistBtnFocusNode,
                       icon: const Icon(Icons.add),
-                      tooltip: 'Madde Ekle',
+                      tooltip: lang.addChecklistItem,
                       onPressed: _addChecklistItem,
                     )
                   ],
                 ),
                 if (_isLoading) const Center(child: CircularProgressIndicator())
-                else if (_checklists.isEmpty) const Text('Kontrol listesi boş.')
+                else if (_checklists.isEmpty) Text(lang.checklistEmpty)
                 else ..._checklists.map((c) {
                   return Card(
                     child: Semantics(
-                      label: '${c.title}. ${c.isCompleted ? "Tamamlandı" : "Tamamlanmadı"}. İşlem seçenekleri için parmağınızı yukarı veya aşağı kaydırın.',
+                      label: '${c.title}. ${c.isCompleted ? lang.completed : lang.incomplete}. ${lang.taskOptionsHint}',
                       button: true,
                       customSemanticsActions: {
-                        CustomSemanticsAction(label: c.isCompleted ? 'Tamamlanmadı Olarak İşaretle' : 'Tamamlandı Olarak İşaretle'): () => _toggleChecklist(c),
-                        const CustomSemanticsAction(label: 'Maddeyi Sil'): () => _deleteChecklistItem(c),
+                        CustomSemanticsAction(label: c.isCompleted ? lang.markAsIncomplete : lang.markAsCompleted): () => _toggleChecklist(c),
+                        CustomSemanticsAction(label: lang.delete): () => _deleteChecklistItem(c),
                       },
                       child: ExcludeSemantics(
                         child: ListTile(
@@ -949,7 +976,7 @@ addRepaintBoundaries: true,
                           ),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
-                            tooltip: 'Sil',
+                            tooltip: lang.delete,
                             onPressed: () => _deleteChecklistItem(c),
                           ),
                           onTap: () => _toggleChecklist(c),
@@ -963,8 +990,8 @@ addRepaintBoundaries: true,
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.chat),
-                  title: const Text('Bu Görevdeki Mesajlar', style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: const Text('Diğer üyelerle sohbet edin veya sesli mesaj bırakın.'),
+                  title: Text(lang.comments, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(lang.taskMessagesSubtitle),
                   trailing: const Icon(Icons.arrow_forward_ios),
                   onTap: () {
                     Navigator.push(
@@ -973,9 +1000,9 @@ addRepaintBoundaries: true,
                         builder: (c) => Scaffold(
                           appBar: AppBar(
                             title: Semantics(
-                              label: '${_task.title} isimli görev için mesajlaşmaktasınız',
+                              label: '${lang.taskMessagesSemantics} ${_task.title}',
                               child: Text(
-                                '${_task.title} - Mesajlar',
+                                '${_task.title} - ${lang.comments}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -1014,9 +1041,10 @@ addRepaintBoundaries: true,
   }
 
   String _formatDt(DateTime dt) {
+    final lang = ref.read(localizationProvider);
     final now = DateTime.now();
     final dLocal = dt.toLocal();
-    const months = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    final months = lang.months;
     if (now.year == dLocal.year) return "${dLocal.day} ${months[dLocal.month]}";
     return "${dLocal.day} ${months[dLocal.month]} ${dLocal.year}";
   }

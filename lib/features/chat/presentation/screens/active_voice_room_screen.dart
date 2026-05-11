@@ -12,8 +12,10 @@ import 'package:flutter_webrtc/flutter_webrtc.dart' as webrtc;
 import 'package:blind_social/features/profile/presentation/screens/user_profile_screen.dart' as blind_social_profile;
 import 'package:permission_handler/permission_handler.dart';
 import '../../../../core/services/settings_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 
-class ActiveVoiceRoomScreen extends StatefulWidget {
+class ActiveVoiceRoomScreen extends ConsumerStatefulWidget {
   final String roomId;
   final String roomName;
 
@@ -24,10 +26,10 @@ class ActiveVoiceRoomScreen extends StatefulWidget {
   });
 
   @override
-  State<ActiveVoiceRoomScreen> createState() => _ActiveVoiceRoomScreenState();
+  ConsumerState<ActiveVoiceRoomScreen> createState() => _ActiveVoiceRoomScreenState();
 }
 
-class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
+class _ActiveVoiceRoomScreenState extends ConsumerState<ActiveVoiceRoomScreen> {
   bool _isMuted = false;
   bool _isSpeakerOn = true;
   bool _isConnected = false;
@@ -294,7 +296,7 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
         AppLogger.instance.warning('Bağlantı sonrası mikrofon açılamadı (\'$cause\'). Sadece dinleyici modundasınız.');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Mikrofona erişilemedi, sadece dinleyici olarak katıldınız.')),
+              SnackBar(content: Text(ref.read(localizationProvider).microphoneAccessDenied)),
           );
           setState(() {
             _isMuted = true;
@@ -320,7 +322,7 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
           _isConnected = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Bağlantı hatası: $finalErrorOut')),
+          SnackBar(content: Text('${ref.read(localizationProvider).connectionErrorWithStatus}$finalErrorOut')),
         );
       }
     }
@@ -537,18 +539,18 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.volume_up),
-                title: const Text('Hoparlör'),
+                title: Text(ref.read(localizationProvider).speakerSet),
                 onTap: () => Navigator.pop(context, 'speaker'),
               ),
               ListTile(
                 leading: const Icon(Icons.phone_in_talk),
-                title: const Text('Ahize'),
+                title: Text(ref.read(localizationProvider).earpieceSet),
                 onTap: () => Navigator.pop(context, 'earpiece'),
               ),
               // Eğer kulaklık takılıysa kullanıcı bunu manuel de seçebilmeli
               ListTile(
                 leading: const Icon(Icons.headset),
-                title: const Text('Kulaklık / Bluetooth'),
+                title: Text(ref.read(localizationProvider).headsetOrBluetoothSet),
                 onTap: () => Navigator.pop(context, 'headset'),
               ),
             ],
@@ -628,13 +630,14 @@ class _ActiveVoiceRoomScreenState extends State<ActiveVoiceRoomScreen> {
   }
 }
 
-class _ParticipantTile extends StatelessWidget {
+class _ParticipantTile extends ConsumerWidget {
   final Participant participant;
 
   const _ParticipantTile({required this.participant});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(localizationProvider);
     final identity = participant.identity;
     // LiveKit name alanını kontrol et, boşsa identity (ID) kullan.
     final displayName = participant.name.isNotEmpty ? participant.name : identity;
@@ -688,11 +691,11 @@ class _ParticipantTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   if (isSpeaking)
-                   const Padding(
-                     padding: EdgeInsets.only(top: 4.0),
+                   Padding(
+                     padding: const EdgeInsets.only(top: 4.0),
                      child: Text(
-                       "Şu anda konuşuyor",
-                       style: TextStyle(color: Colors.green, fontSize: 12),
+                       lang.currentlySpeaking,
+                       style: const TextStyle(color: Colors.green, fontSize: 12),
                      ),
                    ),
                   if (isSpeaking)

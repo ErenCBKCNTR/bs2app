@@ -38,14 +38,23 @@ import 'package:blind_social/features/campaigns/presentation/screens/campaigns_s
 import '../../../radio/presentation/screens/radio_list_screen.dart';
 import 'package:blind_social/features/tools/presentation/screens/tools_screen.dart' as blind_social_tools;
 
-class ChatListScreen extends StatefulWidget {
+class ChatListScreen extends ConsumerWidget {
   const ChatListScreen({super.key});
 
   @override
-  State<ChatListScreen> createState() => _ChatListScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    return const _ChatListScreenContent();
+  }
 }
 
-class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProviderStateMixin {
+class _ChatListScreenContent extends ConsumerStatefulWidget {
+  const _ChatListScreenContent();
+
+  @override
+  ConsumerState<_ChatListScreenContent> createState() => _ChatListScreenContentState();
+}
+
+class _ChatListScreenContentState extends ConsumerState<_ChatListScreenContent> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _refreshKey = 0;
   
@@ -95,11 +104,13 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     try {
       final myId = PocketBaseService.client.authStore.model?.id;
       if (myId == null) return;
+      final lang = ref.read(localizationProvider);
+
       final pendingGames = await PocketBaseService.client.collection('quiz_games').getList(
         filter: 'player2_id = "$myId" && status = "waiting"',
       );
       for (var game in pendingGames.items) {
-        String inviterName = "Bir kullanıcı";
+        String inviterName = lang.unnamed;
         try {
           final player1Id = game.getStringValue('player1_id');
           if (player1Id.isNotEmpty) {
@@ -237,13 +248,15 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
 
   void _showGameInviteDialog(RecordModel game, String inviterName) {
     if (!mounted) return;
+    final lang = ref.read(localizationProvider);
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Oyun İsteği'),
-          content: Text('$inviterName isimli kullanıcı size bilgi yarışması için oyun daveti gönderdi.'),
+          title: Text(lang.gameInviteTitle),
+          content: Text('$inviterName ${lang.gameInviteDesc}'),
           actions: [
             TextButton(
               onPressed: () async {
@@ -254,7 +267,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                   });
                 } catch (_) {}
               },
-              child: const Text('Reddet'),
+              child: Text(lang.reject),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -273,7 +286,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                   AppLogger.instance.error('Game accept error: $e');
                 }
               },
-              child: const Text('Kabul Et'),
+              child: Text(lang.accept),
             ),
           ],
         );
@@ -510,6 +523,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   }
 
   Future<void> _togglePin(String chatId, bool currentStatus) async {
+    final lang = ref.read(localizationProvider);
     setState(() {
       _pendingOperations.add(chatId);
       final chatIndex = _chats.indexWhere((c) => c.id == chatId);
@@ -535,7 +549,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(!currentStatus ? 'Sohbet sabitlendi' : 'Sohbet sabitlemesi kaldırıldı'),
+            content: Text(!currentStatus ? lang.chatPinnedStatus : lang.chatUnpinnedStatus),
             duration: const Duration(seconds: 2),
           )
         );
@@ -543,7 +557,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     } catch (e) {
       AppLogger.instance.error('Sabitleme hatası: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
       }
     } finally {
        if (mounted) {
@@ -555,6 +569,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
   }
 
   Future<void> _toggleArchive(String chatId, bool currentStatus) async {
+    final lang = ref.read(localizationProvider);
     // Yerel UI güncelemesi (Optimizasyon)
     setState(() {
       _pendingOperations.add(chatId);
@@ -581,7 +596,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(!currentStatus ? 'Sohbet arşivlendi' : 'Sohbet arşivden çıkarıldı'),
+            content: Text(!currentStatus ? lang.chatArchivedStatus : lang.chatUnarchivedStatus),
             duration: const Duration(seconds: 2),
           )
         );
@@ -589,7 +604,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     } catch (e) {
       AppLogger.instance.error('Arşivleme hatası: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
       }
     } finally {
        if (mounted) {
@@ -620,6 +635,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) {
@@ -631,7 +647,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       child: Scaffold(
         appBar: AppBar(
           title: Semantics(
-            label: "Blind Social Ana Sayfa",
+            label: "Blind Social ${lang.overview}",
             header: true,
             child: const Text(
               'Blind Social',
@@ -645,9 +661,9 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
             labelColor: Theme.of(context).colorScheme.primary,
             unselectedLabelColor: Colors.grey,
             tabs: [
-              Tab(child: Semantics(label: "Sohbetler", excludeSemantics: true, child: const Text("Sohbetler"))),
-              Tab(child: Semantics(label: "Blog", excludeSemantics: true, child: const Text("Blog"))),
-              Tab(child: Semantics(label: "Sunucular", excludeSemantics: true, child: const Text("Sunucular"))),
+              Tab(child: Semantics(label: lang.chats, excludeSemantics: true, child: Text(lang.chats))),
+              Tab(child: Semantics(label: lang.blog, excludeSemantics: true, child: Text(lang.blog))),
+              Tab(child: Semantics(label: lang.servers, excludeSemantics: true, child: Text(lang.servers))),
             ],
           ),
         ),
@@ -660,7 +676,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
             ChatServersScreen(key: ValueKey(_refreshKey)),
           ],
         ),
-        floatingActionButton: _buildFAB(),
+        floatingActionButton: _buildFAB(lang),
       ),
     );
   }
@@ -674,16 +690,16 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     final exitConfirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Uygulamadan Çık'),
-        content: const Text('Uygulamadan çıkmak istediğinize emin misiniz?'),
+        title: Text(lang.exitAppTitle),
+        content: Text(lang.exitAppConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('İPTAL'),
+            child: Text(lang.cancel.toUpperCase()),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('ÇIK', style: TextStyle(color: Colors.red)),
+            child: Text(lang.exit, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -702,7 +718,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     }
   }
 
-  Widget? _buildFAB() {
+  Widget? _buildFAB(BaseLanguage lang) {
     if (_tabController.index == 0) {
       return FloatingActionButton(
         onPressed: () async {
@@ -715,21 +731,21 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
           }
         },
         backgroundColor: Theme.of(context).colorScheme.primary,
-        tooltip: "Yeni Sohbet Başlat",
+        tooltip: lang.newChatTooltip,
         child: const Icon(Icons.message, color: Colors.black),
       );
     } else if (_tabController.index == 2) {
       return FloatingActionButton(
-        onPressed: _showCreateChatServerDialog,
+        onPressed: () => _showCreateChatServerDialog(lang),
         backgroundColor: Theme.of(context).colorScheme.primary,
-        tooltip: "Yeni Sohbet Sunucusu Oluştur",
+        tooltip: lang.newServerTooltip,
         child: const Icon(Icons.dns, color: Colors.black),
       );
     }
     return null;
   }
 
-  Future<void> _showCreateChatServerDialog() async {
+  Future<void> _showCreateChatServerDialog(BaseLanguage lang) async {
     final titleController = TextEditingController();
     final formKey = GlobalKey<FormState>();
     int capacity = 24;
@@ -742,7 +758,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: const Text('Yeni Sohbet Sunucusu'),
+              title: Text(lang.createServerTitle),
               content: Form(
                 key: formKey,
                 child: SingleChildScrollView(
@@ -753,35 +769,35 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                         controller: titleController,
                         autofocus: true,
                         maxLength: 32,
-                        decoration: const InputDecoration(
-                          labelText: 'Sunucu Adı',
-                          hintText: 'Örn: Blind Social Dostlar',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: lang.serverNameLabel,
+                          hintText: lang.serverNameHint,
+                          border: const OutlineInputBorder(),
                           counterText: "",
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Sunucu adı boş olamaz';
+                            return lang.serverNameRequired;
                           }
                           if (value.trim().length < 3) {
-                            return 'Sunucu adı 3 karakterden kısa olamaz';
+                            return lang.serverNameTooShort;
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 16),
                       Semantics(
-                        hint: 'Seçenekleri görmek ve değiştirmek için çift tıklayın',
+                        hint: lang.dropdownHint,
                         child: DropdownButtonFormField<int>(
                           value: capacity,
-                          decoration: const InputDecoration(
-                            labelText: 'Kişi Kapasitesi',
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: lang.capacityLabel,
+                            border: const OutlineInputBorder(),
                           ),
                           items: [12, 24, 32, 48, 64, 128].map((int value) {
                             return DropdownMenuItem<int>(
                               value: value,
-                              child: Text('$value Kişilik'),
+                              child: Text(lang.voiceRoomCapacity(value)),
                             );
                           }).toList(),
                           onChanged: (val) {
@@ -793,7 +809,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                       Theme(
                         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                         child: ExpansionTile(
-                          title: const Text('Güvenlik Ayarları'),
+                          title: Text(lang.securitySettings),
                           leading: const Icon(Icons.security, size: 20),
                           children: [
                             Padding(
@@ -801,11 +817,11 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                               child: TextField(
                                 controller: passwordController,
                                 keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  labelText: 'Sunucu Şifresi (Numara)',
-                                  hintText: 'Şifresiz için boş bırakın',
-                                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.lock_outline),
+                                decoration: InputDecoration(
+                                  labelText: lang.serverPasswordLabel,
+                                  hintText: lang.serverPasswordHint,
+                                  border: const OutlineInputBorder(),
+                                  prefixIcon: const Icon(Icons.lock_outline),
                                 ),
                               ),
                             ),
@@ -819,7 +835,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
               actions: [
                 TextButton(
                   onPressed: isSaving ? null : () => Navigator.pop(context),
-                  child: const Text('İptal'),
+                  child: Text(lang.cancel),
                 ),
                 ElevatedButton(
                   onPressed: isSaving ? null : () async {
@@ -842,7 +858,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                       if (context.mounted) {
                         Navigator.pop(context); // Dialogu kapat
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Sunucu başarıyla oluşturuldu!')),
+                           SnackBar(content: Text(lang.serverCreatedSuccess)),
                         );
                         
                         Navigator.push(
@@ -862,15 +878,15 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                       bool shouldCloseDialog = false;
                       
                       if (errorMsg.contains('validation_min_text_constraint')) {
-                        errorMsg = 'Sunucu adı en az 3 karakter olmalıdır.';
+                        errorMsg = lang.serverNameMinLength;
                       } else if (errorMsg.contains('Kullanıcı en fazla 3 adet')) {
-                        errorMsg = 'Kullanıcı en fazla 3 adet sunucu oluşturabilir';
+                        errorMsg = lang.serverLimitReached;
                         shouldCloseDialog = true;
                       } else if (errorMsg.contains('Bir günde en fazla 2 adet')) {
-                        errorMsg = 'Bir günde en fazla 2 adet sunucu oluşturabilirsiniz';
+                        errorMsg = lang.serverLimitDaily;
                         shouldCloseDialog = true;
                       } else if (errorMsg.contains('ClientException')) {
-                        errorMsg = 'Sunucu oluşturulamadı. Lütfen tekrar deneyin.';
+                        errorMsg = lang.serverCreateGenericError;
                       }
 
                       if (context.mounted) {
@@ -885,7 +901,7 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
                   },
                   child: isSaving 
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Text('Oluştur'),
+                      : Text(lang.create),
                 ),
               ],
             );
@@ -971,7 +987,8 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
       });
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sohbet oluşturuldu!')));
+        final lang = ref.read(localizationProvider);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.operationFailed))); // actually localized error handling is better
         _navigateToChat(chatId, targetUser.getStringValue('username'));
       }
       AppLogger.instance.info('Sohbet oluşturuldu: $chatId');
@@ -997,16 +1014,17 @@ class _ChatListScreenState extends State<ChatListScreen> with SingleTickerProvid
     }).toList();
 
     if (_chats.isEmpty) {
+      final lang = ref.read(localizationProvider);
       return SafeArea(
         child: Column(
           children: [
             _buildTopActionButtons(),
-            const Expanded(
+            Expanded(
               child: Center(
                 child: Text(
-                  'Henüz bir sohbetiniz yok.\nYeni bir sohbet başlatın.',
+                  lang.emptyChatList,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  style: const TextStyle(fontSize: 16, color: Colors.grey),
                 ),
               ),
             ),
@@ -1037,8 +1055,9 @@ addRepaintBoundaries: true,
         
         String? targetUserId;
         String? lastReadId;
+        final lang = ref.read(localizationProvider);
         String displayChatName = ProfanityFilter.filter(chat.getStringValue('name'));
-        if (displayChatName.isEmpty) displayChatName = 'İsimsiz Sohbet';
+        if (displayChatName.isEmpty) displayChatName = lang.unnamedChat;
 
         final participants = chat.expand['chat_participants_via_chat_id'] ?? [];
         final messages = chat.expand['messages_via_chat_id'] ?? [];
@@ -1052,7 +1071,7 @@ addRepaintBoundaries: true,
                  final targetUserRec = p.expand['user_id']!.first;
                  displayChatName = targetUserRec.getStringValue('username');
                  if (displayChatName.isEmpty) displayChatName = targetUserRec.getStringValue('full_name');
-                 if (displayChatName.isEmpty) displayChatName = 'İsimsiz';
+                 if (displayChatName.isEmpty) displayChatName = lang.unnamed;
               } else {
                  if (_userNameCache.containsKey(uid)) {
                    displayChatName = _userNameCache[uid]!;

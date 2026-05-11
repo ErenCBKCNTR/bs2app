@@ -20,6 +20,8 @@ import 'package:blind_social/core/services/audio_cache_service.dart';
 import 'package:blind_social/features/update/presentation/screens/update_check_wrapper.dart';
 import 'package:blind_social/core/utils/performance_monitor.dart';
 import 'package:blind_social/core/utils/route_observer.dart';
+import 'package:blind_social/core/providers/font_size_provider.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 
 void main() async {
   // Global hata yakalayıcı (Framework hataları)
@@ -154,12 +156,22 @@ class BlindSocialApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
+    final fontSizeMultiplier = ref.watch(fontSizeProvider);
+    final lang = ref.watch(localizationProvider);
 
     return MaterialApp(
-      title: 'Blind Social',
+      title: lang.appName,
       debugShowCheckedModeBanner: false,
       navigatorObservers: [globalRouteObserver],
       themeMode: themeMode,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(fontSizeMultiplier),
+          ),
+          child: child!,
+        );
+      },
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -167,6 +179,7 @@ class BlindSocialApp extends ConsumerWidget {
       ],
       supportedLocales: const [
         Locale('tr', 'TR'),
+        Locale('en', 'US'),
       ],
       theme: ThemeData(
         useMaterial3: true,

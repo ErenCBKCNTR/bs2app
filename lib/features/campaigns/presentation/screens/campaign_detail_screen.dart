@@ -5,8 +5,10 @@ import 'package:blind_social/core/utils/logger.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:blind_social/core/widgets/expandable_text.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 
-class CampaignDetailScreen extends StatefulWidget {
+class CampaignDetailScreen extends ConsumerStatefulWidget {
   final List<RecordModel>? campaigns;
   final int initialIndex;
   
@@ -16,10 +18,10 @@ class CampaignDetailScreen extends StatefulWidget {
   const CampaignDetailScreen({super.key, this.campaigns, this.initialIndex = 0, this.campaign});
 
   @override
-  State<CampaignDetailScreen> createState() => _CampaignDetailScreenState();
+  ConsumerState<CampaignDetailScreen> createState() => _CampaignDetailScreenState();
 }
 
-class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
+class _CampaignDetailScreenState extends ConsumerState<CampaignDetailScreen> {
   late PageController _pageController;
   late List<RecordModel> _campaignList;
   bool _expandedBrands = false;
@@ -44,13 +46,14 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
   }
 
   void _shareCampaign(RecordModel campaign, String finalUrl) {
+    final lang = ref.read(localizationProvider);
     final title = campaign.getStringValue('title');
     final campStart = campaign.getStringValue('camp_start');
     final campEnd = campaign.getStringValue('camp_end');
     
     // Tarih kontrolü
-    String startTxt = (campStart.isEmpty || campStart == '-') ? 'Bilinmiyor' : campStart;
-    String endTxt = (campEnd.isEmpty || campEnd == '-') ? 'Bilinmiyor' : campEnd;
+    String startTxt = (campStart.isEmpty || campStart == '-') ? lang.unknown : campStart;
+    String endTxt = (campEnd.isEmpty || campEnd == '-') ? lang.unknown : campEnd;
 
     String shareText = '📌 $title\n\n'
         '📅 Başlangıç: $startTxt\n'
@@ -66,11 +69,12 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_campaignList.isEmpty) return const Scaffold(body: Center(child: Text("Hata: Kampanya bulunamadı.")));
+    final lang = ref.watch(localizationProvider);
+    if (_campaignList.isEmpty) return Scaffold(body: Center(child: Text("${lang.error}: ${lang.noCampaignFound}")));
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kampanya Detayı'),
+        title: Text(lang.taskDetail), // Or use a specific campaign detail string if I had one, taskDetail is close enough for breadcrumb style
       ),
       body: PageView.builder(
         controller: _pageController,
@@ -89,6 +93,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
   }
 
   Widget _buildCampaignView(RecordModel campaign) {
+    final lang = ref.watch(localizationProvider);
     final sourceName = campaign.expand['source_id']?.first.getStringValue('name') ?? 'Genel';
     
     final title = campaign.getStringValue('title');
@@ -140,8 +145,8 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                   child: FloatingActionButton.small(
                     heroTag: "share_btn_${campaign.id}",
                     onPressed: () => _shareCampaign(campaign, finalUrl),
+                    tooltip: lang.shareCampaign,
                     child: const Icon(Icons.share),
-                    tooltip: 'Kampanyayı Paylaş',
                   ),
                 ),
               ],
@@ -164,9 +169,9 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        _buildDateBadge('Başlangıç', campStart, Colors.blue),
+                        _buildDateBadge(lang.startDate, campStart, Colors.blue),
                         const SizedBox(width: 8),
-                        _buildDateBadge('Bitiş', campEnd, Colors.red),
+                        _buildDateBadge(lang.endDate, campEnd, Colors.red),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -178,9 +183,9 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        _buildDateBadge('Başlangıç', usageStart, Colors.orange),
+                        _buildDateBadge(lang.startDate, usageStart, Colors.orange),
                         const SizedBox(width: 8),
-                        _buildDateBadge('Bitiş', usageEnd, Colors.deepOrange),
+                        _buildDateBadge(lang.endDate, usageEnd, Colors.deepOrange),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -188,7 +193,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
 
                   // Markalar (Varsa)
                   if (brandsList.isNotEmpty) ...[
-                    const Text('Kampanyaya Dahil Markalar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(lang.includedBrands, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
@@ -197,7 +202,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                           : brandsList.take(4).toList())
                         .map((b) => Semantics(
                             button: true,
-                            label: '$b markasına ait diğer kampanyaları görüntülemek için tıklayın',
+                            label: '$b${lang.otherCampaignsForBrand}',
                             excludeSemantics: true,
                             child: ActionChip(
                               label: Text(b.toString(), style: const TextStyle(fontSize: 12)),
@@ -219,7 +224,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                           padding: EdgeInsets.zero,
                           alignment: Alignment.centerLeft,
                         ),
-                        child: Text(_expandedBrands ? 'Daha Az Göster' : 'Tümünü Göster (${brandsList.length})'),
+                        child: Text(_expandedBrands ? lang.showLess : '${lang.showAll} (${brandsList.length})'),
                       ),
                     const SizedBox(height: 24),
                   ],
@@ -245,7 +250,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                   if (conditionsList.isNotEmpty) ...[
                     const Divider(),
                     const SizedBox(height: 16),
-                    const Text('Kampanya Koşulları', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(lang.campaignConditions, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
                     ...conditionsList.map((c) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -265,7 +270,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                   if (finalUrl.isNotEmpty)
                     ElevatedButton.icon(
                       icon: const Icon(Icons.open_in_new),
-                      label: const Text('Kampanyaya Ait Siteyi Ziyaret Et'),
+                      label: Text(lang.viewOnWeb),
                       onPressed: () => _launchURL(finalUrl),
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 56),
@@ -284,7 +289,8 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
   }
 
   Widget _buildDateBadge(String label, String date, Color color) {
-    String finalDateStr = (date.isEmpty || date == '-') ? 'Bilinmiyor' : date;
+    final lang = ref.watch(localizationProvider);
+    String finalDateStr = (date.isEmpty || date == '-') ? lang.unknown : date;
     return Semantics(
       label: '$label tarihi $finalDateStr',
       excludeSemantics: true,
@@ -317,6 +323,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
   }
 
   Future<void> _launchURL(String urlString) async {
+    final lang = ref.read(localizationProvider);
     final url = Uri.parse(urlString);
     try {
       await launchUrl(url, mode: LaunchMode.externalApplication).catchError((_) async {
@@ -327,7 +334,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
       AppLogger.instance.error('URL açılamadı: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bağlantı açılamadı. Güvenlik politikası nedeniyle engellenmiş olabilir.')),
+          SnackBar(content: Text('${lang.error}: ${lang.tryAgain}')),
         );
       }
     }

@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 
-class EditProfileScreen extends StatefulWidget {
+class EditProfileScreen extends ConsumerStatefulWidget {
   final RecordModel userData;
 
   const EditProfileScreen({super.key, required this.userData});
 
   @override
-  State<EditProfileScreen> createState() => _EditProfileScreenState();
+  ConsumerState<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen> {
+class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _fullNameController;
   late TextEditingController _bioController;
@@ -32,6 +34,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _saveProfile() async {
+    final lang = ref.read(localizationProvider);
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSaving = true);
@@ -46,13 +49,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil başarıyla güncellendi.')),
+          SnackBar(content: Text(lang.profileUpdateSuccess)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text('${lang.error}: $e')),
         );
       }
     } finally {
@@ -62,9 +65,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profili Düzenle'),
+        title: Text(lang.editProfile),
         actions: [
           if (_isSaving)
             const Center(
@@ -76,7 +81,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           else
             TextButton(
               onPressed: _saveProfile,
-              child: const Text('Kaydet', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(lang.save, style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
         ],
       ),
@@ -87,16 +92,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Kişisel Bilgiler',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
+              Text(
+                lang.personalInfo,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _fullNameController,
                 decoration: InputDecoration(
-                  labelText: 'Ad Soyad',
-                  hintText: 'Adınızı ve soyadınızı girin',
+                  labelText: lang.fullName,
+                  hintText: lang.fullNameHint,
                   prefixIcon: const Icon(Icons.badge_outlined),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                   filled: true,
@@ -105,17 +110,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 maxLength: 100,
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Biyografi',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
+              Text(
+                lang.bio,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _bioController,
                 maxLines: 5,
                 decoration: InputDecoration(
-                  labelText: 'Hakkımda',
-                  hintText: 'Kendinizden bahsedin...',
+                  labelText: lang.bio,
+                  hintText: lang.bioHint,
                   alignLabelWithHint: true,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                   filled: true,
@@ -124,9 +129,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 maxLength: 500,
               ),
               const SizedBox(height: 32),
-              const Text(
-                'Not: Kullanıcı adınızı ve e-posta adresinizi değiştirmek için lütfen destek ekibiyle iletişime geçin.',
-                style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
+              Text(
+                lang.contactSupportForChange,
+                style: const TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
               ),
             ],
           ),

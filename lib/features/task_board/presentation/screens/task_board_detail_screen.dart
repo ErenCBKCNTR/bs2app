@@ -8,16 +8,18 @@ import 'package:blind_social/features/task_board/data/models/task_list_model.dar
 import 'package:blind_social/features/task_board/data/models/task_item.dart';
 import 'package:blind_social/features/task_board/data/services/task_board_service.dart';
 import 'package:blind_social/features/task_board/presentation/screens/task_detail_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 
-class TaskBoardDetailScreen extends StatefulWidget {
+class TaskBoardDetailScreen extends ConsumerStatefulWidget {
   final TaskBoard board;
   const TaskBoardDetailScreen({super.key, required this.board});
 
   @override
-  State<TaskBoardDetailScreen> createState() => _TaskBoardDetailScreenState();
+  ConsumerState<TaskBoardDetailScreen> createState() => _TaskBoardDetailScreenState();
 }
 
-class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
+class _TaskBoardDetailScreenState extends ConsumerState<TaskBoardDetailScreen> {
   final TaskBoardService _service = TaskBoardService();
   String? _currentUserId;
   bool _isLoading = true;
@@ -52,7 +54,10 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
         _sortLists();
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) {
+        final lang = ref.read(localizationProvider);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
+      }
     } finally {
       if (mounted && showLoading) setState(() => _isLoading = false);
     }
@@ -69,6 +74,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
   }
 
   Future<void> _togglePin(TaskListM listM) async {
+    final lang = ref.read(localizationProvider);
     try {
       final updated = await _service.toggleListPinned(listM);
       setState(() {
@@ -77,25 +83,27 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
         _sortLists();
       });
       final isPinned = _currentUserId != null && updated.pinnedBy.contains(_currentUserId);
-      SemanticsService.announce(isPinned ? "${listM.name} isimli liste başa tutturuldu" : "${listM.name} isimli listenin başa tutturulması kaldırıldı", TextDirection.ltr);
+      SemanticsService.announce(isPinned ? "${listM.name} ${lang.listPinnedSuccess}" : "${listM.name} ${lang.listUnpinnedSuccess}", TextDirection.ltr);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
     }
   }
 
   void _toggleCollapse(TaskListM listM) {
+    final lang = ref.read(localizationProvider);
     setState(() {
       if (_expandedLists.contains(listM.id)) {
         _expandedLists.remove(listM.id);
-        SemanticsService.announce("${listM.name} isimli liste daraltıldı", TextDirection.ltr);
+        SemanticsService.announce("${listM.name} ${lang.listCollapsed}", TextDirection.ltr);
       } else {
         _expandedLists.add(listM.id);
-        SemanticsService.announce("${listM.name} isimli liste genişletildi", TextDirection.ltr);
+        SemanticsService.announce("${listM.name} ${lang.listExpanded}", TextDirection.ltr);
       }
     });
   }
 
   void _showListOptionsBottomSheet(BuildContext context, TaskListM list, int index, bool canEdit, bool isPinned) {
+    final lang = ref.read(localizationProvider);
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
@@ -104,30 +112,30 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
             if (canEdit)
               ListTile(
                 leading: const Icon(Icons.add),
-                title: const Text('Görev Ekle'),
+                title: Text(lang.addTask),
                 onTap: () { Navigator.pop(ctx); _createTaskDialog(list.id); },
               ),
             ListTile(
               leading: const Icon(Icons.push_pin),
-              title: Text(isPinned ? 'Başa Tutturmayı Kaldır' : 'Başa Tuttur'),
+              title: Text(isPinned ? lang.unpinList : lang.pinList),
               onTap: () { Navigator.pop(ctx); _togglePin(list); },
             ),
             if (canEdit && index > 0)
               ListTile(
                 leading: const Icon(Icons.arrow_upward),
-                title: const Text('Yukarı Taşı'),
+                title: Text(lang.moveUp),
                 onTap: () { Navigator.pop(ctx); _moveList(list, true); },
               ),
             if (canEdit && index < _lists.length - 1)
               ListTile(
                 leading: const Icon(Icons.arrow_downward),
-                title: const Text('Aşağı Taşı'),
+                title: Text(lang.moveDown),
                 onTap: () { Navigator.pop(ctx); _moveList(list, false); },
               ),
             if (canEdit)
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Listeyi Sil', style: TextStyle(color: Colors.red)),
+                title: Text(lang.deleteList, style: const TextStyle(color: Colors.red)),
                 onTap: () { Navigator.pop(ctx); _deleteListDialog(list); },
               ),
           ],
@@ -137,6 +145,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
   }
 
   void _showTaskOptionsBottomSheet(BuildContext context, TaskItem task, bool canEdit, bool isTaskCompleted) {
+    final lang = ref.read(localizationProvider);
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
@@ -145,13 +154,13 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
             if (canEdit || task.assignees.contains(_currentUserId))
               ListTile(
                 leading: Icon(isTaskCompleted ? Icons.close : Icons.check),
-                title: Text(isTaskCompleted ? 'Tamamlanmadı Olarak İşaretle' : 'Tamamlandı Olarak İşaretle'),
+                title: Text(isTaskCompleted ? lang.markAsIncomplete : lang.markAsCompleted),
                 onTap: () { Navigator.pop(ctx); _toggleTaskState(task); },
               ),
             if (canEdit)
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Görevi Sil', style: TextStyle(color: Colors.red)),
+                title: Text(lang.deleteTask, style: const TextStyle(color: Colors.red)),
                 onTap: () { Navigator.pop(ctx); _deleteTaskDialog(task); },
               ),
           ],
@@ -161,6 +170,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
   }
 
   Future<void> _moveList(TaskListM listM, bool moveUp) async {
+    final lang = ref.read(localizationProvider);
     // Normal sıralamayı alıyoruz, pinliler de kendi içinde taşınabilir
     final currentIndex = _lists.indexWhere((l) => l.id == listM.id);
     if (currentIndex == -1) return;
@@ -179,24 +189,25 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
         _lists[targetIndex] = updatedTarget;
         _sortLists();
       });
-      SemanticsService.announce(moveUp ? "${listM.name} isimli liste yukarı taşındı" : "${listM.name} isimli liste aşağı taşındı", TextDirection.ltr);
+      SemanticsService.announce(moveUp ? "${listM.name} ${lang.moveListUp}" : "${listM.name} ${lang.moveListDown}", TextDirection.ltr);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
     }
   }
 
   Future<void> _deleteListDialog(TaskListM list) async {
+    final lang = ref.read(localizationProvider);
     final isConfirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Listeyi Sil'),
-        content: Text('"${list.name}" isimli listeyi ve içindeki tüm görevleri silmek istediğinize emin misiniz?'),
+        title: Text(lang.deleteListTitle),
+        content: Text('"${list.name}" ${lang.deleteListConfirm}'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(lang.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Evet, Sil', style: TextStyle(color: Colors.white)),
+            child: Text(lang.yesDelete, style: const TextStyle(color: Colors.white)),
           ),
         ],
       )
@@ -205,26 +216,27 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
     if (isConfirmed == true) {
       try {
         await _service.deleteList(list.id);
-        SemanticsService.announce("${list.name} isimli liste silindi", TextDirection.ltr);
+        SemanticsService.announce("${list.name} ${lang.deleteListSuccess}", TextDirection.ltr);
         _fetchData(showLoading: false);
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
       }
     }
   }
 
   Future<void> _deleteTaskDialog(TaskItem task) async {
+    final lang = ref.read(localizationProvider);
     final isConfirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Görevi Sil'),
-        content: Text('"${task.title}" isimli görevi silmek istediğinize emin misiniz?'),
+        title: Text(lang.deleteTaskTitle),
+        content: Text('"${task.title}" ${lang.deleteTaskConfirm}'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(lang.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Evet, Sil', style: TextStyle(color: Colors.white)),
+            child: Text(lang.yesDelete, style: const TextStyle(color: Colors.white)),
           ),
         ],
       )
@@ -233,15 +245,16 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
     if (isConfirmed == true) {
       try {
         await _service.deleteTask(task.id);
-        SemanticsService.announce("${task.title} isimli görev silindi", TextDirection.ltr);
+        SemanticsService.announce("${task.title} ${lang.deleteTaskSuccess}", TextDirection.ltr);
         _fetchData(showLoading: false);
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
       }
     }
   }
 
   Future<void> _createListDialog() async {
+    final lang = ref.read(localizationProvider);
     final nameCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
     bool isSaving = false;
@@ -254,21 +267,21 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: const Text('Yeni Liste Ekle'),
+              title: Text(lang.newListTitle),
               content: Form(
                 key: formKey,
                 child: TextFormField(
                   controller: nameCtrl,
                   maxLength: 100,
                   enabled: !isSaving,
-                  decoration: const InputDecoration(labelText: 'Liste Adı', hintText: 'Örn: Yapılacaklar, Tamamlananlar'),
-                  validator: (v) => v != null && v.trim().isEmpty ? 'Lütfen liste adı giriniz' : null,
+                  decoration: InputDecoration(labelText: lang.boardName, hintText: lang.listNameHint),
+                  validator: (v) => v != null && v.trim().isEmpty ? lang.listNameRequired : null,
                 ),
               ),
               actions: [
                 TextButton(
                   onPressed: isSaving ? null : () => Navigator.pop(context),
-                  child: const Text('İptal'),
+                  child: Text(lang.cancel),
                 ),
                 ElevatedButton(
                   onPressed: isSaving ? null : () async {
@@ -277,17 +290,17 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                     try {
                       final order = _lists.length + 1;
                       await _service.createList(widget.board.id, nameCtrl.text.trim(), order);
-                      SemanticsService.announce("${nameCtrl.text.trim()} isimli liste oluşturuldu", TextDirection.ltr);
+                      SemanticsService.announce("${nameCtrl.text.trim()} ${lang.listCreatedSuccess}", TextDirection.ltr);
                       if (context.mounted) {
                         Navigator.pop(context);
                         _fetchData(showLoading: false);
                       }
                     } catch (e) {
                       setStateDialog(() => isSaving = false);
-                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
                     }
                   },
-                  child: isSaving ? const CircularProgressIndicator() : const Text('Ekle'),
+                  child: isSaving ? const CircularProgressIndicator() : Text(lang.addTask),
                 ),
               ],
             );
@@ -298,6 +311,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
   }
 
   Future<void> _createTaskDialog(String listId) async {
+    final lang = ref.read(localizationProvider);
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
@@ -311,7 +325,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: const Text('Yeni Görev Ekle'),
+              title: Text(lang.addTaskTitle),
               content: Form(
                 key: formKey,
                 child: SingleChildScrollView(
@@ -322,8 +336,8 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                         controller: titleCtrl,
                         maxLength: 100,
                         enabled: !isSaving,
-                        decoration: const InputDecoration(labelText: 'Görev Adı'),
-                        validator: (v) => v != null && v.trim().isEmpty ? 'Boş bırakılamaz' : null,
+                        decoration: InputDecoration(labelText: lang.taskName),
+                        validator: (v) => v != null && v.trim().isEmpty ? lang.taskNameRequired : null,
                       ),
                       const SizedBox(height: 10),
                       TextFormField(
@@ -331,7 +345,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                         maxLength: 500,
                         enabled: !isSaving,
                         maxLines: 3,
-                        decoration: const InputDecoration(labelText: 'Geniş Açıklama'),
+                        decoration: InputDecoration(labelText: lang.taskDesc),
                       ),
                     ],
                   ),
@@ -340,7 +354,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
               actions: [
                 TextButton(
                   onPressed: isSaving ? null : () => Navigator.pop(context),
-                  child: const Text('İptal'),
+                  child: Text(lang.cancel),
                 ),
                 ElevatedButton(
                   onPressed: isSaving ? null : () async {
@@ -349,17 +363,17 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
                     try {
                       final currentTasksCount = _tasksByList[listId]?.length ?? 0;
                       await _service.createTask(listId, titleCtrl.text.trim(), descCtrl.text.trim(), currentTasksCount + 1);
-                      SemanticsService.announce("${titleCtrl.text.trim()} isimli görev eklendi", TextDirection.ltr);
+                      SemanticsService.announce("${titleCtrl.text.trim()} ${lang.taskAddedSuccess}", TextDirection.ltr);
                       if (context.mounted) {
                         Navigator.pop(context);
                         _fetchData(showLoading: false);
                       }
                     } catch (e) {
                       setStateDialog(() => isSaving = false);
-                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
                     }
                   },
-                  child: isSaving ? const CircularProgressIndicator() : const Text('Ekle'),
+                  child: isSaving ? const CircularProgressIndicator() : Text(lang.addTask),
                 ),
               ],
             );
@@ -370,17 +384,19 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
   }
 
   Future<void> _toggleTaskState(TaskItem task) async {
+    final lang = ref.read(localizationProvider);
     try {
       await _service.updateTaskState(task.id, !task.isCompleted);
       _fetchData(showLoading: false);
-      SemanticsService.announce(!task.isCompleted ? "${task.title} isimli görev tamamlandı olarak işaretlendi" : "${task.title} isimli görev tamamlanmadı olarak işaretlendi", TextDirection.ltr);
+      SemanticsService.announce(!task.isCompleted ? "${task.title} ${lang.markAsCompleted}" : "${task.title} ${lang.markAsIncomplete}", TextDirection.ltr);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     bool canEdit = widget.board.ownerId == _currentUserId || widget.board.editors.contains(_currentUserId);
     
     return Scaffold(
@@ -388,9 +404,9 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
         title: _isSearching ? TextField(
           autofocus: true,
           style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hintText: 'Kart Ara (isim, #id veya etiket)',
-            hintStyle: TextStyle(color: Colors.white54),
+          decoration: InputDecoration(
+            hintText: lang.searchCards,
+            hintStyle: const TextStyle(color: Colors.white54),
             border: InputBorder.none,
           ),
           onChanged: (val) {
@@ -399,13 +415,13 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
             });
           },
         ) : Semantics(
-          label: "${widget.board.name} isimli pano içerisindesiniz.",
+          label: lang.boardDetailAnnouncement(widget.board.name),
           child: Text(widget.board.name),
         ),
         actions: [
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),
-            tooltip: _isSearching ? 'Aramayı Kapat' : 'Kartlarda Ara',
+            tooltip: _isSearching ? lang.cancel : lang.searchCards,
             onPressed: () {
               setState(() {
                 if (_isSearching) {
@@ -419,7 +435,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.people),
-            tooltip: 'Bağlı Kullanıcılar',
+            tooltip: lang.boardMembers,
             onPressed: () {
               Navigator.push(
                 context,
@@ -432,22 +448,22 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
           if (canEdit)
           IconButton(
             icon: const Icon(Icons.group_add),
-            tooltip: 'Üye Davet Et',
+            tooltip: lang.inviteUser,
             onPressed: () async {
               final emailCtrl = TextEditingController();
               final isAdded = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text('Üye Davet Et'),
+                  title: Text(lang.inviteUser),
                   content: TextField(
                     controller: emailCtrl,
-                    decoration: const InputDecoration(hintText: 'Kullanıcı adı veya e-posta adresi'),
+                    decoration: InputDecoration(hintText: lang.inviteUserHint),
                   ),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+                    TextButton(onPressed: () => Navigator.pop(context, false), child: Text(lang.cancel)),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Davet Et'),
+                      child: Text(lang.inviteAction),
                     ),
                   ],
                 )
@@ -456,10 +472,10 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
               if (isAdded == true && emailCtrl.text.isNotEmpty) {
                 try {
                   await _service.addMember(widget.board.id, emailCtrl.text.trim());
-                  SemanticsService.announce("Kullanıcı panoya eklendi", TextDirection.ltr);
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kullanıcı başarıyla eklendi!')));
+                  SemanticsService.announce(lang.inviteSuccess, TextDirection.ltr);
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.inviteSuccess)));
                 } catch (e) {
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
                 }
               }
             },
@@ -467,7 +483,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
           if (canEdit)
             IconButton(
               icon: const Icon(Icons.add_card),
-              tooltip: 'Yeni Liste Ekle',
+              tooltip: lang.newListTitle,
               onPressed: _createListDialog,
             )
         ],
@@ -476,7 +492,7 @@ class _TaskBoardDetailScreenState extends State<TaskBoardDetailScreen> {
         child: _isLoading 
           ? const Center(child: CircularProgressIndicator())
           : _lists.isEmpty
-            ? const Center(child: Text('Bu panoda henüz bir liste yok.\nSağ üst köşeden liste ekleyebilirsiniz.', textAlign: TextAlign.center))
+            ? Center(child: Text(lang.emptyList, textAlign: TextAlign.center))
             : ListView.builder(
 addAutomaticKeepAlives: false,
 addRepaintBoundaries: true,
@@ -518,19 +534,19 @@ addRepaintBoundaries: true,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Semantics(
-                          label: '${list.name} isimli liste içerisinde $totalTasks adet görev mevcut. Yüzde $percentage tamamlandı. ${kIsWeb ? "Seçenekleri açmak için uzun basılı tutun." : "Liste ile alakalı işlem yapmak için parmağınızı yukarı ya da aşağı kaydırın."}',
+                          label: '${list.name} ${lang.listOptionsHint}. $totalTasks ${lang.tasks}. $percentage% ${lang.completedPercentage.toLowerCase()}. ${kIsWeb ? lang.taskOptionsHint : lang.listOptionsHint}',
                           button: true,
-                          onTapHint: isCollapsed ? "Genişlet" : "Daralt",
+                          onTapHint: isCollapsed ? lang.listExpanded : lang.listCollapsed,
                           onTap: () => _toggleCollapse(list),
-                          onLongPressHint: "Seçenekleri Göster",
+                          onLongPressHint: lang.options,
                           onLongPress: () => _showListOptionsBottomSheet(context, list, index, canEdit, isPinned),
                           customSemanticsActions: {
-                            const CustomSemanticsAction(label: 'Listeyi Genişlet/Daralt'): () => _toggleCollapse(list),
-                            CustomSemanticsAction(label: isPinned ? 'Başa Tutturmayı Kaldır' : 'Başa Tuttur'): () => _togglePin(list),
-                            if (canEdit && index > 0) const CustomSemanticsAction(label: 'Yukarı Taşı'): () => _moveList(list, true),
-                            if (canEdit && index < _lists.length - 1) const CustomSemanticsAction(label: 'Aşağı Taşı'): () => _moveList(list, false),
-                            if (canEdit) const CustomSemanticsAction(label: 'Görev Ekle'): () => _createTaskDialog(list.id),
-                            if (canEdit) const CustomSemanticsAction(label: 'Listeyi Sil'): () => _deleteListDialog(list),
+                            CustomSemanticsAction(label: '${lang.listExpanded}/${lang.listCollapsed}'): () => _toggleCollapse(list),
+                            CustomSemanticsAction(label: isPinned ? lang.unpinList : lang.pinList): () => _togglePin(list),
+                            if (canEdit && index > 0) CustomSemanticsAction(label: lang.moveUp): () => _moveList(list, true),
+                            if (canEdit && index < _lists.length - 1) CustomSemanticsAction(label: lang.moveDown): () => _moveList(list, false),
+                            if (canEdit) CustomSemanticsAction(label: lang.addTask): () => _createTaskDialog(list.id),
+                            if (canEdit) CustomSemanticsAction(label: lang.deleteList): () => _deleteListDialog(list),
                           },
                           child: ExcludeSemantics(
                             child: InkWell(
@@ -555,7 +571,7 @@ addRepaintBoundaries: true,
                                             Padding(
                                               padding: const EdgeInsets.only(top: 4.0),
                                               child: Text(
-                                                '%$percentage Tamamlandı ($completedTasks/$totalTasks)',
+                                                '%$percentage ${lang.completedPercentage} ($completedTasks/$totalTasks)',
                                                 style: const TextStyle(fontSize: 13, color: Colors.white70),
                                               ),
                                             ),
@@ -567,7 +583,7 @@ addRepaintBoundaries: true,
                                     const SizedBox(width: 8),
                                     PopupMenuButton<String>(
                                       icon: const Icon(Icons.more_vert),
-                                      tooltip: 'Liste İşlemleri',
+                                      tooltip: lang.options,
                                       onSelected: (val) {
                                         if (val == 'pin') _togglePin(list);
                                         else if (val == 'up') _moveList(list, true);
@@ -576,11 +592,11 @@ addRepaintBoundaries: true,
                                         else if (val == 'delete') _deleteListDialog(list);
                                       },
                                       itemBuilder: (context) => [
-                                        const PopupMenuItem(value: 'add', child: Text('Görev Ekle')),
-                                        PopupMenuItem(value: 'pin', child: Text(isPinned ? 'Başa Tutturmayı Kaldır' : 'Başa Tuttur')),
-                                        if (index > 0) const PopupMenuItem(value: 'up', child: Text('Yukarı Taşı')),
-                                        if (index < _lists.length - 1) const PopupMenuItem(value: 'down', child: Text('Aşağı Taşı')),
-                                        const PopupMenuItem(value: 'delete', child: Text('Listeyi Sil', style: TextStyle(color: Colors.red))),
+                                        PopupMenuItem(value: 'add', child: Text(lang.addTask)),
+                                        PopupMenuItem(value: 'pin', child: Text(isPinned ? lang.unpinList : lang.pinList)),
+                                        if (index > 0) PopupMenuItem(value: 'up', child: Text(lang.moveUp)),
+                                        if (index < _lists.length - 1) PopupMenuItem(value: 'down', child: Text(lang.moveDown)),
+                                        PopupMenuItem(value: 'delete', child: Text(lang.deleteList, style: const TextStyle(color: Colors.red))),
                                       ],
                                     )
                                   ],
@@ -592,9 +608,9 @@ addRepaintBoundaries: true,
                         if (!isCollapsed) ...[
                           const Divider(height: 1),
                           if (tasks.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: Text('Bu listede henüz görev yok.'),
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(lang.noTasksInList),
                             ),
                             Container(
                               width: double.infinity,
@@ -620,21 +636,21 @@ addRepaintBoundaries: true,
                                       int hours = total.inHours % 24;
                                       int mins = total.inMinutes % 60;
                                       List<String> p = [];
-                                      if(days > 0) p.add("$days gün");
-                                      if(hours > 0) p.add("$hours saat");
-                                      if(mins > 0) p.add("$mins dakika");
-                                      if(p.isEmpty) p.add("1 dakikadan az");
-                                      timeSpentStr = " Görev üzerinde toplam ${p.join(" ")} çalışıldı.";
+                                      if(days > 0) p.add("$days ${lang.days}");
+                                      if(hours > 0) p.add("$hours ${lang.hours}");
+                                      if(mins > 0) p.add("$mins ${lang.minutes}");
+                                      if(p.isEmpty) p.add(lang.lessThanAMinute);
+                                      timeSpentStr = " ${lang.timeSpentOnTask.replaceAll("{time}", p.join(" "))}";
                                     }
                                   }
 
                                   return SizedBox(
                                     width: 160,
                                     child: Semantics(
-                                      label: 'Görev numarası ${task.taskNumber}: ${task.title}. ${isTaskCompleted ? "Tamamlandı" : "Devam ediyor"}.$timeSpentStr Düzenlemek veya görüntülemek için çift tıklayın. ${kIsWeb ? "Seçenekleri açmak için uzun basılı tutun." : "İşlem seçenekleri için parmağınızı yukarı veya aşağı kaydırın."}',
+                                      label: '${lang.task} #${task.taskNumber}: ${task.title}. ${isTaskCompleted ? lang.markAsCompleted : lang.markAsIncomplete}.$timeSpentStr ${lang.taskDetailAction} ${kIsWeb ? lang.options : lang.taskOptionsHint}',
                                       button: true,
-                                      onTapHint: 'Görevi Aç',
-                                      onLongPressHint: 'Seçenekleri Göster',
+                                      onTapHint: lang.taskDetailAction,
+                                      onLongPressHint: lang.options,
                                       onTap: () async {
                                         final refresh = await Navigator.push(
                                           context,
@@ -646,8 +662,8 @@ addRepaintBoundaries: true,
                                       },
                                       onLongPress: () => _showTaskOptionsBottomSheet(context, task, canEdit, isTaskCompleted),
                                       customSemanticsActions: {
-                                        if (canEdit) const CustomSemanticsAction(label: 'Görevi Sil'): () => _deleteTaskDialog(task),
-                                        if (canEdit || task.assignees.contains(_currentUserId)) CustomSemanticsAction(label: isTaskCompleted ? 'Tamamlanmadı Olarak İşaretle' : 'Tamamlandı Olarak İşaretle'): () => _toggleTaskState(task),
+                                        if (canEdit) CustomSemanticsAction(label: lang.deleteTask): () => _deleteTaskDialog(task),
+                                        if (canEdit || task.assignees.contains(_currentUserId)) CustomSemanticsAction(label: isTaskCompleted ? lang.markAsIncomplete : lang.markAsCompleted): () => _toggleTaskState(task),
                                       },
                                       child: ExcludeSemantics(
                                         child: Card(
@@ -682,7 +698,7 @@ addRepaintBoundaries: true,
                                                         ),
                                                       ),
                                                       Semantics(
-                                                        label: isTaskCompleted ? 'Tamamlandı olarak işaretli. Tıklayarak tamamlanmadı olarak işaretle' : 'Tamamlanmadı. Tıklayarak tamamlandı olarak işaretle',
+                                                        label: isTaskCompleted ? lang.markAsIncomplete : lang.markAsCompleted,
                                                         button: true,
                                                         child: GestureDetector(
                                                           onTap: () => _toggleTaskState(task),
@@ -732,9 +748,9 @@ addRepaintBoundaries: true,
                                               ),
                                             ),
                                           ),
-                                        )
+                                        ),
                                       ),
-                                    )
+                                    ),
                                   );
                                 }).toList(),
                               ),
@@ -742,6 +758,7 @@ addRepaintBoundaries: true,
                           ]
                         ],
                       ),
+                    ),
                   );
                 },
               ),
@@ -756,8 +773,9 @@ addRepaintBoundaries: true,
   }
 
   String _formatDt(DateTime dt) {
+    final lang = ref.read(localizationProvider);
     final now = DateTime.now();
-    const months = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    final months = ["", lang.january, lang.february, lang.march, lang.april, lang.may, lang.june, lang.july, lang.august, lang.september, lang.october, lang.november, lang.december];
     if (now.year == dt.year) return "${dt.day} ${months[dt.month]}";
     return "${dt.day} ${months[dt.month]} ${dt.year}";
   }

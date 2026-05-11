@@ -6,6 +6,7 @@ import 'package:blind_social/features/auth/presentation/screens/auth_wrapper.dar
 import 'package:blind_social/features/update/presentation/screens/update_check_wrapper.dart';
 import 'package:blind_social/features/profile/presentation/screens/edit_profile_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 
 class MyProfileScreen extends ConsumerStatefulWidget {
   const MyProfileScreen({super.key});
@@ -25,6 +26,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   }
 
   Future<void> _fetchProfile() async {
+    final lang = ref.read(localizationProvider);
     try {
       final user = PocketBaseService.client.authStore.model;
       if (user != null) {
@@ -57,7 +59,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Profil yüklenirken hata: $e')),
+          SnackBar(content: Text('${lang.profile} yüklenirken hata: $e')),
         );
       }
     }
@@ -74,7 +76,8 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   }
 
   String _formatDate(String? isoString) {
-    if (isoString == null || isoString.isEmpty) return 'Bilinmiyor';
+    final lang = ref.read(localizationProvider);
+    if (isoString == null || isoString.isEmpty) return lang.unknown;
     try {
       final date = DateTime.parse(isoString).toLocal();
       return DateFormat('dd.MM.yyyy').format(date);
@@ -85,22 +88,24 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
+    
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Profilim')),
+        appBar: AppBar(title: Text(lang.myProfile)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
-    final username = _userData?.getStringValue('username') ?? 'Bilinmiyor';
-    final fullName = _userData?.getStringValue('full_name') ?? 'Belirtilmemiş';
-    final bio = _userData?.getStringValue('bio') ?? 'Henüz bir biyografi eklenmemiş.';
+    final username = _userData?.getStringValue('username') ?? lang.unknown;
+    final fullName = _userData?.getStringValue('full_name') ?? lang.notSpecified;
+    final bio = _userData?.getStringValue('bio') ?? lang.noBio;
     final dob = _userData?.getStringValue('dob');
     final createdAt = _userData?.created;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profilim'),
+        title: Text(lang.myProfile),
         actions: [
           IconButton(
             onPressed: () async {
@@ -117,7 +122,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
               }
             },
             icon: const Icon(Icons.edit_outlined),
-            tooltip: "Profili Düzenle",
+            tooltip: lang.editProfile,
           ),
         ],
       ),
@@ -144,7 +149,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
               child: Column(
                 children: [
                   Semantics(
-                    label: "Profil fotoğrafınız",
+                    label: lang.profilePhoto,
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
@@ -154,7 +159,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                       child: CircleAvatar(
                         radius: 44,
                         backgroundColor: Theme.of(context).colorScheme.primary,
-                        child: username.isNotEmpty && username != 'Bilinmiyor'
+                        child: username.isNotEmpty && username != lang.unknown
                           ? Text(
                               username[0].toUpperCase(),
                               style: const TextStyle(fontSize: 36, color: Colors.black, fontWeight: FontWeight.bold),
@@ -180,21 +185,21 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             const SizedBox(height: 16),
             
             // Hakkımda Section
-            _buildSectionTitle('Hakkımda'),
+            _buildSectionTitle(lang.bio),
             _buildBioCard(bio),
             const SizedBox(height: 16),
 
             // Bilgiler Section
-            _buildSectionTitle('Bilgiler'),
+            _buildSectionTitle(lang.personalInfo),
             Row(
               children: [
-                Expanded(child: _buildMiniInfoCard(Icons.cake_outlined, 'Doğum Tarihi', _formatDate(dob), Colors.blue)),
+                Expanded(child: _buildMiniInfoCard(Icons.cake_outlined, lang.dob, _formatDate(dob), Colors.blue)),
                 const SizedBox(width: 12),
-                Expanded(child: _buildMiniInfoCard(Icons.calendar_today_outlined, 'Katılım', _formatDate(createdAt), Colors.green)),
+                Expanded(child: _buildMiniInfoCard(Icons.calendar_today_outlined, lang.joinedAt, _formatDate(createdAt), Colors.green)),
               ],
             ),
             const SizedBox(height: 12),
-            _buildFullWidthInfoCard(Icons.email_outlined, 'E-posta', PocketBaseService.client.authStore.model?.getStringValue('email') ?? 'Belirtilmemiş', Colors.amber),
+            _buildFullWidthInfoCard(Icons.email_outlined, lang.email, PocketBaseService.client.authStore.model?.getStringValue('email') ?? lang.notSpecified, Colors.amber),
             
             const SizedBox(height: 24),
             
@@ -204,7 +209,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
               child: ElevatedButton.icon(
                 onPressed: _signOut,
                 icon: const Icon(Icons.logout),
-                label: const Text('Hesaptan Çıkış Yap'),
+                label: Text(lang.signOutAccount),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red.withOpacity(0.08),
                   foregroundColor: Colors.redAccent,

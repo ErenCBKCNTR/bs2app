@@ -3,17 +3,19 @@ import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:intl/intl.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/localization_provider.dart';
 
-class UserProfileScreen extends StatefulWidget {
+class UserProfileScreen extends ConsumerStatefulWidget {
   final String userId;
 
   const UserProfileScreen({super.key, required this.userId});
 
   @override
-  State<UserProfileScreen> createState() => _UserProfileScreenState();
+  ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
 }
 
-class _UserProfileScreenState extends State<UserProfileScreen> {
+class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   bool _isLoading = true;
   RecordModel? _userProfile;
   String? _errorMessage;
@@ -30,6 +32,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> _fetchProfile() async {
+    final lang = ref.read(localizationProvider);
     try {
       final response = await PocketBaseService.client.collection('users').getOne(widget.userId);
 
@@ -83,19 +86,20 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = "Profil yüklenemedi: $e";
+        _errorMessage = "${lang.profileLoadError}: $e";
         _isLoading = false;
       });
     }
   }
 
   Widget _buildRemoveFriendButton() {
+    final lang = ref.watch(localizationProvider);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ElevatedButton.icon(
         onPressed: _removeFriend,
         icon: const Icon(Icons.person_remove),
-        label: const Text('Arkadaş Listemden Çıkar', style: TextStyle(fontSize: 16)),
+        label: Text(lang.removeFromFriends, style: const TextStyle(fontSize: 16)),
         style: ElevatedButton.styleFrom(
           minimumSize: const Size.fromHeight(50),
           backgroundColor: Colors.red,
@@ -106,6 +110,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> _removeFriend() async {
+    final lang = ref.read(localizationProvider);
     if (_friendshipRecordId == null) return;
     try {
       await PocketBaseService.client.collection('friendships').delete(_friendshipRecordId!);
@@ -115,20 +120,21 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           _friendshipRecordId = null;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Arkadaşlıktan çıkarıldı.')),
+          SnackBar(content: Text(lang.removedFromFriends)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata oluştu: $e')),
+          SnackBar(content: Text('${lang.error}: $e')),
         );
       }
     }
   }
 
   Widget _buildBlockButton() {
-    final labelText = _hasBlocked ? 'Engellemeyi Kaldır' : 'Kullanıcıyı Engelle';
+    final lang = ref.watch(localizationProvider);
+    final labelText = _hasBlocked ? lang.unblockUserTooltip : lang.blockUser;
     final bgColor = _hasBlocked ? Colors.grey.shade600 : Colors.red.shade900;
     final iconData = _hasBlocked ? Icons.lock_open : Icons.block;
     
@@ -152,6 +158,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> _toggleBlock() async {
+    final lang = ref.read(localizationProvider);
     final currentUserId = PocketBaseService.client.authStore.model!.id;
     try {
       if (_hasBlocked) {
@@ -163,7 +170,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               _blockRecordId = null;
             });
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Kullanıcının engeli kaldırıldı.')),
+              SnackBar(content: Text(lang.userUnblocked)),
             );
           }
         }
@@ -186,14 +193,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             _friendshipRecordId = null;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Kullanıcı engellendi.')),
+            SnackBar(content: Text(lang.userBlocked)),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('İşlem başarısız: $e')),
+          SnackBar(content: Text('${lang.operationFailed}: $e')),
         );
       }
     }
@@ -201,15 +208,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profil Bilgileri'),
+        title: Text(lang.profileInfo),
       ),
-      body: _buildBody(),
+      body: _buildBody(lang),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(BaseLanguage lang) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -224,12 +232,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
 
     if (_userProfile == null) {
-      return const Center(child: Text("Kullanıcı bulunamadı."));
+      return Center(child: Text(lang.userNotFound));
     }
 
     final currentUserId = PocketBaseService.client.authStore.model?.id;
     final username = _userProfile!.getStringValue('username');
-    final displayName = ProfanityFilter.filter(username.isNotEmpty ? username : 'İsimsiz');
+    final displayName = ProfanityFilter.filter(username.isNotEmpty ? username : lang.unnamed);
     final dobRaw = _userProfile!.getStringValue('dob');
     final hideLastSeen = _userProfile!.getBoolValue('hide_last_seen');
     final fullName = _userProfile!.getStringValue('full_name');
@@ -272,9 +280,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       showFullName = true; // Always show own info
     }
     
-    String formattedDob = "Belirtilmemiş";
+    String formattedDob = lang.unspecified;
     if (!showBirthday) {
-      formattedDob = "Gizli";
+      formattedDob = lang.hidden;
     } else if (dobRaw.isNotEmpty) {
       try {
         final date = DateTime.parse(dobRaw);
@@ -283,7 +291,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
 
     final createdAtRaw = _userProfile!.created;
-    String formattedJoined = "Bilinmiyor";
+    String formattedJoined = lang.unknown;
     if (createdAtRaw.isNotEmpty) {
       try {
         final date = DateTime.parse(createdAtRaw).toLocal();
@@ -294,13 +302,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final bio = _userProfile!.getStringValue('bio');
     final hasBio = bio.isNotEmpty;
 
-    String statusText = "Son görülme bilinmiyor";
+    String statusText = lang.lastSeenUnknown;
     Color statusColor = Colors.grey;
     if (hideLastSeen) {
-       statusText = "Son görülme gizli";
+       statusText = lang.lastSeenHidden;
        statusColor = Colors.grey;
     } else if (isOnline) {
-       statusText = "Şu an aktif";
+       statusText = lang.currentlyActive;
        statusColor = Colors.green;
     } else {
        final lastSeenRaw = _userProfile!.getStringValue('last_seen');
@@ -309,9 +317,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
            final lastSeenDate = DateTime.parse(targetRaw).toLocal();
            final now = DateTime.now();
            if (lastSeenDate.year == now.year && lastSeenDate.month == now.month && lastSeenDate.day == now.day) {
-               statusText = "Son görülme bugün ${DateFormat('HH:mm').format(lastSeenDate)}";
+               statusText = "${lang.lastSeenToday} ${DateFormat('HH:mm').format(lastSeenDate)}";
            } else {
-               statusText = "Son görülme ${DateFormat('dd.MM.yyyy HH:mm').format(lastSeenDate)}";
+               statusText = "${lang.lastSeen} ${DateFormat('dd.MM.yyyy HH:mm').format(lastSeenDate)}";
            }
        }
     }
@@ -330,7 +338,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               children: [
                 const SizedBox(height: 16),
                 Semantics(
-                  label: "$displayName adlı kullanıcının profil fotoğrafı",
+                  label: "$displayName ${lang.userProfilePhoto}",
                   child: Hero(
                     tag: 'avatar_${widget.userId}',
                     child: CircleAvatar(
@@ -398,7 +406,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (hasBio) ...[
-                  const Text('Hakkında', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
+                  Text(lang.about, style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Card(
                     elevation: 0,
@@ -411,17 +419,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ),
                   const SizedBox(height: 24),
                 ],
-                const Text('Detaylar', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
+                Text(lang.details, style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Expanded(child: _buildCompactInfoCard(Icons.cake_outlined, "Doğum Günü", formattedDob)),
+                    Expanded(child: _buildCompactInfoCard(Icons.cake_outlined, lang.birthday, formattedDob)),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildCompactInfoCard(Icons.calendar_today_outlined, "Katılım", formattedJoined)),
+                    Expanded(child: _buildCompactInfoCard(Icons.calendar_today_outlined, lang.joined, formattedJoined)),
                   ],
                 ),
                 const SizedBox(height: 32),
-                if (!_isBlockedBy) _buildFriendButton(),
+                if (!_isBlockedBy) _buildFriendButton(lang),
                 if (_friendshipStatus == 1 && !_isBlockedBy) const SizedBox(height: 12),
                 if (_friendshipStatus == 1 && !_isBlockedBy) _buildRemoveFriendButton(),
                 if (currentUserId != widget.userId) const SizedBox(height: 12),
@@ -435,24 +443,24 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Widget _buildFriendButton() {
-    String labelText = 'Arkadaş Olarak Ekle';
+  Widget _buildFriendButton(BaseLanguage lang) {
+    String labelText = lang.addAsFriend;
     IconData iconData = Icons.person_add;
     VoidCallback? onPressed = _sendFriendRequest;
     Color bgColor = Theme.of(context).colorScheme.primary;
 
     if (_friendshipStatus == 1) {
-      labelText = 'Arkadaşsınız';
+      labelText = lang.youAreFriends;
       iconData = Icons.people;
       onPressed = null;
       bgColor = Colors.grey.shade800;
     } else if (_friendshipStatus == 2) {
-      labelText = 'Arkadaşlık İsteği Gönderildi';
+      labelText = lang.friendRequestSent;
       iconData = Icons.check;
       onPressed = null;
       bgColor = Colors.grey.shade800;
     } else if (_friendshipStatus == 3) {
-      labelText = 'Sizi Eklemek İstiyor';
+      labelText = lang.wantsToAddYou;
       iconData = Icons.person_add_alt_1;
       onPressed = null;
       bgColor = Colors.grey.shade800;
@@ -474,6 +482,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> _sendFriendRequest() async {
+    final lang = ref.read(localizationProvider);
     try {
       final currentUserId = PocketBaseService.client.authStore.model!.id;
       await PocketBaseService.client.collection('friend_requests').create(body: {
@@ -486,13 +495,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           _friendshipStatus = 2;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Arkadaşlık isteği gönderildi!')),
+          SnackBar(content: Text(lang.friendRequestSentSuccess)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata oluştu: $e')),
+          SnackBar(content: Text('${lang.error}: $e')),
         );
       }
     }

@@ -1,7 +1,9 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 
-class VoiceRoomItem extends StatelessWidget {
+class VoiceRoomItem extends ConsumerWidget {
   final String roomName;
   final VoidCallback onTap;
 
@@ -12,7 +14,8 @@ class VoiceRoomItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(localizationProvider);
     return Semantics(
       label: "$roomName adlı sesli oda. Katılmak için çift dokunun.",
       button: true,
@@ -26,7 +29,7 @@ class VoiceRoomItem extends StatelessWidget {
           roomName,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
-        subtitle: const Text('Canlı Ses Odası'),
+        subtitle: Text(lang.liveVoiceRoom),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),

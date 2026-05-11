@@ -1,21 +1,23 @@
 import 'dart:io' as io;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/services/notification_service.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 
-class AuthScreen extends StatefulWidget {
+class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
 
   @override
-  State<AuthScreen> createState() => _AuthScreenState();
+  ConsumerState<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> {
+class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
@@ -438,10 +440,24 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
+    final currentLangCode = ref.read(localizationProvider.notifier).currentLanguageCode;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Giriş / Kayıt'),
+        title: Text('${lang.login} / ${lang.signUp}'),
         centerTitle: true,
+      ),
+      floatingActionButton: FloatingActionButton.small(
+        onPressed: () {
+          final nextLang = currentLangCode == 'tr-TR' ? 'en-US' : 'tr-TR';
+          ref.read(localizationProvider.notifier).setLanguage(nextLang);
+        },
+        tooltip: lang.language,
+        child: Text(
+          currentLangCode == 'tr-TR' ? '🇺🇸' : '🇹🇷',
+          style: const TextStyle(fontSize: 20),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -450,11 +466,11 @@ class _AuthScreenState extends State<AuthScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Semantics(
-              label: 'Blind social uygulamasına Hoş geldiniz. Lütfen giriş yöntemi seçin.',
-              child: const ExcludeSemantics(
+              label: '${lang.appName} uygulamasına Hoş geldiniz. Lütfen giriş yöntemi seçin.',
+              child: ExcludeSemantics(
                 child: Text(
-                  'Hoş Geldiniz',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  lang.welcomeBack,
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -516,11 +532,11 @@ class _AuthScreenState extends State<AuthScreen> {
             TextFormField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'E-posta Adresi',
+              decoration: InputDecoration(
+                labelText: lang.email,
                 hintText: 'ornek@eposta.com',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.email),
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.email),
               ),
               textInputAction: TextInputAction.next,
             ),
@@ -528,11 +544,11 @@ class _AuthScreenState extends State<AuthScreen> {
             TextFormField(
               controller: _passwordController,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Şifre',
+              decoration: InputDecoration(
+                labelText: lang.password,
                 hintText: 'En az 8 karakter',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.lock),
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.lock),
               ),
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _authenticate(),

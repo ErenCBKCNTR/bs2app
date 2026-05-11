@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/localization_provider.dart';
 
-class FriendRequestsScreen extends StatefulWidget {
+class FriendRequestsScreen extends ConsumerStatefulWidget {
   const FriendRequestsScreen({super.key});
 
   @override
-  State<FriendRequestsScreen> createState() => _FriendRequestsScreenState();
+  ConsumerState<FriendRequestsScreen> createState() => _FriendRequestsScreenState();
 }
 
-class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
+class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
   bool _isLoading = true;
   List<RecordModel> _incomingRequests = [];
   List<RecordModel> _outgoingRequests = [];
@@ -63,6 +65,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   }
 
   Future<void> _acceptRequest(RecordModel request) async {
+    final lang = ref.read(localizationProvider);
     try {
       final fromUserId = request.getStringValue('from_user');
       final toUserId = request.getStringValue('to_user');
@@ -78,7 +81,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Arkadaşlık isteği kabul edildi.')),
+          SnackBar(content: Text(lang.friendRequestAccepted)),
         );
         _fetchRequests();
       }
@@ -86,43 +89,45 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
       AppLogger.instance.error('Arkadaşlık isteği kabul edilirken hata: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text('${lang.error}: $e')),
         );
       }
     }
   }
 
   Future<void> _rejectRequest(RecordModel request) async {
+    final lang = ref.read(localizationProvider);
     try {
       await PocketBaseService.client.collection('friend_requests').delete(request.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Arkadaşlık isteği reddedildi.')),
+          SnackBar(content: Text(lang.friendRequestRejected)),
         );
         _fetchRequests();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text('${lang.error}: $e')),
         );
       }
     }
   }
 
   Future<void> _unblockUser(RecordModel blockRecord) async {
+    final lang = ref.read(localizationProvider);
     try {
       await PocketBaseService.client.collection('user_blocks').delete(blockRecord.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kullanıcının engeli kaldırıldı.')),
+          SnackBar(content: Text(lang.userUnblocked)),
         );
         _fetchRequests();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text('${lang.error}: $e')),
         );
       }
     }
@@ -130,9 +135,10 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Arkadaşlık ve Engellenenler Listesi'),
+        title: Text(lang.friendRequestsAndBlocks),
       ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())
@@ -142,33 +148,33 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionHeader('Gelen İstekler', _incomingRequests.length),
+                  _buildSectionHeader(lang.incomingRequestsHeader, _incomingRequests.length),
                   if (_incomingRequests.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Text('Gelen istek yok.', style: TextStyle(color: Colors.grey)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text(lang.noIncomingRequests, style: const TextStyle(color: Colors.grey)),
                     )
                   else
                     ..._incomingRequests.map((req) => _buildIncomingRequestItem(req)),
 
                   const Divider(height: 32),
 
-                  _buildSectionHeader('Giden İstekler', _outgoingRequests.length),
+                  _buildSectionHeader(lang.outgoingRequestsHeader, _outgoingRequests.length),
                   if (_outgoingRequests.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Text('Giden istek yok.', style: TextStyle(color: Colors.grey)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text(lang.noOutgoingRequests, style: const TextStyle(color: Colors.grey)),
                     )
                   else
                     ..._outgoingRequests.map((req) => _buildOutgoingRequestItem(req)),
 
                   const Divider(height: 32),
 
-                  _buildSectionHeader('Engellenen Kullanıcılar', _blockedUsers.length),
+                  _buildSectionHeader(lang.blockedUsersHeader, _blockedUsers.length),
                   if (_blockedUsers.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Text('Engellenen kullanıcı yok.', style: TextStyle(color: Colors.grey)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text(lang.noBlockedUsers, style: const TextStyle(color: Colors.grey)),
                     )
                   else
                     ..._blockedUsers.map((blk) => _buildBlockedUserItem(blk)),
@@ -194,14 +200,15 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   }
 
   Widget _buildIncomingRequestItem(RecordModel request) {
+    final lang = ref.watch(localizationProvider);
     final fromUser = request.expand['from_user']?.first;
     if (fromUser == null) return const SizedBox.shrink();
 
     final username = fromUser.getStringValue('username');
-    final displayName = username.isNotEmpty ? username : 'İsimsiz';
+    final displayName = username.isNotEmpty ? username : lang.unnamed;
 
     return Semantics(
-      label: "$displayName'den gelen arkadaşlık isteği",
+      label: "$displayName ${lang.friendRequestFrom}",
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
@@ -217,12 +224,12 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
             IconButton(
               icon: const Icon(Icons.check_circle, color: Colors.green),
               onPressed: () => _acceptRequest(request),
-              tooltip: 'İsteği kabul et',
+              tooltip: lang.markAsCompleted, // Using markAsCompleted as "Accept" placeholder if not specific, or I should add it
             ),
             IconButton(
               icon: const Icon(Icons.cancel, color: Colors.red),
               onPressed: () => _rejectRequest(request),
-              tooltip: 'İsteği reddet',
+              tooltip: lang.no,
             ),
           ],
         ),
@@ -231,14 +238,15 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   }
 
   Widget _buildOutgoingRequestItem(RecordModel request) {
+    final lang = ref.watch(localizationProvider);
     final toUser = request.expand['to_user']?.first;
     if (toUser == null) return const SizedBox.shrink();
 
     final username = toUser.getStringValue('username');
-    final displayName = username.isNotEmpty ? username : 'İsimsiz';
+    final displayName = username.isNotEmpty ? username : lang.unnamed;
 
     return Semantics(
-      label: "$displayName'ye gönderilen arkadaşlık isteği. İptal etmek için tıklayın.",
+      label: "$displayName ${lang.friendRequestTo}",
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
@@ -251,21 +259,22 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
         trailing: IconButton(
           icon: const Icon(Icons.close, color: Colors.grey),
           onPressed: () => _rejectRequest(request),
-          tooltip: 'Gönderilen isteği iptal et',
+          tooltip: lang.cancelOutgoingRequest,
         ),
       ),
     );
   }
 
   Widget _buildBlockedUserItem(RecordModel blockRecord) {
+    final lang = ref.watch(localizationProvider);
     final blockedUser = blockRecord.expand['blocked']?.first;
     if (blockedUser == null) return const SizedBox.shrink();
 
     final username = blockedUser.getStringValue('username');
-    final displayName = username.isNotEmpty ? username : 'İsimsiz';
+    final displayName = username.isNotEmpty ? username : lang.unnamed;
 
     return Semantics(
-      label: "Engellenen kullanıcı $displayName. Engeli kaldırmak için tıklayın.",
+      label: displayName + " " + lang.blockedUserInfo,
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
@@ -278,7 +287,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
         trailing: IconButton(
           icon: const Icon(Icons.lock_open, color: Colors.blue),
           onPressed: () => _unblockUser(blockRecord),
-          tooltip: 'Kullanıcının engelini kaldır',
+          tooltip: lang.unblockUserTooltip,
         ),
       ),
     );

@@ -26,7 +26,7 @@ import 'package:blind_social/core/widgets/expandable_text.dart';
 import 'package:blind_social/core/widgets/chat_input_field.dart';
 import 'package:blind_social/core/widgets/voice_message_widget.dart';
 
-class ChatDetailScreen extends StatefulWidget {
+class ChatDetailScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> chat;
 
   const ChatDetailScreen({super.key, required this.chat});
@@ -36,10 +36,10 @@ class ChatDetailScreen extends StatefulWidget {
   }
 
   @override
-  State<ChatDetailScreen> createState() => _ChatDetailScreenState();
+  ConsumerState<ChatDetailScreen> createState() => _ChatDetailScreenState();
 }
 
-class _ChatDetailScreenState extends State<ChatDetailScreen> {
+class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   static final Map<String, List<Map<String, dynamic>>> _messageCache = {};
   
   static void clearCacheForChat(String chatId) {
@@ -90,15 +90,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
     if (targetId != null) {
       try {
+        final lang = ref.read(localizationProvider);
         final record = await PocketBaseService.client.collection('users').getOne(targetId);
         final isOnline = record.getBoolValue('is_online');
         final hideLastSeen = record.getBoolValue('hide_last_seen');
 
-        String status = "Bilinmiyor";
+        String status = lang.unknown;
         if (hideLastSeen) {
-          status = "Son görülme gizli";
+          status = lang.lastSeenHidden;
         } else if (isOnline) {
-          status = "Şu an aktif";
+          status = lang.activeNow;
         } else {
           final lastSeenRaw = record.getStringValue('last_seen');
           final targetRaw = lastSeenRaw.isNotEmpty ? lastSeenRaw : record.updated;
@@ -106,9 +107,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             final date = DateTime.parse(targetRaw).toLocal();
             final now = DateTime.now();
             if (date.year == now.year && date.month == now.month && date.day == now.day) {
-               status = "Son görülme bugün ${DateFormat('HH:mm').format(date)}";
+               status = lang.statusTodayAt(DateFormat('HH:mm').format(date));
             } else {
-               status = "Son görülme ${DateFormat('dd.MM.yyyy HH:mm').format(date)}";
+               status = lang.statusLastSeen(DateFormat('dd.MM.yyyy HH:mm').format(date));
             }
           }
         }
@@ -121,7 +122,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Durum alınamadı')));
+          final lang = ref.read(localizationProvider);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.statusFailed)));
         }
       }
     }
@@ -196,7 +198,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         });
       }
     } catch (e) {
-      AppLogger.instance.error('Sohbet detayları yüklenemedi: $e');
+      final lang = ref.read(localizationProvider);
+      AppLogger.instance.error('${lang.failedToLoadDetails}: $e');
     }
   }
 
@@ -480,11 +483,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       }
 
     } catch (e) {
+      final lang = ref.read(localizationProvider);
       AppLogger.instance.error('Mesaj gönderilirken hata: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Bağlantı hatası: Mesaj gönderiliyor olarak işaretlendi.'),
-          duration: Duration(seconds: 2),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('${lang.error}: ${lang.messageSentStatus}.'),
+          duration: const Duration(seconds: 2),
         ));
       }
     }
@@ -552,11 +556,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         player.play(AssetSource('sounds/message_sent.mp3')).catchError((_) => null);
       }
     } catch (e) {
+      final lang = ref.read(localizationProvider);
       AppLogger.instance.error('Ses gönderilemedi: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Bağlantı hatası: Ses mesajı gönderiliyor olarak işaretlendi.'),
-          duration: Duration(seconds: 2),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('${lang.error}: ${lang.voiceSentStatus}.'),
+          duration: const Duration(seconds: 2),
         ));
       }
     }
@@ -581,9 +586,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       _fetchMessages();
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Mesaj sizden silindi.'),
-          duration: Duration(seconds: 1),
+        final lang = ref.read(localizationProvider);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(lang.messageDeletedStatus),
+          duration: const Duration(seconds: 1),
         ));
       }
     } catch (e) {
@@ -599,8 +605,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       _fetchMessages();
       
       if (mounted) {
+        final lang = ref.read(localizationProvider);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(!currentStatus ? 'Mesaj favorilere eklendi.' : 'Mesaj favorilerden çıkarıldı.'),
+          content: Text(!currentStatus ? lang.favAddedStatus : lang.favRemovedStatus),
           duration: const Duration(seconds: 1),
         ));
       }
@@ -659,6 +666,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   void _showLongPressMenu(Map<String, dynamic> message, bool isMyMessage, String textContent, bool isFavorite) {
+    final lang = ref.read(localizationProvider);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -694,7 +702,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   ),
                   ListTile(
                     leading: const Icon(Icons.reply),
-                    title: const Text('Yanıtla'),
+                    title: Text(lang.reply),
                     onTap: () {
                       Navigator.pop(context);
                       setState(() {
@@ -704,7 +712,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   ),
                   ListTile(
                     leading: Icon(isFavorite ? Icons.star : Icons.star_border, color: Colors.amber),
-                    title: Text(isFavorite ? 'Favorilerden Çıkar' : 'Favorilere Ekle'),
+                    title: Text(isFavorite ? lang.removeFromFavs : lang.addToFavs),
                     onTap: () {
                       Navigator.pop(context);
                       _toggleFavorite(message['id'], isFavorite);
@@ -714,7 +722,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 if (isMyMessage && !isCallMessage && !isVoiceMessage)
                   ListTile(
                     leading: const Icon(Icons.edit_outlined),
-                    title: const Text('Düzenle'),
+                    title: Text(lang.editMessage),
                     onTap: () {
                       Navigator.pop(context);
                       _showEditMessageDialog(message['id'], textContent);
@@ -723,7 +731,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 if (isMyMessage)
                   ListTile(
                     leading: const Icon(Icons.delete_outline, color: Colors.red),
-                    title: const Text('Sil', style: TextStyle(color: Colors.red)),
+                    title: Text(lang.deleteMessage, style: const TextStyle(color: Colors.red)),
                     onTap: () {
                       Navigator.pop(context);
                       _deleteMessage(message['id']);
@@ -739,24 +747,25 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   void _showEditMessageDialog(String messageId, String currentContent) {
     final editController = TextEditingController(text: currentContent);
+    final lang = ref.read(localizationProvider);
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Mesajı Düzenle'),
+          title: Text(lang.editMessageTitle),
           content: TextField(
             controller: editController,
             maxLines: 3,
             autofocus: true,
-            decoration: const InputDecoration(
-              hintText: 'Mesajınızı düzenleyin...',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: lang.editMessageHint,
+              border: const OutlineInputBorder(),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('İptal'),
+              child: Text(lang.cancel),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -771,7 +780,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   AppLogger.instance.error('Mesaj düzenlenemedi: $e');
                 }
               },
-              child: const Text('Kaydet'),
+              child: Text(lang.save),
             ),
           ],
         );
@@ -817,7 +826,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
          } else {
            if (mounted) {
              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-               content: Text('Hata: Katılımcı bilgisi alınamadı. Sohbet yenileniyor...'),
+               content: Text('${ref.read(localizationProvider).error}: ${ref.read(localizationProvider).failedToLoadDetails}.'),
                behavior: SnackBarBehavior.floating,
              ));
            }
@@ -830,13 +839,14 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   void _navigateToCall(String targetId, bool isVideo) {
+    final lang = ref.read(localizationProvider);
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CallScreen(
           chatId: _chat['id'],
           targetUserId: targetId,
-          targetUsername: _chat['name'] ?? 'Kullanıcı',
+          targetUsername: _chat['name'] ?? lang.user,
           isVideo: isVideo,
         ),
       ),
@@ -845,7 +855,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final chatName = ProfanityFilter.filter(widget.chat['name'] ?? 'Sohbet');
+    final lang = ref.watch(localizationProvider);
+    final chatName = ProfanityFilter.filter(widget.chat['name'] ?? lang.unnamedChat);
     final isSystemChat = chatName == 'Blind Social Ekibi';
 
     return Scaffold(
@@ -897,7 +908,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.star_outline),
-            tooltip: 'Favori Mesajlar',
+            tooltip: lang.favoriteMessages,
             onPressed: () {
               Navigator.push(
                 context,
@@ -913,12 +924,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           if (!isSystemChat) ...[
             IconButton(
               icon: const Icon(Icons.videocam),
-              tooltip: 'Görüntülü Arama',
+              tooltip: lang.videoCall,
               onPressed: () => _startCall(isVideo: true),
             ),
             IconButton(
               icon: const Icon(Icons.call),
-              tooltip: 'Sesli Arama',
+              tooltip: lang.voiceCall,
               onPressed: () => _startCall(isVideo: false),
             ),
           ],
@@ -931,7 +942,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               child: _isLoading 
                 ? const Center(child: CircularProgressIndicator())
                 : _messages.isEmpty 
-                  ? const Center(child: Text('Henüz mesaj yok.'))
+                  ? Center(child: Text(lang.noMessagesYet))
                   : ListView.builder(
 addAutomaticKeepAlives: false,
 addRepaintBoundaries: true,
@@ -951,7 +962,7 @@ addRepaintBoundaries: true,
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Text(
-                              '${message['unread_count']} Okunmamış Mesaj',
+                              lang.unreadMessagesCount(message['unread_count']),
                               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                             ),
                           ),
@@ -991,35 +1002,35 @@ addRepaintBoundaries: true,
 
                         if (rawContent.contains('CALL_STARTED')) {
                           displayContent = isMyMessage 
-                            ? (isVideo ? "Giden Görüntülü Arama" : "Giden Sesli Arama")
-                            : (isVideo ? "Gelen Görüntülü Arama" : "Gelen Sesli Arama");
+                            ? (isVideo ? lang.outgoingVideoCall : lang.outgoingVoiceCall)
+                            : (isVideo ? lang.incomingVideoCall : lang.incomingVoiceCall);
                           callIcon = isVideo ? Icons.videocam : Icons.call;
                         } else if (isVideoReq) {
-                          displayContent = isMyMessage ? "Görüntülü Arama İsteği Gönderildi" : "Görüntülü Arama İsteği";
+                          displayContent = isMyMessage ? lang.outgoingVideoCall : lang.incomingVideoCall;
                           callIcon = Icons.video_call;
                         } else if (isCallAccepted) {
-                          displayContent = isMyMessage ? "Aramayı Kabul Ettiniz" : "Arama Kabul Edildi";
+                          displayContent = isMyMessage ? lang.callAcceptedByYou : lang.callAccepted;
                           callIcon = Icons.call_made;
                         } else if (isCallEnded || isCallRejected || isCallCancelled) {
                           if (isUnanswered) {
                             displayContent = isMyMessage 
-                              ? (isVideo ? "Giden Arama Cevaplanmadı" : "Giden Arama Cevaplanmadı")
-                              : (isVideo ? "Cevapsız Görüntülü Arama" : "Cevapsız Gelen Arama");
+                              ? (isVideo ? lang.outgoingCallUnanswered : lang.outgoingCallUnanswered)
+                              : (isVideo ? lang.missedVideoCall : lang.missedCall);
                             
                             if (isCallBusy) {
-                               displayContent = isMyMessage ? "Hat Meşgul" : "Arama Meşgule Alındı";
+                               displayContent = isMyMessage ? lang.lineBusy : lang.callRejected;
                             } else if (isCallRejected) {
-                               displayContent = isMyMessage ? "Aramayı Reddetiniz" : "Arama Reddedildi";
+                               displayContent = isMyMessage ? lang.callRejectedByYou : lang.callRejected;
                             } else if (isCallCancelled) {
-                               displayContent = isMyMessage ? "Aramayı İptal Ettiniz" : "Arama İptal Edildi";
+                               displayContent = isMyMessage ? lang.callCancelledByYou : lang.callCancelled;
                             }
                             
                             callIcon = isVideo ? Icons.missed_video_call : Icons.call_missed;
                           } else {
                             displayContent = isMyMessage
-                              ? (isVideo ? "Giden Görüntülü Arama" : "Giden Sesli Arama")
-                              : (isVideo ? "Gelen Görüntülü Arama" : "Gelen Sesli Arama");
-                            if (duration.isNotEmpty) displayContent += "\nSüre: $duration";
+                              ? (isVideo ? lang.outgoingVideoCall : lang.outgoingVoiceCall)
+                              : (isVideo ? lang.incomingVideoCall : lang.incomingVoiceCall);
+                            if (duration.isNotEmpty) displayContent += "\n${lang.duration}: $duration";
                             callIcon = isVideo ? Icons.videocam : Icons.call;
                           }
                         }
@@ -1041,29 +1052,29 @@ addRepaintBoundaries: true,
                       }
 
                       final hasReply = message['reply_to'] != null;
-                      final replyText = hasReply ? "Yanıtlanan mesaj: ${ProfanityFilter.filter(message['reply_content']?.toString() ?? '')}. " : "";
+                      final replyText = hasReply ? "${lang.repliedMessage}: ${ProfanityFilter.filter(message['reply_content']?.toString() ?? '')}. " : "";
 
                       return Align(
                         alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
                         child: Semantics(
                           container: true,
                           excludeSemantics: !isVoiceMessage,
-                          label: "${isFavorite ? 'Yıldızlı. ' : ''}$replyText${isVoiceMessage 
-                            ? (isMyMessage ? "Gönderdiğiniz sesli mesaj. $timeString" : "Gelen sesli mesaj. $timeString") 
+                          label: "${isFavorite ? '${lang.starred}. ' : ''}$replyText${isVoiceMessage 
+                            ? (isMyMessage ? "${lang.yourVoiceMessage}. $timeString" : "${lang.incomingVoiceMessage}. $timeString") 
                             : (isCallMessage 
                                 ? "$displayContent. $timeString" 
-                                : (isMyMessage ? "Gönderdiğiniz mesaj: $textContent. $timeString" : "Gelen mesaj: $textContent. $timeString"))}${isEdited ? '. Düzenlendi' : ''}",
+                                : (isMyMessage ? "${lang.yourMessage}: $textContent. $timeString" : "${lang.incomingMessage}: $textContent. $timeString"))}${isEdited ? '. ${lang.edited}' : ''}",
                           customSemanticsActions: {
                             if (!isCallMessage)
-                              CustomSemanticsAction(label: isFavorite ? 'Favorilerden Çıkar' : 'Favorilere Ekle'): () {
+                              CustomSemanticsAction(label: isFavorite ? lang.removeFromFavs : lang.addToFavs): () {
                                 _toggleFavorite(message['id'], isFavorite);
                               },
                             if (isMyMessage && !isVoiceMessage && !isCallMessage)
-                              CustomSemanticsAction(label: 'Mesajı Düzenle'): () {
+                              CustomSemanticsAction(label: lang.editMessageTitle): () {
                                 _showEditMessageDialog(message['id'], textContent);
                               },
                             if (isMyMessage)
-                              CustomSemanticsAction(label: 'Mesajı Sil'): () {
+                              CustomSemanticsAction(label: lang.deleteComment): () {
                                 _deleteMessage(message['id']);
                               },
                           },
@@ -1166,9 +1177,9 @@ addRepaintBoundaries: true,
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 if (isEdited)
-                                                  const Text(
-                                                    'düzenlendi  ',
-                                                    style: TextStyle(fontSize: 10, color: Colors.white60, fontStyle: FontStyle.italic),
+                                                  Text(
+                                                    '${lang.edited}  ',
+                                                    style: const TextStyle(fontSize: 10, color: Colors.white60, fontStyle: FontStyle.italic),
                                                   ),
                                                 if (isFavorite)
                                                   const Icon(Icons.star, color: Colors.amber, size: 12),
@@ -1198,10 +1209,10 @@ addRepaintBoundaries: true,
               padding: const EdgeInsets.symmetric(vertical: 24),
               alignment: Alignment.center,
               color: const Color(0xFF1B2530),
-              child: const Text('Sadece Blind Social Ekibi mesaj gönderebilir', style: TextStyle(color: Colors.grey, fontSize: 13)),
+              child: Text(lang.onlyAdminCanSendMessages, style: const TextStyle(color: Colors.grey, fontSize: 13)),
             )
           else
-            _buildMessageInput(),
+            _buildMessageInput(lang),
         ],
       ),
     ),
@@ -1252,8 +1263,8 @@ addRepaintBoundaries: true,
     if (replyContent.isEmpty || message['reply_to'] == null) return const SizedBox.shrink();
 
     String displayReply = ProfanityFilter.filter(replyContent);
-    if (displayReply.startsWith('[VOICE]')) displayReply = '🎤 Sesli Mesaj';
-    if (displayReply.contains('CALL_')) displayReply = '📞 Arama Kaydı';
+    if (displayReply.startsWith('[VOICE]')) displayReply = '🎤 ${lang.voiceMessage}';
+    if (displayReply.contains('CALL_')) displayReply = '📞 ${lang.callLog}';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
@@ -1268,7 +1279,7 @@ addRepaintBoundaries: true,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            isMyMessage ? 'Siz' : 'Yanıtlanan',
+            isMyMessage ? lang.you : lang.replied,
             style: TextStyle(
               color: isMyMessage ? Colors.white70 : Colors.blueAccent,
               fontSize: 10,
@@ -1290,7 +1301,7 @@ addRepaintBoundaries: true,
     return ChatInputField(
       onSendText: _sendMessage,
       onSendAudio: _sendAudioMessage,
-      hintText: 'Mesaj yaz...',
+      hintText: lang.typeMessage,
       replyWidget: _replyingTo == null ? null : Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -1303,8 +1314,8 @@ addRepaintBoundaries: true,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Yanıtlama:',
+                  Text(
+                    '${lang.replyingTo}:',
                     style: TextStyle(
                       color: Colors.blueAccent,
                       fontWeight: FontWeight.bold,

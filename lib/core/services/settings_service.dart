@@ -9,6 +9,8 @@ class SettingsService {
   static const String _keyShowOnLockScreen = 'show_on_lock_screen_enabled';
   static const String _keyVoiceRoomNotifications = 'voice_room_notifications_enabled';
   static const String _keyScreenProtection = 'screen_protection_enabled';
+  static const String _keyFontSize = 'app_font_size';
+  static const String _keyLanguage = 'app_language';
 
   static final SettingsService _instance = SettingsService._internal();
   factory SettingsService() => _instance;
@@ -33,6 +35,8 @@ class SettingsService {
   bool get showOnLockScreenEnabled => _prefs.getBool(_keyShowOnLockScreen) ?? false; // Varsayılan olarak kapalı
   bool get voiceRoomNotificationsEnabled => _prefs.getBool(_keyVoiceRoomNotifications) ?? true; // Varsayılan olarak açık
   bool get screenProtectionEnabled => _prefs.getBool(_keyScreenProtection) ?? false; // Varsayılan olarak kapalı (Kullanıcı isteği)
+  double get fontSize => _prefs.getDouble(_keyFontSize) ?? 1.0;
+  String get language => _prefs.getString(_keyLanguage) ?? 'tr-TR';
 
   // Setters
   Future<void> setMessageSoundEnabled(bool value) async => await _prefs.setBool(_keyMessageSound, value);
@@ -44,6 +48,10 @@ class SettingsService {
     _applyLockScreenSetting(value);
   }
   Future<void> setVoiceRoomNotificationsEnabled(bool value) async => await _prefs.setBool(_keyVoiceRoomNotifications, value);
+
+  Future<void> setFontSize(double value) async => await _prefs.setDouble(_keyFontSize, value);
+
+  Future<void> setLanguage(String value) async => await _prefs.setString(_keyLanguage, value);
 
   Future<void> setScreenProtectionEnabled(bool value) async {
     await _prefs.setBool(_keyScreenProtection, value);

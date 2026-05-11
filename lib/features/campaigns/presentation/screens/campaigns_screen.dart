@@ -7,15 +7,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:blind_social/features/campaigns/presentation/screens/campaign_detail_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 
-class CampaignsScreen extends StatefulWidget {
+class CampaignsScreen extends ConsumerStatefulWidget {
   const CampaignsScreen({super.key});
 
   @override
-  State<CampaignsScreen> createState() => _CampaignsScreenState();
+  ConsumerState<CampaignsScreen> createState() => _CampaignsScreenState();
 }
 
-class _CampaignsScreenState extends State<CampaignsScreen> {
+class _CampaignsScreenState extends ConsumerState<CampaignsScreen> {
   List<RecordModel> _campaigns = [];
   bool _isLoading = true;
   bool _isLoadingMore = false;
@@ -146,9 +148,11 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Güncel Kampanyalar'),
+        title: Text(lang.campaigns),
       ),
       body: SafeArea(
         child: GestureDetector(
@@ -174,12 +178,12 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                 padding: const EdgeInsets.all(12.0),
                 child: Semantics(
                   button: true,
-                  hint: 'Kampanyalar arasında aramak için tıklayın',
+                  hint: lang.searchCampaign,
                   child: TextField(
                     controller: _searchController,
                     onChanged: _onSearchChanged,
                     decoration: InputDecoration(
-                      hintText: 'Aramak istediğiniz markayı girin...',
+                      hintText: '${lang.searchCampaign}...',
                       prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                       filled: true,
@@ -201,18 +205,20 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
               SizedBox(
                 height: 48,
                 child: ListView.builder(
-addAutomaticKeepAlives: false,
-addRepaintBoundaries: true,
+                  addAutomaticKeepAlives: false,
+                  addRepaintBoundaries: true,
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   itemCount: _categories.length,
                   itemBuilder: (context, index) {
                     final cat = _categories[index];
                     final isSelected = _selectedCategory == cat;
+                    // Note: 'Tümü' specifically localized, others stay as in DB for now
+                    final displayCat = cat == 'Tümü' ? lang.all : cat;
                     return Padding(
                       padding: const EdgeInsets.only(right: 8.0),
                       child: FilterChip(
-                        label: Text(cat),
+                        label: Text(displayCat),
                         selected: isSelected,
                         onSelected: (selected) {
                           _changeCategory(cat);
@@ -227,7 +233,7 @@ addRepaintBoundaries: true,
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : _campaigns.isEmpty
-                        ? const Center(child: Text('Henüz kampanya bulunamadı.'))
+                        ? Center(child: Text(lang.noCampaignFound))
                         : _buildCampaignGrid(),
               ),
             ],
@@ -238,13 +244,14 @@ addRepaintBoundaries: true,
   }
 
   void _changeCategory(String cat) {
+    final lang = ref.read(localizationProvider);
     setState(() => _selectedCategory = cat);
     _fetchCampaigns(refresh: true, focusFirst: true);
 
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$cat kategorisini incelemektesiniz.'),
+        content: Text('${cat == 'Tümü' ? lang.all : cat}${lang.inspectingCategory}'),
         duration: const Duration(seconds: 1),
       ),
     );

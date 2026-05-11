@@ -28,6 +28,7 @@ Bu dosya, projede kullanılan tüm Yapay Zeka Ajanı yönlendirmelerinin, iş ak
 
 ### Görev Başlatma
 - **ZORUNLU GÖREV BAŞLATMA KONTROLÜ:** Yapay zeka ajanları, HER görevin başında bu ana `AGENTS.md` dosyasını okumalıdır. Bu kural tartışılamazdır.
+- **Yapılacaklar Sorgusu:** Eğer kullanıcı "Yapılacaklar neydi?", "Planımız ne?" veya benzeri bir soru sorarsa; Ajan, `AGENTS.md` dosyasının sonundaki "Bekleyen Görevler" listesini güncel haliyle madde madde kullanıcıya raporlamalıdır.
 - Yeni bir şey oluşturmadan önce, `Sistem Katalogu` bölümünde uygun bir bileşenin veya servisin zaten mevcut olup olmadığını kontrol edin.
 - Yeni bir bağımlılık eklemeden önce `Bağımlılık Envanteri` bölümünü kontrol edin ve pub.dev üzerinden mutlaka web araması yapın.
 - Veritabanıyla ilgili herhangi bir işlem yapmadan önce, tam tutarlılığı sağlamak için `pb_schema.json` dosyasını bir kez okuyun.
@@ -43,7 +44,7 @@ Bu dosya, projede kullanılan tüm Yapay Zeka Ajanı yönlendirmelerinin, iş ak
 - **Çevre Bütünlüğü:** Uygulama, başlatma sırasında `SecurityService` aracılığıyla cihaz bütünlüğü kontrollerini (root/jailbreak tespiti) yapmalıdır. Bir güvenlik ihlali tespit edilirse hassas özellikler devre dışı bırakılmalıdır.
 - **Veri Güvenliği:** Hassas veriler (JWT token'ları, kullanıcı ID'leri, özel anahtarlar) düz metin olarak (SharedPreferences) saklanmamalıdır. Verilerin şifrelenmiş olarak saklanmasını sağlamak için `PocketBaseService` üzerinden `FlutterSecureStorage` kullanın.
 - **Tersine Mühendislik Önleme:** Tüm üretim sürümleri Flutter'ın gizleme (obfuscation) bayraklarını kullanmalıdır: `flutter build apk --obfuscate --split-debug-info=./debug-info`. Bu işlem, sınıfları ve metodları okunamaz diziler olarak yeniden adlandırır.
-- **Admin Rotası Güvenliği:** AdminService geçmişte sahibini e-posta adresiyle yetkilendiren bir geri dönüş mekanizmasına sahipti. Bu artık KESİNLİKLE KISITLANMIŞTIR. `AdminService().isAdmin()` sadece `user.data['role'] == '0'` kontrolünü yapmalıdır. Ayrıca, yönetici paneline ait tüm ekranlar ve rotalar, standart bir kullanıcının modüle haksız yere girmesi durumunda hiçbir verinin çekilmemesini ve UI'ın oluşturulmamasını sağlamak için `build` bağlamlarını `if (!AdminService().isAdmin()) return AccessDeniedWidget();` ile sarmalamalıdır.
+- **Admin Rotası Güvenliği:** AdminService geçmişte sahibini e-posta adresiyle yetkilendiren bir geri dönüş mekanizmasına sahipti. Bu artık KESİNLİKLE KISITLANMIŞTIR. `AdminService().isAdmin()` sadece `user.data['role'] == '0'` kontrolünü yapmalıdır. Ayrıca, yönetici paneline ait tüm ekranlar ve rotalar, standart bir kullanıcının modüle haksür yere girmesi durumunda hiçbir verinin çekilmemesini ve UI'ın oluşturulmamasını sağlamak için `build` bağlamlarını `if (!AdminService().isAdmin()) return AccessDeniedWidget();` ile sarmalamalıdır.
 
 ### Veritabanı ve Veri Standartları
 - **Resmi Makamlar (Adli Bilişim) ve Log Yönetimi:** 
@@ -193,9 +194,12 @@ Projede kullanılan kritik `pubspec.yaml` paket listesi:
 *   Detay sayfasında `PageView` kullanılarak kampanyalar arasında akıcı hızlı geçiş desteği eklendi ve SharePlus ile Paylaş butonu getirildi (v1.6.2).
 *   Sohbet klavyesine akıllı emoji seçici (en çok kullanılanları hatırlayan yerel önbellek destekli) eklendi (v1.6.3).
 *   Çağrı başlangıcındaki "bip" sesi daha yumuşak bir sistem tonuyla değiştirildi (v1.6.3).
+*   Uygulama Ayarları menüsüne "Yazı Tipi Boyutu" ayarı eklendi (v1.7.1).
+*   Profil sayfasındaki tasarım modernize edildi ve "Çıkış Yap" butonu kaydırma yapmadan erişilebilir hale getirildi (v1.7.1).
 
 **🛠️ Devam Eden / Bekleyen Görevler**
 *   Süresi dolan kampanyaların otomatik olarak "Pasif" işaretlenmesi için bir cron-job botu entegre edilecek.
 *   Farklı kampanya siteleri için Modüler/Genel bir Bot adaptörü yazılacak.
 *   Çoklu dil desteği eklenecek.
 *   Topluluk odaklı tema arayüzü seçenekleri eklenecek.
+*   Uygulama genelinde semantik etiketlerin (Semantics) eksiksiz olduğunun ve ekran okuyucu uyumluluğunun denetlenmesi.

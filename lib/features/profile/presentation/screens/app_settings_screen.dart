@@ -1,35 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/settings_service.dart';
+import '../../../../core/providers/localization_provider.dart';
 import 'theme_settings_screen.dart';
 import 'notification_settings_screen.dart';
 import 'accessibility_settings_screen.dart';
 import 'privacy_settings_screen.dart';
+import 'language_settings_screen.dart';
 import 'changelog_screen.dart';
 import 'feedback_screen.dart';
 import '../../../../features/admin/data/services/admin_service.dart';
 
-class AppSettingsScreen extends StatefulWidget {
+class AppSettingsScreen extends ConsumerStatefulWidget {
   const AppSettingsScreen({super.key});
 
   @override
-  State<AppSettingsScreen> createState() => _AppSettingsScreenState();
+  ConsumerState<AppSettingsScreen> createState() => _AppSettingsScreenState();
 }
 
-class _AppSettingsScreenState extends State<AppSettingsScreen> {
+class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
   final SettingsService _settingsService = SettingsService();
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Uygulama Ayarları'),
+        title: Text(lang.appSettings),
       ),
       body: ListView(
         children: [
           ListTile(
             leading: const Icon(Icons.brightness_6),
-            title: const Text('Tema Ayarları'),
-            subtitle: const Text('Açık, koyu veya sistem teması seçin'),
+            title: Text(lang.theme),
+            subtitle: Text(lang.themeSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(
@@ -40,9 +45,22 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           ),
           const Divider(),
           ListTile(
+            leading: const Icon(Icons.language),
+            title: Text(lang.language),
+            subtitle: Text(lang.languageSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LanguageSettingsScreen()),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
             leading: const Icon(Icons.notifications_active),
-            title: const Text('Bildirim Ayarları'),
-            subtitle: const Text('Ses ve titreşim ayarlarını yönetin'),
+            title: Text(lang.notifications),
+            subtitle: Text(lang.notificationsSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(
@@ -54,8 +72,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.accessibility),
-            title: const Text('Erişilebilirlik Ayarları'),
-            subtitle: const Text('Ekran okuyucu ve yardım özellikleri'),
+            title: Text(lang.accessibility),
+            subtitle: Text(lang.accessibilitySubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(
@@ -67,8 +85,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.security),
-            title: const Text('Gizlilik Ayarları'),
-            subtitle: const Text('Ekran koruma ve kilit ekranı seçenekleri'),
+            title: Text(lang.privacy),
+            subtitle: Text(lang.privacySubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(
@@ -81,8 +99,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             const Divider(),
             ListTile(
               leading: const Icon(Icons.info_outline),
-              title: const Text('Sürüm Bilgisi'),
-              subtitle: const Text('v1.7.5 - Neler yeni?'),
+              title: Text(lang.changelog),
+              subtitle: Text(lang.changelogSubtitle),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 Navigator.push(
@@ -95,8 +113,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.feedback_outlined),
-            title: const Text('İstek, Öneri ve Şikayet Bildirimi'),
-            subtitle: const Text('Görüşlerinizi bizimle paylaşın'),
+            title: Text(lang.feedback),
+            subtitle: Text(lang.feedbackSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(
@@ -106,10 +124,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             },
           ),
           const SizedBox(height: 16),
-          const Center(
+          Center(
             child: Text(
-              'Blind Social © 2026',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              '${lang.appName} © 2026',
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
             ),
           ),
           const SizedBox(height: 24),

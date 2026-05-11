@@ -5,17 +5,19 @@ import 'package:blind_social/features/task_board/data/models/task_board.dart';
 import 'package:blind_social/features/task_board/data/services/task_board_service.dart';
 import 'package:blind_social/features/task_board/presentation/screens/task_board_detail_screen.dart';
 import 'package:blind_social/features/task_board/presentation/screens/task_overview_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 
-class TaskBoardsScreen extends StatefulWidget {
+class TaskBoardsScreen extends ConsumerStatefulWidget {
   const TaskBoardsScreen({super.key});
 
   @override
-  State<TaskBoardsScreen> createState() => _TaskBoardsScreenState();
+  ConsumerState<TaskBoardsScreen> createState() => _TaskBoardsScreenState();
 }
 
 enum BoardFilter { all, myBoards, sharedWithMe }
 
-class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
+class _TaskBoardsScreenState extends ConsumerState<TaskBoardsScreen> {
   final TaskBoardService _service = TaskBoardService();
   List<TaskBoard> _boards = [];
   Map<String, int> _boardListCounts = {};
@@ -34,6 +36,7 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
   }
 
   Future<void> _fetchBoards() async {
+    final lang = ref.read(localizationProvider);
     setState(() => _isLoading = true);
     try {
       final list = await _service.getMyBoards();
@@ -57,13 +60,14 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
         _boardListCounts = counts;
       });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _toggleFavorite(TaskBoard board) async {
+    final lang = ref.read(localizationProvider);
     try {
       final updatedBoard = await _service.toggleFavoriteBoard(board);
       setState(() {
@@ -73,25 +77,26 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
         }
       });
       final isFav = updatedBoard.favoritedBy.contains(_currentUserId);
-      SemanticsService.announce(isFav ? "Pano favorilere eklendi" : "Pano favorilerden çıkarıldı", TextDirection.ltr);
+      SemanticsService.announce(isFav ? lang.favAdded : lang.favRemoved, TextDirection.ltr);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
     }
   }
 
   Future<void> _createBoardDialog() async {
+    final lang = ref.read(localizationProvider);
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
     bool isSaving = false;
     
     final Map<String, List<String>> templates = {
-      'Boş Şablon': [],
-      'Yazılım Geliştirme': ['İncelenecekler', 'Yapılacaklar', 'Sürüyor', 'Test Bekleyen', 'Tamamlananlar'],
-      'Günlük İşler': ['Yapılacak', 'Hafta İçi', 'Hafta Sonu', 'Bitenler'],
-      'Proje Yönetimi': ['Fikirler', 'Planlama', 'Uygulama', 'Değerlendirme', 'Tamamlananlar'],
+      lang.emptyTemplate: [],
+      lang.softwareDevTemplate: ['İncelenecekler', 'Yapılacaklar', 'Sürüyor', 'Test Bekleyen', 'Tamamlananlar'],
+      lang.dailyTasksTemplate: ['Yapılacak', 'Hafta İçi', 'Hafta Sonu', 'Bitenler'],
+      lang.projectMgmtTemplate: ['Fikirler', 'Planlama', 'Uygulama', 'Değerlendirme', 'Tamamlananlar'],
     };
-    String selectedTemplate = 'Boş Şablon';
+    String selectedTemplate = templates.keys.first;
 
     await showDialog(
       context: context,
@@ -101,7 +106,7 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: const Text('Yeni Görev Panosu Oluştur'),
+              title: Text(lang.newBoardTitle),
               content: Form(
                 key: formKey,
                 child: SingleChildScrollView(
@@ -112,8 +117,8 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                         controller: nameCtrl,
                         maxLength: 100,
                         enabled: !isSaving,
-                        decoration: const InputDecoration(labelText: 'Pano Adı', hintText: 'Örn: Okul Projesi'),
-                        validator: (v) => v != null && v.trim().isEmpty ? 'Lütfen pano adı giriniz' : null,
+                        decoration: InputDecoration(labelText: lang.boardName, hintText: lang.boardNameHint),
+                        validator: (v) => v != null && v.trim().isEmpty ? lang.boardNameRequired : null,
                       ),
                       const SizedBox(height: 10),
                       TextFormField(
@@ -121,14 +126,14 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                         maxLength: 255,
                         enabled: !isSaving,
                         maxLines: 2,
-                        decoration: const InputDecoration(labelText: 'Açıklama (İsteğe Bağlı)'),
+                        decoration: InputDecoration(labelText: lang.descOptional),
                       ),
                       const SizedBox(height: 16),
                       Semantics(
-                        hint: 'Seçenekleri görmek ve değiştirmek için çift tıklayın',
+                        hint: lang.dropdownHint,
                         child: DropdownButtonFormField<String>(
                           value: selectedTemplate,
-                          decoration: const InputDecoration(labelText: 'Pano Şablonu Seçin', border: OutlineInputBorder()),
+                          decoration: InputDecoration(labelText: lang.selectTemplate, border: const OutlineInputBorder()),
                           items: templates.keys.map((String key) {
                             return DropdownMenuItem<String>(
                               value: key,
@@ -142,7 +147,7 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                       ),
                       if (templates[selectedTemplate]!.isNotEmpty) ...[
                         const SizedBox(height: 8),
-                        Text('Bu şablon ile şunlar eklenecek:\n${templates[selectedTemplate]!.join(', ')}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        Text('${lang.description}:\n${templates[selectedTemplate]!.join(', ')}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                       ]
                     ],
                   ),
@@ -151,7 +156,7 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
               actions: [
                 TextButton(
                   onPressed: isSaving ? null : () => Navigator.pop(context),
-                  child: const Text('İptal'),
+                  child: Text(lang.cancel),
                 ),
                 ElevatedButton(
                   onPressed: isSaving ? null : () async {
@@ -167,7 +172,7 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                           await _service.createList(board.id, listsToCreate[i], i + 1);
                        }
                        
-                       SemanticsService.announce("Görev panosu başarıyla oluşturuldu", TextDirection.ltr);
+                       SemanticsService.announce(lang.boardCreatedSuccess, TextDirection.ltr);
                        if (context.mounted) {
                          Navigator.pop(context);
                          _fetchBoards();
@@ -175,11 +180,11 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                     } catch (e) {
                       setStateDialog(() => isSaving = false);
                       if (context.mounted) {
-                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
                       }
                     }
                   },
-                  child: isSaving ? const CircularProgressIndicator() : const Text('Oluştur'),
+                  child: isSaving ? const CircularProgressIndicator() : Text(lang.createBoard),
                 ),
               ],
             );
@@ -190,6 +195,7 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
   }
 
   Future<void> _editBoardDialog(TaskBoard board) async {
+    final lang = ref.read(localizationProvider);
     final nameCtrl = TextEditingController(text: board.name);
     final formKey = GlobalKey<FormState>();
     bool isSaving = false;
@@ -201,21 +207,21 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: const Text('Pano Adını Düzenle'),
+              title: Text(lang.editName),
               content: Form(
                 key: formKey,
                 child: TextFormField(
                   controller: nameCtrl,
                   maxLength: 100,
                   enabled: !isSaving,
-                  decoration: const InputDecoration(labelText: 'Pano Adı'),
-                  validator: (v) => v != null && v.trim().isEmpty ? 'Lütfen pano adı giriniz' : null,
+                  decoration: InputDecoration(labelText: lang.boardName),
+                  validator: (v) => v != null && v.trim().isEmpty ? lang.boardNameRequired : null,
                 ),
               ),
               actions: [
                 TextButton(
                   onPressed: isSaving ? null : () => Navigator.pop(context),
-                  child: const Text('İptal'),
+                  child: Text(lang.cancel),
                 ),
                 ElevatedButton(
                   onPressed: isSaving ? null : () async {
@@ -223,7 +229,7 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                     setStateDialog(() => isSaving = true);
                     try {
                       await _service.updateBoard(board.id, nameCtrl.text.trim());
-                      SemanticsService.announce("Pano adı güncellendi", TextDirection.ltr);
+                      SemanticsService.announce(lang.boardUpdateSuccess, TextDirection.ltr);
                       if (context.mounted) {
                         Navigator.pop(context);
                         _fetchBoards();
@@ -231,11 +237,11 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                     } catch (e) {
                       setStateDialog(() => isSaving = false);
                       if (context.mounted) {
-                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
                       }
                     }
                   },
-                  child: isSaving ? const CircularProgressIndicator() : const Text('Kaydet'),
+                  child: isSaving ? const CircularProgressIndicator() : Text(lang.save),
                 ),
               ],
             );
@@ -246,20 +252,21 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
   }
 
   Future<void> _deleteBoardDialog(TaskBoard board) async {
+    final lang = ref.read(localizationProvider);
     final isConfirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Panoyu Sil'),
-        content: Text('"${board.name}" isimli panoyu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'),
+        title: Text(lang.deleteBoardTitle),
+        content: Text('"${board.name}" ${lang.deleteBoardConfirm}'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
+            child: Text(lang.cancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Evet, Sil', style: TextStyle(color: Colors.white)),
+            child: Text(lang.yesDelete, style: const TextStyle(color: Colors.white)),
           ),
         ],
       )
@@ -268,16 +275,17 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
     if (isConfirmed == true) {
       try {
         await _service.deleteBoard(board.id);
-        SemanticsService.announce("Pano başarıyla silindi", TextDirection.ltr);
+        SemanticsService.announce(lang.deleteBoardSuccess, TextDirection.ltr);
         _fetchBoards();
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${lang.error}: $e')));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     List<TaskBoard> filteredBoards = _showFavoritesOnly
         ? _boards.where((b) => _currentUserId != null && b.favoritedBy.contains(_currentUserId)).toList()
         : _boards;
@@ -297,9 +305,9 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
         title: _isSearching ? TextField(
           autofocus: true,
           style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hintText: 'Pano Ara',
-            hintStyle: TextStyle(color: Colors.white54),
+          decoration: InputDecoration(
+            hintText: lang.searchBoards,
+            hintStyle: const TextStyle(color: Colors.white54),
             border: InputBorder.none,
           ),
           onChanged: (val) {
@@ -307,7 +315,7 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
               _searchQuery = val.toLowerCase();
             });
           },
-        ) : const Text('Görev Panoları'),
+        ) : Text(lang.taskBoard),
         actions: [
           PopupMenuButton<BoardFilter>(
             icon: const Icon(Icons.filter_list),
@@ -317,36 +325,36 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                 _currentFilter = result;
               });
               String anno = "";
-              if (result == BoardFilter.all) anno = "Tüm panolar listeleniyor";
-              if (result == BoardFilter.myBoards) anno = "Sadece kendi panolarınız listeleniyor";
-              if (result == BoardFilter.sharedWithMe) anno = "Sadece sizinle paylaşılan panolar listeleniyor";
+              if (result == BoardFilter.all) anno = lang.boardFilterAll;
+              if (result == BoardFilter.myBoards) anno = lang.boardFilterMy;
+              if (result == BoardFilter.sharedWithMe) anno = lang.boardFilterShared;
               SemanticsService.announce(anno, TextDirection.ltr);
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<BoardFilter>>[
-              const PopupMenuItem<BoardFilter>(
+              PopupMenuItem<BoardFilter>(
                 value: BoardFilter.all,
-                child: Text('Tümü'),
+                child: Text(lang.all),
               ),
-              const PopupMenuItem<BoardFilter>(
+              PopupMenuItem<BoardFilter>(
                 value: BoardFilter.myBoards,
-                child: Text('Kendi Panolarım'),
+                child: Text(lang.myBoards),
               ),
-              const PopupMenuItem<BoardFilter>(
+              PopupMenuItem<BoardFilter>(
                 value: BoardFilter.sharedWithMe,
-                child: Text('Benimle Paylaşılan Panolar'),
+                child: Text(lang.sharedWithMe),
               ),
             ],
           ),
           IconButton(
             icon: const Icon(Icons.analytics),
-            tooltip: 'Görev Geçmişi ve Özeti',
+            tooltip: lang.overview,
             onPressed: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const TaskOverviewScreen()));
             },
           ),
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),
-            tooltip: _isSearching ? 'Aramayı Kapat' : 'Panolarda Ara',
+            tooltip: _isSearching ? lang.cancel : lang.searchBoards,
             onPressed: () {
               setState(() {
                 if (_isSearching) {
@@ -360,13 +368,13 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
           ),
           IconButton(
             icon: Icon(_showFavoritesOnly ? Icons.star : Icons.star_border),
-            tooltip: _showFavoritesOnly ? 'Tüm Panoları Göster' : 'Sadece Favorileri Göster',
+            tooltip: _showFavoritesOnly ? lang.allBoards : lang.favoritesOnly,
             onPressed: () {
               setState(() {
                 _showFavoritesOnly = !_showFavoritesOnly;
               });
               SemanticsService.announce(
-                _showFavoritesOnly ? 'Sadece favori panolar listeleniyor' : 'Tüm panolar listeleniyor',
+                _showFavoritesOnly ? lang.favoritesOnly : lang.boardFilterAll,
                 TextDirection.ltr,
               );
             },
@@ -376,14 +384,14 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createBoardDialog,
         icon: const Icon(Icons.add),
-        label: const Text('Pano Oluştur'),
-        tooltip: 'Yeni bir görev panosu oluştur',
+        label: Text(lang.createBoard),
+        tooltip: lang.newBoardTitle,
       ),
       body: SafeArea(
         child: _isLoading 
           ? const Center(child: CircularProgressIndicator())
           : filteredBoards.isEmpty
-            ? Center(child: Text(_showFavoritesOnly ? 'Favori panonuz bulunmuyor.' : 'Henüz bir görev panosu bulunmuyor\nEkranın sağ altından Pano Oluştur butonuna tıklayabilirsiniz.', textAlign: TextAlign.center))
+            ? Center(child: Text(_showFavoritesOnly ? lang.emptyFavs : lang.emptyBoards, textAlign: TextAlign.center))
             : GridView.builder(
                 padding: const EdgeInsets.all(16.0),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -403,22 +411,17 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                   final borderColor = Colors.primaries[colorIndex].withOpacity(0.5);
 
                   final isOwner = _currentUserId == board.ownerId;
-                  final favText = isFav ? "Favorilerinizde." : "Favorilerinizde değil.";
-                  String label = "";
-                  if (!isOwner) {
-                    label = "Sizinle paylaşılmış ${board.name} isimli pano, $favText İçerisinde $listCount adet liste mevcut. Panoya girmek için çift tıklayın, favori durumunu değiştirmek için uzun basın.";
-                  } else {
-                    label = "${board.name} isimli pano, $favText İçerisinde $listCount adet liste mevcut. Panoya girmek için çift tıklayın, favori durumunu değiştirmek için uzun basın.";
-                  }
+                  final favText = isFav ? lang.inFavorites : lang.notInFavorites;
+                  String label = lang.boardAnnouncement(board.name, favText, listCount, isOwner);
 
                   return Semantics(
                     label: label,
                     button: true,
-                    onLongPressHint: isFav ? "Favorilerden Çıkar" : "Favorilere Ekle",
-                    onTapHint: "Panoya Gir",
+                    onLongPressHint: isFav ? lang.favRemoved : lang.favAdded,
+                    onTapHint: lang.openBoard,
                     customSemanticsActions: {
-                      if (isOwner) const CustomSemanticsAction(label: 'Panoyu Sil'): () => _deleteBoardDialog(board),
-                      if (isOwner) const CustomSemanticsAction(label: 'Adını Düzenle'): () => _editBoardDialog(board),
+                      if (isOwner) CustomSemanticsAction(label: lang.deleteBoardTitle): () => _deleteBoardDialog(board),
+                      if (isOwner) CustomSemanticsAction(label: lang.editName): () => _editBoardDialog(board),
                     },
                     child: ExcludeSemantics(
                       child: InkWell(
@@ -461,7 +464,7 @@ class _TaskBoardsScreenState extends State<TaskBoardsScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                "$listCount Liste",
+                                lang.listCount.replaceFirst('{count}', listCount.toString()),
                                 style: const TextStyle(fontSize: 14, color: Colors.white70),
                               ),
                             ],
