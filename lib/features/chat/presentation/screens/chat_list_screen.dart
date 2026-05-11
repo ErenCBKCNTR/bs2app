@@ -1194,6 +1194,7 @@ addRepaintBoundaries: true,
 }
 
   Widget _buildTopActionButtons() {
+    final lang = ref.watch(localizationProvider);
     final currentUserId = PocketBaseService.client.authStore.model?.id;
     final archivedCount = _chats.where((c) {
       final myPart = c.data['my_participant'] as RecordModel?;
@@ -1245,6 +1246,7 @@ addRepaintBoundaries: true,
   }
 
   void _showChatOptions(RecordModel chat) {
+    final lang = ref.read(localizationProvider);
     final currentUserId = PocketBaseService.client.authStore.model?.id;
     final myPart = chat.data['my_participant'] as RecordModel?;
     final isArchived = myPart != null ? (myPart.data['is_archived'] ?? false) : false;

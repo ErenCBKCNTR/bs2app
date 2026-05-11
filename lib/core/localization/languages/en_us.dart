@@ -1200,7 +1200,6 @@ class LanguageEn extends BaseLanguage {
   @override
   String get voiceNoteSaved => "Voice note saved successfully.";
   @override
-  @override
   String get cancelBtn => "Cancel";
   @override
   String get finishBtn => "Finish";
@@ -1234,7 +1233,6 @@ class LanguageEn extends BaseLanguage {
   String get deleteUppercase => "DELETE";
   @override
   String get shareError => "Share error";
-  @override
   @override
   String get deleteRecording => "Delete Recording";
   @override

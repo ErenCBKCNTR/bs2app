@@ -1200,7 +1200,6 @@ class LanguageTr extends BaseLanguage {
   @override
   String get voiceNoteSaved => "Sesli not başarıyla kaydedildi.";
   @override
-  @override
   String get cancelBtn => "İptal Et";
   @override
   String get finishBtn => "Bitir";
@@ -1234,7 +1233,6 @@ class LanguageTr extends BaseLanguage {
   String get deleteUppercase => "SİL";
   @override
   String get shareError => "Paylaşma hatası";
-  @override
   @override
   String get deleteRecording => "Kaydı Sil";
   @override

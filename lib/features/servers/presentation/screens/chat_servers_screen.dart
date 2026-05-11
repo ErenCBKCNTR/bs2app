@@ -1,5 +1,6 @@
 import 'package:blind_social/core/localization/localization_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
