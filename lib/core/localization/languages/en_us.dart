@@ -185,7 +185,6 @@ class LanguageEn extends BaseLanguage {
   String get overview => "Overview";
   @override
   String get description => "Description";
-
   @override
   String get boardFilterAll => "All boards are listed";
   @override
@@ -236,7 +235,6 @@ class LanguageEn extends BaseLanguage {
   String get emptyFavs => "You have no favorite boards.";
   @override
   String get emptyBoards => "No task boards found yet\nYou can click the Create Board button at the bottom right.";
-
   @override
   String get pinList => "Pin to Top";
   @override
@@ -383,6 +381,8 @@ class LanguageEn extends BaseLanguage {
   String get editDescription => "Edit Description";
   @override
   String get noDescription => "No description added yet.";
+  @override
+  String get addChecklistItem => "Add checklist item";
   @override
   String get voiceNotes => "Voice Notes";
   @override
@@ -699,255 +699,44 @@ class LanguageEn extends BaseLanguage {
   String get noPermissionView => "You do not have permission to view this page.";
   @override
   String get latest => "Latest";
+  
+  // Campaigns
   @override
-  String get taskOverview => "Task Overview and History";
+  String get campaigns => "Campaigns";
   @override
-  String get generalStats => "General Statistics";
+  String get categories => "Categories";
   @override
-  String get total => "Total";
+  String get all => "All";
   @override
-  String get completed => "Completed";
+  String get searchCampaign => "Search Campaign";
   @override
-  String get pending => "Pending";
+  String get noCampaignFound => "No campaign found";
   @override
-  String get myPendingTasks => "My Pending Tasks";
+  String get viewOnWeb => "View on Web";
   @override
-  String get myCompletedTasks => "History (Completed) Tasks";
+  String get shareCampaign => "Share Campaign";
   @override
-  String get noPendingTasksFound => "No pending tasks found.";
+  String get inspectingCategory => "Inspecting category";
   @override
-  String get noCompletedTasksFound => "No completed tasks found.";
+  String get campaignParticipation => "Participation";
   @override
-  String taskOverviewAnnouncement(int total, int completed, int pending) =>
-      "Task Overview and History page. In total of $total tasks, there are $completed completed and $pending pending tasks.";
+  String get earningsUsage => "Earnings Usage";
   @override
-  String taskOverviewStatsLabel(int total, int completed, int pending) =>
-      "General Statistics. In total of $total tasks, there are $completed completed and $pending pending tasks";
+  String get includedBrands => "Included Brands";
   @override
-  String get inFavorites => "In favorites.";
+  String get otherCampaignsForBrand => "Other Campaigns for Brand";
   @override
-  String get notInFavorites => "Not in favorites.";
+  String get showLess => "Show Less";
   @override
-  String boardAnnouncement(String name, String favText, int listCount, bool isOwner) {
-    String prefix = isOwner ? "" : "Shared with you ";
-    return "${prefix}board named $name, $favText There are $listCount lists inside. Double tap to enter the board, long press to change favorite status.";
-  }
+  String get showAll => "Show All";
   @override
-  String boardDetailAnnouncement(String name) => "You are inside the board named $name.";
+  String get campaignConditions => "Conditions";
   @override
-  String get boardOptionsHint => "Double tap with two fingers or long press to see board options.";
+  String get startDate => "Start Date";
   @override
-  String get dropdownHint => "Double tap to see and change options";
-  @override
-  String get dropdownAccessibilityHint => "Double tap to see and change options";
-  @override
-  String get lastSeenHidden => "Last seen hidden";
-  @override
-  String get activeNow => "Active now";
-  @override
-  String get lastSeenToday => "Last seen today";
-  @override
-  String get statusFailed => "Failed to get status";
-  @override
-  String get gameInviteTitle => "Game Request";
-  @override
-  String get gameInviteDesc => "sent you a game invite for a quiz.";
-  @override
-  String get accept => "Accept";
-  @override
-  String get reject => "Reject";
-  @override
-  String get exitAppTitle => "Exit App";
-  @override
-  String get exitAppConfirm => "Are you sure you want to exit the app?";
-  @override
-  String get exit => "EXIT";
-  @override
-  String get newChatTooltip => "Start New Chat";
-  @override
-  String get newServerTooltip => "Create New Chat Server";
-  @override
-  String get createServerTitle => "New Chat Server";
-  @override
-  String get serverNameLabel => "Server Name";
-  @override
-  String get serverNameHint => "Ex: Blind Social Friends";
-  @override
-  String get serverNameRequired => "Server name cannot be empty";
-  @override
-  String get serverNameTooShort => "Server name cannot be shorter than 3 characters";
-  @override
-  String get capacityLabel => "Person Capacity";
-  @override
-  String get securitySettings => "Security Settings";
-  @override
-  String get serverPasswordLabel => "Server Password (Numeric)";
-  @override
-  String get serverPasswordHint => "Leave empty for no password";
-  @override
-  String get create => "Create";
-  @override
-  String get serverCreatedSuccess => "Server created successfully!";
-  @override
-  String get serverNameMinLength => "Server name must be at least 3 characters.";
-  @override
-  String get serverLimitReached => "User can create at most 3 servers";
-  @override
-  String get serverLimitDaily => "You can create at most 2 servers per day";
-  @override
-  String get serverCreateGenericError => "Failed to create server. Please try again.";
-  @override
-  String get emptyChatList => "You don't have any chats yet.\nStart a new one.";
-  @override
-  String get unnamedChat => "Unnamed Chat";
-  @override
-  String get liveVoiceRoom => "Live Voice Room";
-  @override
-  String get reply => "Reply";
-  @override
-  String get microphoneAccessDenied => "Microphone access denied, joined as listener only.";
-  @override
-  String get connectionErrorWithStatus => "Connection error: ";
-  @override
-  String get speakerSet => "Speaker";
-  @override
-  String get earpieceSet => "Earpiece";
-  @override
-  String get headsetOrBluetoothSet => "Headset / Bluetooth";
-  @override
-  String get deleteMessage => "Delete";
-  @override
-  String get editMessage => "Edit";
-  @override
-  String get editMessageTitle => "Edit Message";
-  @override
-  String get editMessageHint => "Edit your message...";
-  @override
-  String get messageSentStatus => "Message sent";
-  @override
-  String get voiceSentStatus => "Voice message sent";
-  @override
-  String get messageDeletedStatus => "Message deleted from you.";
-  @override
-  String get favAddedStatus => "Message added to favorites.";
-  @override
-  String get favRemovedStatus => "Message removed from favorites.";
-  @override
-  String get addToFavs => "Add to Favorites";
-  @override
-  String get removeFromFavs => "Remove from Favorites";
-  @override
-  String get chatPinnedStatus => "Chat pinned";
-  @override
-  String get chatUnpinnedStatus => "Chat unpinned";
-  @override
-  String get chatArchivedStatus => "Chat archived";
-  @override
-  String get chatUnarchivedStatus => "Chat unarchived";
-  @override
-  String get voiceCall => "Voice Call";
-  @override
-  String get videoCall => "Video Call";
-  @override
-  String get missedCall => "Missed Call";
-  @override
-  String get group => "Group";
-  @override
-  String get privateChat => "Private Chat";
-  @override
-  String get servers => "Servers";
-  @override
-  String get admin => "Admin";
-  @override
-  String get failedToLoadDetails => "Failed to load details";
-  @override
-  String get favoriteMessages => "Favorite Messages";
-  @override
-  String get noMessagesYet => "No messages yet.";
-  @override
-  String get unreadMessageSuffix => "Unread Message";
-  @override
-  String get outgoingVideoCall => "Outgoing Video Call";
-  @override
-  String get outgoingVoiceCall => "Outgoing Voice Call";
-  @override
-  String get incomingVideoCall => "Incoming Video Call";
-  @override
-  String get incomingVoiceCall => "Incoming Voice Call";
-  @override
-  String get callAcceptedByYou => "You accepted the call";
-  @override
-  String get callAccepted => "Call accepted";
-  @override
-  String get outgoingCallUnanswered => "Outgoing call unanswered";
-  @override
-  String get missedVideoCall => "Missed Video Call";
-  @override
-  String get lineBusy => "Line Busy";
-  @override
-  String get callRejectedByYou => "You rejected the call";
-  @override
-  String get callRejected => "Call rejected";
-  @override
-  String get callCancelledByYou => "You cancelled the call";
-  @override
-  String get callCancelled => "Call cancelled";
-  @override
-  String get duration => "Duration";
-  @override
-  String get starred => "Starred";
-  @override
-  String get repliedMessage => "Replied message";
-  @override
-  String get yourVoiceMessage => "Your voice message";
-  @override
-  String get incomingVoiceMessage => "Incoming voice message";
-  @override
-  String get yourMessage => "Your message";
-  @override
-  String get incomingMessage => "Incoming message";
-  @override
-  String get edited => "Edited";
-  @override
-  String get voiceMessage => "Voice Message";
-  @override
-  String get currentlySpeaking => "Currently speaking";
-  @override
-  String get callLog => "Call Log";
-  @override
-  String get you => "You";
-  @override
-  String get replied => "Replied";
-  @override
-  String get typeMessage => "Type a message...";
-  @override
-  String get replyingTo => "Replying to";
-  @override
-  String get onlyAdminCanSendMessages => "Only Blind Social Team can send messages";
-  @override
-  String get user => "User";
-  @override
-  String unreadMessagesCount(int count) => "$count Unread Messages";
-  @override
-  String statusLastSeen(String date) => "Last seen $date";
-  @override
-  String statusTodayAt(String time) => "Last seen today $time";
-  @override
-  String voiceRoomCapacity(int count) => "$count Persons";
-  @override
-  String get deleteComment => "Delete Message";
-  @override
-  String get deleteCommentConfirm => "Are you sure you want to delete this message?";
-  @override
-  String get commentDeleted => "Message deleted";
-  @override
-  String get commentSent => "Message sent";
-  @override
-  String get sendingVoiceComment => "Sending voice message, please wait";
-  @override
-  String get voiceCommentSent => "Voice message sent successfully";
-  @override
-  String get noComments => "No messages yet. Be the first to send one.";
+  String get endDate => "End Date";
+  
+  // Errors
   @override
   String get connectionError => "Connection error occurred";
   @override
