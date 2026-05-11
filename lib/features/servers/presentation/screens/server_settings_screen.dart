@@ -263,6 +263,7 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> wit
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sunucu Ayarları'),

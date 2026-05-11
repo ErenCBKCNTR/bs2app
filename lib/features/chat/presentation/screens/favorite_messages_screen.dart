@@ -20,7 +20,7 @@ class FavoriteMessagesScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerConsumerState<FavoriteMessagesScreen> createState() => _FavoriteMessagesScreenState();
+  ConsumerState<FavoriteMessagesScreen> createState() => _FavoriteMessagesScreenState();
 }
 
 class _FavoriteMessagesScreenState extends State<FavoriteMessagesScreen> {
@@ -127,6 +127,7 @@ class _FavoriteMessagesScreenState extends State<FavoriteMessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     final title = widget.chatId != null 
         ? '${widget.chatName} - Favoriler' 
         : 'Favori Mesajlar';

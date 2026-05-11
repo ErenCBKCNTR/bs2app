@@ -22,7 +22,6 @@ import 'package:blind_social/features/games/presentation/screens/quiz_game_scree
 import 'package:blind_social/core/providers/localization_provider.dart';
 import 'package:blind_social/features/chat/presentation/screens/blog_screen.dart';
 import 'package:blind_social/core/utils/logger.dart';
-import 'package:blind_social/core/localization/languages/language.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
@@ -30,7 +29,6 @@ import 'package:vibration/vibration.dart';
 import 'package:blind_social/core/services/settings_service.dart';
 import 'package:blind_social/features/servers/data/services/chat_server_service.dart';
 import 'package:blind_social/features/servers/presentation/screens/chat_servers_screen.dart';
-import 'package:blind_social/core/localization/languages/language.dart';
 import 'package:blind_social/features/servers/presentation/screens/chat_server_rooms_screen.dart' as blind_social_server_rooms;
 import 'package:blind_social/features/admin/presentation/screens/admin_panel_screen.dart';
 import 'package:blind_social/features/admin/data/services/admin_service.dart';
@@ -48,6 +46,7 @@ class ChatListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(localizationProvider);
     return const _ChatListScreenContent();
   }
 }
@@ -640,7 +639,6 @@ class _ChatListScreenContentState extends ConsumerState<_ChatListScreenContent> 
 
   @override
   Widget build(BuildContext context) {
-    final lang = ref.watch(localizationProvider);
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) {

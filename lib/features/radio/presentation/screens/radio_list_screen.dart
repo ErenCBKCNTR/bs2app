@@ -55,6 +55,7 @@ class _RadioListScreenState extends ConsumerState<RadioListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     return Scaffold(
       appBar: AppBar(
         title: Text(ref.watch(localizationProvider).liveRadio),

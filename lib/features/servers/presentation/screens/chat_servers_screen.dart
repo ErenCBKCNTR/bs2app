@@ -1,3 +1,4 @@
+import 'package:blind_social/core/localization/localization_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'dart:convert';
@@ -126,6 +127,7 @@ class _ChatServersScreenState extends State<ChatServersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }

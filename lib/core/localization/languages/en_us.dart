@@ -1039,7 +1039,6 @@ class LanguageEn extends BaseLanguage {
   @override
   String get unbanUser => "Unban User";
   @override
-  String get removeFromFavs => "Remove from Favorites";
   @override
   String get playRecordAnnounce => "Playing recording";
   @override
@@ -1073,7 +1072,6 @@ class LanguageEn extends BaseLanguage {
   @override
   String get onlyAdminCanSendMessages => "Only admins can send messages";
   @override
-  String get voiceNotes => "Voice Notes";
   @override
   String get noVoiceNotesAdded => "No voice notes added.";
   @override
@@ -1143,13 +1141,10 @@ class LanguageEn extends BaseLanguage {
   @override
   String get deleteChat => "Delete Chat";
   @override
-  String get deleteRoom => "Delete Room";
   @override
   String get kickFromServer => "Kick from Server";
   @override
-  String get banUser => "Ban User";
   @override
-  String get unbanUser => "Unban User";
   @override
   String serverSemanticLabel(String serverName, String description, String capacity, String encryptedText, String onlineCount) =>
       "Server name $serverName. Description $description. $capacity capacity $encryptedText server. Currently $onlineCount people are online.";
@@ -1172,7 +1167,6 @@ class LanguageEn extends BaseLanguage {
   @override
   String get messageReactionSemantic => "Leave a reaction to message";
   @override
-  String get playRecording => "Play Recording";
   @override
   String get shareRecording => "Share Recording";
   @override
@@ -1206,7 +1200,6 @@ class LanguageEn extends BaseLanguage {
   @override
   String get voiceNoteSaved => "Voice note saved successfully.";
   @override
-  String get voiceNoteDeleted => "Voice note deleted.";
   @override
   String get cancelBtn => "Cancel";
   @override
@@ -1242,5 +1235,4 @@ class LanguageEn extends BaseLanguage {
   @override
   String get shareError => "Share error";
   @override
-  String get playRecordAnnounce => "Playing recording";
 }

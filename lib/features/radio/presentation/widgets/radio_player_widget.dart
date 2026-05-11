@@ -310,6 +310,7 @@ class _RadioPlayerWidgetState extends ConsumerState<RadioPlayerWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     return SingleChildScrollView(
       child: Container(
         padding: const EdgeInsets.all(24),

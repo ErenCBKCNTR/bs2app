@@ -515,20 +515,6 @@ abstract class BaseLanguage {
   String get statusUpdated;
   String get checklistTitle;
   String get copy;
-  String get deleteComment;
-  String get editPost;
-  String get deletePost;
-  String get unlikePost;
-  String get likePost;
-  String get openComments;
-  String get deleteVoiceNote;
-  String get playRecording;
-  String get deleteRoom;
-  String get kickUser;
-  String get banUser;
-  String get unbanUser;
-  String get removeFromFavs;
-  String get playRecordAnnounce;
   String get deleteCommentConfirm;
   String get commentDeleted;
   String get commentSent;
@@ -545,7 +531,6 @@ abstract class BaseLanguage {
   String get incomingMessage;
   String get onlyAdminCanSendMessages;
   // Task Board
-  String get voiceNotes;
   String get noVoiceNotesAdded;
   String get recordNewVoiceNote;
   String get voiceNote;
@@ -553,7 +538,6 @@ abstract class BaseLanguage {
   String get voiceRecorderInitError;
   String get voiceNoteSavedSuccessfully;
   String get voiceNoteUploadError;
-  String get voiceNoteDeleted;
   String get voiceNoteDeleteError;
   String get voiceNotePlayError;
 
@@ -575,21 +559,14 @@ abstract class BaseLanguage {
   String get administrationSection;
   String get adminPanel;
   String get developerModeLogs;
-  String get archivedChats;
-  String get favoriteMessages;
-  String get chatUnarchivedStatus;
 
   // Semantics & Actions
   String get viewProfile;
-  String get unarchiveChat;
   String get archiveChat;
   String get unpinChat;
   String get pinChat;
   String get deleteChat;
-  String get deleteRoom;
   String get kickFromServer;
-  String get banUser;
-  String get unbanUser;
   String serverSemanticLabel(String serverName, String description, String capacity, String encryptedText, String onlineCount);
   String get joinServerHint;
   String joinedServerAnnounce(String serverName);
@@ -600,8 +577,6 @@ abstract class BaseLanguage {
   String get roomsTabCreatorHint;
   String get roomsTabHint;
   String get messageReactionSemantic;
-  String get playRecording;
-  String get shareRecording;
   String get removeRecording;
   String get deleteLog;
 

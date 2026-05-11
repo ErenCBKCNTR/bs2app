@@ -12,7 +12,7 @@ class ArchivedMessagesScreen extends ConsumerStatefulWidget {
   const ArchivedMessagesScreen({super.key});
 
   @override
-  ConsumerConsumerState<ArchivedMessagesScreen> createState() => _ArchivedMessagesScreenState();
+  ConsumerState<ArchivedMessagesScreen> createState() => _ArchivedMessagesScreenState();
 }
 
 class _ArchivedMessagesScreenState extends State<ArchivedMessagesScreen> {
@@ -115,6 +115,7 @@ class _ArchivedMessagesScreenState extends State<ArchivedMessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     return Scaffold(
       appBar: AppBar(title: Text(ref.watch(localizationProvider).archivedChats)),
       body: SafeArea(

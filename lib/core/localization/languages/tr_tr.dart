@@ -1039,7 +1039,6 @@ class LanguageTr extends BaseLanguage {
   @override
   String get unbanUser => "Yasak listesinden çıkar";
   @override
-  String get removeFromFavs => "Favorilerden Kaldır";
   @override
   String get playRecordAnnounce => "Kayıt oynatılıyor";
   @override
@@ -1073,7 +1072,6 @@ class LanguageTr extends BaseLanguage {
   @override
   String get onlyAdminCanSendMessages => "Sadece yöneticiler mesaj gönderebilir";
   @override
-  String get voiceNotes => "Sesli Notlar";
   @override
   String get noVoiceNotesAdded => "Sesli not eklenmemiş.";
   @override
@@ -1143,13 +1141,10 @@ class LanguageTr extends BaseLanguage {
   @override
   String get deleteChat => "Sohbeti Sil";
   @override
-  String get deleteRoom => "Odayı sil";
   @override
   String get kickFromServer => "Sunucudan At";
   @override
-  String get banUser => "Kullanıcıyı Yasakla";
   @override
-  String get unbanUser => "Yasak listesinden çıkar";
   @override
   String serverSemanticLabel(String serverName, String description, String capacity, String encryptedText, String onlineCount) =>
       "Sunucu adı $serverName. Sunucu açıklaması $description. $capacity kişilik $encryptedText sunucu. Şu anda sunucuda $onlineCount kişi var.";
@@ -1172,7 +1167,6 @@ class LanguageTr extends BaseLanguage {
   @override
   String get messageReactionSemantic => "Mesaja durum ifadesi bırak";
   @override
-  String get playRecording => "Kaydı Oynat";
   @override
   String get shareRecording => "Kaydı Paylaş";
   @override
@@ -1206,7 +1200,6 @@ class LanguageTr extends BaseLanguage {
   @override
   String get voiceNoteSaved => "Sesli not başarıyla kaydedildi.";
   @override
-  String get voiceNoteDeleted => "Sesli not silindi.";
   @override
   String get cancelBtn => "İptal Et";
   @override
@@ -1242,7 +1235,6 @@ class LanguageTr extends BaseLanguage {
   @override
   String get shareError => "Paylaşma hatası";
   @override
-  String get playRecordAnnounce => "kaydı oynatılıyor";
 }
 
 

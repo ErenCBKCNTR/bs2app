@@ -143,6 +143,7 @@ class _SavedRecordingsScreenState extends ConsumerState<SavedRecordingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     return Scaffold(
       appBar: AppBar(title: Text(ref.watch(localizationProvider).savedRecordingsTitle)),
       body: SafeArea(

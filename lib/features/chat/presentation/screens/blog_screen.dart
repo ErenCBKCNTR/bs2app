@@ -24,7 +24,7 @@ class BlogScreen extends ConsumerStatefulWidget {
   const BlogScreen({super.key});
 
   @override
-  ConsumerConsumerState<BlogScreen> createState() => _BlogScreenState();
+  ConsumerState<BlogScreen> createState() => _BlogScreenState();
 }
 
 class _BlogScreenState extends State<BlogScreen> {
@@ -382,6 +382,7 @@ class _BlogScreenState extends State<BlogScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(

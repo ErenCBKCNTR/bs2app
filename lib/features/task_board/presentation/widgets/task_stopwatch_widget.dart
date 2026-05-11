@@ -140,6 +140,7 @@ class _TaskStopwatchWidgetState extends ConsumerState<TaskStopwatchWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     final lang = ref.read(localizationProvider);
     final bool active = _isTimerActive();
     final Duration totalDuration = _calculateTotalDuration();

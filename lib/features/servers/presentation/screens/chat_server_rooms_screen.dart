@@ -217,6 +217,7 @@ class _ChatServerRoomsScreenState extends ConsumerState<ChatServerRoomsScreen> w
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     final isCreator = _server.creatorId == ChatServerService().currentUserId;
     final canCreateRoom = isCreator || _server.canMembersCreateRooms;
 
