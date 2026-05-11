@@ -1273,7 +1273,6 @@ class LanguageEn extends BaseLanguage {
   @override
   String get onlyAdminCanSendMessages => "Only admins can send messages";
   @override
-  @override
   String get noVoiceNotesAdded => "No voice notes added.";
   @override
   String get recordNewVoiceNote => "Record New Voice Note (Max 5 mins)";
@@ -1342,10 +1341,7 @@ class LanguageEn extends BaseLanguage {
   @override
   String get deleteChat => "Delete Chat";
   @override
-  @override
   String get kickFromServer => "Kick from Server";
-  @override
-  @override
   @override
   String serverSemanticLabel(String serverName, String description, String capacity, String encryptedText, String onlineCount) =>
       "Server name $serverName. Description $description. $capacity capacity $encryptedText server. Currently $onlineCount people are online.";
@@ -1367,7 +1363,6 @@ class LanguageEn extends BaseLanguage {
   String get roomsTabHint => "Rooms tab";
   @override
   String get messageReactionSemantic => "Leave a reaction to message";
-  @override
   @override
   String get shareRecording => "Share Recording";
   @override

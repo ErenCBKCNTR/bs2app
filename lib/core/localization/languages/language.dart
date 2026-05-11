@@ -628,7 +628,6 @@ abstract class BaseLanguage {
   String get noSavedRecordings;
   String get permanentlyDeleteNotice;
   String get cancelUppercase;
-  String get deleteUppercase;
   String get shareError;
   String get playRecordAnnounce;
   String get deleteComment;

@@ -1203,7 +1203,6 @@ class LanguageTr extends BaseLanguage {
   @override
   String get messageReactionSemantic => "Mesaja durum ifadesi bırak";
   @override
-  @override
   String get shareRecording => "Kaydı Paylaş";
   @override
   String get removeRecording => "Kaydı Sil";
