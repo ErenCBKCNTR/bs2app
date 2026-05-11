@@ -151,6 +151,7 @@ class _RadioPlayerWidgetState extends ConsumerState<RadioPlayerWidget> {
   }
 
   void _showSleepTimerDialog() {
+    final lang = ref.read(localizationProvider);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],

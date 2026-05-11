@@ -1037,6 +1037,10 @@ class LanguageEn extends BaseLanguage {
   @override
   String get add => "Add";
   @override
+  String get edit => "Edit";
+  @override
+  String get editUppercase => "EDIT";
+  @override
   String get delete => "Delete";
   @override
   String get label => "Label";
@@ -1243,6 +1247,20 @@ class LanguageEn extends BaseLanguage {
   @override
   String get exitAndClose => "LOGOUT AND CLOSE";
   @override
+  String unreadMessagesSuffix(int count) => "You have $count unread new messages.";
+  @override
+  String lastMessagePrefix(String content) => "Last message: $content.";
+  @override
+  String get platformActionHintWeb => "Long press for action menu.";
+  @override
+  String get platformActionHintMobile => "Swipe up or down for action options.";
+  @override
+  String get showOptions => "Show Options";
+  @override
+  String get tapToGoToChat => "Tap to go to chat";
+  @override
+  String get doubleTapToOpenChat => "Double tap to open chat";
+  @override
   String get deleteChatTitle => "Delete Chat";
   @override
   String get deleteChatConfirm => "Are you sure you want to delete this chat? This action cannot be undone.";
@@ -1438,38 +1456,4 @@ class LanguageEn extends BaseLanguage {
   String get noPostsYet => "You haven't shared any posts yet.";
   @override
   String get readCommentsHint => "Double tap to read and write comments";
-  @override
-  String blogPostSemanticLabel({
-    required String username,
-    required String time,
-    required String content,
-    required int likes,
-    required int comments,
-  }) => "$username. $time. $content. $likes likes, $comments comments.";
-  @override
-  String get closeBottomSheet => "Close";
-  @override
-  String get speaker => "Speaker";
-  @override
-  String get video => "Video";
-  @override
-  String get mute => "Mute";
-  @override
-  String get share => "Share";
-  @override
-  String get switchCamera => "Switch Camera";
-  @override
-  String get endCall => "End Call";
-  @override
-  String get answer => "Answer";
-  @override
-  String get decline => "Decline";
-  @override
-  String get recordingProgress => "Recording progress";
-  @override
-  String get rewind5s => "Rewind 5 seconds";
-  @override
-  String get forward5s => "Forward 5 seconds";
-  @override
-  String recordingDurationLabel(String position, String duration) => "Recording progress: $position / $duration";
 }

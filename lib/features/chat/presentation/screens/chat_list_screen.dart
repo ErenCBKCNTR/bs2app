@@ -1120,26 +1120,26 @@ addRepaintBoundaries: true,
            }
         }
         
-        String subtitleText = 'Sohbete gitmek için dokunun';
+        String subtitleText = lang.tapToGoToChat;
         
         if (lastMessage != null) {
            final content = ProfanityFilter.filter(lastMessage.getStringValue('content'));
-           subtitleText = content.startsWith('[VOICE]') ? 'Sesli Mesaj' : content;
+           subtitleText = content.startsWith('[VOICE]') ? lang.voiceMessage : content;
         }
         
-        final semanticUnreadSuffix = unreadCount > 0 ? "Okunmamış $unreadCount yeni mesajınız var." : "";
-        final semanticSubtitle = lastMessage != null ? "Son mesaj: $subtitleText." : "";
+        final semanticUnreadSuffix = unreadCount > 0 ? lang.unreadMessagesSuffix(unreadCount) : "";
+        final semanticSubtitle = lastMessage != null ? lang.lastMessagePrefix(subtitleText) : "";
         
         final bool isPinned = myPart?.getBoolValue('is_pinned') == true;
-        final platformActionHint = kIsWeb ? "İşlem menüsü için uzun basın." : "İşlem seçenekleri için parmağınızı yukarı ya da aşağı kaydırın.";
+        final platformActionHint = kIsWeb ? lang.platformActionHintWeb : lang.platformActionHintMobile;
         
         return Semantics(
           key: ValueKey('${chat.id}_${isArchived}_$isPinned'),
           label: "$displayChatName. $semanticSubtitle $semanticUnreadSuffix $platformActionHint",
           button: true,
           excludeSemantics: true,
-          onTapHint: "Sohbeti açmak için çift dokunun",
-          onLongPressHint: "Seçenekleri Göster",
+          onTapHint: lang.doubleTapToOpenChat,
+          onLongPressHint: lang.showOptions,
           onLongPress: () => _showChatOptions(chat),
           customSemanticsActions: {
             CustomSemanticsAction(label: isArchived ? lang.unarchiveChat : lang.archiveChat): () {
@@ -1593,6 +1593,7 @@ addRepaintBoundaries: true,
   }
 
   void _confirmDeleteChat(RecordModel chat) {
+    final lang = ref.read(localizationProvider);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1616,6 +1617,7 @@ addRepaintBoundaries: true,
   }
 
   Future<void> _deleteChat(String chatId) async {
+    final lang = ref.read(localizationProvider);
     // Yerel UI güncellemesi (Anlık tepki için)
     setState(() {
       _isDeleting = true;

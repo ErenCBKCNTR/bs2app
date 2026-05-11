@@ -1037,6 +1037,10 @@ class LanguageTr extends BaseLanguage {
   @override
   String get add => "Ekle";
   @override
+  String get edit => "Düzenle";
+  @override
+  String get editUppercase => "DÜZENLE";
+  @override
   String get delete => "Sil";
   @override
   String get label => "Etiket";
@@ -1412,6 +1416,20 @@ class LanguageTr extends BaseLanguage {
   String get globalErrorOccurred => "Uygulamada bir hata oluştu";
   @override
   String get exitAndClose => "ÇIKIŞ YAP VE KAPAT";
+  @override
+  String unreadMessagesSuffix(int count) => "Okunmamış $count yeni mesajınız var.";
+  @override
+  String lastMessagePrefix(String content) => "Son mesaj: $content.";
+  @override
+  String get platformActionHintWeb => "İşlem menüsü için uzun basın.";
+  @override
+  String get platformActionHintMobile => "İşlem seçenekleri için parmağınızı yukarı ya da aşağı kaydırın.";
+  @override
+  String get showOptions => "Seçenekleri Göster";
+  @override
+  String get tapToGoToChat => "Sohbete gitmek için dokunun";
+  @override
+  String get doubleTapToOpenChat => "Sohbeti açmak için çift dokunun";
   @override
   String get deleteChatTitle => "Sohbeti Sil";
   @override

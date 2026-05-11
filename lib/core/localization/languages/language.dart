@@ -526,7 +526,10 @@ abstract class BaseLanguage {
   String get december;
   String get permission;
   String get add;
+  String get edit;
+  String get editUppercase;
   String get delete;
+  String get deleteUppercase;
   String get label;
   String get statusUpdated;
   String get checklistTitle;
@@ -717,6 +720,13 @@ abstract class BaseLanguage {
   String get likeProcessFailed;
   String get globalErrorOccurred;
   String get exitAndClose;
+  String unreadMessagesSuffix(int count);
+  String lastMessagePrefix(String content);
+  String get platformActionHintWeb;
+  String get platformActionHintMobile;
+  String get showOptions;
+  String get tapToGoToChat;
+  String get doubleTapToOpenChat;
   String get deleteChatTitle;
   String get deleteChatConfirm;
   String get chatDeletedStatus;

@@ -42,6 +42,7 @@ class _SavedRecordingsScreenState extends ConsumerState<SavedRecordingsScreen> {
   }
 
   Future<void> _playRecording(RadioRecording recording) async {
+    final lang = ref.read(localizationProvider);
     try {
       if (_playingId == recording.id) {
         await _player.stop();

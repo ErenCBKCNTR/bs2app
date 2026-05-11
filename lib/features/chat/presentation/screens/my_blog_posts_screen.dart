@@ -29,6 +29,7 @@ class _MyBlogPostsScreenState extends ConsumerState<MyBlogPostsScreen> {
   }
 
   Future<void> _fetchMyPosts() async {
+    final lang = ref.read(localizationProvider);
     try {
       final userId = PocketBaseService.client.authStore.model!.id;
       final response = await PocketBaseService.client.collection('posts').getFullList(
@@ -60,6 +61,7 @@ class _MyBlogPostsScreenState extends ConsumerState<MyBlogPostsScreen> {
   }
 
   Future<void> _deletePost(String postId) async {
+    final lang = ref.read(localizationProvider);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -95,6 +97,7 @@ class _MyBlogPostsScreenState extends ConsumerState<MyBlogPostsScreen> {
   }
 
   Future<void> _showEditDialog(String postId, String currentContent) async {
+    final lang = ref.read(localizationProvider);
     final controller = TextEditingController(text: currentContent);
     final focusNode = FocusNode();
     final result = await showDialog<String>(
@@ -144,6 +147,7 @@ class _MyBlogPostsScreenState extends ConsumerState<MyBlogPostsScreen> {
   }
 
   Future<void> _toggleLike(String postId, int currentLikes) async {
+    final lang = ref.read(localizationProvider);
     final myId = PocketBaseService.client.authStore.model!.id;
     final postIndex = _posts.indexWhere((p) => p['id'] == postId);
     if (postIndex == -1) return;
