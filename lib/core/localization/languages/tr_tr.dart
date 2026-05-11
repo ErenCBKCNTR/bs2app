@@ -849,4 +849,191 @@ class LanguageTr extends BaseLanguage {
   String get genericError => "Bir hata oluştu";
   @override
   String get accessDenied => "Erişim Reddedildi";
+
+  @override
+  String get admin => "Yönetici";
+  @override
+  String get capacityLabel => "Kapasite";
+  @override
+  String get chatArchivedStatus => "Arşivlendi";
+  @override
+  String get chatPinnedStatus => "Başa tutturuldu";
+  @override
+  String get chatUnarchivedStatus => "Arşivden çıkarıldı";
+  @override
+  String get chatUnpinnedStatus => "Baştan kaldırıldı";
+  @override
+  String get connectionErrorWithStatus => "Bağlantı Hatası: ";
+  @override
+  String get create => "Oluştur";
+  @override
+  String get createServerTitle => "Sunucu Oluştur";
+  @override
+  String get deleteMessage => "Mesajı Sil";
+  @override
+  String get duration => "Süre";
+  @override
+  String get earpieceSet => "Ahize modu aktif";
+  @override
+  String get editMessage => "Mesajı Düzenle";
+  @override
+  String get editMessageHint => "Mesajınızı yazın...";
+  @override
+  String get editMessageTitle => "Mesajı Düzenle";
+  @override
+  String get edited => "Düzenlendi";
+  @override
+  String get emptyChatList => "Sohbet bulunamadı";
+  @override
+  String get failedToLoadDetails => "Detaylar yüklenemedi";
+  @override
+  String get favAddedStatus => "Favorilere eklendi";
+  @override
+  String get favRemovedStatus => "Favorilerden çıkarıldı";
+  @override
+  String get favoriteMessages => "Favori Mesajlar";
+  @override
+  String get gameInviteDesc => "Seni bir oyun oynamaya davet ettim!";
+  @override
+  String get gameInviteTitle => "Oyun Daveti";
+  @override
+  String get generalStats => "Genel İstatistikler";
+  @override
+  String get group => "Grup";
+  @override
+  String get headsetOrBluetoothSet => "Kulaklık/Bluetooth bağlandı";
+  @override
+  String get inFavorites => "Favorilerde";
+  @override
+  String get incomingVideoCall => "Gelen görüntülü arama";
+  @override
+  String get incomingVoiceCall => "Gelen sesli arama";
+  @override
+  String get incomingVoiceMessage => "Gelen sesli mesaj";
+  @override
+  String get lineBusy => "Hat meşgul";
+  @override
+  String get liveVoiceRoom => "Canlı Ses Odası";
+  @override
+  String get messageDeletedStatus => "Mesaj silindi";
+  @override
+  String get messageSentStatus => "Mesaj gönderildi";
+  @override
+  String get microphoneAccessDenied => "Mikrofon izni reddedildi";
+  @override
+  String get missedCall => "Cevapsız arama";
+  @override
+  String get missedVideoCall => "Cevapsız görüntülü arama";
+  @override
+  String get outgoingVideoCall => "Giden görüntülü arama";
+  @override
+  String get outgoingVoiceCall => "Giden sesli arama";
+  @override
+  String get securitySettings => "Güvenlik Ayarları";
+  @override
+  String get unnamed => "İsimsiz";
+  @override
+  String get blog => "Blog";
+  @override
+  String voiceRoomCapacity(String value) => "Kapasite: $value";
+  @override
+  String get lastSeenHidden => "Son görülme gizli";
+  @override
+  String get lastSeenToday => "Bugün şu saatte görüldü:";
+  @override
+  String get no => "Hayır";
+  @override
+  String get yes => "Evet";
+  @override
+  String get typeMessage => "Mesajınızı yazın...";
+  @override
+  String get you => "Sen";
+  @override
+  String get replied => "Yanıt verildi";
+  @override
+  String get replyingTo => "Yanıtlanıyor:";
+  @override
+  String get callLog => "Arama Kaydı";
+  @override
+  String get dropdownAccessibilityHint => "Seçeneği değiştirmek için çift dokunun";
+  @override
+  String get sendFeedback => "Geri Bildirim Gönder";
+  @override
+  String get emptyTemplate => "Boş Şablon";
+  @override
+  String get softwareDevTemplate => "Yazılım Geliştirme";
+  @override
+  String get dailyTasksTemplate => "Günlük Görevler";
+  @override
+  String get projectMgmtTemplate => "Proje Yönetimi";
+  @override
+  String get openBoard => "Panoyu Aç";
+  @override
+  String get currentlySpeaking => "şu an konuşuyor";
+  @override
+  String get deleteListSuccess => "liste silindi";
+  @override
+  String get tasks => "görevler";
+  @override
+  String get options => "Seçenekler";
+  @override
+  String get task => "Görev";
+  @override
+  String get january => "Ocak";
+  @override
+  String get february => "Şubat";
+  @override
+  String get march => "Mart";
+  @override
+  String get april => "Nisan";
+  @override
+  String get may => "Mayıs";
+  @override
+  String get june => "Haziran";
+  @override
+  String get july => "Temmuz";
+  @override
+  String get august => "Ağustos";
+  @override
+  String get september => "Eylül";
+  @override
+  String get october => "Ekim";
+  @override
+  String get november => "Kasım";
+  @override
+  String get december => "Aralık";
+  @override
+  String get permission => "İzin";
+  @override
+  String get add => "Ekle";
+  @override
+  String get delete => "Sil";
+  @override
+  String get label => "Etiket";
+  @override
+  String get statusUpdated => "Durum güncellendi";
+  @override
+  String get checklistTitle => "Kontrol Listesi";
+  @override
+  String get copy => "Kopyala";
+  @override
+  String get deleteComment => "Yorumu Sil";
+  @override
+  String get deleteCommentConfirm => "Bu yorumu silmek istediğinize emin misiniz?";
+  @override
+  String get commentDeleted => "Yorum silindi";
+  @override
+  String get commentSent => "Yorum gönderildi";
+  @override
+  String get sendingVoiceComment => "Sesli yorum gönderiliyor...";
+  @override
+  String get voiceCommentSent => "Sesli yorum gönderildi";
+  @override
+  String get noComments => "Henüz yorum yok. İlk yorum yapan siz olun!";
+  @override
+  String get stopVoiceMessage => "Sesli Mesajı Durdur";
+  @override
+  String get playVoiceMessage => "Sesli Mesajı Oynat";
+  @override
+  String get incomplete => "Tamamlanmadı";
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 import 'package:blind_social/features/chat/presentation/screens/call_screen.dart';
 import 'package:blind_social/features/chat/presentation/screens/favorite_messages_screen.dart';
 import 'package:flutter/material.dart';
@@ -826,8 +827,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
             _navigateToCall(targetId!, isVideo);
          } else {
            if (mounted) {
-             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-               content: Text('${ref.read(localizationProvider).error}: ${ref.read(localizationProvider).failedToLoadDetails}.'),
+             final lang = ref.read(localizationProvider);
+             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+               content: Text('${lang.error}: ${lang.failedToLoadDetails}.'),
                behavior: SnackBarBehavior.floating,
              ));
            }
@@ -1260,6 +1262,7 @@ addRepaintBoundaries: true,
   }
 
   Widget _buildReplyBubbleHeader(Map<String, dynamic> message, bool isMyMessage) {
+    final lang = ref.read(localizationProvider);
     final replyContent = message['reply_content']?.toString() ?? '';
     if (replyContent.isEmpty || message['reply_to'] == null) return const SizedBox.shrink();
 
@@ -1298,7 +1301,7 @@ addRepaintBoundaries: true,
     );
   }
 
-  Widget _buildMessageInput() {
+  Widget _buildMessageInput(BaseLanguage lang) {
     return ChatInputField(
       onSendText: _sendMessage,
       onSendAudio: _sendAudioMessage,

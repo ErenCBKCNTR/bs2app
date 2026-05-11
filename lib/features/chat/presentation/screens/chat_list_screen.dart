@@ -687,6 +687,7 @@ class _ChatListScreenContentState extends ConsumerState<_ChatListScreenContent> 
   }
 
   Future<void> _handleBackNavigation() async {
+    final lang = ref.read(localizationProvider);
     if (_tabController.index != 0) {
       _tabController.animateTo(0);
       return;

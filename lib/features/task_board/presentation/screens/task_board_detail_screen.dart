@@ -758,9 +758,8 @@ addRepaintBoundaries: true,
                           ]
                         ],
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
               ),
       ),
     );

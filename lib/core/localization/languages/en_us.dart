@@ -849,4 +849,191 @@ class LanguageEn extends BaseLanguage {
   String get genericError => "Something went wrong";
   @override
   String get accessDenied => "Access Denied";
+
+  @override
+  String get admin => "Admin";
+  @override
+  String get capacityLabel => "Capacity";
+  @override
+  String get chatArchivedStatus => "Archived";
+  @override
+  String get chatPinnedStatus => "Pinned";
+  @override
+  String get chatUnarchivedStatus => "Unarchived";
+  @override
+  String get chatUnpinnedStatus => "Unpinned";
+  @override
+  String get connectionErrorWithStatus => "Connection Error: ";
+  @override
+  String get create => "Create";
+  @override
+  String get createServerTitle => "Create Server";
+  @override
+  String get deleteMessage => "Delete Message";
+  @override
+  String get duration => "Duration";
+  @override
+  String get earpieceSet => "Earpiece mode active";
+  @override
+  String get editMessage => "Edit Message";
+  @override
+  String get editMessageHint => "Type your message...";
+  @override
+  String get editMessageTitle => "Edit Message";
+  @override
+  String get edited => "Edited";
+  @override
+  String get emptyChatList => "No chats found";
+  @override
+  String get failedToLoadDetails => "Failed to load details";
+  @override
+  String get favAddedStatus => "Added to favorites";
+  @override
+  String get favRemovedStatus => "Removed from favorites";
+  @override
+  String get favoriteMessages => "Favorite Messages";
+  @override
+  String get gameInviteDesc => "I've invited you to play a game!";
+  @override
+  String get gameInviteTitle => "Game Invite";
+  @override
+  String get generalStats => "General Stats";
+  @override
+  String get group => "Group";
+  @override
+  String get headsetOrBluetoothSet => "Headset/Bluetooth connected";
+  @override
+  String get inFavorites => "In Favorites";
+  @override
+  String get incomingVideoCall => "Incoming video call";
+  @override
+  String get incomingVoiceCall => "Incoming voice call";
+  @override
+  String get incomingVoiceMessage => "Incoming voice message";
+  @override
+  String get lineBusy => "Line busy";
+  @override
+  String get liveVoiceRoom => "Live Voice Room";
+  @override
+  String get messageDeletedStatus => "Message deleted";
+  @override
+  String get messageSentStatus => "Message sent";
+  @override
+  String get microphoneAccessDenied => "Microphone access denied";
+  @override
+  String get missedCall => "Missed call";
+  @override
+  String get missedVideoCall => "Missed video call";
+  @override
+  String get outgoingVideoCall => "Outgoing video call";
+  @override
+  String get outgoingVoiceCall => "Outgoing voice call";
+  @override
+  String get securitySettings => "Security Settings";
+  @override
+  String get unnamed => "Unnamed";
+  @override
+  String get blog => "Blog";
+  @override
+  String voiceRoomCapacity(String value) => "Capacity: $value";
+  @override
+  String get lastSeenHidden => "Last seen hidden";
+  @override
+  String get lastSeenToday => "Last seen today at";
+  @override
+  String get no => "No";
+  @override
+  String get yes => "Yes";
+  @override
+  String get typeMessage => "Type your message...";
+  @override
+  String get you => "You";
+  @override
+  String get replied => "Replied";
+  @override
+  String get replyingTo => "Replying to";
+  @override
+  String get callLog => "Call Log";
+  @override
+  String get dropdownAccessibilityHint => "Double tap to change option";
+  @override
+  String get sendFeedback => "Send Feedback";
+  @override
+  String get emptyTemplate => "Empty Template";
+  @override
+  String get softwareDevTemplate => "Software Development";
+  @override
+  String get dailyTasksTemplate => "Daily Tasks";
+  @override
+  String get projectMgmtTemplate => "Project Management";
+  @override
+  String get openBoard => "Open Board";
+  @override
+  String get currentlySpeaking => "currently speaking";
+  @override
+  String get deleteListSuccess => "list deleted";
+  @override
+  String get tasks => "tasks";
+  @override
+  String get options => "Options";
+  @override
+  String get task => "Task";
+  @override
+  String get january => "January";
+  @override
+  String get february => "February";
+  @override
+  String get march => "March";
+  @override
+  String get april => "April";
+  @override
+  String get may => "May";
+  @override
+  String get june => "June";
+  @override
+  String get july => "July";
+  @override
+  String get august => "August";
+  @override
+  String get september => "September";
+  @override
+  String get october => "October";
+  @override
+  String get november => "November";
+  @override
+  String get december => "December";
+  @override
+  String get permission => "Permission";
+  @override
+  String get add => "Add";
+  @override
+  String get delete => "Delete";
+  @override
+  String get label => "Label";
+  @override
+  String get statusUpdated => "Status updated";
+  @override
+  String get checklistTitle => "Checklist";
+  @override
+  String get copy => "Copy";
+  @override
+  String get deleteComment => "Delete Comment";
+  @override
+  String get deleteCommentConfirm => "Are you sure you want to delete this comment?";
+  @override
+  String get commentDeleted => "Comment deleted";
+  @override
+  String get commentSent => "Comment sent";
+  @override
+  String get sendingVoiceComment => "Sending voice comment...";
+  @override
+  String get voiceCommentSent => "Voice comment sent";
+  @override
+  String get noComments => "No comments yet. Be the first to comment!";
+  @override
+  String get stopVoiceMessage => "Stop Voice Message";
+  @override
+  String get playVoiceMessage => "Play Voice Message";
+  @override
+  String get incomplete => "Incomplete";
 }
