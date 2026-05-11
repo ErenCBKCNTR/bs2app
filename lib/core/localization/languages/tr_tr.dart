@@ -721,9 +721,9 @@ class LanguageTr extends BaseLanguage {
   @override
   String get total => "Toplam";
   @override
-  String get completed => "Tamamlanan";
+  String get completed => "Tamamlandı";
   @override
-  String get pending => "Bekleyen";
+  String get pending => "Bekliyor";
   @override
   String get myPendingTasks => "Bekleyen Görevlerim";
   @override
@@ -753,8 +753,6 @@ class LanguageTr extends BaseLanguage {
   String get boardOptionsHint => "Pano seçeneklerini görmek için iki parmağınızla dokunun veya uzun basın.";
   @override
   String get dropdownHint => "Seçenekleri görmek ve değiştirmek için çift tıklayın";
-  @override
-  String get dropdownAccessibilityHint => "Seçenekleri görmek ve değiştirmek için çift tıklayın";
   @override
   String get lastSeenHidden => "Son görülme gizli";
   @override
@@ -917,8 +915,6 @@ class LanguageTr extends BaseLanguage {
   String get yourVoiceMessage => "Gönderdiğiniz sesli mesaj";
   @override
   String get incomingVoiceMessage => "Gelen sesli mesaj";
-  @override
-  String get yourMessage => "Gönderdiğiniz mesaj";
   @override
   String get incomingMessage => "Gelen mesaj";
   @override

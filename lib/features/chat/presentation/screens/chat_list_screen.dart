@@ -18,6 +18,7 @@ import 'package:blind_social/features/developer/presentation/screens/developer_l
 import 'package:blind_social/core/utils/json_utils.dart';
 import 'package:blind_social/features/games/presentation/screens/games_screen.dart' as blind_social_games;
 import 'package:blind_social/features/games/presentation/screens/quiz_game_screen.dart' as quiz_game;
+import 'package:blind_social/core/providers/localization_provider.dart';
 import 'package:blind_social/features/chat/presentation/screens/blog_screen.dart';
 import 'package:blind_social/core/utils/logger.dart';
 import 'package:blind_social/core/utils/profanity_filter.dart';
