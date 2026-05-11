@@ -10,14 +10,14 @@ import 'dart:async';
 import 'package:blind_social/core/utils/logger.dart';
 import 'chat_server_rooms_screen.dart';
 
-class ChatServersScreen extends StatefulWidget {
+class ChatServersScreen extends ConsumerStatefulWidget {
   const ChatServersScreen({super.key});
 
   @override
-  State<ChatServersScreen> createState() => _ChatServersScreenState();
+  ConsumerState<ChatServersScreen> createState() => _ChatServersScreenState();
 }
 
-class _ChatServersScreenState extends State<ChatServersScreen> {
+class _ChatServersScreenState extends ConsumerState<ChatServersScreen> {
   static List<ChatServer>? _cachedServers;
   
   List<ChatServer> _servers = _cachedServers ?? [];

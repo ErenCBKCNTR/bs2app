@@ -639,6 +639,7 @@ class _ChatListScreenContentState extends ConsumerState<_ChatListScreenContent> 
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localizationProvider);
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) {

@@ -1235,10 +1235,10 @@ class LanguageEn extends BaseLanguage {
   @override
   String get shareError => "Share error";
   @override
+  @override
   String get deleteRecording => "Delete Recording";
-}
   @override
   String get ongoingWork => "Ongoing work";
-
   @override
   String get completedWork => "Completed work";
+}

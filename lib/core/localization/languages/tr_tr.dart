@@ -1235,11 +1235,11 @@ class LanguageTr extends BaseLanguage {
   @override
   String get shareError => "Paylaşma hatası";
   @override
+  @override
   String get deleteRecording => "Kaydı Sil";
-}
   @override
   String get ongoingWork => "Devam Eden Çalışma";
-
   @override
   String get completedWork => "Tamamlanan Çalışma";
+}
 
