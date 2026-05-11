@@ -9,7 +9,7 @@ import 'package:blind_social/core/utils/profanity_filter.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:blind_social/core/localization/language_provider.dart';
+import 'package:blind_social/core/providers/localization_provider.dart';
 
 class ChatInputField extends ConsumerStatefulWidget {
   final Function(String) onSendText;

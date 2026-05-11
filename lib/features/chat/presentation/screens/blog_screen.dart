@@ -196,17 +196,17 @@ class _BlogScreenState extends ConsumerState<BlogScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Gönderiyi Sil'),
-        content: const Text('Bu gönderiyi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'),
+        title: Text(lang.deletePostConfirmTitle),
+        content: Text(lang.deletePostConfirmMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
+            child: Text(lang.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Sil'),
+            child: Text(lang.delete),
           ),
         ],
       ),
@@ -218,12 +218,12 @@ class _BlogScreenState extends ConsumerState<BlogScreen> {
         AppLogger.instance.info('Gönderi silindi: $id');
         _fetchPosts();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gönderi silindi.')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.postDeleted)));
         }
       } catch (e) {
         AppLogger.instance.error('Gönderi silinemedi: $e');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.error)));
         }
       }
     }
@@ -298,22 +298,22 @@ class _BlogScreenState extends ConsumerState<BlogScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Gönderiyi Düzenle'),
+          title: Text(lang.editPostDialogTitle),
           content: TextField(
             controller: editController,
             maxLines: 4,
             maxLength: 1000,
             autofocus: true,
-            decoration: const InputDecoration(
-              hintText: 'Gönderinizi düzenleyin...',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: lang.editPostHint,
+              border: const OutlineInputBorder(),
               counterText: "", // Hide counter but keep limit
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('İptal'),
+              child: Text(lang.cancel),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -328,16 +328,16 @@ class _BlogScreenState extends ConsumerState<BlogScreen> {
                   AppLogger.instance.info('Gönderi düzenlendi: $id');
                   _fetchPosts();
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gönderi güncellendi.')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.postUpdated)));
                   }
                 } catch (e) {
                   AppLogger.instance.error('Gönderi düzenlenemedi: $e');
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Düzenlenemedi: $e')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang.postUpdateFailed)));
                   }
                 }
               },
-              child: const Text('Kaydet'),
+              child: Text(lang.save),
             ),
           ],
         );
@@ -350,29 +350,29 @@ class _BlogScreenState extends ConsumerState<BlogScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Yeni Gönderi'),
+          title: Text(lang.createPostDialogTitle),
           content: TextField(
             controller: _postController,
             maxLines: 4,
             maxLength: 1000,
             autofocus: true,
-            decoration: const InputDecoration(
-              hintText: 'Ne düşünüyorsunuz?',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: lang.createPostHint,
+              border: const OutlineInputBorder(),
               counterText: "",
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('İptal'),
+              child: Text(lang.cancel),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
                 _createPost();
               },
-              child: const Text('Paylaş'),
+              child: Text(lang.share),
             ),
           ],
         );
@@ -415,8 +415,8 @@ class _BlogScreenState extends ConsumerState<BlogScreen> {
                       children: [
                         const Icon(Icons.history, color: Colors.green, size: 22),
                         const SizedBox(width: 12),
-                        const Text(
-                          "Blog Gönderilerim",
+                        Text(
+                          lang.myBlogPosts,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -441,9 +441,9 @@ class _BlogScreenState extends ConsumerState<BlogScreen> {
                 child: OutlinedButton.icon(
                   onPressed: _showCreatePostDialog,
                   icon: const Icon(Icons.edit, size: 20),
-                  label: const Text(
-                    "Yeni Gönderi Paylaş",
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                  label: Text(
+                    lang.shareNewPost,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 54),
@@ -470,7 +470,7 @@ class _BlogScreenState extends ConsumerState<BlogScreen> {
               child: _isLoading 
                 ? const Center(child: CircularProgressIndicator())
                 : _posts.isEmpty 
-                  ? const Center(child: Text("Henüz hiç gönderi paylaşılmamış."))
+                  ? Center(child: Text(lang.noPostsYet))
                   : ListView.builder(
 addAutomaticKeepAlives: false,
 addRepaintBoundaries: true,
@@ -615,7 +615,7 @@ addRepaintBoundaries: true,
                                                         _showEditDialog(post['id'], content);
                                                       } else {
                                                         ScaffoldMessenger.of(context).showSnackBar(
-                                                          const SnackBar(content: Text('Sadece kendi gönderilerinizi düzenleyebilirsiniz.'))
+                                                          SnackBar(content: Text(lang.onlyOwnerCanEdit))
                                                         );
                                                       }
                                                     }
@@ -623,8 +623,8 @@ addRepaintBoundaries: true,
                                                   },
                                                   itemBuilder: (context) => [
                                                     if (post['user_id'] == PocketBaseService.client.authStore.model?.id)
-                                                      const PopupMenuItem(value: 'edit', child: Text('Düzenle')),
-                                                    const PopupMenuItem(value: 'delete', child: Text('Sil', style: TextStyle(color: Colors.red))),
+                                                      PopupMenuItem(value: 'edit', child: Text(lang.edit)),
+                                                    PopupMenuItem(value: 'delete', child: Text(lang.delete, style: const TextStyle(color: Colors.red))),
                                                   ],
                                                 ),
                                             ],

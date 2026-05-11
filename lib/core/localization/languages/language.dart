@@ -737,7 +737,77 @@ abstract class BaseLanguage {
   String get editPostTitle;
   String get postUpdated;
   String get noPostsYet;
-  String get readCommentsHint;
+  // Blog
+  String get myBlogPosts;
+  String get shareNewPost;
+  String get deletePostConfirmTitle;
+  String get deletePostConfirmMessage;
+  String get editPostDialogTitle;
+  String get editPostHint;
+  String get save;
+  String get postCreated;
+  String get postCreationFailed;
+  String get postDeleted;
+  String get postDeleteFailed;
+  String get postUpdated;
+  String get postUpdateFailed;
+  String get createPostDialogTitle;
+  String get createPostHint;
+  String get share;
+  String get onlyOwnerCanEdit;
+  String get commentsHint;
+
+  // Server Settings
+  String get serverSettings;
+  String get general;
+  String get rooms;
+  String get members;
+  String get banned;
+  String get basicInfo;
+  String get serverName;
+  String get description;
+  String get capacity;
+  String personCapacity(int value);
+  String get securityAndPermissions;
+  String get membersCanCreateRooms;
+  String get onlyCreatorCanCreateRooms;
+  String get serverPassword;
+  String get serverPasswordHint;
+  String get saveChanges;
+  String get deleteServer;
+  String get deleteServerConfirm;
+  String get deleteServerWarning;
+  String get yesDelete;
+  String get kickMember;
+  String kickMemberConfirm(String username);
+  String get kick;
+  String get banMember;
+  String banMemberConfirm(String username);
+  String get ban;
+  String get unbanMember;
+  String unbanMemberConfirm(String username);
+  String get unban;
+  String get roomDeleted;
+  String get memberKicked;
+  String get memberBanned;
+  String get unbanned;
+  String get roomNotFound;
+  String get memberNotFound;
+  String get noBannedMembers;
+  String get removeMemberTooltip;
+
+  // Servers
+  String get chatRooms;
+  String get noRoomsFound;
+  String get descriptionNone;
+  String get kickUser;
+  String get banUser;
+  String get unbanUser;
+  String get serverOwner;
+  String get serverAdmin;
+  String get serverMember;
+  String get sunucuSahibiYasaklayabilir;
+  String get sunucudanAt;
 
   // Chat Input
   String get cancelRecording;

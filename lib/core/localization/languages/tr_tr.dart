@@ -1471,7 +1471,139 @@ class LanguageTr extends BaseLanguage {
   String get postUpdated => "Gönderi güncellendi.";
   @override
   String get noPostsYet => "Henüz hiç gönderi paylaşmadınız.";
+
+  // Blog
+  @override
+  String get myBlogPosts => "Blog Yazılarım";
+  @override
+  String get shareNewPost => "Yeni Yazı Paylaş";
+  @override
+  String get deletePostConfirmTitle => "Silmeyi Onayla";
+  @override
+  String get deletePostConfirmMessage => "Bu yazıyı silmek istediğinizden emin misiniz?";
+  @override
+  String get editPostDialogTitle => "Yazıyı Düzenle";
+  @override
+  String get editPostHint => "Yazınızı buraya düzenleyin...";
+  @override
+  String get postCreated => "Yazı paylaşıldı.";
+  @override
+  String get postCreationFailed => "Yazı paylaşılamadı.";
+  @override
+  String get postDeleteFailed => "Yazı silinemedi.";
+  @override
+  String get postUpdateFailed => "Yazı güncellenemedi.";
+  @override
+  String get createPostDialogTitle => "Yeni Yazı Oluştur";
+  @override
+  String get createPostHint => "Ne düşünüyorsunuz?";
+  @override
+  String get share => "Paylaş";
+  @override
+  String get onlyOwnerCanEdit => "Sadece içerik sahibi düzenleyebilir.";
+  @override
+  String get commentsHint => "Yorumlar...";
   @override
   String get readCommentsHint => "Yorumları okumak ve yazmak için çift dokunun";
+
+  // Server Settings
+  @override
+  String get serverSettings => "Sunucu Ayarları";
+  @override
+  String get general => "Genel";
+  @override
+  String get rooms => "Odalar";
+  @override
+  String get members => "Üyeler";
+  @override
+  String get banned => "Yasaklılar";
+  @override
+  String get basicInfo => "Temel Bilgiler";
+  @override
+  String get serverName => "Sunucu Adı";
+  @override
+  String get description => "Açıklama";
+  @override
+  String get capacity => "Kişi Kapasitesi";
+  @override
+  String personCapacity(int value) => "$value Kişilik";
+  @override
+  String get securityAndPermissions => "Güvenlik ve Yetkiler";
+  @override
+  String get membersCanCreateRooms => "Üyeler Oda Açabilsin";
+  @override
+  String get onlyCreatorCanCreateRooms => "Sadece kurucu oda açabilir";
+  @override
+  String get serverPassword => "Sunucu Şifresi (Sadece Rakam)";
+  @override
+  String get serverPasswordHint => "Şifresiz olması için boş bırakın";
+  @override
+  String get saveChanges => "Değişiklikleri Kaydet";
+  @override
+  String get deleteServer => "Sunucuyu Sil";
+  @override
+  String get deleteServerConfirm => "Sunucuyu tamamen silmek istediğinize emin misiniz? Bu işlem geri alınamaz.";
+  @override
+  String get deleteServerWarning => "Bu işlem geri alınamaz.";
+  @override
+  String get yesDelete => "Evet, Sil";
+  @override
+  String get kickMember => "Üyeyi Uzaklaştır";
+  @override
+  String kickMemberConfirm(String username) => "$username bu sunucudan uzaklaştırılsın mı?";
+  @override
+  String get kick => "Uzaklaştır";
+  @override
+  String get banMember => "Üyeyi Yasakla (Banla)";
+  @override
+  String banMemberConfirm(String username) => "$username adlı kullanıcı sunucudan kalıcı olarak yasaklansın mı? Bir daha giriş yapamayacak.";
+  @override
+  String get ban => "Yasakla";
+  @override
+  String get unbanMember => "Yasaklamayı Kaldır";
+  @override
+  String unbanMemberConfirm(String username) => "$username adlı kullanıcının yasağı kaldırılsın mı?";
+  @override
+  String get unban => "Yasağı Kaldır";
+  @override
+  String get roomDeleted => "Oda silindi.";
+  @override
+  String get memberKicked => "Üye uzaklaştırıldı.";
+  @override
+  String get memberBanned => "Üye başarıyla yasaklandı.";
+  @override
+  String get unbanned => "Yasak kaldırıldı.";
+  @override
+  String get roomNotFound => "Oda bulunamadı.";
+  @override
+  String get memberNotFound => "Üye bulunamadı.";
+  @override
+  String get noBannedMembers => "Yasaklı üye bulunamadı.";
+  @override
+  String get removeMemberTooltip => "Yasak listesinden çıkar";
+
+  // Servers
+  @override
+  String get chatRooms => "Sohbet Odaları";
+  @override
+  String get noRoomsFound => "Oda bulunamadı.";
+  @override
+  String get descriptionNone => "Açıklama yok";
+  @override
+  String get kickUser => "Uzaklaştır";
+  @override
+  String get banUser => "Yasakla";
+  @override
+  String get unbanUser => "Yasağı Kaldır";
+  @override
+  String get serverOwner => "Kurucu";
+  @override
+  String get serverAdmin => "Yönetici";
+  @override
+  String get serverMember => "Üye";
+  @override
+  String get sunucuSahibiYasaklayabilir => "Yalnızca sunucu sahibi yasaklama işlemi yapabilir.";
+  @override
+  String get sunucudanAt => "Sunucudan At";
 }
 

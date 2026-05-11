@@ -266,15 +266,15 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> wit
     final lang = ref.watch(localizationProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sunucu Ayarları'),
+        title: Text(lang.serverSettings),
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
-          tabs: const [
-            Tab(icon: Icon(Icons.settings), text: 'Genel'),
-            Tab(icon: Icon(Icons.meeting_room), text: 'Odalar'),
-            Tab(icon: Icon(Icons.people), text: 'Üyeler'),
-            Tab(icon: Icon(Icons.block), text: 'Yasaklılar'),
+          tabs: [
+            Tab(icon: const Icon(Icons.settings), text: lang.general),
+            Tab(icon: const Icon(Icons.meeting_room), text: lang.rooms),
+            Tab(icon: const Icon(Icons.people), text: lang.members),
+            Tab(icon: const Icon(Icons.block), text: lang.banned),
           ],
         ),
       ),
@@ -311,27 +311,27 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> wit
                     children: [
                       Icon(Icons.info_outline, color: Theme.of(context).colorScheme.primary),
                       const SizedBox(width: 8),
-                      const Text(
-                        'Temel Bilgiler',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      Text(
+                        lang.basicInfo,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                   const Divider(height: 24),
                   TextField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Sunucu Adı',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.dns),
+                    decoration: InputDecoration(
+                      labelText: lang.serverName,
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.dns),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _descController,
-                    decoration: const InputDecoration(
-                      labelText: 'Açıklama',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: lang.description,
+                      border: const OutlineInputBorder(),
                       alignLabelWithHint: true,
                     ),
                     maxLines: 3,
@@ -341,15 +341,15 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> wit
                     hint: 'Seçenekleri görmek ve değiştirmek için çift tıklayın',
                     child: DropdownButtonFormField<int>(
                       value: _capacity,
-                      decoration: const InputDecoration(
-                        labelText: 'Kişi Kapasitesi',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.groups),
+                      decoration: InputDecoration(
+                        labelText: lang.capacity,
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.groups),
                       ),
                       items: [12, 24, 32, 48, 64, 128].map((int value) {
                         return DropdownMenuItem<int>(
                           value: value,
-                          child: Text('$value Kişilik'),
+                          child: Text(lang.personCapacity(value)),
                         );
                       }).toList(),
                       onChanged: (val) {
@@ -375,16 +375,16 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> wit
                     children: [
                       const Icon(Icons.security, color: Colors.orange),
                       const SizedBox(width: 8),
-                      const Text(
-                        'Güvenlik ve Yetkiler',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      Text(
+                        lang.securityAndPermissions,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                   const Divider(height: 24),
                   SwitchListTile(
-                    title: const Text('Üyeler Oda Açabilsin', style: TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Bu özellik kapalıyken sadece kurucu oda açabilir.'),
+                    title: Text(lang.membersCanCreateRooms, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text(lang.onlyCreatorCanCreateRooms),
                     contentPadding: EdgeInsets.zero,
                     activeColor: Theme.of(context).colorScheme.primary,
                     value: _canMembersCreateRooms,
@@ -394,11 +394,11 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> wit
                   TextField(
                     controller: _passwordController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Sunucu Şifresi (Sadece Rakam)',
-                      hintText: 'Şifresiz olması için boş bırakın',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock_outline),
+                    decoration: InputDecoration(
+                      labelText: lang.serverPassword,
+                      hintText: lang.serverPasswordHint,
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.lock_outline),
                     ),
                   ),
                 ],
@@ -416,7 +416,7 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> wit
             ),
             child: _isSaving 
                 ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
-                : const Text('Değişiklikleri Kaydet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                : Text(lang.saveChanges, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(height: 16),
           if (ChatServerService().currentUserId == widget.server.creatorId)
@@ -428,7 +428,7 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> wit
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Sunucuyu Sil', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: Text(lang.deleteServer, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           const SizedBox(height: 16),
         ],

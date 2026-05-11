@@ -1469,6 +1469,38 @@ class LanguageEn extends BaseLanguage {
   String get postUpdated => "Post updated.";
   @override
   String get noPostsYet => "You haven't shared any posts yet.";
+
+  // Blog
+  @override
+  String get myBlogPosts => "My Blog Posts";
+  @override
+  String get shareNewPost => "Share New Post";
+  @override
+  String get deletePostConfirmTitle => "Confirm Delete";
+  @override
+  String get deletePostConfirmMessage => "Are you sure you want to delete this post?";
+  @override
+  String get editPostDialogTitle => "Edit Post";
+  @override
+  String get editPostHint => "Edit your post here...";
+  @override
+  String get postCreated => "Post shared.";
+  @override
+  String get postCreationFailed => "Post could not be shared.";
+  @override
+  String get postDeleteFailed => "Post could not be deleted.";
+  @override
+  String get postUpdateFailed => "Post could not be updated.";
+  @override
+  String get createPostDialogTitle => "Create New Post";
+  @override
+  String get createPostHint => "What do you think?";
+  @override
+  String get share => "Share";
+  @override
+  String get onlyOwnerCanEdit => "Only the content owner can edit.";
+  @override
+  String get commentsHint => "Comments...";
   @override
   String get readCommentsHint => "Double tap to read and write comments";
 }
