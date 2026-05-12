@@ -10,6 +10,7 @@ import 'package:blind_social/core/widgets/expandable_text.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blind_social/core/providers/localization_provider.dart';
+import 'package:blind_social/core/localization/languages/language.dart';
 
 class MyBlogPostsScreen extends ConsumerStatefulWidget {
   const MyBlogPostsScreen({super.key});

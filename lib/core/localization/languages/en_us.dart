@@ -1095,7 +1095,6 @@ class LanguageEn extends BaseLanguage {
   @override
   String get unbanUser => "Unban User";
   @override
-  @override
   String get playRecordAnnounce => "Playing recording";
   @override
   String get deleteCommentConfirm => "Are you sure you want to delete this comment?";
@@ -1474,8 +1473,6 @@ class LanguageEn extends BaseLanguage {
   @override
   String get myBlogPosts => "My Blog Posts";
   @override
-  String get shareNewPost => "Share New Post";
-  @override
   String get deletePostConfirmTitle => "Confirm Delete";
   @override
   String get deletePostConfirmMessage => "Are you sure you want to delete this post?";
@@ -1496,11 +1493,91 @@ class LanguageEn extends BaseLanguage {
   @override
   String get createPostHint => "What do you think?";
   @override
-  String get share => "Share";
-  @override
   String get onlyOwnerCanEdit => "Only the content owner can edit.";
   @override
   String get commentsHint => "Comments...";
   @override
   String get readCommentsHint => "Double tap to read and write comments";
+
+  // Server Settings
+  @override
+  String get serverSettings => "Server Settings";
+  @override
+  String get general => "General";
+  @override
+  String get rooms => "Rooms";
+  @override
+  String get banned => "Banned";
+  @override
+  String get basicInfo => "Basic Information";
+  @override
+  String get serverName => "Server Name";
+  @override
+  String personCapacity(int value) => "$value People Capacity";
+  @override
+  String get securityAndPermissions => "Security and Permissions";
+  @override
+  String get membersCanCreateRooms => "Members Can Create Rooms";
+  @override
+  String get onlyCreatorCanCreateRooms => "Only creator can create rooms";
+  @override
+  String get serverPassword => "Server Password (Numeric Only)";
+  @override
+  String get deleteServer => "Delete Server";
+  @override
+  String get deleteServerConfirm => "Are you sure you want to delete the server? This action cannot be undone.";
+  @override
+  String get deleteServerWarning => "This action cannot be undone.";
+  @override
+  String get kickMember => "Kick Member";
+  @override
+  String kickMemberConfirm(String username) => "Should $username be kicked from this server?";
+  @override
+  String get kick => "Kick";
+  @override
+  String get banMember => "Ban Member";
+  @override
+  String banMemberConfirm(String username) => "Should $username be permanently banned from the server? They won't be able to log in again.";
+  @override
+  String get ban => "Ban";
+  @override
+  String get unbanMember => "Unban Member";
+  @override
+  String unbanMemberConfirm(String username) => "Should the ban of $username be lifted?";
+  @override
+  String get unban => "Unban";
+  @override
+  String get roomDeleted => "Room deleted.";
+  @override
+  String get memberKicked => "Member kicked.";
+  @override
+  String get memberBanned => "Member successfully banned.";
+  @override
+  String get unbanned => "Ban lifted.";
+  @override
+  String get roomNotFound => "Room not found.";
+  @override
+  String get memberNotFound => "Member not found.";
+  @override
+  String get noBannedMembers => "No banned members found.";
+  @override
+  String get removeMemberTooltip => "Remove from ban list";
+
+  // Servers
+  @override
+  String get chatRooms => "Chat Rooms";
+  @override
+  String get noRoomsFound => "No rooms found.";
+  @override
+  String get descriptionNone => "No description";
+  @override
+  String get serverOwner => "Owner";
+  @override
+  String get serverAdmin => "Admin";
+  @override
+  String get serverMember => "Member";
+  @override
+  String get sunucuSahibiYasaklayabilir => "Only the server owner can perform banning.";
+  @override
+  String get sunucudanAt => "Kick from Server";
 }

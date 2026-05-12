@@ -641,9 +641,6 @@ abstract class BaseLanguage {
   String get shareRecording;
   String get deleteRecording;
   String get deleteRoom;
-  String get kickUser;
-  String get banUser;
-  String get unbanUser;
   String get unarchiveChat;
   String get ongoingWork;
   String get completedWork;
@@ -667,7 +664,6 @@ abstract class BaseLanguage {
   String get messageLongPressHint;
   String get myPostsPage;
   String get myPostsPageHint;
-  String get shareNewPost;
   String blogPostSemanticLabel({
     required String username,
     required String time,
@@ -733,51 +729,39 @@ abstract class BaseLanguage {
   String get myPosts;
   String get deleteConfirmTitle;
   String get deletePostConfirm;
-  String get postDeleted;
   String get editPostTitle;
-  String get postUpdated;
   String get noPostsYet;
   // Blog
   String get myBlogPosts;
-  String get shareNewPost;
   String get deletePostConfirmTitle;
   String get deletePostConfirmMessage;
   String get editPostDialogTitle;
   String get editPostHint;
-  String get save;
   String get postCreated;
   String get postCreationFailed;
-  String get postDeleted;
   String get postDeleteFailed;
-  String get postUpdated;
   String get postUpdateFailed;
   String get createPostDialogTitle;
   String get createPostHint;
-  String get share;
   String get onlyOwnerCanEdit;
   String get commentsHint;
+  String get readCommentsHint;
 
   // Server Settings
   String get serverSettings;
   String get general;
   String get rooms;
-  String get members;
   String get banned;
   String get basicInfo;
   String get serverName;
-  String get description;
-  String get capacity;
   String personCapacity(int value);
   String get securityAndPermissions;
   String get membersCanCreateRooms;
   String get onlyCreatorCanCreateRooms;
   String get serverPassword;
-  String get serverPasswordHint;
-  String get saveChanges;
   String get deleteServer;
   String get deleteServerConfirm;
   String get deleteServerWarning;
-  String get yesDelete;
   String get kickMember;
   String kickMemberConfirm(String username);
   String get kick;
@@ -800,9 +784,6 @@ abstract class BaseLanguage {
   String get chatRooms;
   String get noRoomsFound;
   String get descriptionNone;
-  String get kickUser;
-  String get banUser;
-  String get unbanUser;
   String get serverOwner;
   String get serverAdmin;
   String get serverMember;

@@ -34,6 +34,8 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> wit
   List<ChatServerRoom> _rooms = [];
   bool _isLoadingRooms = true;
 
+  BaseLanguage get lang => ref.read(localizationProvider);
+
   @override
   void initState() {
     super.initState();

@@ -1476,8 +1476,6 @@ class LanguageTr extends BaseLanguage {
   @override
   String get myBlogPosts => "Blog Yazılarım";
   @override
-  String get shareNewPost => "Yeni Yazı Paylaş";
-  @override
   String get deletePostConfirmTitle => "Silmeyi Onayla";
   @override
   String get deletePostConfirmMessage => "Bu yazıyı silmek istediğinizden emin misiniz?";
@@ -1498,8 +1496,6 @@ class LanguageTr extends BaseLanguage {
   @override
   String get createPostHint => "Ne düşünüyorsunuz?";
   @override
-  String get share => "Paylaş";
-  @override
   String get onlyOwnerCanEdit => "Sadece içerik sahibi düzenleyebilir.";
   @override
   String get commentsHint => "Yorumlar...";
@@ -1514,17 +1510,11 @@ class LanguageTr extends BaseLanguage {
   @override
   String get rooms => "Odalar";
   @override
-  String get members => "Üyeler";
-  @override
   String get banned => "Yasaklılar";
   @override
   String get basicInfo => "Temel Bilgiler";
   @override
   String get serverName => "Sunucu Adı";
-  @override
-  String get description => "Açıklama";
-  @override
-  String get capacity => "Kişi Kapasitesi";
   @override
   String personCapacity(int value) => "$value Kişilik";
   @override
@@ -1536,17 +1526,11 @@ class LanguageTr extends BaseLanguage {
   @override
   String get serverPassword => "Sunucu Şifresi (Sadece Rakam)";
   @override
-  String get serverPasswordHint => "Şifresiz olması için boş bırakın";
-  @override
-  String get saveChanges => "Değişiklikleri Kaydet";
-  @override
   String get deleteServer => "Sunucuyu Sil";
   @override
   String get deleteServerConfirm => "Sunucuyu tamamen silmek istediğinize emin misiniz? Bu işlem geri alınamaz.";
   @override
   String get deleteServerWarning => "Bu işlem geri alınamaz.";
-  @override
-  String get yesDelete => "Evet, Sil";
   @override
   String get kickMember => "Üyeyi Uzaklaştır";
   @override
@@ -1589,12 +1573,6 @@ class LanguageTr extends BaseLanguage {
   String get noRoomsFound => "Oda bulunamadı.";
   @override
   String get descriptionNone => "Açıklama yok";
-  @override
-  String get kickUser => "Uzaklaştır";
-  @override
-  String get banUser => "Yasakla";
-  @override
-  String get unbanUser => "Yasağı Kaldır";
   @override
   String get serverOwner => "Kurucu";
   @override

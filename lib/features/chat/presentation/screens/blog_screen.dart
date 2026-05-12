@@ -39,6 +39,8 @@ class _BlogScreenState extends ConsumerState<BlogScreen> {
   final Set<String> _processingLikes = {};
   final Map<String, Timer> _likeDebouncers = {};
 
+  BaseLanguage get lang => ref.read(localizationProvider);
+
   @override
   void initState() {
     super.initState();
