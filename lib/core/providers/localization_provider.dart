@@ -31,39 +31,16 @@ class LocalizationNotifier extends StateNotifier<BaseLanguage> {
         state = LanguageTr();
       }
     } else {
-      // No saved language, detect from system locale
-      _detectLanguageFromSystem();
+      // Varsayılan olarak Türkçe başlat (kullanıcı talebi)
+      state = LanguageTr();
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setString(_languageKey, 'tr');
+      });
     }
   }
 
   void _detectLanguageFromSystem() {
-    final locales = PlatformDispatcher.instance.locales;
-    final primaryLocale = PlatformDispatcher.instance.locale;
-    bool isEnglish = false;
-    
-    final allCodes = [primaryLocale.languageCode.toLowerCase()];
-    for (var loc in locales) {
-      allCodes.add(loc.languageCode.toLowerCase());
-    }
-    
-    for (var code in allCodes) {
-      if (code == 'en' || code.startsWith('en')) {
-        isEnglish = true;
-        break;
-      }
-    }
-    
-    // Varsayılan olarak Türkçe, sadece kesin İngilizce ise İngilizce yapalım
-    if (isEnglish && !allCodes.any((c) => c.startsWith('tr'))) {
-      state = LanguageEn();
-    } else {
-      state = LanguageTr();
-    }
-    
-    // Save the detected language for future sessions
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setString(_languageKey, state is LanguageEn ? 'en' : 'tr');
-    });
+    // Bu metod artık kullanılmıyor, çünkü her zaman Türkçe varsayılan
   }
 
   Future<void> setLanguage(String langCode) async {

@@ -452,12 +452,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         title: Text(lang.welcomeBack),
         centerTitle: true,
         actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.language),
-            tooltip: lang.language,
-            onSelected: (String code) {
-              ref.read(localizationProvider.notifier).setLanguage(code);
-            },
+          Semantics(
+            label: 'Dil değiştir / Change language', // Ekran okuyucu bu etiketi okuyacak
+            child: PopupMenuButton<String>(
+              icon: const Icon(Icons.language),
+              tooltip: 'Dil değiştir / Change language',
+              onSelected: (String code) {
+                ref.read(localizationProvider.notifier).setLanguage(code);
+              },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               PopupMenuItem<String>(
                 value: 'tr',
@@ -487,6 +489,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               ),
             ],
           ),
+          )
         ],
       ),
       body: Padding(

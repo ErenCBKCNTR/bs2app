@@ -10,7 +10,7 @@ class PocketBaseService {
   static const _authKey = 'pb_auth_secure';
 
   static Future<void> init() async {
-    const androidOptions = AndroidOptions(encryptedSharedPreferences: true);
+    const androidOptions = AndroidOptions();
     try {
       // 1. Cihaz güvenliği kontrolü
       final isSecure = await SecurityService().isDeviceSecure();
@@ -23,7 +23,7 @@ class PocketBaseService {
         initialAuth = await _secureStorage.read(key: _authKey, aOptions: androidOptions);
       } catch (e) {
         debugPrint("Secure storage okuma hatasi, sifirlaniyor: $e");
-        await _secureStorage.deleteAll(aOptions: androidOptions);
+        await _secureStorage.delete(key: _authKey, aOptions: androidOptions);
       }
 
       // 2. Güvenli AuthStore başlatma
