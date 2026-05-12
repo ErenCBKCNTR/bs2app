@@ -5,9 +5,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:blind_social/core/services/pocketbase_service.dart';
 import 'package:blind_social/core/utils/logger.dart';
-import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:open_filex/open_filex.dart';
 
 class UpdateCheckWrapper extends StatefulWidget {
   final Widget child;
@@ -24,8 +21,6 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
   String _currentVersion = '';
   String _dbVersion = '';
   
-  bool _isDownloading = false;
-  double _downloadProgress = 0.0;
   String _downloadStatus = '';
 
   final FocusNode _buttonFocusNode = FocusNode();
@@ -106,74 +101,21 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
   }
 
   Future<void> _startDownload() async {
-    if (_apkUrl.isEmpty) return;
-
-    if (!Platform.isAndroid) {
-      // iOS and Web will still use url launcher
-      final Uri url = Uri.parse(_apkUrl);
-      try {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } catch (e) {
-        debugPrint("Guncelleme linki acilamadi: $e");
-      }
-      return;
+    String updateUrl = _apkUrl;
+    if (updateUrl.isEmpty || !updateUrl.startsWith('http')) {
+      updateUrl = 'https://play.google.com/store/apps/details?id=com.prusoft.blindsocial';
     }
 
-    setState(() {
-      _isDownloading = true;
-      _downloadProgress = 0.0;
-      _downloadStatus = 'İndiriliyor...';
-    });
-
+    final Uri url = Uri.parse(updateUrl);
     try {
-      final dir = await getExternalStorageDirectory();
-      
-      // Clean up old APK files to prevent storage bloat
-      if (dir != null) {
-        try {
-          final files = dir.listSync();
-          for (var file in files) {
-            if (file.path.endsWith('.apk')) {
-              file.deleteSync();
-            }
-          }
-        } catch (_) {}
-      }
-
-      final filePath = '${dir?.path}/update_$_dbVersion.apk';
-
-      final dio = Dio();
-      await dio.download(
-        _apkUrl,
-        filePath,
-        onReceiveProgress: (received, total) {
-          if (total != -1) {
-            setState(() {
-              _downloadProgress = received / total;
-              _downloadStatus = 'İndiriliyor: %${(_downloadProgress * 100).toStringAsFixed(0)}';
-            });
-          }
-        },
-      );
-
-      setState(() {
-        _downloadStatus = 'İndirme tamamlandı! Kurulum başlatılıyor...';
-      });
-
-      final result = await OpenFilex.open(filePath);
-      
-      if (result.type != ResultType.done) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint("Guncelleme linki acilamadi: $e");
+      if (mounted) {
         setState(() {
-          _downloadStatus = 'Kurulum başlatılamadı: ${result.message}';
-          _isDownloading = false;
+          _downloadStatus = 'Mağaza bağlantısı açılamadı.';
         });
       }
-    } catch (e) {
-      AppLogger.instance.error("İndirme hatası: $e");
-      setState(() {
-        _isDownloading = false;
-        _downloadStatus = 'İndirme başarısız oldu. Lütfen tekrar deneyin.';
-      });
     }
   }
 
@@ -214,46 +156,31 @@ class _UpdateCheckWrapperState extends State<UpdateCheckWrapper> {
                 ),
                 const SizedBox(height: 32),
                 
-                if (_isDownloading)
-                  Column(
-                    children: [
-                      LinearProgressIndicator(value: _downloadProgress),
-                      const SizedBox(height: 8),
-                      Semantics(
-                        liveRegion: true,
-                        child: Text(
-                          _downloadStatus,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        focusNode: _buttonFocusNode,
+                        onPressed: _startDownload,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
                         ),
+                        child: const Text("Uygulamayı Güncelle", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ),
-                    ],
-                  )
-                else
-                  Column(
-                    children: [
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          focusNode: _buttonFocusNode,
-                          onPressed: _startDownload,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text("Uygulamayı Güncelle", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                      if (_downloadStatus.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        Text(
-                          _downloadStatus,
-                          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
-                        )
-                      ]
-                    ],
-                  ),
+                    ),
+                    if (_downloadStatus.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        _downloadStatus,
+                        style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      )
+                    ]
+                  ],
+                ),
               ],
             ),
           ),
