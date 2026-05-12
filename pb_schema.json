@@ -548,8 +548,8 @@
     "listRule": "@collection.chat_participants.chat_id ?= id && @collection.chat_participants.user_id ?= @request.auth.id || created_by = @request.auth.id",
     "viewRule": "@collection.chat_participants.chat_id ?= id && @collection.chat_participants.user_id ?= @request.auth.id || created_by = @request.auth.id",
     "createRule": "@request.auth.id != \"\"",
-    "updateRule": "created_by = @request.auth.id",
-    "deleteRule": "@request.auth.id != \"\"",
+    "updateRule": "created_by = @request.auth.id || (@request.auth.role = 0)",
+    "deleteRule": "created_by = @request.auth.id || (@request.auth.role = 0)",
     "options": {}
   },
   {
@@ -954,8 +954,8 @@
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "@request.auth.id != ''",
-    "deleteRule": "@request.auth.id != ''"
+    "updateRule": "created_by = @request.auth.id || (@request.auth.role = 0)",
+    "deleteRule": "created_by = @request.auth.id || (@request.auth.role = 0)"
   },
   {
     "id": "col_chat_servers",
@@ -1088,8 +1088,8 @@
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "@request.auth.id != ''",
-    "deleteRule": "@request.auth.id != ''",
+    "updateRule": "creator = @request.auth.id || admins ~ @request.auth.id || (@request.auth.role = 0)",
+    "deleteRule": "creator = @request.auth.id || (@request.auth.role = 0)",
     "options": {}
   },
   {
@@ -1164,8 +1164,8 @@
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "@request.auth.id != ''",
-    "deleteRule": "@request.auth.id != ''",
+    "updateRule": "@collection.chat_servers.id ?= server_id && (@collection.chat_servers.creator ?= @request.auth.id || @collection.chat_servers.admins ?= @request.auth.id)",
+    "deleteRule": "@collection.chat_servers.id ?= server_id && (@collection.chat_servers.creator ?= @request.auth.id || @collection.chat_servers.admins ?= @request.auth.id)",
     "options": {}
   },
   {
@@ -1236,8 +1236,8 @@
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "user_id = @request.auth.id",
-    "deleteRule": "user_id = @request.auth.id",
+    "updateRule": "user_id = @request.auth.id || (@collection.chat_servers.id ?= server_id && (@collection.chat_servers.creator ?= @request.auth.id || @collection.chat_servers.admins ?= @request.auth.id))",
+    "deleteRule": "user_id = @request.auth.id || (@collection.chat_servers.id ?= server_id && (@collection.chat_servers.creator ?= @request.auth.id || @collection.chat_servers.admins ?= @request.auth.id))",
     "options": {}
   },
   {
@@ -1314,7 +1314,7 @@
     "viewRule": "@request.auth.id != '' && @collection.server_memberships.server_id ?= room_id.server_id && @collection.server_memberships.user_id ?= @request.auth.id",
     "createRule": "@request.auth.id = sender_id",
     "updateRule": "@request.auth.id = sender_id",
-    "deleteRule": "@request.auth.id = sender_id",
+    "deleteRule": "@request.auth.id = sender_id || (@request.auth.role = 0)",
     "options": {}
   },
   {
@@ -1351,8 +1351,8 @@
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "@request.auth.id != ''",
-    "deleteRule": "@request.auth.id != ''"
+    "updateRule": "user_id = @request.auth.id",
+    "deleteRule": "user_id = @request.auth.id"
   },
   {
     "id": "col_quiz_questions",
@@ -1549,8 +1549,8 @@
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "@request.auth.id != ''",
-    "deleteRule": "@request.auth.id != ''"
+    "updateRule": "player1_id = @request.auth.id || player2_id = @request.auth.id || status = 'waiting'",
+    "deleteRule": "player1_id = @request.auth.id || (@request.auth.role = 0)"
   },
   {
     "id": "col_server_bans",
@@ -1596,9 +1596,9 @@
     ],
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
-    "createRule": "@request.auth.id != ''",
-    "updateRule": "@request.auth.id != ''",
-    "deleteRule": "@request.auth.id != ''",
+    "createRule": "@collection.chat_servers.id ?= server_id && (@collection.chat_servers.creator ?= @request.auth.id || @collection.chat_servers.admins ?= @request.auth.id)",
+    "updateRule": "@collection.chat_servers.id ?= server_id && (@collection.chat_servers.creator ?= @request.auth.id || @collection.chat_servers.admins ?= @request.auth.id)",
+    "deleteRule": "@collection.chat_servers.id ?= server_id && (@collection.chat_servers.creator ?= @request.auth.id || @collection.chat_servers.admins ?= @request.auth.id)",
     "options": {}
   },
   {
@@ -1785,8 +1785,8 @@
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
-    "updateRule": "@request.auth.id != ''",
-    "deleteRule": "@request.auth.id != ''"
+    "updateRule": "@collection.task_boards.id ?= board_id && (@collection.task_boards.owner_id ?= @request.auth.id || @collection.task_boards.editors ~ @request.auth.id || @collection.task_boards.members ~ @request.auth.id)",
+    "deleteRule": "@collection.task_boards.id ?= board_id && (@collection.task_boards.owner_id ?= @request.auth.id || @collection.task_boards.editors ~ @request.auth.id)"
   },
   {
     "id": "col_task_items",
@@ -1942,7 +1942,7 @@
     "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.id != ''",
     "updateRule": "@request.auth.id != ''",
-    "deleteRule": "@request.auth.id != ''"
+    "deleteRule": "created_by = @request.auth.id || (@request.auth.role = 0)"
   },
   {
     "id": "col_task_checklists",
@@ -2122,8 +2122,8 @@
     ],
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
-    "createRule": "@request.auth.id != ''",
-    "updateRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.id = user1",
+    "updateRule": "@request.auth.id = user1 || @request.auth.id = user2",
     "deleteRule": "@request.auth.id = user1 || @request.auth.id = user2"
   },
   {

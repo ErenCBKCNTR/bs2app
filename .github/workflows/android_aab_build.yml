@@ -1,4 +1,4 @@
-name: Android Build
+name: Android AAB Build
 
 on:
   push:
@@ -47,16 +47,16 @@ jobs:
             echo "Skipping keystore creation, base64 data not provided."
           fi
 
-      - name: Build APK
+      - name: Build App Bundle (AAB)
         env:
           KEYSTORE_PATH: "upload-keystore.jks"
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: flutter build apk --release --obfuscate --split-debug-info=./debug-info --no-tree-shake-icons
+        run: flutter build appbundle --release --obfuscate --split-debug-info=./debug-info --no-tree-shake-icons
 
-      - name: Upload APK Artifact
+      - name: Upload AAB Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: app-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
