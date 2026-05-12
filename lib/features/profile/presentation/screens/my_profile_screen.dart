@@ -256,10 +256,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   }
 
   Widget _buildMiniInfoCard(IconData icon, String title, String value, Color accentColor) {
-    return Semantics(
-      container: true,
-      label: '$title $value',
-      excludeSemantics: true,
+    return MergeSemantics(
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -281,10 +278,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   }
 
   Widget _buildFullWidthInfoCard(IconData icon, String title, String value, Color accentColor) {
-    return Semantics(
-      container: true,
-      label: '$title $value',
-      excludeSemantics: true,
+    return MergeSemantics(
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(14),

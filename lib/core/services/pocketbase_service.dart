@@ -10,7 +10,7 @@ class PocketBaseService {
   static const _authKey = 'pb_auth_secure';
 
   static Future<void> init() async {
-    const androidOptions = AndroidOptions();
+    const androidOptions = AndroidOptions(encryptedSharedPreferences: true);
     try {
       // 1. Cihaz güvenliği kontrolü
       final isSecure = await SecurityService().isDeviceSecure();

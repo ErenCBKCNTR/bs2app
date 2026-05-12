@@ -509,10 +509,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   }
 
   Widget _buildCompactInfoCard(IconData icon, String title, String value) {
-    return Semantics(
-      container: true,
-      label: '$title, $value',
-      excludeSemantics: true,
+    return MergeSemantics(
       child: Card(
         elevation: 0,
         color: Theme.of(context).colorScheme.surface,

@@ -18,7 +18,7 @@ class LocalizationNotifier extends StateNotifier<BaseLanguage> {
     _loadLanguage();
   }
 
-  static const String _languageKey = 'selected_language';
+  static const String _languageKey = 'selected_app_language_v2';
 
   Future<void> _loadLanguage() async {
     final prefs = await SharedPreferences.getInstance();
@@ -31,11 +31,10 @@ class LocalizationNotifier extends StateNotifier<BaseLanguage> {
         state = LanguageTr();
       }
     } else {
-      // Varsayılan olarak Türkçe başlat (kullanıcı talebi)
+      // Varsayılan olarak her zaman Türkçe başlat (kullanıcı talebi)
+      // İlk kurulumda sistem dilinden bağımsız Türkçe başlar.
       state = LanguageTr();
-      SharedPreferences.getInstance().then((prefs) {
-        prefs.setString(_languageKey, 'tr');
-      });
+      prefs.setString(_languageKey, 'tr');
     }
   }
 
