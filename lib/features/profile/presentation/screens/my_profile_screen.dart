@@ -259,6 +259,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     return Semantics(
       container: true,
       label: '$title $value',
+      excludeSemantics: true,
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -283,6 +284,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     return Semantics(
       container: true,
       label: '$title $value',
+      excludeSemantics: true,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(14),

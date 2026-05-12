@@ -10,20 +10,39 @@ class PocketBaseService {
   static const _authKey = 'pb_auth_secure';
 
   static Future<void> init() async {
+    const androidOptions = AndroidOptions(encryptedSharedPreferences: true);
     try {
       // 1. Cihaz güvenliği kontrolü
       final isSecure = await SecurityService().isDeviceSecure();
       if (!isSecure) {
-        // Güvenli olmayan cihazlarda oturumu temizleyebilir veya kritik verileri silebiliriz.
-        // Şimdilik sadece uyarı veriyoruz, ancak üretimde uygulamayı durdurmak daha iyidir.
         debugPrint("UYARI: Cihaz güvenliği düşük tespit edildi.");
+      }
+
+      String? initialAuth;
+      try {
+        initialAuth = await _secureStorage.read(key: _authKey, aOptions: androidOptions);
+      } catch (e) {
+        debugPrint("Secure storage okuma hatasi, sifirlaniyor: $e");
+        await _secureStorage.deleteAll(aOptions: androidOptions);
       }
 
       // 2. Güvenli AuthStore başlatma
       final authStore = AsyncAuthStore(
-        save: (String data) async => await _secureStorage.write(key: _authKey, value: data),
-        initial: await _secureStorage.read(key: _authKey),
-        clear: () async => await _secureStorage.delete(key: _authKey),
+        save: (String data) async {
+          try {
+            await _secureStorage.write(key: _authKey, value: data, aOptions: androidOptions);
+          } catch (e) {
+            debugPrint("Secure storage yazma hatasi: $e");
+          }
+        },
+        initial: initialAuth,
+        clear: () async {
+          try {
+            await _secureStorage.delete(key: _authKey, aOptions: androidOptions);
+          } catch (e) {
+            debugPrint("Secure storage silme hatasi: $e");
+          }
+        },
       );
 
       client = PocketBase(
