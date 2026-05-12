@@ -1518,6 +1518,8 @@ class LanguageTr extends BaseLanguage {
   @override
   String personCapacity(int value) => "$value Kişilik";
   @override
+  String get capacity => "Kapasite";
+  @override
   String get securityAndPermissions => "Güvenlik ve Yetkiler";
   @override
   String get membersCanCreateRooms => "Üyeler Oda Açabilsin";

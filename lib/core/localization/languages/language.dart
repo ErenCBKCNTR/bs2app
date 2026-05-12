@@ -763,6 +763,7 @@ abstract class BaseLanguage {
   String get basicInfo;
   String get serverName;
   String personCapacity(int value);
+  String get capacity;
   String get securityAndPermissions;
   String get membersCanCreateRooms;
   String get onlyCreatorCanCreateRooms;

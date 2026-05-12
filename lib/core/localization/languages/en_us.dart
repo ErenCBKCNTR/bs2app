@@ -1515,6 +1515,8 @@ class LanguageEn extends BaseLanguage {
   @override
   String personCapacity(int value) => "$value People Capacity";
   @override
+  String get capacity => "Capacity";
+  @override
   String get securityAndPermissions => "Security and Permissions";
   @override
   String get membersCanCreateRooms => "Members Can Create Rooms";
