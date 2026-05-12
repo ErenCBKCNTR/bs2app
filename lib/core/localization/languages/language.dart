@@ -747,6 +747,14 @@ abstract class BaseLanguage {
   String get commentsHint;
   String get readCommentsHint;
 
+  // Added missing getters
+  String get kickUser;
+  String get banUser;
+  String get unbanUser;
+  String get postDeleted;
+  String get postUpdated;
+  String get shareNewPost;
+
   // Server Settings
   String get serverSettings;
   String get general;

@@ -19,6 +19,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blind_social/core/providers/localization_provider.dart';
+import 'package:blind_social/core/localization/languages/language.dart';
 
 class BlogScreen extends ConsumerStatefulWidget {
   const BlogScreen({super.key});
