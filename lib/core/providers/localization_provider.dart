@@ -24,8 +24,8 @@ class LocalizationNotifier extends StateNotifier<BaseLanguage> {
     final prefs = await SharedPreferences.getInstance();
     final langCode = prefs.getString(_languageKey);
     
-    if (langCode != null) {
-      if (langCode == 'en' || langCode == 'en-US') {
+    if (langCode != null && langCode.isNotEmpty) {
+      if (langCode.startsWith('en')) {
         state = LanguageEn();
       } else {
         state = LanguageTr();
@@ -37,10 +37,18 @@ class LocalizationNotifier extends StateNotifier<BaseLanguage> {
   }
 
   void _detectLanguageFromSystem() {
-    final locale = PlatformDispatcher.instance.locale;
-    final langCode = locale.languageCode.toLowerCase();
+    final locales = PlatformDispatcher.instance.locales;
+    bool isTurkish = false;
     
-    if (langCode == 'tr') {
+    for (var loc in locales) {
+      final code = loc.languageCode.toLowerCase();
+      if (code == 'tr' || code.startsWith('tr') || code.startsWith('tur')) {
+        isTurkish = true;
+        break;
+      }
+    }
+    
+    if (isTurkish) {
       state = LanguageTr();
     } else {
       state = LanguageEn();

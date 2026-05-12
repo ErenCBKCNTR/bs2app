@@ -22,6 +22,8 @@ import 'package:blind_social/core/utils/performance_monitor.dart';
 import 'package:blind_social/core/utils/route_observer.dart';
 import 'package:blind_social/core/providers/font_size_provider.dart';
 import 'package:blind_social/core/providers/localization_provider.dart';
+import 'package:blind_social/core/localization/languages/language.dart';
+import 'package:blind_social/core/localization/languages/tr_tr.dart';
 
 void main() async {
   // Global hata yakalayıcı (Framework hataları)
@@ -181,6 +183,7 @@ class BlindSocialApp extends ConsumerWidget {
         Locale('tr', 'TR'),
         Locale('en', 'US'),
       ],
+      locale: Locale(lang is LanguageTr ? 'tr' : 'en'),
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
